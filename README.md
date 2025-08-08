@@ -1,4 +1,4 @@
-# 📌 YouTube Comment Blocker by Handle — v0.1.0
+# 📌 YouTube Comment Blocker by Handle — v0.1.1
 
 Tampermonkey에서 동작하는 사용자 스크립트로, **YouTube 댓글에서 특정 사용자 핸들(@handle)을 차단**할 수 있습니다.
 차단된 사용자의 댓글은 실시간으로 숨겨지며, 차단 목록은 **메뉴로 관리/가져오기/내보내기** 할 수 있습니다.
@@ -29,7 +29,7 @@ Tampermonkey에서 동작하는 사용자 스크립트로, **YouTube 댓글에�
 3. YouTube 페이지 접속 후, 댓글 영역에서 다음 사용 가능:
 
    * 작성자 핸들 우클릭 → 차단/해제 팝업
-   * 핸들이 아닌 곳에서 우클릭 → Tampermonky → YouTube Comment Blocker by Handle → 차단 목록 관리 / 초기화
+   * 핸들이 아닌 곳에서 우클릭 → Tampermonkey → YouTube Comment Blocker by Handle → 차단 목록 관리 / 초기화
 
 ---
 
