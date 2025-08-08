@@ -55,7 +55,3 @@ Tampermonkey에서 동작하는 사용자 스크립트로, **YouTube 댓글에�
 
 * **Mango\_Clark**
 * License: MIT
-
----
-
-README를 `.md` 또는 `.txt` 파일로 저장할 수 있어. 원한다면 바로 생성해줄게.
