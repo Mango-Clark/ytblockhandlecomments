@@ -7,6 +7,10 @@ This file is for openai codex agent.
 - The user will provide a task in Korean
 - The task involves working with Git repositories in your current working directory.
 - Wait for all terminal commands to be completed (or terminate them) before finishing.
+- Write code and comments in English.
+- Write `README.md` in English.
+- Translate `README.md` to Korean and make `나를읽어.md`
+- Write `CHANGELOG.md` in English and translate to Korean and update `변경사항.md`
 
 ## Git instructions
 
