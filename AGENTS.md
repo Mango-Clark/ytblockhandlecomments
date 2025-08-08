@@ -11,6 +11,7 @@ This file is for openai codex agent.
 - Write `README.md` in English.
 - Translate `README.md` to Korean and make `나를읽어.md`
 - Write `CHANGELOG.md` in English and translate to Korean and update `변경사항.md`
+- Check `TODO.md`.
 
 ## Git instructions
 
