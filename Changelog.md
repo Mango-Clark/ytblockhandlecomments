@@ -31,6 +31,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - 보안 관련 수정 내역
 
+## [0.1.1] – 2025-08-08
+
+### Fixed
+
+- Corrected "Tampermonkey" spelling in README
+
 ## [0.1.0] – 2025-08-08
 
 ### Added

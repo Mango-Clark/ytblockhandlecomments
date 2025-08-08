@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube Comment Blocker by Handle
 // @namespace    http://tampermonkey.net/
-// @version      0.1.0
+// @version      0.1.1
 // @description  댓글 핸들 우클릭으로 차단/해제. 실시간 숨김, 커스텀 팝업, 토스트 알림, 차단 목록 관리/가져오기/내보내기 지원.
 // @author       Mango_Clark
 // @match        https://www.youtube.com/*
