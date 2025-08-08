@@ -31,6 +31,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - 보안 관련 수정 내역
 
+## [0.1.0] – 2025-08-08
+
+### Added
+
+- OOP 구조(Class 기반)로 전체 코드 리팩토링
+- 댓글 ⋯ 메뉴 자동 주입 기능 분리 (`MenuEnhancer` 클래스)
+- 차단 목록 내보내기(JSON + 라인별) 포맷 제공
+- 가져오기 시 JSON 스키마 형식 및 다중 포맷 처리
+- 차단 목록 저장 구조에 버전(`blockedHandles_v1`) 도입 및 레거시(`blockedHandles`) 자동 마이그레이션
+- 탭 간 동기화(`GM_addValueChangeListener`) 지원
+- 핸들 정규화(@handle → 소문자 처리)
+- 포커스 트랩 적용한 다이얼로그 개선
+- MutationObserver 및 rAF 기반 디바운스 적용으로 성능 향상
+
+### Changed
+
+- 기존 DOM 탐색/이벤트 처리 방식 → 위임 이벤트 처리로 변경
+- 목록 UI를 동적으로 렌더링하도록 개선
+
+### Deprecated
+
+- `blockedHandles` 키는 유지하되 내부적으로는 사용하지 않음
+
+### Removed
+
+- 없음
+
+### Fixed
+
+- 일부 댓글 스레드에서 차단이 누락되던 문제 해결
+
+### Security
+
+- 다이얼로그에 텍스트 노드를 우선 사용하여 XSS 위험 감소
+
 ## [0.0.1] – 2025-07-06
 
 ### Added
