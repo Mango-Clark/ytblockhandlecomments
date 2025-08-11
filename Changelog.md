@@ -8,99 +8,71 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-
-- 새롭게 추가된 기능
+- None
 
 ### Changed
-
-- 기존 기능이 변경된 내용
+- None
 
 ### Deprecated
-
-- 향후 제거될 예정인 기능
+- None
 
 ### Removed
-
-- 완전히 제거된 기능
+- None
 
 ### Fixed
-
-- 버그 수정 내역
+- None
 
 ### Security
+- None
 
-- 보안 관련 수정 내역
+## [0.1.2] – 2025-08-08
+
+### Added
+- Added `@updateURL` and `@downloadURL` metadata for the userscript
+- Documented storage versioning, delegated context menu events, cross-tab synchronization, and JSON import/export
+
+### Changed
+- Rewrote README in English and provided Korean translation
 
 ## [0.1.1] – 2025-08-08
 
 ### Fixed
-
 - Corrected "Tampermonkey" spelling in README
 
 ## [0.1.0] – 2025-08-08
 
 ### Added
-
-- OOP 구조(Class 기반)로 전체 코드 리팩토링
-- 댓글 ⋯ 메뉴 자동 주입 기능 분리 (`MenuEnhancer` 클래스)
-- 차단 목록 내보내기(JSON + 라인별) 포맷 제공
-- 가져오기 시 JSON 스키마 형식 및 다중 포맷 처리
-- 차단 목록 저장 구조에 버전(`blockedHandles_v1`) 도입 및 레거시(`blockedHandles`) 자동 마이그레이션
-- 탭 간 동기화(`GM_addValueChangeListener`) 지원
-- 핸들 정규화(@handle → 소문자 처리)
-- 포커스 트랩 적용한 다이얼로그 개선
-- MutationObserver 및 rAF 기반 디바운스 적용으로 성능 향상
+- Refactored entire codebase to a class-based OOP structure
+- Separated automatic menu injection into the `MenuEnhancer` class
+- Provided export formats (JSON and line-by-line text) for the block list
+- Handled import via JSON schema and multiple formats
+- Introduced versioned storage key `blockedHandles_v1` and automatic migration from legacy `blockedHandles`
+- Added cross-tab synchronization with `GM_addValueChangeListener`
+- Normalized handles to lowercase
+- Improved dialog with focus trap
+- Enhanced performance using MutationObserver and requestAnimationFrame-based debounce
 
 ### Changed
-
-- 기존 DOM 탐색/이벤트 처리 방식 → 위임 이벤트 처리로 변경
-- 목록 UI를 동적으로 렌더링하도록 개선
+- Switched from direct DOM binding to delegated event handling
+- Improved list UI to render dynamically
 
 ### Deprecated
-
-- `blockedHandles` 키는 유지하되 내부적으로는 사용하지 않음
-
-### Removed
-
-- 없음
+- Kept the `blockedHandles` key but no longer used internally
 
 ### Fixed
-
-- 일부 댓글 스레드에서 차단이 누락되던 문제 해결
+- Fixed missed blocking in some comment threads
 
 ### Security
-
-- 다이얼로그에 텍스트 노드를 우선 사용하여 XSS 위험 감소
+- Reduced XSS risk by prioritizing text nodes in dialogs
 
 ## [0.0.1] – 2025-07-06
 
 ### Added
-
-- 댓글 작성자 핸들(@handle)을 우클릭하여 차단/해제하는 기능
-- 실시간 댓글 차단 적용을 위한 `MutationObserver` 도입
-- 차단된 핸들을 팝업에서 확인·해제 가능한 차단 목록 UI
-- 차단 목록을 줄바꿈 텍스트로 **내보내기/가져오기** 기능
-- Tampermonkey 메뉴(`GM_registerMenuCommand`)에 관리 명령 2종 추가:
-  - 🔍 차단 목록 관리
-  - 🗑️ 차단 목록 초기화
-- 사용자용 커스텀 토스트 알림 및 간단한 다이얼로그 인터페이스
-
-### Changed
-
-- 없음
-
-### Deprecated
-
-- 없음
-
-### Removed
-
-- 없음
-
-### Fixed
-
-- 없음
-
-### Security
-
-- 없음
+- Block or unblock comment authors by right-clicking their `@handle`
+- Introduced `MutationObserver` for real-time comment blocking
+- Block list UI with popup to review or unblock handles
+- Export/import block list as newline-separated text
+- Added two Tampermonkey menu commands:
+  - 🔍 Manage block list
+  - 🗑️ Clear block list
+- Custom toast notifications and simple dialog interface
