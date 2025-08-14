@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube Comment Blocker by Handle
 // @namespace    http://tampermonkey.net/
-// @version      0.1.2
+// @version      0.1.3
 // @description  Block/unblock comment handles via right-click. Real-time hiding, custom popup, toast alerts, and block list manage/import/export.
 // @updateURL    https://raw.githubusercontent.com/example/ytblockhandlecomments/main/ytblockhandlecomments.js
 // @downloadURL  https://raw.githubusercontent.com/example/ytblockhandlecomments/main/ytblockhandlecomments.js
@@ -21,18 +21,18 @@
 	 * ---------------------------------------------------------- */
 	const style = document.createElement('style');
 	style.textContent = `
-    .tm-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#323232;color:#fff;padding:8px 16px;border-radius:6px;opacity:0;transition:opacity .2s ease;z-index:10000;font-size:14px;pointer-events:none}
+    .tm-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#323232;color:#fff;padding:8px 16px;border-radius:6px;opacity:0;transition:opacity .2s ease;z-index:10000;font-size:15px;pointer-events:none}
     .tm-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:10000}
-    .tm-dialog{background:#fff;color:#000;padding:20px 24px;border-radius:12px;max-width:520px;box-shadow:0 10px 30px rgba(0,0,0,.25);max-height:80vh;overflow:auto}
-    .tm-dialog header{margin:0 0 12px 0;font-size:16px;font-weight:700}
-    .tm-dialog footer{display:flex;justify-content:flex-end;gap:8px;margin-top:14px;flex-wrap:wrap}
-    .tm-dialog button{padding:8px 14px;border:none;border-radius:8px;font-size:13px;cursor:pointer}
+    .tm-dialog{background:#fff;color:#000;padding:24px 28px;border-radius:12px;width:min(720px,90vw);max-width:720px;box-shadow:0 10px 30px rgba(0,0,0,.25);max-height:80vh;overflow:auto;font-size:14px}
+    .tm-dialog header{margin:0 0 14px 0;font-size:18px;font-weight:700}
+    .tm-dialog footer{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;flex-wrap:wrap}
+    .tm-dialog button{padding:10px 16px;border:none;border-radius:8px;font-size:14px;cursor:pointer}
     .tm-dialog button.primary{background:#065fd4;color:#fff}
     .tm-dialog button.secondary{background:#eee;color:#000}
-    .tm-dialog textarea{width:100%;height:220px;resize:vertical;margin-top:8px;font-family:monospace;font-size:13px}
+    .tm-dialog textarea{width:100%;height:260px;resize:vertical;margin-top:8px;font-family:monospace;font-size:14px}
     .tm-block-list{list-style:none;padding:0;margin:0}
-    .tm-block-list li{display:flex;justify-content:space-between;align-items:center;padding:6px 0;gap:12px;word-break:break-all}
-    .tm-block-list li button{padding:4px 10px;border:none;border-radius:8px;font-size:12px;cursor:pointer;background:#d32f2f;color:#fff}
+    .tm-block-list li{display:flex;justify-content:space-between;align-items:center;padding:8px 0;gap:12px;word-break:break-all}
+    .tm-block-list li button{padding:4px 12px;border:none;border-radius:8px;font-size:13px;cursor:pointer;background:#d32f2f;color:#fff}
   `;
 	document.head.appendChild(style);
 
@@ -348,8 +348,7 @@
 			const h4a = document.createElement('h4'); h4a.textContent = 'JSON';
 			const ta1 = document.createElement('textarea'); ta1.readOnly = true; ta1.value = json;
 			const h4b = document.createElement('h4'); h4b.textContent = '텍스트';
-			const ta2 = document.createElement('textarea'); ta2.readOnly = true; ta2.value = this.storage.all().join('\\n');
-
+                        const ta2 = document.createElement('textarea'); ta2.readOnly = true; ta2.value = this.storage.all().join('\n');
 			body.append(p, h4a, ta1, h4b, ta2);
 			Dialog.show({ title: '차단 목록 내보내기', body, buttons: [{ label: '닫기', value: false, primary: true }] });
 		}
