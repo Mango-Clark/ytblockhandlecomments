@@ -25,6 +25,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 - None
 
+## [0.1.3] – 2025-08-14
+
+### Changed
+- Enlarged default dialog UI for better readability
+
+### Fixed
+- Expanded export list dialog width
+- Exported text now uses real line breaks between handles
+
 ## [0.1.2] – 2025-08-08
 
 ### Added
