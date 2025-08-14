@@ -25,6 +25,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 - None
 
+## [0.1.4] – 2025-08-14
+
+### Changed
+- Block list dialog footer fixed so Import, Export, and Close buttons stay visible
+
 ## [0.1.3] – 2025-08-14
 
 ### Changed

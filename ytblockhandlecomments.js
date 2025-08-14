@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube Comment Blocker by Handle
 // @namespace    http://tampermonkey.net/
-// @version      0.1.3
+// @version      0.1.4
 // @description  Block/unblock comment handles via right-click. Real-time hiding, custom popup, toast alerts, and block list manage/import/export.
 // @updateURL    https://raw.githubusercontent.com/example/ytblockhandlecomments/main/ytblockhandlecomments.js
 // @downloadURL  https://raw.githubusercontent.com/example/ytblockhandlecomments/main/ytblockhandlecomments.js
@@ -23,8 +23,9 @@
 	style.textContent = `
     .tm-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#323232;color:#fff;padding:8px 16px;border-radius:6px;opacity:0;transition:opacity .2s ease;z-index:10000;font-size:15px;pointer-events:none}
     .tm-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:10000}
-    .tm-dialog{background:#fff;color:#000;padding:24px 28px;border-radius:12px;width:min(720px,90vw);max-width:720px;box-shadow:0 10px 30px rgba(0,0,0,.25);max-height:80vh;overflow:auto;font-size:14px}
+    .tm-dialog{background:#fff;color:#000;padding:24px 28px;border-radius:12px;width:min(720px,90vw);max-width:720px;box-shadow:0 10px 30px rgba(0,0,0,.25);max-height:80vh;display:flex;flex-direction:column;font-size:14px}
     .tm-dialog header{margin:0 0 14px 0;font-size:18px;font-weight:700}
+    .tm-dialog .tm-content{flex:1 1 auto;overflow:auto;min-height:0}
     .tm-dialog footer{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;flex-wrap:wrap}
     .tm-dialog button{padding:10px 16px;border:none;border-radius:8px;font-size:14px;cursor:pointer}
     .tm-dialog button.primary{background:#065fd4;color:#fff}
@@ -119,7 +120,7 @@
 				const header = document.createElement('header');
 				header.textContent = title;
 
-				const content = document.createElement('div');
+                                const content = Object.assign(document.createElement('div'), { className: 'tm-content' });
 				if (body instanceof Node) content.appendChild(body);
 				else if (typeof body === 'string') {
 					// Accept limited HTML from internal templates only
