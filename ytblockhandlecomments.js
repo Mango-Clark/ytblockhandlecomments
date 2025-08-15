@@ -86,7 +86,8 @@
 			addBtn: '추가',
 			invalidRegex: '유효하지 않은 정규식',
 			addedRegex: '정규식을 추가했습니다',
-			exists: '이미 존재합니다'
+			exists: '이미 존재합니다',
+			testRegex: '정규식 만들기/테스트'
 		},
 		en: {
 			block: 'Block',
@@ -119,7 +120,8 @@
 			addBtn: 'Add',
 			invalidRegex: 'Invalid regex',
 			addedRegex: 'Regex added',
-			exists: 'Already exists'
+			exists: 'Already exists',
+			testRegex: 'Build/Test Regex'
 		}
 	};
 	const getLang = () => {
@@ -469,13 +471,12 @@
 			const iptF = document.createElement('input'); iptF.type = 'text'; iptF.style.width = '80px'; iptF.placeholder = 'i';
 			const addBtn = Object.assign(document.createElement('button'), { textContent: I18N[getLang()].addBtn });
 			addBtn.className = 'secondary'; addBtn.style.marginLeft = '8px';
-			// Quick link to regex testing site
-			const regexr = document.createElement('a');
-			regexr.href = 'https://regexr.com/';
-			regexr.target = '_blank';
-			regexr.rel = 'noopener noreferrer';
-			regexr.textContent = 'regexr.com';
-			regexr.style.marginLeft = '8px';
+			// Button to open regexr.com for building/testing regex
+			const btnRegexr = Object.assign(document.createElement('button'), { textContent: I18N[getLang()].testRegex });
+			btnRegexr.className = 'secondary'; btnRegexr.style.marginLeft = '8px';
+			btnRegexr.addEventListener('click', () => {
+				try { window.open('https://regexr.com/', '_blank', 'noopener'); } catch { location.href = 'https://regexr.com/'; }
+			});
 			addBtn.addEventListener('click', () => {
 				let p = (iptP.value||'').trim(); let f = (iptF.value||'').trim();
 				if (!p) return;
@@ -503,7 +504,7 @@
 				iptP.value = ''; iptF.value = '';
 			});
 			const formTitle = document.createElement('header'); formTitle.textContent = I18N[getLang()].addRegex;
-			form.append(formTitle, lblP, iptP, lblF, iptF, addBtn, regexr);
+			form.append(formTitle, btnRegexr, lblP, iptP, lblF, iptF, addBtn);
 			const ul = Object.assign(document.createElement('ul'), { className: 'tm-block-list' });
 
 			if (data.length === 0) {
