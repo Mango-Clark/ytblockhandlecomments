@@ -1,4 +1,4 @@
-# 📌 YouTube Comment Blocker by Handle — v0.2.0
+# 📌 YouTube Comment Blocker by Handle — v0.2.1
 
 [English](README.md) | [한국어](나를읽어.md)
 

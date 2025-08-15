@@ -27,6 +27,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 - None
 
+## [0.2.1] – 2025-08-15
+
+### Added
+- Inline regex input form in the block list dialog
+- “Build/Test Regex” button that opens regexr.com
+- Sticky, separated regex toolbar not affected by scrolling
+
+### Changed
+- Reduced button height in regex section for a tighter UI
+- Added bilingual link bars to README and changelogs
+- Updated userscript @namespace and @updateURL/@downloadURL to GitHub repo
+
 ## [0.2.0] – 2025-08-15
 
 ### Added
