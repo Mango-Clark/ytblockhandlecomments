@@ -473,7 +473,7 @@
 			addBtn.className = 'secondary'; addBtn.style.marginLeft = '8px';
 			// Button to open regexr.com for building/testing regex
 			const btnRegexr = Object.assign(document.createElement('button'), { textContent: I18N[getLang()].testRegex });
-			btnRegexr.className = 'secondary'; btnRegexr.style.marginLeft = '8px';
+			btnRegexr.className = 'primary';
 			btnRegexr.addEventListener('click', () => {
 				try { window.open('https://regexr.com/', '_blank', 'noopener'); } catch { location.href = 'https://regexr.com/'; }
 			});
@@ -504,7 +504,12 @@
 				iptP.value = ''; iptF.value = '';
 			});
 			const formTitle = document.createElement('header'); formTitle.textContent = I18N[getLang()].addRegex;
-			form.append(formTitle, btnRegexr, lblP, iptP, lblF, iptF, addBtn);
+			const titleRow = document.createElement('div');
+			titleRow.style.display = 'flex';
+			titleRow.style.alignItems = 'center';
+			titleRow.style.justifyContent = 'space-between';
+			titleRow.append(formTitle, btnRegexr);
+			form.append(titleRow, lblP, iptP, lblF, iptF, addBtn);
 			const ul = Object.assign(document.createElement('ul'), { className: 'tm-block-list' });
 
 			if (data.length === 0) {
