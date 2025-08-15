@@ -79,7 +79,14 @@
 			importBtn: '가져오기',
 			importedCount: (n) => `${n}개 항목 가져옴`,
 			menuHide: '이 채널의 댓글 숨김',
-			menuUnhide: '이 채널 댓글 숨김 해제'
+			menuUnhide: '이 채널 댓글 숨김 해제',
+			addRegex: '정규식 추가',
+			patternLabel: '패턴',
+			flagsLabel: '플래그',
+			addBtn: '추가',
+			invalidRegex: '유효하지 않은 정규식',
+			addedRegex: '정규식을 추가했습니다',
+			exists: '이미 존재합니다'
 		},
 		en: {
 			block: 'Block',
@@ -105,7 +112,14 @@
 			importBtn: 'Import',
 			importedCount: (n) => `Imported ${n} entries`,
 			menuHide: 'Hide comments from this channel',
-			menuUnhide: "Unhide this channel's comments"
+			menuUnhide: "Unhide this channel's comments",
+			addRegex: 'Add Regex',
+			patternLabel: 'Pattern',
+			flagsLabel: 'Flags',
+			addBtn: 'Add',
+			invalidRegex: 'Invalid regex',
+			addedRegex: 'Regex added',
+			exists: 'Already exists'
 		}
 	};
 	const getLang = () => {
@@ -447,6 +461,42 @@
 		openList() {
 			const data = this.storage.all();
 			const wrap = document.createElement('div');
+			// Add Regex inline form
+			const form = document.createElement('div');
+			const lblP = document.createElement('label'); lblP.textContent = I18N[getLang()].patternLabel + ':';
+			const iptP = document.createElement('input'); iptP.type = 'text'; iptP.style.width = '60%'; iptP.placeholder = '/^@spam.*/i or ^@promo';
+			const lblF = document.createElement('label'); lblF.textContent = I18N[getLang()].flagsLabel + ':'; lblF.style.marginLeft = '8px';
+			const iptF = document.createElement('input'); iptF.type = 'text'; iptF.style.width = '80px'; iptF.placeholder = 'i';
+			const addBtn = Object.assign(document.createElement('button'), { textContent: I18N[getLang()].addBtn });
+			addBtn.className = 'secondary'; addBtn.style.marginLeft = '8px';
+			addBtn.addEventListener('click', () => {
+				let p = (iptP.value||'').trim(); let f = (iptF.value||'').trim();
+				if (!p) return;
+				const m = /^\/(.*)\/([gimsuy]*)$/.exec(p);
+				if (m) { p = m[1]; f = m[2]||''; }
+				try { new RegExp(p, f); } catch { Toast.show(I18N[getLang()].invalidRegex); return; }
+				const ok = this.storage.addRegex(p, f);
+				if (!ok) { Toast.show(I18N[getLang()].exists); return; }
+				// append to list
+				const li = document.createElement('li');
+				const span = document.createElement('span'); span.textContent = `/${p}/${f}`;
+				const btn = Object.assign(document.createElement('button'), { textContent: I18N[getLang()].unblock });
+				btn.addEventListener('click', () => {
+					this.storage.remove({ type:'regex', value:p, flags:f });
+					this.hider.rebuildLookup();
+					li.remove();
+					this.hider.refreshScheduled();
+					Toast.show(t('removed', span.textContent));
+				});
+				li.append(span, btn);
+				ul.prepend(li);
+				this.hider.rebuildLookup();
+				this.hider.refreshScheduled();
+				Toast.show(I18N[getLang()].addedRegex);
+				iptP.value = ''; iptF.value = '';
+			});
+			const formTitle = document.createElement('header'); formTitle.textContent = I18N[getLang()].addRegex;
+			form.append(formTitle, lblP, iptP, lblF, iptF, addBtn);
 			const ul = Object.assign(document.createElement('ul'), { className: 'tm-block-list' });
 
 			if (data.length === 0) {
@@ -471,7 +521,7 @@
 					ul.appendChild(li);
 				});
 			}
-			wrap.appendChild(ul);
+			wrap.append(form, ul);
 
 			const header = (I18N[getLang()].manageTitle ? I18N[getLang()].manageTitle(data.length) : `Blocked channels (${data.length})`);
 			Dialog.show({
