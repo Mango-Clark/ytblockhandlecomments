@@ -1,5 +1,7 @@
 # Changelog
 
+[English](CHANGELOG.md) | [한국어](변경사항.md)
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
@@ -24,6 +26,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 - None
+
+## [0.2.0] – 2025-08-15
+
+### Added
+- Channel ID blocking with ID-first matching (handle as fallback)
+- Regex-based blocking for handles with validation and import/export support
+- i18n (Korean/English) and accessibility improvements (ARIA roles, aria-live)
+- IntersectionObserver-based visibility processing and WeakSet node caching
+- Tampermonkey menu to toggle language
+
+### Changed
+- Storage upgraded to v2 schema `{version:2, items:[{type:'id'|'handle'|'regex', ...}]}` with automatic migration
+- Switched from inline style hiding to class toggling for batched updates
+
+### Fixed
+- Reduced redundant scans by scoping refresh and debouncing via rAF
 
 ## [0.1.5] – 2025-08-15
 
