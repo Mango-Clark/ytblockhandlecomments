@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name         YouTube Comment Blocker by Handle
 // @namespace    http://tampermonkey.net/
-// @version      0.2.0
+// @version      0.2.1
 // @description  Block/unblock comment handles via right-click. Real-time hiding, custom popup, toast alerts, and block list manage/import/export.
-// @updateURL    https://raw.githubusercontent.com/example/ytblockhandlecomments/main/ytblockhandlecomments.js
-// @downloadURL  https://raw.githubusercontent.com/example/ytblockhandlecomments/main/ytblockhandlecomments.js
+// @updateURL    https://raw.githubusercontent.com/Mango-Clark/ytblockhandlecomments/refs/heads/master/ytblockhandlecomments.js
+// @downloadURL  https://raw.githubusercontent.com/Mango-Clark/ytblockhandlecomments/refs/heads/master/ytblockhandlecomments.js
 // @author       Mango_Clark
 // @match        https://www.youtube.com/*
 // @grant        GM_getValue
@@ -34,10 +34,15 @@
     .tm-block-list{list-style:none;padding:0;margin:0}
     .tm-block-list li{display:flex;justify-content:space-between;align-items:center;padding:8px 0;gap:12px;word-break:break-all}
     .tm-block-list li button{padding:4px 12px;border:none;border-radius:8px;font-size:13px;cursor:pointer;background:#d32f2f;color:#fff}
+    .tm-regex-bar{position:sticky;top:0;z-index:1;background:#fff;border-bottom:1px solid #e5e5e5;padding:12px 8px;margin-bottom:8px}
+    .tm-regex-bar header{margin:0;font-size:16px;font-weight:700}
+    .tm-regex-bar .row{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+    .tm-regex-bar .controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
     .tm-hidden{display:none !important}
     @media (prefers-color-scheme: dark){
       .tm-dialog{background:#1f1f1f;color:#fff}
       .tm-dialog button.secondary{background:#333;color:#fff}
+      .tm-regex-bar{background:#1f1f1f;border-color:#444}
     }
   `;
 	document.head.appendChild(style);
@@ -79,7 +84,15 @@
 			importBtn: '가져오기',
 			importedCount: (n) => `${n}개 항목 가져옴`,
 			menuHide: '이 채널의 댓글 숨김',
-			menuUnhide: '이 채널 댓글 숨김 해제'
+			menuUnhide: '이 채널 댓글 숨김 해제',
+			addRegex: '정규식 추가',
+			patternLabel: '패턴',
+			flagsLabel: '플래그',
+			addBtn: '추가',
+			invalidRegex: '유효하지 않은 정규식',
+			addedRegex: '정규식을 추가했습니다',
+			exists: '이미 존재합니다',
+			testRegex: '정규식 만들기/테스트'
 		},
 		en: {
 			block: 'Block',
@@ -105,7 +118,15 @@
 			importBtn: 'Import',
 			importedCount: (n) => `Imported ${n} entries`,
 			menuHide: 'Hide comments from this channel',
-			menuUnhide: "Unhide this channel's comments"
+			menuUnhide: "Unhide this channel's comments",
+			addRegex: 'Add Regex',
+			patternLabel: 'Pattern',
+			flagsLabel: 'Flags',
+			addBtn: 'Add',
+			invalidRegex: 'Invalid regex',
+			addedRegex: 'Regex added',
+			exists: 'Already exists',
+			testRegex: 'Build/Test Regex'
 		}
 	};
 	const getLang = () => {
@@ -447,6 +468,59 @@
 		openList() {
 			const data = this.storage.all();
 			const wrap = document.createElement('div');
+			// Add Regex inline form
+				const form = document.createElement('div');
+				form.className = 'tm-regex-bar';
+			const lblP = document.createElement('label'); lblP.textContent = I18N[getLang()].patternLabel + ':';
+			const iptP = document.createElement('input'); iptP.type = 'text'; iptP.style.width = '60%'; iptP.placeholder = '/^@spam.*/i or ^@promo';
+			const lblF = document.createElement('label'); lblF.textContent = I18N[getLang()].flagsLabel + ':'; lblF.style.marginLeft = '8px';
+			const iptF = document.createElement('input'); iptF.type = 'text'; iptF.style.width = '80px'; iptF.placeholder = 'i';
+			const addBtn = Object.assign(document.createElement('button'), { textContent: I18N[getLang()].addBtn });
+			addBtn.className = 'secondary'; addBtn.style.marginLeft = '8px';
+			addBtn.style.padding = '6px 12px';
+			addBtn.style.fontSize = '13px';
+			// Button to open regexr.com for building/testing regex
+			const btnRegexr = Object.assign(document.createElement('button'), { textContent: I18N[getLang()].testRegex });
+			btnRegexr.className = 'primary';
+			btnRegexr.style.padding = '6px 12px';
+			btnRegexr.style.fontSize = '13px';
+			btnRegexr.addEventListener('click', () => {
+				try { window.open('https://regexr.com/', '_blank', 'noopener'); } catch { location.href = 'https://regexr.com/'; }
+			});
+			addBtn.addEventListener('click', () => {
+				let p = (iptP.value||'').trim(); let f = (iptF.value||'').trim();
+				if (!p) return;
+				const m = /^\/(.*)\/([gimsuy]*)$/.exec(p);
+				if (m) { p = m[1]; f = m[2]||''; }
+				try { new RegExp(p, f); } catch { Toast.show(I18N[getLang()].invalidRegex); return; }
+				const ok = this.storage.addRegex(p, f);
+				if (!ok) { Toast.show(I18N[getLang()].exists); return; }
+				// append to list
+				const li = document.createElement('li');
+				const span = document.createElement('span'); span.textContent = `/${p}/${f}`;
+				const btn = Object.assign(document.createElement('button'), { textContent: I18N[getLang()].unblock });
+				btn.addEventListener('click', () => {
+					this.storage.remove({ type:'regex', value:p, flags:f });
+					this.hider.rebuildLookup();
+					li.remove();
+					this.hider.refreshScheduled();
+					Toast.show(t('removed', span.textContent));
+				});
+				li.append(span, btn);
+				ul.prepend(li);
+				this.hider.rebuildLookup();
+				this.hider.refreshScheduled();
+				Toast.show(I18N[getLang()].addedRegex);
+				iptP.value = ''; iptF.value = '';
+			});
+			const formTitle = document.createElement('header'); formTitle.textContent = I18N[getLang()].addRegex;
+				const titleRow = document.createElement('div');
+				titleRow.className = 'row';
+				titleRow.append(formTitle, btnRegexr);
+				const controls = document.createElement('div');
+				controls.className = 'controls';
+				controls.append(lblP, iptP, lblF, iptF, addBtn);
+				form.append(titleRow, controls);
 			const ul = Object.assign(document.createElement('ul'), { className: 'tm-block-list' });
 
 			if (data.length === 0) {
@@ -471,7 +545,7 @@
 					ul.appendChild(li);
 				});
 			}
-			wrap.appendChild(ul);
+			wrap.append(form, ul);
 
 			const header = (I18N[getLang()].manageTitle ? I18N[getLang()].manageTitle(data.length) : `Blocked channels (${data.length})`);
 			Dialog.show({

@@ -1,4 +1,4 @@
-# 📌 YouTube Comment Blocker by Handle — v0.2.0
+# 📌 YouTube Comment Blocker by Handle — v0.2.1
 
 [English](README.md) | [한국어](나를읽어.md)
 
@@ -14,6 +14,7 @@ A Tampermonkey userscript that lets you block YouTube comments from specific aut
 - 🔧 Block list popup:
 
   - Review or unblock entries (handle, channel ID, or regex)
+  - Add regex patterns directly via an inline form
   - Export as JSON (v2) or newline text
   - Import from JSON (v2/v1) or newline text (@handle, /regex/flags, or channel ID)
 - 📝 Settings via `GM_registerMenuCommand`:
