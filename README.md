@@ -1,5 +1,7 @@
 # 📌 YouTube Comment Blocker by Handle — v0.2.0
 
+[English](README.md) | [한국어](나를읽어.md)
+
 A Tampermonkey userscript that lets you block YouTube comments from specific author handles (@handle). Hidden comments disappear in real time, and the block list can be managed, imported, or exported via the menu.
 
 ---
