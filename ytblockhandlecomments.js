@@ -469,6 +469,13 @@
 			const iptF = document.createElement('input'); iptF.type = 'text'; iptF.style.width = '80px'; iptF.placeholder = 'i';
 			const addBtn = Object.assign(document.createElement('button'), { textContent: I18N[getLang()].addBtn });
 			addBtn.className = 'secondary'; addBtn.style.marginLeft = '8px';
+			// Quick link to regex testing site
+			const regexr = document.createElement('a');
+			regexr.href = 'https://regexr.com/';
+			regexr.target = '_blank';
+			regexr.rel = 'noopener noreferrer';
+			regexr.textContent = 'regexr.com';
+			regexr.style.marginLeft = '8px';
 			addBtn.addEventListener('click', () => {
 				let p = (iptP.value||'').trim(); let f = (iptF.value||'').trim();
 				if (!p) return;
@@ -496,7 +503,7 @@
 				iptP.value = ''; iptF.value = '';
 			});
 			const formTitle = document.createElement('header'); formTitle.textContent = I18N[getLang()].addRegex;
-			form.append(formTitle, lblP, iptP, lblF, iptF, addBtn);
+			form.append(formTitle, lblP, iptP, lblF, iptF, addBtn, regexr);
 			const ul = Object.assign(document.createElement('ul'), { className: 'tm-block-list' });
 
 			if (data.length === 0) {
