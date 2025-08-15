@@ -471,9 +471,13 @@
 			const iptF = document.createElement('input'); iptF.type = 'text'; iptF.style.width = '80px'; iptF.placeholder = 'i';
 			const addBtn = Object.assign(document.createElement('button'), { textContent: I18N[getLang()].addBtn });
 			addBtn.className = 'secondary'; addBtn.style.marginLeft = '8px';
+			addBtn.style.padding = '6px 12px';
+			addBtn.style.fontSize = '13px';
 			// Button to open regexr.com for building/testing regex
 			const btnRegexr = Object.assign(document.createElement('button'), { textContent: I18N[getLang()].testRegex });
 			btnRegexr.className = 'primary';
+			btnRegexr.style.padding = '6px 12px';
+			btnRegexr.style.fontSize = '13px';
 			btnRegexr.addEventListener('click', () => {
 				try { window.open('https://regexr.com/', '_blank', 'noopener'); } catch { location.href = 'https://regexr.com/'; }
 			});
