@@ -3,8 +3,8 @@
 // @namespace    http://tampermonkey.net/
 // @version      0.2.0
 // @description  Block/unblock comment handles via right-click. Real-time hiding, custom popup, toast alerts, and block list manage/import/export.
-// @updateURL    https://raw.githubusercontent.com/example/ytblockhandlecomments/main/ytblockhandlecomments.js
-// @downloadURL  https://raw.githubusercontent.com/example/ytblockhandlecomments/main/ytblockhandlecomments.js
+// @updateURL    https://raw.githubusercontent.com/Mango-Clark/ytblockhandlecomments/refs/heads/master/ytblockhandlecomments.js
+// @downloadURL  https://raw.githubusercontent.com/Mango-Clark/ytblockhandlecomments/refs/heads/master/ytblockhandlecomments.js
 // @author       Mango_Clark
 // @match        https://www.youtube.com/*
 // @grant        GM_getValue
