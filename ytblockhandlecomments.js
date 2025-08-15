@@ -34,10 +34,15 @@
     .tm-block-list{list-style:none;padding:0;margin:0}
     .tm-block-list li{display:flex;justify-content:space-between;align-items:center;padding:8px 0;gap:12px;word-break:break-all}
     .tm-block-list li button{padding:4px 12px;border:none;border-radius:8px;font-size:13px;cursor:pointer;background:#d32f2f;color:#fff}
+    .tm-regex-bar{position:sticky;top:0;z-index:1;background:#fff;border-bottom:1px solid #e5e5e5;padding:12px 8px;margin-bottom:8px}
+    .tm-regex-bar header{margin:0;font-size:16px;font-weight:700}
+    .tm-regex-bar .row{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+    .tm-regex-bar .controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
     .tm-hidden{display:none !important}
     @media (prefers-color-scheme: dark){
       .tm-dialog{background:#1f1f1f;color:#fff}
       .tm-dialog button.secondary{background:#333;color:#fff}
+      .tm-regex-bar{background:#1f1f1f;border-color:#444}
     }
   `;
 	document.head.appendChild(style);
@@ -464,7 +469,8 @@
 			const data = this.storage.all();
 			const wrap = document.createElement('div');
 			// Add Regex inline form
-			const form = document.createElement('div');
+				const form = document.createElement('div');
+				form.className = 'tm-regex-bar';
 			const lblP = document.createElement('label'); lblP.textContent = I18N[getLang()].patternLabel + ':';
 			const iptP = document.createElement('input'); iptP.type = 'text'; iptP.style.width = '60%'; iptP.placeholder = '/^@spam.*/i or ^@promo';
 			const lblF = document.createElement('label'); lblF.textContent = I18N[getLang()].flagsLabel + ':'; lblF.style.marginLeft = '8px';
@@ -508,12 +514,13 @@
 				iptP.value = ''; iptF.value = '';
 			});
 			const formTitle = document.createElement('header'); formTitle.textContent = I18N[getLang()].addRegex;
-			const titleRow = document.createElement('div');
-			titleRow.style.display = 'flex';
-			titleRow.style.alignItems = 'center';
-			titleRow.style.justifyContent = 'space-between';
-			titleRow.append(formTitle, btnRegexr);
-			form.append(titleRow, lblP, iptP, lblF, iptF, addBtn);
+				const titleRow = document.createElement('div');
+				titleRow.className = 'row';
+				titleRow.append(formTitle, btnRegexr);
+				const controls = document.createElement('div');
+				controls.className = 'controls';
+				controls.append(lblP, iptP, lblF, iptF, addBtn);
+				form.append(titleRow, controls);
 			const ul = Object.assign(document.createElement('ul'), { className: 'tm-block-list' });
 
 			if (data.length === 0) {
