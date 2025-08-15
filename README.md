@@ -1,4 +1,4 @@
-# 📌 YouTube Comment Blocker by Handle — v0.1.5
+# 📌 YouTube Comment Blocker by Handle — v0.2.0
 
 A Tampermonkey userscript that lets you block YouTube comments from specific author handles (@handle). Hidden comments disappear in real time, and the block list can be managed, imported, or exported via the menu.
 
@@ -8,16 +8,17 @@ A Tampermonkey userscript that lets you block YouTube comments from specific aut
 
 - 🔇 Right-click an author handle to block or unblock
 - Adds "Hide comments from this channel" to the ⋯ menu automatically
-- Real-time DOM updates using MutationObserver
+- Real-time updates using MutationObserver + IntersectionObserver
 - 🔧 Block list popup:
 
-  - Review or unblock handles
-  - Export handles as JSON or newline text
-  - Import handles from JSON or newline text
+  - Review or unblock entries (handle, channel ID, or regex)
+  - Export as JSON (v2) or newline text
+  - Import from JSON (v2/v1) or newline text (@handle, /regex/flags, or channel ID)
 - 📝 Settings via `GM_registerMenuCommand`:
 
   - `🔍 Manage block list`
   - `🗑️ Clear block list`
+  - `🌐 Language: KO/EN`
 
 ---
 
@@ -34,20 +35,22 @@ A Tampermonkey userscript that lets you block YouTube comments from specific aut
 
 ## 💾 Storage
 
-- Storage key: `'blockedHandles_v1'`
-- Storage value: `{ version: 1, updatedAt: number, handles: string[] }`
+- Storage key: `blocked_v2`
+- Storage value: `{ version: 2, updatedAt: number, items: Array<{ type: 'handle'|'id'|'regex', value: string, flags?: string }> }`
+- Migrates from legacy keys: `blockedHandles` (string[]/text) and `blockedHandles_v1`
 - Uses Tampermonkey `GM_getValue` and `GM_setValue`
-- Supports import/export in JSON format for backups
+- Import/export: JSON (v2/v1) and newline text
 
 ---
 
 ## ⚠️ Limitations & Notes
 
 - Handles are normalized to lowercase (comparison is case-insensitive)
+- Channel ID blocking is preferred when available; handle is used as fallback
 - Storage is versioned and migrates legacy data automatically
-- Context menus use **delegated events**, avoiding direct DOM bindings
-- Cross-tab synchronization is supported via `GM_addValueChangeListener`
-- The dialog's `textarea` relies on direct DOM access and may be fragile
+- Context menus use delegated events
+- Cross-tab synchronization via `GM_addValueChangeListener`
+- Regex patterns apply to handle text only (not comment body)
 
 ---
 
