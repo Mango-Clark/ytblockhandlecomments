@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube Comment Blocker by Handle
 // @namespace    http://tampermonkey.net/
-// @version      0.1.4
+// @version      0.1.5
 // @description  Block/unblock comment handles via right-click. Real-time hiding, custom popup, toast alerts, and block list manage/import/export.
 // @updateURL    https://raw.githubusercontent.com/example/ytblockhandlecomments/main/ytblockhandlecomments.js
 // @downloadURL  https://raw.githubusercontent.com/example/ytblockhandlecomments/main/ytblockhandlecomments.js
@@ -74,9 +74,29 @@
 		}
 		_saveV1(list) {
 			const unique = Array.from(new Set(list.map(norm).filter(Boolean)));
+			// Avoid redundant writes (prevents cross-tab echo storms)
+			if (this._arraysEqual(this._handles, unique)) {
+				this._handles = unique;
+				return unique;
+			}
 			this._setGM(this.KEY_V1, { version: 1, updatedAt: Date.now(), handles: unique });
 			this._handles = unique;
 			return unique;
+		}
+
+		// In-memory update only (no GM_setValue). Used for remote sync to avoid echoing.
+		setAllLocal(list) {
+			const unique = Array.from(new Set(list.map(norm).filter(Boolean)));
+			this._handles = unique;
+			return unique;
+		}
+
+		_arraysEqual(a, b) {
+			if (a === b) return true;
+			if (!Array.isArray(a) || !Array.isArray(b)) return false;
+			if (a.length !== b.length) return false;
+			for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+			return true;
 		}
 		_init() {
 			const merged = [...this._loadLegacy(), ...this._loadV1()].map(norm).filter(Boolean);
@@ -452,7 +472,8 @@
 				GM_addValueChangeListener('blockedHandles_v1', (_k, _old, val, remote) => {
 					if (!remote) return;
 					if (val && val.version === 1 && Array.isArray(val.handles)) {
-						this.storage.setAll(val.handles.map(norm).filter(Boolean));
+						// Update in-memory only to prevent rebroadcast to other tabs
+						this.storage.setAllLocal(val.handles);
 						this.hider.rebuildSet();
 						this.hider.refreshScheduled();
 						Toast.show('차단 목록이 다른 탭과 동기화되었습니다.');

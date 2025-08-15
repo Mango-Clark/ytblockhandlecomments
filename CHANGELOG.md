@@ -25,6 +25,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 - None
 
+## [0.1.5] – 2025-08-15
+
+### Fixed
+- Optimized cross-tab synchronization: prevent echo writes on remote updates that caused cascading updates and exponential slowdowns with many tabs
+
+### Changed
+- Storage avoids redundant writes when the handle list is unchanged
+
 ## [0.1.4] – 2025-08-14
 
 ### Changed
