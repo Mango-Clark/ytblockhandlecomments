@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube Comment Blocker by Handle
-// @namespace    http://tampermonkey.net/
-// @version      0.2.1
+// @namespace    https://github.com/Mango-Clark/ytblockhandlecomments/
+// @version      0.2.2
 // @description  Block/unblock comment handles via right-click. Real-time hiding, custom popup, toast alerts, and block list manage/import/export.
 // @updateURL    https://raw.githubusercontent.com/Mango-Clark/ytblockhandlecomments/refs/heads/master/ytblockhandlecomments.js
 // @downloadURL  https://raw.githubusercontent.com/Mango-Clark/ytblockhandlecomments/refs/heads/master/ytblockhandlecomments.js
@@ -167,7 +167,7 @@
 		_loadV2() {
 			const v = this._getGM(this.KEY_V2, null);
 			if (!v || typeof v !== 'object' || v.version !== 2 || !Array.isArray(v.items)) return [];
-			return v.items.filter(it => it && typeof it.value === 'string' && ['id','handle','regex'].includes(it.type));
+			return v.items.filter(it => it && typeof it.value === 'string' && ['id', 'handle', 'regex'].includes(it.type));
 		}
 		_saveV2(items) {
 			const normed = [];
@@ -178,14 +178,14 @@
 				} else if (it.type === 'id') {
 					const id = String(it.value).trim(); if (!/^UC[0-9A-Za-z_-]{10,}$/.test(id)) continue; normed.push({ type: 'id', value: id });
 				} else if (it.type === 'regex') {
-					try { const p = String(it.value); const flags = (it.flags||''); new RegExp(p, flags); normed.push({ type: 'regex', value: p, flags }); } catch { }
+					try { const p = String(it.value); const flags = (it.flags || ''); new RegExp(p, flags); normed.push({ type: 'regex', value: p, flags }); } catch { }
 				}
 			}
 			// dedupe
 			const unique = [];
 			const seen = new Set();
 			for (const it of normed) {
-				const key = it.type==='handle'?`h:${it.value}`: it.type==='id'?`i:${it.value}`:`r:${it.value}/${it.flags||''}`;
+				const key = it.type === 'handle' ? `h:${it.value}` : it.type === 'id' ? `i:${it.value}` : `r:${it.value}/${it.flags || ''}`;
 				if (seen.has(key)) continue; seen.add(key); unique.push(it);
 			}
 			if (this._arraysEqual(this._items, unique)) { this._items = unique; return unique; }
@@ -199,9 +199,9 @@
 			if (a === b) return true;
 			if (!Array.isArray(a) || !Array.isArray(b)) return false;
 			if (a.length !== b.length) return false;
-			for (let i=0;i<a.length;i++) {
-				const A=a[i], B=b[i];
-				if (!A || !B || A.type!==B.type || A.value!==B.value || (A.flags||'')!==(B.flags||'')) return false;
+			for (let i = 0; i < a.length; i++) {
+				const A = a[i], B = b[i];
+				if (!A || !B || A.type !== B.type || A.value !== B.value || (A.flags || '') !== (B.flags || '')) return false;
 			}
 			return true;
 		}
@@ -211,14 +211,14 @@
 		}
 		all() { return this._items.slice(); }
 		setAll(items) { return this._saveV2(items); }
-		addHandle(h) { const v = norm(h); if (!v) return false; return !!this._saveV2([...this._items, { type:'handle', value:v }]); }
-		addId(id) { id = (id||'').trim(); if (!/^UC[0-9A-Za-z_-]{10,}$/.test(id)) return false; return !!this._saveV2([...this._items, { type:'id', value:id }]); }
-		addRegex(pattern, flags='') { try { new RegExp(pattern, flags); } catch { return false; } return !!this._saveV2([...this._items, { type:'regex', value:pattern, flags }]); }
+		addHandle(h) { const v = norm(h); if (!v) return false; return !!this._saveV2([...this._items, { type: 'handle', value: v }]); }
+		addId(id) { id = (id || '').trim(); if (!/^UC[0-9A-Za-z_-]{10,}$/.test(id)) return false; return !!this._saveV2([...this._items, { type: 'id', value: id }]); }
+		addRegex(pattern, flags = '') { try { new RegExp(pattern, flags); } catch { return false; } return !!this._saveV2([...this._items, { type: 'regex', value: pattern, flags }]); }
 		remove(item) {
-			const key = item.type==='handle'?`h:${norm(item.value)}`: item.type==='id'?`i:${(item.value||'').trim()}`:`r:${String(item.value)}/${item.flags||''}`;
+			const key = item.type === 'handle' ? `h:${norm(item.value)}` : item.type === 'id' ? `i:${(item.value || '').trim()}` : `r:${String(item.value)}/${item.flags || ''}`;
 			return !!this._saveV2(this._items.filter(it => {
-				const k = it.type==='handle'?`h:${it.value}`: it.type==='id'?`i:${it.value}`:`r:${it.value}/${it.flags||''}`;
-				return k!==key;
+				const k = it.type === 'handle' ? `h:${it.value}` : it.type === 'id' ? `i:${it.value}` : `r:${it.value}/${it.flags || ''}`;
+				return k !== key;
 			}));
 		}
 		clear() { this._saveV2([]); }
@@ -244,14 +244,14 @@
 			return new Promise(resolve => {
 				const backdrop = Object.assign(document.createElement('div'), { className: 'tm-backdrop' });
 				const dialog = Object.assign(document.createElement('div'), { className: 'tm-dialog' });
-				dialog.setAttribute('role','dialog');
-				dialog.setAttribute('aria-modal','true');
+				dialog.setAttribute('role', 'dialog');
+				dialog.setAttribute('aria-modal', 'true');
 
 				const header = document.createElement('header');
 				header.textContent = title;
 				dialog.setAttribute('aria-label', title);
 
-                                const content = Object.assign(document.createElement('div'), { className: 'tm-content' });
+				const content = Object.assign(document.createElement('div'), { className: 'tm-content' });
 				if (body instanceof Node) content.appendChild(body);
 				else if (typeof body === 'string') {
 					// Accept limited HTML from internal templates only
@@ -356,7 +356,7 @@
 			for (const it of this.storage.all()) {
 				if (it.type === 'id') this._idSet.add(it.value);
 				else if (it.type === 'handle') this._handleSet.add(it.value);
-				else if (it.type === 'regex') { try { this._regexes.push(new RegExp(it.value, it.flags||'')); } catch { } }
+				else if (it.type === 'regex') { try { this._regexes.push(new RegExp(it.value, it.flags || '')); } catch { } }
 			}
 		}
 		_matches(node) {
@@ -425,7 +425,7 @@
 		}
 
 		_addItem(menu, handle) {
-			const isBlocked = this.storage.all().some(it => it.type==='handle' && it.value===handle);
+			const isBlocked = this.storage.all().some(it => it.type === 'handle' && it.value === handle);
 			const item = Object.assign(document.createElement('tp-yt-paper-item'), {
 				className: 'style-scope ytd-menu-service-item-renderer tm-hide-channel',
 				role: 'menuitem'
@@ -446,7 +446,7 @@
 					buttons: [{ label: t('close'), value: false }, { label: isBlocked ? t('unblock') : t('block'), value: true, primary: true }]
 				});
 				if (!ok) return;
-				if (isBlocked) { this.storage.remove({ type:'handle', value: handle }); Toast.show(t('removed', handle)); }
+				if (isBlocked) { this.storage.remove({ type: 'handle', value: handle }); Toast.show(t('removed', handle)); }
 				else { this.storage.addHandle(handle); Toast.show(t('added', handle)); }
 				this.hider.rebuildLookup();
 				this.hider.refreshScheduled();
@@ -469,8 +469,8 @@
 			const data = this.storage.all();
 			const wrap = document.createElement('div');
 			// Add Regex inline form
-				const form = document.createElement('div');
-				form.className = 'tm-regex-bar';
+			const form = document.createElement('div');
+			form.className = 'tm-regex-bar';
 			const lblP = document.createElement('label'); lblP.textContent = I18N[getLang()].patternLabel + ':';
 			const iptP = document.createElement('input'); iptP.type = 'text'; iptP.style.width = '60%'; iptP.placeholder = '/^@spam.*/i or ^@promo';
 			const lblF = document.createElement('label'); lblF.textContent = I18N[getLang()].flagsLabel + ':'; lblF.style.marginLeft = '8px';
@@ -488,10 +488,10 @@
 				try { window.open('https://regexr.com/', '_blank', 'noopener'); } catch { location.href = 'https://regexr.com/'; }
 			});
 			addBtn.addEventListener('click', () => {
-				let p = (iptP.value||'').trim(); let f = (iptF.value||'').trim();
+				let p = (iptP.value || '').trim(); let f = (iptF.value || '').trim();
 				if (!p) return;
 				const m = /^\/(.*)\/([gimsuy]*)$/.exec(p);
-				if (m) { p = m[1]; f = m[2]||''; }
+				if (m) { p = m[1]; f = m[2] || ''; }
 				try { new RegExp(p, f); } catch { Toast.show(I18N[getLang()].invalidRegex); return; }
 				const ok = this.storage.addRegex(p, f);
 				if (!ok) { Toast.show(I18N[getLang()].exists); return; }
@@ -500,7 +500,7 @@
 				const span = document.createElement('span'); span.textContent = `/${p}/${f}`;
 				const btn = Object.assign(document.createElement('button'), { textContent: I18N[getLang()].unblock });
 				btn.addEventListener('click', () => {
-					this.storage.remove({ type:'regex', value:p, flags:f });
+					this.storage.remove({ type: 'regex', value: p, flags: f });
 					this.hider.rebuildLookup();
 					li.remove();
 					this.hider.refreshScheduled();
@@ -514,13 +514,13 @@
 				iptP.value = ''; iptF.value = '';
 			});
 			const formTitle = document.createElement('header'); formTitle.textContent = I18N[getLang()].addRegex;
-				const titleRow = document.createElement('div');
-				titleRow.className = 'row';
-				titleRow.append(formTitle, btnRegexr);
-				const controls = document.createElement('div');
-				controls.className = 'controls';
-				controls.append(lblP, iptP, lblF, iptF, addBtn);
-				form.append(titleRow, controls);
+			const titleRow = document.createElement('div');
+			titleRow.className = 'row';
+			titleRow.append(formTitle, btnRegexr);
+			const controls = document.createElement('div');
+			controls.className = 'controls';
+			controls.append(lblP, iptP, lblF, iptF, addBtn);
+			form.append(titleRow, controls);
 			const ul = Object.assign(document.createElement('ul'), { className: 'tm-block-list' });
 
 			if (data.length === 0) {
@@ -532,7 +532,7 @@
 				data.forEach(h => {
 					const li = document.createElement('li');
 					const span = document.createElement('span');
-					span.textContent = h.type==='regex' ? `/${h.value}/${h.flags||''}` : (h.type==='id'? h.value : h.value);
+					span.textContent = h.type === 'regex' ? `/${h.value}/${h.flags || ''}` : (h.type === 'id' ? h.value : h.value);
 					const btn = Object.assign(document.createElement('button'), { textContent: I18N[getLang()].unblock });
 					btn.addEventListener('click', () => {
 						this.storage.remove(h);
@@ -571,7 +571,7 @@
 			const ta1 = document.createElement('textarea'); ta1.readOnly = true; ta1.value = json;
 			const h4b = document.createElement('h4'); h4b.textContent = I18N[getLang()].text;
 			const ta2 = document.createElement('textarea'); ta2.readOnly = true;
-			ta2.value = this.storage.all().map(it => it.type==='regex' ? `/${it.value}/${it.flags||''}` : (it.type==='id'? it.value : it.value)).join('\n');
+			ta2.value = this.storage.all().map(it => it.type === 'regex' ? `/${it.value}/${it.flags || ''}` : (it.type === 'id' ? it.value : it.value)).join('\n');
 			body.append(p, h4a, ta1, h4b, ta2);
 			Dialog.show({ title: I18N[getLang()].export, body, buttons: [{ label: I18N[getLang()].close, value: false, primary: true }] });
 		}
@@ -593,14 +593,14 @@
 					try {
 						const obj = JSON.parse(txt);
 						if (obj && Array.isArray(obj.items)) items = obj.items;
-						else if (obj && Array.isArray(obj.handles)) items = obj.handles.map(h=>({type:'handle', value:h}));
+						else if (obj && Array.isArray(obj.handles)) items = obj.handles.map(h => ({ type: 'handle', value: h }));
 					} catch {
 						const parts = txt.split(/[,\n]+/);
 						items = parts.map(s => s.trim()).filter(Boolean).map(s => {
-							if (s.startsWith('@')) return { type:'handle', value: s };
-							if (s.startsWith('/') && s.endsWith('/')) { const m = /^\/(.*)\/(.*)$/.exec(s); return m?{ type:'regex', value:m[1], flags:m[2] }:null; }
-							if (/^UC[0-9A-Za-z_-]{10,}$/.test(s)) return { type:'id', value: s };
-							return { type:'handle', value: s };
+							if (s.startsWith('@')) return { type: 'handle', value: s };
+							if (s.startsWith('/') && s.endsWith('/')) { const m = /^\/(.*)\/(.*)$/.exec(s); return m ? { type: 'regex', value: m[1], flags: m[2] } : null; }
+							if (/^UC[0-9A-Za-z_-]{10,}$/.test(s)) return { type: 'id', value: s };
+							return { type: 'handle', value: s };
 						}).filter(Boolean);
 					}
 					const merged = [...this.storage.all(), ...items];
@@ -646,20 +646,20 @@
 
 				ev.preventDefault();
 				Dialog.show({
-					title: this.storage.all().some(it => it.type==='handle' && it.value===h) ? I18N[getLang()].unblock : I18N[getLang()].block,
+					title: this.storage.all().some(it => it.type === 'handle' && it.value === h) ? I18N[getLang()].unblock : I18N[getLang()].block,
 					body: (() => {
 						const d = document.createElement('div');
-					const p = document.createElement('p');
-					p.textContent = this.storage.all().some(it => it.type==='handle' && it.value===h) ? I18N[getLang()].confirmUnblock : I18N[getLang()].confirmBlock;
+						const p = document.createElement('p');
+						p.textContent = this.storage.all().some(it => it.type === 'handle' && it.value === h) ? I18N[getLang()].confirmUnblock : I18N[getLang()].confirmBlock;
 						const b = document.createElement('b'); b.textContent = h;
 						d.append(p, b);
 						return d;
 					})(),
-					buttons: [{ label: I18N[getLang()].close, value: false }, { label: this.storage.all().some(it => it.type==='handle' && it.value===h) ? I18N[getLang()].unblock : I18N[getLang()].block, value: true, primary: true }]
+					buttons: [{ label: I18N[getLang()].close, value: false }, { label: this.storage.all().some(it => it.type === 'handle' && it.value === h) ? I18N[getLang()].unblock : I18N[getLang()].block, value: true, primary: true }]
 				}).then(ok => {
 					if (!ok) return;
-					const was = this.storage.all().some(it => it.type==='handle' && it.value===h);
-					if (was) { this.storage.remove({ type:'handle', value:h }); Toast.show(I18N[getLang()].removed(h)); }
+					const was = this.storage.all().some(it => it.type === 'handle' && it.value === h);
+					if (was) { this.storage.remove({ type: 'handle', value: h }); Toast.show(I18N[getLang()].removed(h)); }
 					else { this.storage.addHandle(h); Toast.show(I18N[getLang()].added(h)); }
 					this.hider.rebuildLookup();
 					this.hider.refreshScheduled();
@@ -693,21 +693,21 @@
 
 		_registerMenu() {
 			try {
-				GM_registerMenuCommand((I18N[getLang()].menuManage||'Manage'), () => this.manager.openList());
-				GM_registerMenuCommand((I18N[getLang()].menuClear||'Clear'), () => {
+				GM_registerMenuCommand((I18N[getLang()].menuManage || 'Manage'), () => this.manager.openList());
+				GM_registerMenuCommand((I18N[getLang()].menuClear || 'Clear'), () => {
 					Dialog.show({
-						title: (I18N[getLang()].clear||'Reset'),
-						body: (() => { const p = document.createElement('p'); p.textContent = (I18N[getLang()].confirmClear||'Reset all blocked entries?'); return p; })(),
-						buttons: [{ label: (I18N[getLang()].close||'Close'), value: false }, { label: (I18N[getLang()].clear||'Reset'), value: true, primary: true }]
+						title: (I18N[getLang()].clear || 'Reset'),
+						body: (() => { const p = document.createElement('p'); p.textContent = (I18N[getLang()].confirmClear || 'Reset all blocked entries?'); return p; })(),
+						buttons: [{ label: (I18N[getLang()].close || 'Close'), value: false }, { label: (I18N[getLang()].clear || 'Reset'), value: true, primary: true }]
 					}).then(ok => {
 						if (!ok) return;
 						this.storage.clear(); this.hider.rebuildLookup(); this.hider.refreshScheduled();
-						Toast.show((I18N[getLang()].clear||'Reset'));
+						Toast.show((I18N[getLang()].clear || 'Reset'));
 					});
 				});
 				GM_registerMenuCommand('🌐 Language: ' + getLang().toUpperCase(), () => {
-					const next = getLang()==='ko' ? 'en' : 'ko';
-					try { GM_setValue('lang', next); } catch {}
+					const next = getLang() === 'ko' ? 'en' : 'ko';
+					try { GM_setValue('lang', next); } catch { }
 					Toast.show('Lang: ' + next.toUpperCase());
 				});
 			} catch { /* Tampermonkey menu may be unavailable in some envs */ }
