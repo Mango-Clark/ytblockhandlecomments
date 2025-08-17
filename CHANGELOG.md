@@ -27,6 +27,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 - None
 
+## [0.2.2] – 2025-08-17
+
+### Changed
+- Docs: bump displayed version in README (EN) and Korean translation to v0.2.2
+- Docs: ensure links and texts are consistent across languages
+
 ## [0.2.1] – 2025-08-15
 
 ### Added
