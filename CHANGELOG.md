@@ -27,6 +27,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 - None
 
+## [0.2.3] – 2025-08-17
+
+### Fixed
+- Apply blocks/unblocks in real time without page refresh by re-evaluating existing comment nodes on refresh and removing the cache guard that prevented updates.
+
 ## [0.2.2] – 2025-08-15
 
 ### Changed

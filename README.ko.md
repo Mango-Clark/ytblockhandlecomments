@@ -1,4 +1,4 @@
-# 📌 핸들로 YouTube 댓글 차단 — v0.2.2
+# 📌 핸들로 YouTube 댓글 차단 — v0.2.3
 
 [English](README.md) | [한국어](README.ko.md)
 
@@ -55,7 +55,7 @@
 이 스크립트에서 사용하는 주요 메타 항목:
 
 - `@name`: YouTube Comment Blocker by Handle
-- `@version`: 0.2.2
+- `@version`: 0.2.3
 - `@match`: `https://www.youtube.com/*`
 - `@grant`: `GM_getValue`, `GM_setValue`, `GM_addValueChangeListener`, `GM_registerMenuCommand`
 - `@updateURL`/`@downloadURL`: 업데이트를 위한 GitHub raw URL
