@@ -27,6 +27,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 - None
 
+## [0.2.4] – 2025-08-17
+
+### Added
+- Userscript metadata: add `@homepage`
+
+### Changed
+- Userscript metadata: edit `@namespace`
+
 ## [0.2.3] – 2025-08-17
 
 ### Fixed

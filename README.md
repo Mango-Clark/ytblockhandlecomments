@@ -1,4 +1,4 @@
-# 📌 YouTube Comment Blocker by Handle — v0.2.3
+# 📌 YouTube Comment Blocker by Handle — v0.2.4
 
 [English](README.md) | [한국어](README.ko.md)
 
@@ -55,7 +55,7 @@ Quick install: open this raw URL in Tampermonkey to install/update
 Key entries used by this script:
 
 - `@name`: YouTube Comment Blocker by Handle
-- `@version`: 0.2.3
+- `@version`: 0.2.4
 - `@match`: `https://www.youtube.com/*`
 - `@grant`: `GM_getValue`, `GM_setValue`, `GM_addValueChangeListener`, `GM_registerMenuCommand`
 - `@updateURL`/`@downloadURL`: points to the raw GitHub URL for easy updates

@@ -1,8 +1,9 @@
 // ==UserScript==
-// @name         YouTube Comment Blocker by Handle
-// @namespace    https://github.com/Mango-Clark/ytblockhandlecomments/
-// @version      0.2.3
+// @name         YouTube Comment Blocker
+// @namespace    YouTube_Comment_Blocker
+// @version      0.2.4
 // @description  Block/unblock comment handles via right-click. Real-time hiding, custom popup, toast alerts, and block list manage/import/export.
+// @homepage     https://github.com/Mango-Clark/ytblockhandlecomments/
 // @updateURL    https://raw.githubusercontent.com/Mango-Clark/ytblockhandlecomments/refs/heads/master/ytblockhandlecomments.js
 // @downloadURL  https://raw.githubusercontent.com/Mango-Clark/ytblockhandlecomments/refs/heads/master/ytblockhandlecomments.js
 // @author       Mango_Clark
