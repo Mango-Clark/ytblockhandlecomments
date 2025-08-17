@@ -1,8 +1,12 @@
-# 📌 핸들로 YouTube 댓글 차단 — v0.2.1
+# 📌 핸들로 YouTube 댓글 차단 — v0.2.2
 
-[English](README.md) | [한국어](나를읽어.md)
+[English](README.md) | [한국어](README.ko.md)
 
 특정 사용자 핸들(@handle)의 댓글을 숨길 수 있는 Tampermonkey 사용자 스크립트입니다. 숨겨진 댓글은 실시간으로 사라지며, 차단 목록은 메뉴에서 관리·가져오기·내보내기가 가능합니다.
+
+빠른 설치: 아래 raw URL을 Tampermonkey로 열어 설치/업데이트하세요
+
+- https://raw.githubusercontent.com/Mango-Clark/ytblockhandlecomments/refs/heads/master/ytblockhandlecomments.js
 
 ---
 
@@ -28,7 +32,7 @@
 ## 🧠 사용 방법
 
 1. [Tampermonkey](https://www.tampermonkey.net/) 설치
-2. 새 사용자 스크립트를 만들고 `ytblockhandlecomments.js` 내용을 붙여넣기
+2. 위 raw URL로 설치하거나, 새 사용자 스크립트를 만들고 `ytblockhandlecomments.js` 내용을 붙여넣기
 3. YouTube 페이지에서 다음 사용 가능:
 
    - 작성자 핸들을 우클릭하여 차단/해제
@@ -46,6 +50,18 @@
 
 ---
 
+## 🧾 사용자 스크립트 메타데이터
+
+이 스크립트에서 사용하는 주요 메타 항목:
+
+- `@name`: YouTube Comment Blocker by Handle
+- `@version`: 0.2.2
+- `@match`: `https://www.youtube.com/*`
+- `@grant`: `GM_getValue`, `GM_setValue`, `GM_addValueChangeListener`, `GM_registerMenuCommand`
+- `@updateURL`/`@downloadURL`: 업데이트를 위한 GitHub raw URL
+
+---
+
 ## ⚠️ 한계 및 주의사항
 
 - 핸들은 소문자로 정규화되어 비교합니다 (대소문자 구분 안 함)
@@ -54,6 +70,7 @@
 - 컨텍스트 메뉴는 DOM에 직접 바인딩하지 않고 **위임 이벤트**를 사용함
 - `GM_addValueChangeListener`를 통해 **탭 간 동기화**를 지원함
 - 정규식은 핸들 텍스트에만 적용(댓글 본문 제외)
+- 언어 전환은 새로 열린 대화상자/메뉴에 반영되며, 이미 열린 UI는 다시 열어야 할 수 있음
 
 ---
 
