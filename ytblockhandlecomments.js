@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube Comment Blocker by Handle
 // @namespace    https://github.com/Mango-Clark/ytblockhandlecomments/
-// @version      0.2.2
+// @version      0.2.3
 // @description  Block/unblock comment handles via right-click. Real-time hiding, custom popup, toast alerts, and block list manage/import/export.
 // @updateURL    https://raw.githubusercontent.com/Mango-Clark/ytblockhandlecomments/refs/heads/master/ytblockhandlecomments.js
 // @downloadURL  https://raw.githubusercontent.com/Mango-Clark/ytblockhandlecomments/refs/heads/master/ytblockhandlecomments.js
@@ -347,7 +347,9 @@
 			this._handleSet = new Set();
 			this._regexes = [];
 			this._pending = false;
-			this._seen = new WeakSet();
+			// Note: previously used a WeakSet cache to avoid reprocessing nodes.
+			// This prevented real-time updates when the block list changed.
+			// We now compute visibility on each refresh to apply changes instantly.
 			this._io = null;
 			this.rebuildLookup();
 		}
@@ -368,8 +370,7 @@
 			return false;
 		}
 		applyHide(node) {
-			if (!node || this._seen.has(node)) return;
-			this._seen.add(node);
+			if (!node) return;
 			node.classList.toggle('tm-hidden', this._matches(node));
 		}
 		_connectIO() {
@@ -385,7 +386,14 @@
 			scope.querySelectorAll('ytd-comment-thread-renderer, ytd-comment-renderer, ytd-comment-view-model')
 				.forEach(n => io.observe(n));
 		}
-		doRefresh(root) { this.observeInScope(root); }
+		doRefresh(root) {
+			// Apply visibility to all known comment nodes immediately (real-time update)
+			const scope = root || document;
+			scope.querySelectorAll('ytd-comment-thread-renderer, ytd-comment-renderer, ytd-comment-view-model')
+				.forEach(n => this.applyHide(n));
+			// Ensure we continue to observe for future nodes entering the viewport
+			this.observeInScope(root);
+		}
 		refreshScheduled(root) {
 			if (this._pending) return;
 			this._pending = true;
