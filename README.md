@@ -1,8 +1,12 @@
 # 📌 YouTube Comment Blocker by Handle — v0.2.2
 
-[English](README.md) | [한국어](나를읽어.md)
+[English](README.md) | [한국어](README.ko.md)
 
 A Tampermonkey userscript that lets you block YouTube comments from specific author handles (@handle). Hidden comments disappear in real time, and the block list can be managed, imported, or exported via the menu.
+
+Quick install: open this raw URL in Tampermonkey to install/update
+
+- https://raw.githubusercontent.com/Mango-Clark/ytblockhandlecomments/refs/heads/master/ytblockhandlecomments.js
 
 ---
 
@@ -28,7 +32,7 @@ A Tampermonkey userscript that lets you block YouTube comments from specific aut
 ## 🧠 Usage
 
 1. Install [Tampermonkey](https://www.tampermonkey.net/)
-2. Create a new userscript and paste the contents of `ytblockhandlecomments.js`
+2. Install via the raw URL above, or create a new userscript and paste the contents of `ytblockhandlecomments.js`
 3. On any YouTube page:
 
    - Right-click an author handle to block or unblock
@@ -46,6 +50,18 @@ A Tampermonkey userscript that lets you block YouTube comments from specific aut
 
 ---
 
+## 🧾 Userscript Metadata
+
+Key entries used by this script:
+
+- `@name`: YouTube Comment Blocker by Handle
+- `@version`: 0.2.2
+- `@match`: `https://www.youtube.com/*`
+- `@grant`: `GM_getValue`, `GM_setValue`, `GM_addValueChangeListener`, `GM_registerMenuCommand`
+- `@updateURL`/`@downloadURL`: points to the raw GitHub URL for easy updates
+
+---
+
 ## ⚠️ Limitations & Notes
 
 - Handles are normalized to lowercase (comparison is case-insensitive)
@@ -54,6 +70,7 @@ A Tampermonkey userscript that lets you block YouTube comments from specific aut
 - Context menus use delegated events
 - Cross-tab synchronization via `GM_addValueChangeListener`
 - Regex patterns apply to handle text only (not comment body)
+- Language toggle updates new dialogs/menus; some open UI may need reopen
 
 ---
 
