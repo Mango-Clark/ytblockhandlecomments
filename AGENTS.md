@@ -1,49 +1,118 @@
 # AGENTS.md
 
-This file is for openai codex agent.
+This file contains instructions for the OpenAI Codex agent. Follow these rules when
+working in this repository.
 
-## Instructions
+## Purpose
 
-- The user will provide a task in Korean
-- The task involves working with Git repositories in your current working directory.
-- Wait for all terminal commands to be completed (or terminate them) before finishing.
-- Write code and comments in English.
-- Write `README.md` in English.
-- Translate `README.md` to Korean and make `나를읽어.md`
-- Write `CHANGELOG.md` in English and translate to Korean and update `변경사항.md`
-- Check `TODO.md`.
+Define documentation, versioning, and Git workflows to keep the repository consistent.
+All contributors (human or agent) must follow these rules when editing or adding files.
 
-## Git instructions
+## Quick Checklist
 
-If completing the user's task requires writing or modifying files:
+- Branch: work on `dev` (unless told otherwise).
+- Docs: update `README.md` first, then `README.ko.md`.
+- Changelog: update `CHANGELOG.md` (Keep a Changelog), then `CHANGELOG.ko.md`.
+- Version: bump in `VERSION` or package manifest when behavior changes are shipped.
+- TODO: review `TODO.md`, update checkboxes, add items if needed.
+- Validation: ensure `git status` is clean before committing or opening a PR.
+- Review: request maintainer review for code or changelog changes.
 
-- Do not create new branches.
-- Use git to commit your changes.
-- If pre-commit fails, fix issues and retry.
-- Check git status to confirm your commit. You must leave your worktree in a clean state.
-- Only committed code will be evaluated.
-- Do not modify or amend existing commits.
+## Documentation Workflow
 
-## AGENTS.md spec
+1) README
+- Write `README.md` in English (overview, install, usage, examples, limitations).
+- Translate to Korean as `README.ko.md` after the English version is finalized.
 
-- Containers often contain AGENTS.md files. These files can appear anywhere in the container's filesystem. Typical locations include `/`, `~`, and in various places inside of Git repos.
-- These files are a way for humans to give you (the agent) instructions or tips for working within the container.
-- Some examples might be: coding conventions, info about how code is organized, or instructions for how to run or test code.
-- AGENTS.md files may provide instructions about PR messages (messages attached to a GitHub Pull Request produced by the agent, describing the PR). These instructions should be respected.
-- Instructions in AGENTS.md files:
-  - The scope of an AGENTS.md file is the entire directory tree rooted at the folder that contains it.
-  - For every file you touch in the final patch, you must obey instructions in any AGENTS.md file whose scope includes that file.
-  - Instructions about code style, structure, naming, etc. apply only to code within the AGENTS.md file's scope, unless the file states otherwise.
-  - More-deeply-nested AGENTS.md files take precedence in the case of conflicting instructions.
-  - Direct system/developer/user instructions (as part of a prompt) take precedence over AGENTS.md instructions.
-- AGENTS.md files need not live only in Git repos. For example, you may find one in your home directory.
-- If the AGENTS.md includes programmatic checks to verify your work, you MUST run all of them and make a best effort to validate that the checks pass AFTER all code changes have been made.
-  - This applies even for changes that appear simple, i.e. documentation. You still must run all of the programmatic checks.
+2) Changelog
+- Edit `CHANGELOG.md` in English following Keep a Changelog 1.1.0.
+- Maintain sections: Added, Changed, Deprecated, Removed, Fixed, Security.
+- Keep an `Unreleased` section at the top; move entries under a new version on release.
+- Date format: `YYYY-MM-DD`.
+- Translate corresponding changes into `CHANGELOG.ko.md`.
 
-## Changelog instructions
+3) TODO
+- Review `TODO.md` for pending items.
+- Mark completed items with `- [x]` and add new tasks as needed.
 
-Update changelog file keeping format of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+4) File Structure Example
 
-## Version instructions
+```text
+├── README.md          # English documentation
+├── README.ko.md       # Korean translation of README
+├── CHANGELOG.md       # English changelog
+├── CHANGELOG.ko.md    # Korean translation of changelog
+├── TODO.md            # Task list
+└── AGENTS.md          # Agent instructions
+```
 
-Update version using [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## Translation Guidelines
+
+- Translate meaning faithfully into Korean; prefer clarity over literal phrasing.
+- Keep technical terms in English when they are standard (e.g., merge, rebase, tag).
+- Do not translate code identifiers, CLI flags, API names, or file paths.
+- Preserve code blocks, inline code, and examples exactly as in English docs.
+- Keep dates, version numbers, and formatting consistent with English originals.
+- Apply the same section order and headings between languages.
+
+### Translation Sync and Order
+
+- Always update the English document first.
+- Update the Korean translation immediately after English changes.
+- Do not add additional locales without explicit instructions.
+
+Order:
+1. English -> Korean
+2. English -> Others (if instructed)
+
+### Naming Conventions
+
+- English files: `README.md`, `CHANGELOG.md`.
+- Korean files: `README.ko.md`, `CHANGELOG.ko.md`.
+- Additional locales: use ISO codes (e.g., `README.ja.md`, `README.fr.md`).
+
+## Git Workflow
+
+- Default branch: use `dev` unless otherwise specified.
+- Temporary branches are allowed; merge them back before delivery.
+- Recommended branch names: `feature/<slug>`, `fix/<slug>`, `docs/<slug>`.
+- Do not push to or modify `master`.
+- Do not rewrite published history on shared branches (no force-push for public commits).
+- Commit only when the worktree is clean. Validate with `git status`.
+
+### Pre-Commit Validation
+
+- Ensure only intended files are changed: review `git diff --stat`.
+- Verify English and Korean docs are in sync for any changed sections.
+- Update version and changelog together when releasing user-visible changes.
+
+## Change Approval
+
+- Documentation-only changes: one review is sufficient.
+- Code or changelog changes: require maintainer approval.
+
+## Versioning and Changelog
+
+- Use Semantic Versioning (SemVer) for releases.
+- Bump the version in `VERSION` or the package manifest when releasing changes.
+- Maintain `CHANGELOG.md` using Keep a Changelog format and section names.
+- Each release entry must include a version and date (e.g., `## [1.2.3] - 2025-08-17`).
+
+## Contribution Guidelines
+
+- Commit messages: English, imperative mood (e.g., "Add feature X").
+- Subject line: concise (≤ 72 chars). Wrap body at ≤ 100 chars per line.
+- Keep commits small and focused.
+- Include documentation updates in the same commit as related code changes.
+
+## Documentation Quality
+
+- Prefer concise sentences in active voice.
+- Use Markdown best practices: headings, code fences, and lists.
+- Keep line length under 100 characters for readability.
+
+## Scope and Precedence
+
+- Follow the most specific and recent instruction.
+- Precedence: direct user instructions > nested `AGENTS.md` > parent `AGENTS.md`.
+
