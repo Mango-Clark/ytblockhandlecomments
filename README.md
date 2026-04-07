@@ -1,4 +1,4 @@
-# 📌 YouTube Comment Blocker by Handle — v0.2.4
+# 📌 YouTube Comment Blocker by Handle — v0.3.0
 
 [English](README.md) | [한국어](README.ko.md)
 
@@ -14,7 +14,8 @@ Quick install: open this raw URL in Tampermonkey to install/update
 
 - 🔇 Right-click an author handle to block or unblock
 - Adds "Hide comments from this channel" to the ⋯ menu automatically
-- Real-time updates using MutationObserver + IntersectionObserver
+- Real-time updates scoped to watch-page comments using targeted MutationObserver + IntersectionObserver
+- Reduced YouTube-wide delay by scanning added comment nodes instead of rescanning the full page
 - 🔧 Block list popup:
 
   - Review or unblock entries (handle, channel ID, or regex)
@@ -33,7 +34,7 @@ Quick install: open this raw URL in Tampermonkey to install/update
 
 1. Install [Tampermonkey](https://www.tampermonkey.net/)
 2. Install via the raw URL above, or create a new userscript and paste the contents of `ytblockhandlecomments.js`
-3. On any YouTube page:
+3. On a YouTube video watch page:
 
    - Right-click an author handle to block or unblock
    - Right-click elsewhere → Tampermonkey → YouTube Comment Blocker by Handle → Manage/Clear block list
@@ -55,7 +56,7 @@ Quick install: open this raw URL in Tampermonkey to install/update
 Key entries used by this script:
 
 - `@name`: YouTube Comment Blocker by Handle
-- `@version`: 0.2.4
+- `@version`: 0.3.0
 - `@match`: `https://www.youtube.com/*`
 - `@grant`: `GM_getValue`, `GM_setValue`, `GM_addValueChangeListener`, `GM_registerMenuCommand`
 - `@updateURL`/`@downloadURL`: points to the raw GitHub URL for easy updates
@@ -69,7 +70,9 @@ Key entries used by this script:
 - Storage is versioned and migrates legacy data automatically
 - Context menus use delegated events
 - Cross-tab synchronization via `GM_addValueChangeListener`
+- Comment observation is limited to watch pages and the comments host to reduce YouTube UI delay
 - Regex patterns apply to handle text only (not comment body)
+- Lightweight performance counters are exposed as `window.__ytCommentBlockerPerf`
 - Language toggle updates new dialogs/menus; some open UI may need reopen
 
 ---

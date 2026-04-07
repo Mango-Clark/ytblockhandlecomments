@@ -27,6 +27,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 - None
 
+## [0.3.0] – 2026-04-07
+
+### Added
+- Lightweight performance counters exposed at `window.__ytCommentBlockerPerf`
+
+### Changed
+- Scoped comment observation to watch pages and the comments host instead of reacting to the full page
+- Switched comment refresh from broad subtree rescans to incremental processing of affected comment roots
+- Cached extracted comment handle/channel metadata per node and deduplicated `IntersectionObserver.observe()` registration
+
+### Fixed
+- Reduced YouTube UI delay caused by global DOM observation and repeated comment rescans
+
 ## [0.2.4] – 2025-08-17
 
 ### Added

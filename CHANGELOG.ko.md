@@ -27,6 +27,19 @@
 ### Security
 - 없음
 
+## [0.3.0] – 2026-04-07
+
+### Added
+- `window.__ytCommentBlockerPerf`로 확인할 수 있는 가벼운 성능 카운터 추가
+
+### Changed
+- 전체 페이지 반응 대신 watch 페이지와 comments host만 댓글 관찰 대상으로 제한
+- 넓은 subtree 재스캔 대신 영향받은 댓글 루트만 증분 처리하도록 새로고침 방식 변경
+- 댓글별 handle/channel 메타데이터를 노드 단위로 캐시하고 `IntersectionObserver.observe()` 등록을 중복 방지
+
+### Fixed
+- 전역 DOM 감시와 반복 댓글 재스캔 때문에 발생하던 YouTube UI 지연 감소
+
 ## [0.2.4] – 2025-08-17
 
 ### Added
