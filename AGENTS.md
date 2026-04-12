@@ -14,9 +14,11 @@ All contributors (human or agent) must follow these rules when editing or adding
 - Code updates: review and update all `*.md` files in the repository so Markdown docs stay in
   sync with the current code.
 - Docs: update `README.md` first, then `README.ko.md`.
+- Wiki: update `WIKI.md` first, then `WIKI.ko.md` when detailed behavior or storage changes.
+- Plans: update implementation/planning docs under `docs/` when roadmap or design docs change.
 - Changelog: update `CHANGELOG.md` (Keep a Changelog), then `CHANGELOG.ko.md`.
 - Version: bump in `VERSION` or package manifest when behavior changes are shipped.
-- TODO: review `TODO.md`, update checkboxes, add items if needed.
+- TODO: review `TODO.md`, update checkboxes, add items if needed, erase items that are done in prior verion.
 - Validation: ensure `git status` is clean before committing or opening a PR.
 - Review: request maintainer review for code or changelog changes.
 
@@ -33,7 +35,21 @@ All contributors (human or agent) must follow these rules when editing or adding
    - Write `README.md` in English (overview, install, usage, examples, limitations).
    - Translate to Korean as `README.ko.md` after the English version is finalized.
 
-3) Changelog
+3) WIKI
+
+   - Keep `WIKI.md` aligned with the current implementation details.
+   - Update `WIKI.ko.md` immediately after the English wiki is finalized.
+   - Use the wiki for detailed storage, matching, troubleshooting, and limitation notes.
+
+4) Planning Docs
+
+   - Keep design or planning docs under `docs/` aligned with current intent.
+   - Example files include `docs/기획서.md` and technical analysis notes such as
+     `docs/performance-analysis.md`.
+   - Planning docs may describe future work, so distinguish clearly between implemented behavior
+     and planned behavior.
+
+5) Changelog
 
    - Edit `CHANGELOG.md` in English following Keep a Changelog 1.1.0.
    - Maintain sections: Added, Changed, Deprecated, Removed, Fixed, Security.
@@ -41,20 +57,28 @@ All contributors (human or agent) must follow these rules when editing or adding
    - Date format: `YYYY-MM-DD`.
    - Translate corresponding changes into `CHANGELOG.ko.md`.
 
-4) TODO
+6) TODO
 
    - Review `TODO.md` for pending items.
    - Mark completed items with `- [x]` and add new tasks as needed.
+   - Erase completed items with `- [x]` that is completed in previous version. Active deletion only when version is bumped. For example, if bumped version is `0.2.0-pre2` or `0.2.0`, then erase untill `0.1.x`.
 
-5) File Structure Example
+7) File Structure Example
 
    ```text
-   ├── README.md          # English documentation
-   ├── README.ko.md       # Korean translation of README
-   ├── CHANGELOG.md       # English changelog
-   ├── CHANGELOG.ko.md    # Korean translation of changelog
-   ├── TODO.md            # Task list
-   └── AGENTS.md          # Agent instructions
+   ├── README.md                   # English overview and usage
+   ├── README.ko.md                # Korean translation of README
+   ├── WIKI.md                     # English detailed reference
+   ├── WIKI.ko.md                  # Korean detailed reference
+   ├── CHANGELOG.md                # English changelog
+   ├── CHANGELOG.ko.md             # Korean changelog
+   ├── TODO.md                     # Task list
+   ├── AGENTS.md                   # Agent instructions
+   ├── docs/
+   │   ├── 기획서.md               # Current planning/design document
+   │   └── performance-analysis.md # Technical analysis notes
+   └── credentials/
+       └── YouTube Data API v3.txt # Local reference notes, not shipped credentials
    ```
 
 ## Translation Guidelines

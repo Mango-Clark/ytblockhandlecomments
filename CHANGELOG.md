@@ -33,7 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - None
 
-## [0.4.0-pre2] - 2026-04-12
+## [0.4.0] - 2026-04-12
 
 ### Added
 
@@ -41,6 +41,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Block-list row checkboxes, visible-results select-all, and selected-count display
 - `all|handle|id|regex` type filtering and handle-tag filtering in the manager dialog
 - Bulk actions for deleting selected entries and creating/updating pairs for selected handles
+- Manager search with indexed substring lookup
+- Regex rows now expose matched-handle counts, inline expansion, and matching-handle selection
+- Detailed per-handle pair-run results in the manager and watch-page follow-up dialog
+- API key testing with stored diagnostic results in `youtube_data_api_v3_config`
+- Menu command refresh and dialog refresh hooks for live i18n updates
+- `GM_unregisterMenuCommand` userscript grant
 
 ### Changed
 
@@ -48,7 +54,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pair metadata matching now follows the same handle comparison policy as block rules
 - The manager dialog now includes a dedicated handle case-sensitivity section and an expanded
   list-maintenance toolbar
-- Cross-tab sync now refreshes local state when `app_settings_v1` changes
+- Cross-tab sync now refreshes local state when `app_settings_v1` and `lang` change
+- API config storage is now version 2 and keeps the latest key-test result
+- The watch-page pair banner can surface detailed pair-run results after updates
 
 ### Fixed
 
@@ -56,11 +64,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   case-sensitive mode
 - Filtered tag views now show only matching handle entries instead of unrelated `id` or `regex`
   rows
-
-## [0.4.0-pre1] - 2026-04-12
-
-### Added
-
 - Optional UID detection toggle backed by new `pair_meta_v1` storage
 - Handle↔UID pair creation and refresh actions in the manager dialog
 - Pair status badges and metadata display for blocked handles
@@ -68,18 +71,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cross-tab synchronization for pair metadata updates
 - Local-only YouTube Data API v3 API key storage in the manager dialog
 - Pair creation and update now use `channels.list` with the `forHandle` filter
-
-### Changed
-
 - Expanded the manager dialog with a UID section, pair summary cards, and pair timestamps
 - UID resolution now requires a user-supplied API key instead of scraping channel pages
 - `id` rule matching is now controlled by the UID detection toggle instead of always being active
 - Removing a handle rule now also removes its paired UID rule and pair metadata
 - Pair actions are disabled in the manager until an API key is saved
 - Documentation now describes the API-key-based UID flow and local-only key storage
-
-### Fixed
-
 - Preserved handle-only blocking as a safe fallback when UID lookup fails or a pair cannot be verified
 - Reduced fragility from relying on YouTube channel-page HTML structure for UID lookup
 

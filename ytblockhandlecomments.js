@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube Comment Blocker
 // @namespace    YouTube_Comment_Blocker
-// @version      0.4.0-pre2
+// @version      0.4.0
 // @description  Block/unblock comment handles via right-click. Optional UID pairing via YouTube Data API, real-time hiding, custom popup, and block list management.
 // @homepage     https://github.com/Mango-Clark/ytblockhandlecomments/
 // @updateURL    https://raw.githubusercontent.com/Mango-Clark/ytblockhandlecomments/refs/heads/master/ytblockhandlecomments.js
@@ -12,6 +12,7 @@
 // @grant        GM_setValue
 // @grant        GM_addValueChangeListener
 // @grant        GM_registerMenuCommand
+// @grant        GM_unregisterMenuCommand
 // @run-at       document-idle
 // ==/UserScript==
 (() => {
@@ -65,11 +66,24 @@
     .tm-toolbar-group{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
     .tm-toolbar-group label{font-weight:600}
     .tm-toolbar-group select{padding:7px 10px;border:1px solid #d0d7de;border-radius:8px;background:#fff;color:inherit}
+    .tm-toolbar-group input[type="search"]{padding:7px 10px;border:1px solid #d0d7de;border-radius:8px;background:#fff;color:inherit;min-width:220px}
     .tm-tag-group{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
     .tm-tag-group label{display:inline-flex;align-items:center;gap:6px;font-weight:500}
     .tm-counter{font-size:12px;color:#5f6368}
     .tm-list-empty{padding:18px 0;text-align:center;color:#5f6368}
     .tm-item-check{margin-top:2px}
+    .tm-inline-note{font-size:12px;color:#5f6368}
+    .tm-result-panel{margin-top:10px;border-top:1px solid #ececec;padding-top:10px}
+    .tm-result-panel details{border:1px solid #e5e5e5;border-radius:10px;padding:8px 10px;background:#fafafa}
+    .tm-result-panel summary{cursor:pointer;font-weight:600}
+    .tm-result-list{list-style:none;padding:0;margin:10px 0 0 0;display:flex;flex-direction:column;gap:8px}
+    .tm-result-list li{padding:8px 10px;border:1px solid #ececec;border-radius:8px}
+    .tm-result-outcome{font-weight:700}
+    .tm-search-note{font-size:12px;color:#5f6368}
+    .tm-regex-summary{display:flex;flex-direction:column;gap:8px}
+    .tm-regex-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .tm-regex-match-list{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px}
+    .tm-regex-match-list li{padding:6px 8px;border:1px solid #ececec;border-radius:8px}
     .tm-regex-bar{position:sticky;top:0;z-index:1;background:#fff;border:1px solid #e5e5e5;border-radius:12px;padding:12px 14px;margin-bottom:14px}
     .tm-regex-bar header{margin:0;font-size:16px;font-weight:700}
     .tm-regex-bar .row{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
@@ -90,6 +104,7 @@
       .tm-block-list li button{align-self:flex-end}
       .tm-toolbar-row,.tm-toolbar-group{align-items:stretch}
       .tm-toolbar-group{flex-direction:column;align-items:flex-start}
+      .tm-toolbar-group input[type="search"]{min-width:0;width:100%}
       .tm-banner{left:12px;right:12px;top:auto;bottom:72px;max-width:none}
     }
     @media (prefers-color-scheme: dark){
@@ -98,7 +113,7 @@
       .tm-section,.tm-regex-bar{background:#1f1f1f;border-color:#444}
       .tm-summary-card{background:#2a2a2a}
       .tm-block-list li{border-color:#333}
-      .tm-block-meta,.tm-toggle-row p,.tm-summary-card span,.tm-muted{color:#c7c7c7}
+      .tm-block-meta,.tm-toggle-row p,.tm-summary-card span,.tm-muted,.tm-inline-note,.tm-search-note{color:#c7c7c7}
       .tm-counter,.tm-list-empty{color:#c7c7c7}
       .tm-badge{background:#303134;color:#f1f3f4}
       .tm-badge.handle-only{background:#4b3900;color:#ffd76a}
@@ -109,7 +124,9 @@
       .tm-badge.uid{background:#16325c;color:#9bc2ff}
       .tm-banner{background:#2a2416;color:#ffe8ad;border-color:#8e6c25}
       .tm-banner .actions .secondary{background:#2a2416;color:#ffe8ad;border-color:#8e6c25}
-      .tm-regex-bar input,.tm-section input,.tm-toolbar-group select{background:#111;color:#fff;border-color:#555}
+      .tm-result-panel details,.tm-regex-match-list li{background:#2a2a2a;border-color:#444}
+      .tm-result-list li{border-color:#444}
+      .tm-regex-bar input,.tm-section input,.tm-toolbar-group select,.tm-toolbar-group input[type="search"]{background:#111;color:#fff;border-color:#555}
     }
   `;
 	document.head.appendChild(style);
@@ -203,12 +220,23 @@
 			apiKeyHelp: 'channels.list(forHandle) 호출에 사용합니다. 로컬에만 저장되며 import/export에 포함되지 않습니다.',
 			apiKeyPlaceholder: 'API key를 입력하세요',
 			apiKeySave: 'API 키 저장',
+			apiKeyTest: 'API 키 테스트',
 			apiKeyClear: 'API 키 삭제',
 			apiKeySaved: 'API 키를 저장했습니다',
 			apiKeyCleared: 'API 키를 삭제했습니다',
 			apiKeyStatusMissing: 'API 키가 없습니다. Pair 생성/갱신 전에 저장해야 합니다.',
 			apiKeyStatusSaved: (masked) => `저장된 키: ${masked}`,
 			apiKeyRequired: 'Pair 생성/갱신에는 YouTube Data API v3 API 키가 필요합니다.',
+			apiKeyTestIdle: '아직 API 키 테스트 기록이 없습니다.',
+			apiKeyTestRunning: 'API 키를 테스트하는 중입니다...',
+			apiKeyTestLabel: '마지막 테스트',
+			apiKeyTestResult: (category, message, statusText) => `${category}${statusText ? ` (${statusText})` : ''}: ${message}`,
+			apiKeyTestOk: '정상',
+			apiKeyTestInvalid: '잘못된 키',
+			apiKeyTestQuota: 'quota 초과',
+			apiKeyTestForbidden: '권한 거부',
+			apiKeyTestNetwork: '네트워크 실패',
+			apiKeyTestUnknown: '알 수 없음',
 			pairCreate: 'Pair 생성',
 			pairUpdate: 'Update Pair',
 			pairWorking: '처리 중...',
@@ -239,6 +267,15 @@
 			later: '나중에',
 			pairResult: ({ created, refreshed, mismatches, failed, addedIds }) =>
 				`생성 ${created} / 갱신 ${refreshed} / mismatch ${mismatches} / 실패 ${failed} / UID 추가 ${addedIds}`,
+			pairResultDetails: '최근 Pair 실행 결과',
+			pairResultEmpty: '아직 Pair 실행 기록이 없습니다.',
+			pairResultDialogTitle: 'Pair 실행 상세',
+			pairOutcomeCreated: '생성',
+			pairOutcomeUpdated: '갱신',
+			pairOutcomeMismatch: 'mismatch',
+			pairOutcomeFailed: '실패',
+			pairOutcomeSkipped: 'skip',
+			pairResultSummary: ({ selected, visible, total }) => `선택 ${selected} / 표시 ${visible} / 전체 ${total}`,
 			pairLookupFailed: 'UID 조회 실패',
 			pairLookupNoUid: 'UID를 찾지 못했습니다.',
 			handleCaseLabel: 'Handle 대소문자 구분',
@@ -249,6 +286,9 @@
 			typeHandle: 'handle',
 			typeId: 'id',
 			typeRegex: 'regex',
+			searchLabel: '검색',
+			searchPlaceholder: 'handle, id, regex 검색',
+			searchNoMatches: '검색 결과가 없습니다.',
 			tagFilterLabel: '태그',
 			selectVisible: '현재 목록 전체 선택',
 			selectedCount: (n) => `선택 ${n}개`,
@@ -260,6 +300,14 @@
 			clearSelection: '선택 해제',
 			bulkDeleteResult: (n) => `${n}개 항목을 삭제했습니다`,
 			bulkHandleRequired: '선택된 handle이 없습니다.',
+			regexMatchedCount: (n) => `매칭 handle ${n}개`,
+			regexSelectMatches: '매칭 handle 선택',
+			regexExpand: '펼치기',
+			regexCollapse: '접기',
+			regexShowAll: '전체 보기',
+			regexShowLess: '접기',
+			regexNoMatches: '현재 매칭되는 handle이 없습니다.',
+			regexSelectedMatches: (n) => `${n}개 handle을 선택했습니다`,
 			noFilteredEntries: '현재 필터에 맞는 항목이 없습니다.',
 			noEntries: '—'
 		},
@@ -304,12 +352,23 @@
 			apiKeyHelp: 'Used for channels.list(forHandle). Stored locally only and excluded from import/export.',
 			apiKeyPlaceholder: 'Enter your API key',
 			apiKeySave: 'Save API Key',
+			apiKeyTest: 'Test API Key',
 			apiKeyClear: 'Clear API Key',
 			apiKeySaved: 'API key saved',
 			apiKeyCleared: 'API key cleared',
 			apiKeyStatusMissing: 'No API key saved. Save one before running pair actions.',
 			apiKeyStatusSaved: (masked) => `Saved key: ${masked}`,
 			apiKeyRequired: 'A YouTube Data API v3 API key is required for pair creation and updates.',
+			apiKeyTestIdle: 'No API key test has run yet.',
+			apiKeyTestRunning: 'Testing the API key...',
+			apiKeyTestLabel: 'Last test',
+			apiKeyTestResult: (category, message, statusText) => `${category}${statusText ? ` (${statusText})` : ''}: ${message}`,
+			apiKeyTestOk: 'OK',
+			apiKeyTestInvalid: 'Invalid key',
+			apiKeyTestQuota: 'Quota exceeded',
+			apiKeyTestForbidden: 'Forbidden',
+			apiKeyTestNetwork: 'Network failure',
+			apiKeyTestUnknown: 'Unknown',
 			pairCreate: 'Create Pair',
 			pairUpdate: 'Update Pair',
 			pairWorking: 'Working...',
@@ -340,6 +399,15 @@
 			later: 'Later',
 			pairResult: ({ created, refreshed, mismatches, failed, addedIds }) =>
 				`Created ${created} / Refreshed ${refreshed} / Mismatch ${mismatches} / Failed ${failed} / Added UID ${addedIds}`,
+			pairResultDetails: 'Last Pair Run',
+			pairResultEmpty: 'No pair run has completed yet.',
+			pairResultDialogTitle: 'Pair Run Details',
+			pairOutcomeCreated: 'created',
+			pairOutcomeUpdated: 'updated',
+			pairOutcomeMismatch: 'mismatch',
+			pairOutcomeFailed: 'failed',
+			pairOutcomeSkipped: 'skipped',
+			pairResultSummary: ({ selected, visible, total }) => `Selected ${selected} / Visible ${visible} / Total ${total}`,
 			pairLookupFailed: 'UID lookup failed',
 			pairLookupNoUid: 'Could not find a UID.',
 			handleCaseLabel: 'Handle Case Sensitive',
@@ -350,6 +418,9 @@
 			typeHandle: 'handle',
 			typeId: 'id',
 			typeRegex: 'regex',
+			searchLabel: 'Search',
+			searchPlaceholder: 'Search handle, id, regex',
+			searchNoMatches: 'No search results.',
 			tagFilterLabel: 'Tags',
 			selectVisible: 'Select all visible',
 			selectedCount: (n) => `Selected ${n}`,
@@ -361,6 +432,14 @@
 			clearSelection: 'Clear selection',
 			bulkDeleteResult: (n) => `Deleted ${n} item(s)`,
 			bulkHandleRequired: 'No selected handle entries.',
+			regexMatchedCount: (n) => `${n} matched handle(s)`,
+			regexSelectMatches: 'Select matching handles',
+			regexExpand: 'Expand',
+			regexCollapse: 'Collapse',
+			regexShowAll: 'Show all',
+			regexShowLess: 'Show less',
+			regexNoMatches: 'No blocked handles currently match this regex.',
+			regexSelectedMatches: (n) => `Selected ${n} matching handle(s)`,
 			noFilteredEntries: 'No entries match the current filters.',
 			noEntries: '—'
 		}
@@ -379,6 +458,99 @@
 			return new Date(ts).toLocaleString(getLang() === 'ko' ? 'ko-KR' : 'en-US');
 		} catch {
 			return new Date(ts).toISOString();
+		}
+	};
+	const makePlainTextNode = (value) => {
+		const div = document.createElement('div');
+		div.textContent = String(value ?? '');
+		return div;
+	};
+	const binaryHas = (arr, value) => {
+		let lo = 0, hi = arr.length - 1;
+		while (lo <= hi) {
+			const mid = (lo + hi) >> 1;
+			if (arr[mid] === value) return true;
+			if (arr[mid] < value) lo = mid + 1;
+			else hi = mid - 1;
+		}
+		return false;
+	};
+	const intersectSortedPostings = (lists) => {
+		if (!lists.length) return [];
+		const sortedLists = lists.filter(Boolean).sort((a, b) => a.length - b.length);
+		if (!sortedLists.length) return [];
+		let result = sortedLists[0].slice();
+		for (let i = 1; i < sortedLists.length; i++) {
+			const next = sortedLists[i];
+			result = result.filter(value => binaryHas(next, value));
+			if (!result.length) break;
+		}
+		return result;
+	};
+	const getSearchBigrams = (query) => {
+		const normalized = String(query || '').trim().toLowerCase();
+		if (!normalized) return [];
+		if (normalized.length < 2) return [normalized];
+		const grams = [];
+		const seen = new Set();
+		for (let i = 0; i < normalized.length - 1; i++) {
+			const gram = normalized.slice(i, i + 2);
+			if (seen.has(gram)) continue;
+			seen.add(gram);
+			grams.push(gram);
+		}
+		return grams;
+	};
+	const buildManagerSearchIndex = (items) => {
+		const records = (items || []).map((item, index) => {
+			const label = item?.type === 'regex' ? `/${item.value}/${item.flags || ''}` : String(item?.value || '');
+			return {
+				index,
+				item,
+				label,
+				labelNorm: label.toLowerCase()
+			};
+		});
+		const firstCharBuckets = new Map();
+		const bigramIndex = new Map();
+		for (const record of records) {
+			for (const ch of new Set(record.labelNorm.split(''))) {
+				if (!ch.trim()) continue;
+				if (!firstCharBuckets.has(ch)) firstCharBuckets.set(ch, []);
+				firstCharBuckets.get(ch).push(record.index);
+			}
+			for (const gram of getSearchBigrams(record.labelNorm)) {
+				if (!bigramIndex.has(gram)) bigramIndex.set(gram, []);
+				bigramIndex.get(gram).push(record.index);
+			}
+		}
+		return { records, firstCharBuckets, bigramIndex };
+	};
+	const searchManagerIndex = (index, query) => {
+		const normalized = String(query || '').trim().toLowerCase();
+		if (!normalized) return index.records.map(record => record.item);
+		let candidateIndexes = [];
+		if (normalized.length === 1) {
+			candidateIndexes = (index.firstCharBuckets.get(normalized) || []).slice();
+		} else {
+			const grams = getSearchBigrams(normalized);
+			const postings = grams.map(gram => index.bigramIndex.get(gram) || []);
+			candidateIndexes = intersectSortedPostings(postings);
+		}
+		if (!candidateIndexes.length) return [];
+		return candidateIndexes
+			.map(idx => index.records[idx])
+			.filter(record => record.labelNorm.includes(normalized))
+			.map(record => record.item);
+	};
+	const getApiTestCategoryLabel = (category) => {
+		switch (category) {
+			case 'ok': return t('apiKeyTestOk');
+			case 'invalid': return t('apiKeyTestInvalid');
+			case 'quota': return t('apiKeyTestQuota');
+			case 'forbidden': return t('apiKeyTestForbidden');
+			case 'network': return t('apiKeyTestNetwork');
+			default: return t('apiKeyTestUnknown');
 		}
 	};
 
@@ -705,13 +877,29 @@
 		_getGM(key, def) { try { return GM_getValue(key, def); } catch { return def; } }
 		_setGM(key, val) { try { GM_setValue(key, val); } catch { } }
 		_defaultState() {
-			return { version: 1, apiKey: '' };
+			return { version: 2, apiKey: '', lastTestResult: null };
+		}
+		_normalizeTestResult(raw) {
+			if (!raw || typeof raw !== 'object') return null;
+			const category = ['ok', 'invalid', 'quota', 'forbidden', 'network', 'unknown'].includes(raw.category)
+				? raw.category
+				: 'unknown';
+			return {
+				checkedAt: Number.isFinite(raw.checkedAt) ? raw.checkedAt : Date.now(),
+				ok: !!raw.ok,
+				category,
+				httpStatus: Number.isFinite(raw.httpStatus) ? raw.httpStatus : null,
+				message: typeof raw.message === 'string' && raw.message.trim()
+					? raw.message.trim()
+					: (category === 'ok' ? 'OK' : 'Unknown')
+			};
 		}
 		_normalizeState(raw) {
 			const src = raw && typeof raw === 'object' ? raw : {};
 			return {
-				version: 1,
-				apiKey: typeof src.apiKey === 'string' ? src.apiKey.trim() : ''
+				version: 2,
+				apiKey: typeof src.apiKey === 'string' ? src.apiKey.trim() : '',
+				lastTestResult: this._normalizeTestResult(src.lastTestResult)
 			};
 		}
 		_init() {
@@ -726,7 +914,8 @@
 		}
 		_saveState(nextState) {
 			const normalized = this._normalizeState(nextState);
-			if (this._state.apiKey === normalized.apiKey) {
+			const sameResult = JSON.stringify(this._state.lastTestResult) === JSON.stringify(normalized.lastTestResult);
+			if (this._state.apiKey === normalized.apiKey && sameResult) {
 				this._state = normalized;
 				return this.getState();
 			}
@@ -740,11 +929,25 @@
 		getApiKey() {
 			return this._state.apiKey;
 		}
+		getLastTestResult() {
+			return this._state.lastTestResult ? { ...this._state.lastTestResult } : null;
+		}
 		setApiKey(apiKey) {
-			return this._saveState({ ...this._state, apiKey: String(apiKey || '').trim() });
+			const nextKey = String(apiKey || '').trim();
+			return this._saveState({
+				...this._state,
+				apiKey: nextKey,
+				lastTestResult: this._state.apiKey === nextKey ? this._state.lastTestResult : null
+			});
 		}
 		clearApiKey() {
-			return this._saveState({ ...this._state, apiKey: '' });
+			return this._saveState({ ...this._state, apiKey: '', lastTestResult: null });
+		}
+		setLastTestResult(result) {
+			return this._saveState({ ...this._state, lastTestResult: this._normalizeTestResult(result) });
+		}
+		clearLastTestResult() {
+			return this._saveState({ ...this._state, lastTestResult: null });
 		}
 		getMaskedApiKey() {
 			const key = this.getApiKey();
@@ -851,7 +1054,12 @@
 				mismatches: 0,
 				failed: 0,
 				addedIds: 0,
-				skipped: handles.length
+				skipped: handles.length,
+				items: (handles || []).map(handle => ({
+					handle: sanitizeHandle(handle) || String(handle || ''),
+					outcome: 'skipped',
+					message: 'busy'
+				}))
 			};
 			this._busy = true;
 			const stats = {
@@ -860,7 +1068,8 @@
 				mismatches: 0,
 				failed: 0,
 				addedIds: 0,
-				skipped: 0
+				skipped: 0,
+				items: []
 			};
 			const uniqueHandles = [];
 			const seen = new Set();
@@ -886,6 +1095,13 @@
 								source: resolved.source || existing.source || 'youtube-data-api-v3'
 							});
 							stats.mismatches += 1;
+							stats.items.push({
+								handle,
+								outcome: 'mismatch',
+								uid: existing.uid,
+								resolvedUid: resolved.uid,
+								message: t('pairLookupFailed')
+							});
 							continue;
 						}
 						this.pairStore.upsertPair({
@@ -900,8 +1116,14 @@
 						if (!this.hasBlockedId(resolved.uid) && this.storage.addId(resolved.uid)) {
 							stats.addedIds += 1;
 						}
-						if (existing?.uid) stats.refreshed += 1;
-						else stats.created += 1;
+						if (existing?.uid) {
+							stats.refreshed += 1;
+							stats.items.push({ handle, outcome: 'updated', uid: resolved.uid });
+						}
+						else {
+							stats.created += 1;
+							stats.items.push({ handle, outcome: 'created', uid: resolved.uid });
+						}
 					} catch (error) {
 						const message = error instanceof Error ? error.message : String(error);
 						const fallbackStatus = existing?.uid
@@ -922,6 +1144,13 @@
 							lastError: message
 						});
 						stats.failed += 1;
+						stats.items.push({
+							handle,
+							outcome: 'failed',
+							uid: existing?.uid || undefined,
+							resolvedUid: existing?.lastResolvedUid || undefined,
+							message
+						});
 					}
 				}
 			} finally {
@@ -930,6 +1159,61 @@
 				this.pairStore.refreshStatuses();
 			}
 			return stats;
+		}
+		async testApiKey() {
+			const apiKey = this.apiConfig.getApiKey();
+			if (!apiKey) {
+				return {
+					checkedAt: Date.now(),
+					ok: false,
+					category: 'invalid',
+					httpStatus: null,
+					message: t('apiKeyRequired')
+				};
+			}
+			try {
+				const url = new URL('https://www.googleapis.com/youtube/v3/channels');
+				url.searchParams.set('part', 'id');
+				url.searchParams.set('id', 'UC_x5XG1OV2P6uZZ5FSM9Ttw');
+				url.searchParams.set('key', apiKey);
+				url.searchParams.set('hl', getLang() === 'ko' ? 'ko' : 'en');
+				const response = await fetch(url.toString(), { cache: 'no-store' });
+				let payload = null;
+				try { payload = await response.json(); } catch { }
+				const reason = payload?.error?.errors?.[0]?.reason || '';
+				const message = payload?.error?.message || (response.ok ? 'OK' : `${response.status}`);
+				if (response.ok) {
+					return {
+						checkedAt: Date.now(),
+						ok: true,
+						category: 'ok',
+						httpStatus: response.status,
+						message: 'OK'
+					};
+				}
+				const category = reason.includes('quota') || reason.includes('dailyLimit')
+					? 'quota'
+					: response.status === 400
+						? 'invalid'
+						: response.status === 403
+							? 'forbidden'
+							: 'unknown';
+				return {
+					checkedAt: Date.now(),
+					ok: false,
+					category,
+					httpStatus: response.status,
+					message
+				};
+			} catch (error) {
+				return {
+					checkedAt: Date.now(),
+					ok: false,
+					category: 'network',
+					httpStatus: null,
+					message: error instanceof Error ? error.message : String(error)
+				};
+			}
 		}
 		async resolveHandle(handle) {
 			const apiKey = this.apiConfig.getApiKey();
@@ -971,8 +1255,9 @@
 	}
 
 	class Dialog {
+		static _instances = new Set();
 		// Promise resolves with `value` passed to close()
-		static show({ title = '', body = null, buttons = [], onBeforeClose = null }) {
+		static show({ title = '', body = null, buttons = [], onBeforeClose = null, onRefresh = null }) {
 			return new Promise(resolve => {
 				const backdrop = Object.assign(document.createElement('div'), { className: 'tm-backdrop' });
 				const dialog = Object.assign(document.createElement('div'), { className: 'tm-dialog' });
@@ -986,14 +1271,31 @@
 				const content = Object.assign(document.createElement('div'), { className: 'tm-content' });
 				if (body instanceof Node) content.appendChild(body);
 				else if (typeof body === 'string') {
-					// Accept limited HTML from internal templates only
-					content.insertAdjacentHTML('beforeend', body);
+					content.appendChild(makePlainTextNode(body));
 				}
 
 				const footer = document.createElement('footer');
+				const renderedButtons = [];
+				const refreshContext = {
+					dialog,
+					header,
+					content,
+					footer,
+					buttons: renderedButtons,
+					setTitle: (nextTitle) => {
+						header.textContent = nextTitle;
+						dialog.setAttribute('aria-label', nextTitle);
+					},
+					setBody: (nextBody) => {
+						content.replaceChildren();
+						if (nextBody instanceof Node) content.appendChild(nextBody);
+						else content.appendChild(makePlainTextNode(nextBody));
+					}
+				};
 				const close = (val) => {
 					try { if (onBeforeClose) val = onBeforeClose(val, dialog); } catch { }
 					backdrop.remove(); document.removeEventListener('keydown', onKey);
+					Dialog._instances.delete(instance);
 					resolve(val);
 				};
 
@@ -1003,6 +1305,7 @@
 						className: btn.primary ? 'primary' : 'secondary'
 					});
 					b.addEventListener('click', () => close(btn.value));
+					renderedButtons.push(b);
 					footer.appendChild(b);
 				});
 
@@ -1027,8 +1330,16 @@
 				document.addEventListener('keydown', onKey);
 				backdrop.addEventListener('click', e => { if (e.target === backdrop) close(false); });
 
+				const instance = { refresh: () => onRefresh?.(refreshContext) };
+				Dialog._instances.add(instance);
+				if (onRefresh) onRefresh(refreshContext);
 				dialog.querySelector('button')?.focus();
 			});
+		}
+		static refreshAll() {
+			for (const instance of Array.from(Dialog._instances)) {
+				try { instance.refresh?.(); } catch { }
+			}
 		}
 	}
 
@@ -1147,7 +1458,12 @@
 			const h = meta.handle;
 			const handleKey = getHandleCompareKey(h, this.settings?.isHandleCaseSensitive?.() || false);
 			if (handleKey && this._handleSet.has(handleKey)) return true;
-			if (h) { for (const rx of this._regexes) { if (rx.test(h)) return true; } }
+			if (h) {
+				for (const rx of this._regexes) {
+					rx.lastIndex = 0;
+					if (rx.test(h)) return true;
+				}
+			}
 			return false;
 		}
 		applyHide(node) {
@@ -1230,15 +1546,30 @@
 			this.app = app;
 			this.storage = app.storage;
 			this.lastHandle = null;
+			this._popupObserver = null;
+			this._popupTimer = null;
 
 			document.body.addEventListener('click', e => {
 				const btn = e.target.closest?.('ytd-menu-renderer yt-icon-button#button, ytd-menu-renderer #button');
 				if (!btn) return;
 				const comment = Extractor.getCommentRoot(btn);
 				this.lastHandle = Extractor.getHandle(comment);
+				this._watchNextPopup();
 			}, true);
+			window.addEventListener('yt-navigate-finish', () => this._disconnectPopupObserver(), true);
+			window.addEventListener('popstate', () => this._disconnectPopupObserver(), true);
+		}
 
-			new MutationObserver(muts => {
+		_disconnectPopupObserver() {
+			if (this._popupObserver) this._popupObserver.disconnect();
+			this._popupObserver = null;
+			if (this._popupTimer) clearTimeout(this._popupTimer);
+			this._popupTimer = null;
+		}
+
+		_watchNextPopup() {
+			this._disconnectPopupObserver();
+			this._popupObserver = new MutationObserver(muts => {
 				for (const m of muts) {
 					m.addedNodes?.forEach(n => {
 						if (n.nodeType !== 1) return;
@@ -1246,9 +1577,12 @@
 						const listbox = n.querySelector?.('tp-yt-paper-listbox[role="menu"]');
 						if (listbox && this.lastHandle) this._addItem(listbox, this.lastHandle);
 						n.setAttribute('tm-enhanced', '');
+						this._disconnectPopupObserver();
 					});
 				}
-			}).observe(document.body, { childList: true, subtree: true });
+			});
+			this._popupObserver.observe(document.body, { childList: true, subtree: true });
+			this._popupTimer = setTimeout(() => this._disconnectPopupObserver(), 2000);
 		}
 
 		_addItem(menu, handle) {
@@ -1270,7 +1604,13 @@
 						div.append(p, b);
 						return div;
 					})(),
-					buttons: [{ label: t('close'), value: false }, { label: isBlocked ? t('unblock') : t('block'), value: true, primary: true }]
+					buttons: [{ label: t('close'), value: false }, { label: isBlocked ? t('unblock') : t('block'), value: true, primary: true }],
+					onRefresh: (ctx) => {
+						ctx.setTitle(isBlocked ? t('unblock') : t('block'));
+						ctx.content.querySelector('p').textContent = isBlocked ? t('confirmUnblock') : t('confirmBlock');
+						ctx.buttons[0].textContent = t('close');
+						ctx.buttons[1].textContent = isBlocked ? t('unblock') : t('block');
+					}
 				});
 				if (!ok) return;
 				if (isBlocked) {
@@ -1318,17 +1658,101 @@
 			div.textContent = text;
 			return div;
 		}
+		_getPairOutcomeLabel(code) {
+			if (code === 'created') return t('pairOutcomeCreated');
+			if (code === 'updated') return t('pairOutcomeUpdated');
+			if (code === 'mismatch') return t('pairOutcomeMismatch');
+			if (code === 'failed') return t('pairOutcomeFailed');
+			return t('pairOutcomeSkipped');
+		}
+		_getRegexMatches(regexItem, items) {
+			if (!regexItem || regexItem.type !== 'regex') return [];
+			const handles = (items || []).filter(item => item.type === 'handle');
+			let rx = null;
+			try { rx = new RegExp(regexItem.value, regexItem.flags || ''); } catch { return []; }
+			return handles.filter(item => {
+				rx.lastIndex = 0;
+				return rx.test(item.value);
+			});
+		}
+		_renderPairResultList(container, stats) {
+			container.replaceChildren();
+			if (!stats?.items?.length) {
+				container.textContent = t('pairResultEmpty');
+				container.className = 'tm-inline-note';
+				return;
+			}
+			container.className = 'tm-result-panel';
+			const details = document.createElement('details');
+			details.open = true;
+			const summary = document.createElement('summary');
+			summary.textContent = t('pairResultDetails');
+			const list = document.createElement('ul');
+			list.className = 'tm-result-list';
+			for (const item of stats.items) {
+				const li = document.createElement('li');
+				const title = document.createElement('div');
+				title.innerHTML = '';
+				const outcome = document.createElement('span');
+				outcome.className = 'tm-result-outcome';
+				outcome.textContent = this._getPairOutcomeLabel(item.outcome);
+				const handle = document.createElement('span');
+				handle.textContent = ` ${item.handle}`;
+				title.append(outcome, handle);
+				li.appendChild(title);
+				if (item.uid) li.appendChild(this._createMetaLine(t('metaUid', item.uid)));
+				if (item.resolvedUid && item.resolvedUid !== item.uid) {
+					li.appendChild(this._createMetaLine(t('metaResolvedUid', item.resolvedUid)));
+				}
+				if (item.message) li.appendChild(this._createMetaLine(item.message));
+				list.appendChild(li);
+			}
+			details.append(summary, list);
+			container.appendChild(details);
+		}
+		_renderApiTestStatus(container, result, isRunning) {
+			container.replaceChildren();
+			container.className = 'tm-inline-note';
+			if (isRunning) {
+				container.textContent = t('apiKeyTestRunning');
+				return;
+			}
+			if (!result) {
+				container.textContent = t('apiKeyTestIdle');
+				return;
+			}
+			const category = getApiTestCategoryLabel(result.category);
+			const statusText = result.httpStatus ? String(result.httpStatus) : '';
+			container.textContent = `${t('apiKeyTestLabel')}: ${t('apiKeyTestResult', category, result.message, statusText)} (${formatDateTime(result.checkedAt) || ''})`;
+		}
+		_showPairResultDialog(stats) {
+			const body = document.createElement('div');
+			this._renderPairResultList(body, stats);
+			Dialog.show({
+				title: t('pairResultDialogTitle'),
+				body,
+				buttons: [{ label: t('close'), value: false, primary: true }],
+				onRefresh: (ctx) => {
+					ctx.setTitle(t('pairResultDialogTitle'));
+					ctx.buttons[0].textContent = t('close');
+					this._renderPairResultList(body, stats);
+				}
+			});
+		}
 		openList() {
 			this.app.pairStore.refreshStatuses();
 			const wrap = document.createElement('div');
 			const selection = new Set();
 			const tagFilters = new Set();
+			const expandedRegexKeys = new Set();
+			const showAllRegexKeys = new Set();
 			let busy = false;
+			let apiTestBusy = false;
+			let searchQuery = '';
 
 			const settingsSection = document.createElement('section');
 			settingsSection.className = 'tm-section';
 			const settingsTitle = document.createElement('h3');
-			settingsTitle.textContent = t('handleCaseLabel');
 			const settingsRow = document.createElement('div');
 			settingsRow.className = 'tm-toggle-row';
 			const settingsBox = document.createElement('div');
@@ -1355,36 +1779,36 @@
 			apiRow.className = 'tm-toggle-row';
 			const apiBox = document.createElement('div');
 			const apiLabel = document.createElement('label');
-			apiLabel.textContent = t('apiKeyLabel');
 			const apiInput = document.createElement('input');
 			apiInput.type = 'password';
-			apiInput.placeholder = t('apiKeyPlaceholder');
 			apiInput.style.minWidth = '280px';
 			apiInput.style.width = 'min(420px, 100%)';
 			apiInput.value = this.app.apiConfig.getApiKey();
 			const apiHelp = document.createElement('p');
-			apiHelp.textContent = t('apiKeyHelp');
 			const apiStatus = document.createElement('div');
 			apiStatus.className = 'tm-muted';
+			const apiTestStatus = document.createElement('div');
+			apiTestStatus.className = 'tm-inline-note';
 			apiBox.append(apiLabel, apiInput, apiHelp, apiStatus);
+			apiBox.appendChild(apiTestStatus);
 			const apiActions = document.createElement('div');
 			apiActions.className = 'tm-inline-actions';
 			const saveApiBtn = Object.assign(document.createElement('button'), {
-				textContent: t('apiKeySave'),
 				className: 'primary'
 			});
-			const clearApiBtn = Object.assign(document.createElement('button'), {
-				textContent: t('apiKeyClear'),
+			const testApiBtn = Object.assign(document.createElement('button'), {
 				className: 'secondary'
 			});
-			apiActions.append(saveApiBtn, clearApiBtn);
+			const clearApiBtn = Object.assign(document.createElement('button'), {
+				className: 'secondary'
+			});
+			apiActions.append(saveApiBtn, testApiBtn, clearApiBtn);
 			apiRow.append(apiBox, apiActions);
 			apiSection.append(apiTitle, apiRow);
 
 			const pairSection = document.createElement('section');
 			pairSection.className = 'tm-section';
 			const pairTitle = document.createElement('h3');
-			pairTitle.textContent = t('uidDetectionLabel');
 			const toggleRow = document.createElement('div');
 			toggleRow.className = 'tm-toggle-row';
 			const toggleBox = document.createElement('div');
@@ -1396,36 +1820,31 @@
 			toggleText.textContent = t('uidDetectionLabel');
 			toggleLabel.append(toggle, toggleText);
 			const toggleHelp = document.createElement('p');
-			toggleHelp.textContent = t('uidDetectionHelp');
 			toggleBox.append(toggleLabel, toggleHelp);
 			const pairActions = document.createElement('div');
 			pairActions.className = 'tm-inline-actions';
 			const createBtn = Object.assign(document.createElement('button'), {
-				textContent: t('pairCreate'),
 				className: 'secondary'
 			});
 			const updateBtn = Object.assign(document.createElement('button'), {
-				textContent: t('pairUpdate'),
 				className: 'primary'
 			});
 			pairActions.append(createBtn, updateBtn);
 			toggleRow.append(toggleBox, pairActions);
 			const summaryTitle = document.createElement('h3');
-			summaryTitle.textContent = t('pairSummary');
 			const lastCheck = document.createElement('div');
 			lastCheck.className = 'tm-muted';
 			const summaryGrid = document.createElement('div');
 			summaryGrid.className = 'tm-summary-grid';
-			pairSection.append(pairTitle, toggleRow, summaryTitle, lastCheck, summaryGrid);
+			const pairResultPanel = document.createElement('div');
+			pairSection.append(pairTitle, toggleRow, summaryTitle, lastCheck, summaryGrid, pairResultPanel);
 
 			const form = document.createElement('div');
 			form.className = 'tm-regex-bar';
 			const formTitle = document.createElement('header');
-			formTitle.textContent = t('addRegex');
 			const titleRow = document.createElement('div');
 			titleRow.className = 'row';
 			const regexrBtn = Object.assign(document.createElement('button'), {
-				textContent: t('testRegex'),
 				className: 'primary'
 			});
 			regexrBtn.style.padding = '6px 12px';
@@ -1437,19 +1856,16 @@
 			const controls = document.createElement('div');
 			controls.className = 'controls';
 			const patternLabel = document.createElement('label');
-			patternLabel.textContent = t('patternLabel') + ':';
 			const patternInput = document.createElement('input');
 			patternInput.type = 'text';
 			patternInput.style.width = '60%';
 			patternInput.placeholder = '/^@spam.*/i or ^@promo';
 			const flagsLabel = document.createElement('label');
-			flagsLabel.textContent = t('flagsLabel') + ':';
 			const flagsInput = document.createElement('input');
 			flagsInput.type = 'text';
 			flagsInput.style.width = '80px';
 			flagsInput.placeholder = 'i';
 			const addBtn = Object.assign(document.createElement('button'), {
-				textContent: t('addBtn'),
 				className: 'secondary'
 			});
 			addBtn.style.padding = '6px 12px';
@@ -1470,7 +1886,6 @@
 			const masterToggle = document.createElement('input');
 			masterToggle.type = 'checkbox';
 			const masterText = document.createElement('span');
-			masterText.textContent = t('selectVisible');
 			masterLabel.append(masterToggle, masterText);
 			const counter = document.createElement('div');
 			counter.className = 'tm-counter';
@@ -1478,28 +1893,32 @@
 			const topRight = document.createElement('div');
 			topRight.className = 'tm-toolbar-group';
 			const typeLabel = document.createElement('label');
-			typeLabel.textContent = t('typeFilterLabel');
+			const searchLabel = document.createElement('label');
+			const searchInput = document.createElement('input');
+			searchInput.type = 'search';
+			const searchNote = document.createElement('div');
+			searchNote.className = 'tm-search-note';
 			const typeSelect = document.createElement('select');
 			[
-				['all', t('typeAll')],
-				['handle', t('typeHandle')],
-				['id', t('typeId')],
-				['regex', t('typeRegex')]
+				['all', ''],
+				['handle', ''],
+				['id', ''],
+				['regex', '']
 			].forEach(([value, label]) => {
 				const option = document.createElement('option');
 				option.value = value;
 				option.textContent = label;
 				typeSelect.appendChild(option);
 			});
-			topRight.append(typeLabel, typeSelect);
+			topRight.append(searchLabel, searchInput, typeLabel, typeSelect);
 			topToolbarRow.append(topLeft, topRight);
 			const middleToolbarRow = document.createElement('div');
 			middleToolbarRow.className = 'tm-toolbar-row';
 			const tagLabel = document.createElement('div');
 			tagLabel.className = 'tm-counter';
-			tagLabel.textContent = t('tagFilterLabel');
 			const tagGroup = document.createElement('div');
 			tagGroup.className = 'tm-tag-group';
+			const tagInputs = [];
 			['handle-only', 'paired', 'stale', 'mismatch', 'unverified'].forEach(code => {
 				const label = document.createElement('label');
 				const input = document.createElement('input');
@@ -1510,8 +1929,9 @@
 					renderList();
 				});
 				const text = document.createElement('span');
-				text.textContent = this._makeBadge(code).textContent;
+				text.textContent = '';
 				label.append(input, text);
+				tagInputs.push({ code, input, text });
 				tagGroup.appendChild(label);
 			});
 			middleToolbarRow.append(tagLabel, tagGroup);
@@ -1520,12 +1940,11 @@
 			const bulkLeft = document.createElement('div');
 			bulkLeft.className = 'tm-toolbar-group';
 			const bulkLabel = document.createElement('label');
-			bulkLabel.textContent = t('bulkActionLabel');
 			const bulkSelect = document.createElement('select');
 			[
-				['delete', t('bulkDelete')],
-				['create', t('bulkCreatePairs')],
-				['update', t('bulkUpdatePairs')]
+				['delete', ''],
+				['create', ''],
+				['update', '']
 			].forEach(([value, label]) => {
 				const option = document.createElement('option');
 				option.value = value;
@@ -1533,15 +1952,13 @@
 				bulkSelect.appendChild(option);
 			});
 			const executeBtn = Object.assign(document.createElement('button'), {
-				textContent: t('execute'),
 				className: 'primary'
 			});
 			const clearSelectionBtn = Object.assign(document.createElement('button'), {
-				textContent: t('clearSelection'),
 				className: 'secondary'
 			});
 			bulkLeft.append(bulkLabel, bulkSelect, executeBtn, clearSelectionBtn);
-			bottomToolbarRow.append(bulkLeft);
+			bottomToolbarRow.append(bulkLeft, searchNote);
 			toolbar.append(topToolbarRow, middleToolbarRow, bottomToolbarRow);
 			const list = Object.assign(document.createElement('ul'), { className: 'tm-block-list' });
 			listSection.append(listTitle, toolbar, list);
@@ -1564,8 +1981,10 @@
 			};
 			const getVisibleItems = () => {
 				const items = getCurrentItems();
+				const searchIndex = buildManagerSearchIndex(items);
+				const searched = searchManagerIndex(searchIndex, searchQuery);
 				const typeValue = typeSelect.value || 'all';
-				return items.filter(item => {
+				return searched.filter(item => {
 					if (typeValue !== 'all' && item.type !== typeValue) return false;
 					if (!tagFilters.size) return true;
 					if (item.type !== 'handle') return false;
@@ -1577,6 +1996,7 @@
 				apiStatus.textContent = this.app.apiConfig.hasApiKey()
 					? t('apiKeyStatusSaved', this.app.apiConfig.getMaskedApiKey())
 					: t('apiKeyStatusMissing');
+				this._renderApiTestStatus(apiTestStatus, this.app.apiConfig.getLastTestResult(), apiTestBusy);
 			};
 			const syncActionState = () => {
 				pruneSelection();
@@ -1591,13 +2011,19 @@
 				updateBtn.disabled = busy || !hasKey;
 				createBtn.textContent = busy ? t('pairWorking') : t('pairCreate');
 				updateBtn.textContent = busy ? t('pairWorking') : t('pairUpdate');
+				testApiBtn.disabled = apiTestBusy || !hasKey;
+				testApiBtn.textContent = apiTestBusy ? t('apiKeyTestRunning') : t('apiKeyTest');
 				masterToggle.disabled = busy || !visibleKeys.length;
 				masterToggle.checked = !!visibleKeys.length && selectedVisibleCount === visibleKeys.length;
 				masterToggle.indeterminate = selectedVisibleCount > 0 && selectedVisibleCount < visibleKeys.length;
 				executeBtn.disabled = busy || !selection.size || (pairBulk && (!hasKey || !selectedHandleCount));
 				clearSelectionBtn.disabled = busy || !selection.size;
 				bulkSelect.disabled = busy;
-				counter.textContent = `${t('selectedCount', selection.size)} | ${visibleItems.length}/${getCurrentItems().length}`;
+				counter.textContent = t('pairResultSummary', {
+					selected: selection.size,
+					visible: visibleItems.length,
+					total: getCurrentItems().length
+				});
 			};
 			const renderSummary = () => {
 				const summary = this.app.pairService.getSummary();
@@ -1623,6 +2049,7 @@
 				toggle.checked = this.app.pairStore.isUidDetectionEnabled();
 				caseToggle.checked = this.app.settings.isHandleCaseSensitive();
 				syncApiStatus();
+				this._renderPairResultList(pairResultPanel, this.app.getLastPairRunResult());
 				syncActionState();
 			};
 			const renderList = () => {
@@ -1633,11 +2060,14 @@
 				if (!allItems.length || !items.length) {
 					const li = document.createElement('li');
 					li.className = 'tm-list-empty';
-					li.textContent = allItems.length ? t('noFilteredEntries') : t('noEntries');
+					li.textContent = allItems.length
+						? (searchQuery ? t('searchNoMatches') : t('noFilteredEntries'))
+						: t('noEntries');
 					list.appendChild(li);
 					syncActionState();
 					return;
 				}
+				const handleItems = allItems.filter(item => item.type === 'handle');
 				for (const item of items) {
 					const itemKey = getItemKey(item);
 					const li = document.createElement('li');
@@ -1677,6 +2107,67 @@
 						badges.appendChild(this._makeBadge('uid'));
 					} else if (item.type === 'regex') {
 						badges.appendChild(this._makeBadge('regex'));
+						const regexSummary = document.createElement('div');
+						regexSummary.className = 'tm-regex-summary';
+						const regexActions = document.createElement('div');
+						regexActions.className = 'tm-regex-actions';
+						const matches = this._getRegexMatches(item, handleItems);
+						const countLine = document.createElement('div');
+						countLine.className = 'tm-inline-note';
+						countLine.textContent = t('regexMatchedCount', matches.length);
+						const selectMatchesBtn = Object.assign(document.createElement('button'), {
+							textContent: t('regexSelectMatches')
+						});
+						selectMatchesBtn.disabled = !matches.length || busy;
+						selectMatchesBtn.addEventListener('click', () => {
+							for (const match of matches) {
+								const matchKey = getItemKey(match);
+								if (matchKey) selection.add(matchKey);
+							}
+							Toast.show(t('regexSelectedMatches', matches.length));
+							renderList();
+						});
+						const toggleRegexBtn = Object.assign(document.createElement('button'), {
+							textContent: expandedRegexKeys.has(itemKey) ? t('regexCollapse') : t('regexExpand')
+						});
+						toggleRegexBtn.disabled = !matches.length;
+						toggleRegexBtn.addEventListener('click', () => {
+							if (expandedRegexKeys.has(itemKey)) expandedRegexKeys.delete(itemKey);
+							else expandedRegexKeys.add(itemKey);
+							renderList();
+						});
+						regexActions.append(countLine, selectMatchesBtn, toggleRegexBtn);
+						regexSummary.appendChild(regexActions);
+						if (expandedRegexKeys.has(itemKey)) {
+							const listWrap = document.createElement('ul');
+							listWrap.className = 'tm-regex-match-list';
+							const limit = showAllRegexKeys.has(itemKey) ? matches.length : 20;
+							for (const match of matches.slice(0, limit)) {
+								const row = document.createElement('li');
+								row.textContent = match.value;
+								listWrap.appendChild(row);
+							}
+							if (!matches.length) {
+								const empty = document.createElement('div');
+								empty.className = 'tm-inline-note';
+								empty.textContent = t('regexNoMatches');
+								regexSummary.appendChild(empty);
+							} else {
+								regexSummary.appendChild(listWrap);
+								if (matches.length > 20) {
+									const showAllBtn = Object.assign(document.createElement('button'), {
+										textContent: showAllRegexKeys.has(itemKey) ? t('regexShowLess') : t('regexShowAll')
+									});
+									showAllBtn.addEventListener('click', () => {
+										if (showAllRegexKeys.has(itemKey)) showAllRegexKeys.delete(itemKey);
+										else showAllRegexKeys.add(itemKey);
+										renderList();
+									});
+									regexSummary.appendChild(showAllBtn);
+								}
+							}
+						}
+						meta.appendChild(regexSummary);
 					}
 
 					const removeBtn = Object.assign(document.createElement('button'), { textContent: t('unblock') });
@@ -1698,6 +2189,47 @@
 				renderSummary();
 				renderList();
 			};
+			const applyLanguage = () => {
+				settingsTitle.textContent = t('handleCaseLabel');
+				caseText.textContent = t('handleCaseLabel');
+				caseHelp.textContent = t('handleCaseHelp');
+				caseLegacy.textContent = t('handleCaseLegacy');
+				apiTitle.textContent = t('apiKeyTitle');
+				apiLabel.textContent = t('apiKeyLabel');
+				apiInput.placeholder = t('apiKeyPlaceholder');
+				apiHelp.textContent = t('apiKeyHelp');
+				saveApiBtn.textContent = t('apiKeySave');
+				clearApiBtn.textContent = t('apiKeyClear');
+				pairTitle.textContent = t('uidDetectionLabel');
+				toggleText.textContent = t('uidDetectionLabel');
+				toggleHelp.textContent = t('uidDetectionHelp');
+				createBtn.textContent = t('pairCreate');
+				updateBtn.textContent = t('pairUpdate');
+				summaryTitle.textContent = t('pairSummary');
+				formTitle.textContent = t('addRegex');
+				regexrBtn.textContent = t('testRegex');
+				patternLabel.textContent = t('patternLabel') + ':';
+				flagsLabel.textContent = t('flagsLabel') + ':';
+				addBtn.textContent = t('addBtn');
+				masterText.textContent = t('selectVisible');
+				searchLabel.textContent = t('searchLabel');
+				searchInput.placeholder = t('searchPlaceholder');
+				typeLabel.textContent = t('typeFilterLabel');
+				typeSelect.options[0].textContent = t('typeAll');
+				typeSelect.options[1].textContent = t('typeHandle');
+				typeSelect.options[2].textContent = t('typeId');
+				typeSelect.options[3].textContent = t('typeRegex');
+				tagLabel.textContent = t('tagFilterLabel');
+				tagInputs.forEach(({ code, text }) => { text.textContent = this._makeBadge(code).textContent; });
+				bulkLabel.textContent = t('bulkActionLabel');
+				bulkSelect.options[0].textContent = t('bulkDelete');
+				bulkSelect.options[1].textContent = t('bulkCreatePairs');
+				bulkSelect.options[2].textContent = t('bulkUpdatePairs');
+				executeBtn.textContent = t('execute');
+				clearSelectionBtn.textContent = t('clearSelection');
+				searchNote.textContent = searchQuery ? t('searchLabel') : '';
+				renderAll();
+			};
 			const setBusy = (nextBusy) => {
 				busy = !!nextBusy;
 				renderSummary();
@@ -1712,6 +2244,10 @@
 				this.app.pairStore.setUidDetectionEnabled(toggle.checked);
 				this.app.refreshAfterStorageChange();
 				renderAll();
+			});
+			searchInput.addEventListener('input', () => {
+				searchQuery = searchInput.value || '';
+				renderList();
 			});
 			typeSelect.addEventListener('change', renderList);
 			bulkSelect.addEventListener('change', syncActionState);
@@ -1733,6 +2269,14 @@
 				this.app.refreshAfterStorageChange();
 				renderAll();
 				Toast.show(t('apiKeySaved'));
+			});
+			testApiBtn.addEventListener('click', async () => {
+				apiTestBusy = true;
+				renderSummary();
+				const result = await this.app.testApiKey();
+				apiTestBusy = false;
+				renderSummary();
+				Toast.show(t('apiKeyTestResult', getApiTestCategoryLabel(result.category), result.message, result.httpStatus ? String(result.httpStatus) : ''), 3200);
 			});
 			clearApiBtn.addEventListener('click', () => {
 				this.app.apiConfig.clearApiKey();
@@ -1792,7 +2336,7 @@
 				Toast.show(t('addedRegex'));
 			});
 
-			renderAll();
+			applyLanguage();
 			Dialog.show({
 				title: t('manageTitle', this.app.storage.all().length),
 				body: wrap,
@@ -1800,7 +2344,14 @@
 					{ label: t('import'), value: 'import' },
 					{ label: t('export'), value: 'export' },
 					{ label: t('close'), value: false, primary: true }
-				]
+				],
+				onRefresh: (ctx) => {
+					ctx.setTitle(t('manageTitle', this.app.storage.all().length));
+					ctx.buttons[0].textContent = t('import');
+					ctx.buttons[1].textContent = t('export');
+					ctx.buttons[2].textContent = t('close');
+					applyLanguage();
+				}
 			}).then(v => {
 				if (v === 'import') this.importList();
 				else if (v === 'export') this.exportList();
@@ -1818,7 +2369,18 @@
 			const ta2 = document.createElement('textarea'); ta2.readOnly = true;
 			ta2.value = this.app.storage.all().map(it => it.type === 'regex' ? `/${it.value}/${it.flags || ''}` : it.value).join('\n');
 			body.append(p, h4a, ta1, h4b, ta2);
-			Dialog.show({ title: t('export'), body, buttons: [{ label: t('close'), value: false, primary: true }] });
+			Dialog.show({
+				title: t('export'),
+				body,
+				buttons: [{ label: t('close'), value: false, primary: true }],
+				onRefresh: (ctx) => {
+					ctx.setTitle(t('export'));
+					p.textContent = t('exportHint');
+					h4a.textContent = t('json');
+					h4b.textContent = t('text');
+					ctx.buttons[0].textContent = t('close');
+				}
+			});
 		}
 
 		importList() {
@@ -1829,6 +2391,12 @@
 				title: t('importTitle'),
 				body: ta,
 				buttons: [{ label: t('close'), value: null }, { label: t('importBtn'), value: 'import', primary: true }],
+				onRefresh: (ctx) => {
+					ctx.setTitle(t('importTitle'));
+					ta.placeholder = t('importPlaceholder');
+					ctx.buttons[0].textContent = t('close');
+					ctx.buttons[1].textContent = t('importBtn');
+				},
 				onBeforeClose: (val) => {
 					if (val !== 'import') return null;
 					const txt = (ta.value || '').trim();
@@ -1871,6 +2439,8 @@
 			this.hider = new CommentHider(this.storage, this.pairStore, this.settings);
 			this.menu = new MenuEnhancer(this);
 			this.manager = new BlockListManager(this);
+			this._menuCommandIds = [];
+			this._lastPairRunResult = null;
 			this._commentsHost = null;
 			this._commentObserver = null;
 			this._hostObserver = null;
@@ -1920,12 +2490,35 @@
 			this.hider.rebuildLookup();
 			this.hider.refreshScheduled();
 			this._syncPairBanner();
+			Dialog.refreshAll();
+		}
+
+		refreshLanguageUi() {
+			this._registerMenu();
+			this._syncPairBanner();
+			Dialog.refreshAll();
+		}
+
+		getLastPairRunResult() {
+			return this._lastPairRunResult;
+		}
+
+		showPairResultDialog(stats) {
+			this.manager._showPairResultDialog(stats);
+		}
+
+		async testApiKey() {
+			const result = await this.pairService.testApiKey();
+			this.apiConfig.setLastTestResult(result);
+			this.refreshAfterStorageChange();
+			return result;
 		}
 
 		async runPairUpdate(mode = 'update', handles = null) {
 			const stats = mode === 'create'
 				? (handles ? await this.pairService.createPairsForHandles(handles) : await this.pairService.createMissingPairs())
 				: (handles ? await this.pairService.updatePairsForHandles(handles) : await this.pairService.updatePairs({ includeMissing: true }));
+			this._lastPairRunResult = stats;
 			this.refreshAfterStorageChange();
 			return stats;
 		}
@@ -1955,7 +2548,13 @@
 						d.append(p, b);
 						return d;
 					})(),
-					buttons: [{ label: t('close'), value: false }, { label: isBlocked ? t('unblock') : t('block'), value: true, primary: true }]
+					buttons: [{ label: t('close'), value: false }, { label: isBlocked ? t('unblock') : t('block'), value: true, primary: true }],
+					onRefresh: (ctx) => {
+						ctx.setTitle(isBlocked ? t('unblock') : t('block'));
+						ctx.content.querySelector('p').textContent = isBlocked ? t('confirmUnblock') : t('confirmBlock');
+						ctx.buttons[0].textContent = t('close');
+						ctx.buttons[1].textContent = isBlocked ? t('unblock') : t('block');
+					}
 				}).then(ok => {
 					if (!ok) return;
 					if (isBlocked) {
@@ -2100,6 +2699,10 @@
 					this.settings.setAllLocal(val);
 					this.refreshAfterStorageChange();
 				});
+				GM_addValueChangeListener('lang', (_k, _old, _val, remote) => {
+					if (!remote) return;
+					this.refreshLanguageUi();
+				});
 			}
 		}
 
@@ -2118,19 +2721,20 @@
 				const actions = document.createElement('div');
 				actions.className = 'actions';
 				const updateBtn = Object.assign(document.createElement('button'), {
-					textContent: t('updateNow'),
 					className: 'primary'
 				});
+				updateBtn.dataset.role = 'update';
 				const laterBtn = Object.assign(document.createElement('button'), {
-					textContent: t('later'),
 					className: 'secondary'
 				});
+				laterBtn.dataset.role = 'later';
 				updateBtn.addEventListener('click', async () => {
 					updateBtn.disabled = true;
 					laterBtn.disabled = true;
 					updateBtn.textContent = t('pairWorking');
 					const stats = await this.runPairUpdate('update');
 					Toast.show(t('pairResult', stats), 3200);
+					this.showPairResultDialog(stats);
 					this._syncPairBanner();
 				});
 				laterBtn.addEventListener('click', () => {
@@ -2144,27 +2748,42 @@
 			}
 			this._pairBanner.querySelector('strong').textContent = t('pairBannerTitle');
 			this._pairBanner.querySelector('p').textContent = t('pairBannerBody', summary.stale, summary.mismatch);
+			this._pairBanner.querySelector('[data-role="update"]').textContent = t('updateNow');
+			this._pairBanner.querySelector('[data-role="later"]').textContent = t('later');
 		}
 
 		_registerMenu() {
 			try {
-				GM_registerMenuCommand(t('menuManage') || 'Manage', () => this.manager.openList());
-				GM_registerMenuCommand(t('menuClear') || 'Clear', () => {
+				if (typeof GM_unregisterMenuCommand === 'function') {
+					for (const id of this._menuCommandIds.splice(0)) {
+						try { GM_unregisterMenuCommand(id); } catch { }
+					}
+				}
+				const manageId = GM_registerMenuCommand(t('menuManage') || 'Manage', () => this.manager.openList());
+				const clearId = GM_registerMenuCommand(t('menuClear') || 'Clear', () => {
 					Dialog.show({
 						title: t('clear') || 'Reset',
 						body: (() => { const p = document.createElement('p'); p.textContent = t('confirmClear') || 'Reset all blocked entries?'; return p; })(),
-						buttons: [{ label: t('close') || 'Close', value: false }, { label: t('clear') || 'Reset', value: true, primary: true }]
+						buttons: [{ label: t('close') || 'Close', value: false }, { label: t('clear') || 'Reset', value: true, primary: true }],
+						onRefresh: (ctx) => {
+							ctx.setTitle(t('clear') || 'Reset');
+							ctx.content.firstChild.textContent = t('confirmClear') || 'Reset all blocked entries?';
+							ctx.buttons[0].textContent = t('close') || 'Close';
+							ctx.buttons[1].textContent = t('clear') || 'Reset';
+						}
 					}).then(ok => {
 						if (!ok) return;
 						this.clearAllEntries();
 						Toast.show(t('clear') || 'Reset');
 					});
 				});
-				GM_registerMenuCommand('🌐 Language: ' + getLang().toUpperCase(), () => {
+				const langId = GM_registerMenuCommand('🌐 Language: ' + getLang().toUpperCase(), () => {
 					const next = getLang() === 'ko' ? 'en' : 'ko';
 					try { GM_setValue('lang', next); } catch { }
 					Toast.show('Lang: ' + next.toUpperCase());
+					this.refreshLanguageUi();
 				});
+				this._menuCommandIds = [manageId, clearId, langId].filter(Boolean);
 			} catch { /* Tampermonkey menu may be unavailable in some envs */ }
 		}
 	}

@@ -1,18 +1,16 @@
-# 📌 YouTube Comment Blocker — v0.4.0-pre2
+# 📌 YouTube Comment Blocker — v0.4.0
 
 [English](README.md) | [한국어](README.ko.md)
 
 Full reference: [WIKI.md](WIKI.md) | [WIKI.ko.md](WIKI.ko.md)
 
-A Tampermonkey userscript for hiding YouTube comments by channel identity. Handle blocking remains
-the default flow, and `v0.4.0-pre2` adds case-sensitive handle matching, block-list selection and
-filtering, and bulk pair actions on top of the existing YouTube Data API v3 UID flow.
+A Tampermonkey userscript for hiding YouTube comments by channel identity. `v0.4.0` finishes the
+planned block-list manager work: safer dialogs, lighter menu observation, live i18n refresh,
+API-key validation, searchable rules, regex match helpers, and detailed pair-run results.
 
-Quick install: open this raw URL in Tampermonkey to install or update
+Quick install:
 
 - <https://raw.githubusercontent.com/Mango-Clark/ytblockhandlecomments/refs/heads/master/ytblockhandlecomments.js>
-
----
 
 ## Features
 
@@ -20,46 +18,36 @@ Quick install: open this raw URL in Tampermonkey to install or update
 - Adds `Hide comments from this channel` to the comment `⋯` menu
 - Hides matching comments in real time on YouTube watch pages
 - Supports `handle`, `id`, and `regex` rules in `blocked_v2`
-- Adds optional `UID Detection` in the manager dialog
-- Adds a local-only YouTube Data API key section in the manager dialog
-- Stores handle↔UID pair metadata in `pair_meta_v1`
-- Provides `Create Pair` and `Update Pair` actions
-- Shows per-handle status badges: `handle-only`, `paired`, `stale`, `mismatch`, `unverified`
-- Adds a local `Handle Case Sensitive` setting in the manager dialog
-- Adds per-row checkboxes, filtered select-all, and selected-count UI in the block list
-- Adds `all|handle|id|regex` type filters and handle-tag filters in the block list
-- Adds bulk actions for deleting selected items and creating/updating pairs for selected handles
-- Shows a watch-page banner when stale or mismatch pairs need review
-- Import/export stays focused on block rules only; pair metadata is local-only
-
----
+- Supports optional UID detection with handle↔UID metadata in `pair_meta_v1`
+- Stores a local-only YouTube Data API v3 key and validates it before pair maintenance
+- Supports case-sensitive handle matching
+- Supports block-list search, type filters, tag filters, row selection, and bulk actions
+- Shows regex rows with matched-handle counts and one-click matching-handle selection
+- Shows handle-level pair results after create/update runs
+- Refreshes manager UI, dialogs, banner text, and menu labels after language changes
 
 ## Usage
 
 1. Install [Tampermonkey](https://www.tampermonkey.net/).
 2. Install from the raw URL above, or paste `ytblockhandlecomments.js` into a new userscript.
 3. Open a YouTube watch page.
-4. Right-click a comment author's handle to block or unblock it.
+4. Right-click a comment author's handle, or use the comment `⋯` menu, to block/unblock.
 5. Open `Tampermonkey -> YouTube Comment Blocker -> Manage block list`.
-6. Save your own YouTube Data API v3 key in the manager before running pair actions.
-7. Use the manager to toggle handle case sensitivity, toggle UID detection, filter the list,
-   select entries, run bulk actions, add regex rules, and import/export rules.
+6. Save your YouTube Data API v3 key and optionally run `Test API Key`.
+7. Use search, filters, regex tools, and bulk actions to maintain the list.
+8. Turn on `UID Detection` and run `Create Pair` / `Update Pair` when you want UID-backed matching.
 
-Typical UID flow:
+Typical pair flow:
 
-1. Block one or more handles normally.
-2. Open `Manage block list`.
-3. Save your YouTube Data API v3 API key.
-4. Turn on `UID Detection`.
-5. Run `Create Pair` for missing pairs.
-6. Use type/tag filters and bulk actions when you want to target only part of the block list.
-7. Later run `Update Pair` when stale or mismatch items appear.
-
----
+1. Block one or more handles.
+2. Save and test your API key.
+3. Turn on `UID Detection`.
+4. Run `Create Pair` for missing handles.
+5. Review `Last Pair Run` details or the watch-page banner when updates are needed.
 
 ## Storage
 
-Main rule storage:
+Main rules:
 
 ```ts
 {
@@ -73,7 +61,7 @@ Main rule storage:
 }
 ```
 
-Pair metadata storage:
+Pair metadata:
 
 ```ts
 {
@@ -86,17 +74,35 @@ Pair metadata storage:
     uid: string,
     verifiedAt: number | null,
     status: 'verified' | 'stale' | 'mismatch' | 'unverified',
-    source: string
+    source: string,
+    lastResolvedUid?: string | null,
+    lastError?: string | null
   }>
 }
 ```
 
-App settings storage:
+App settings:
 
 ```ts
 {
   version: 1,
   handleCaseSensitive: boolean
+}
+```
+
+API config:
+
+```ts
+{
+  version: 2,
+  apiKey: string,
+  lastTestResult: {
+    checkedAt: number,
+    ok: boolean,
+    category: 'ok' | 'invalid' | 'quota' | 'forbidden' | 'network' | 'unknown',
+    httpStatus: number | null,
+    message: string
+  } | null
 }
 ```
 
@@ -106,40 +112,28 @@ Notes:
 - Pair metadata key: `pair_meta_v1`
 - App settings key: `app_settings_v1`
 - API config key: `youtube_data_api_v3_config`
-- Legacy rule keys `blockedHandles` and `blockedHandles_v1` still migrate automatically
-- Pair metadata is not included in import/export in `v0.4.0-pre2`
-- The API key is stored locally in Tampermonkey and is not embedded in the script
-
----
+- Pair metadata and API config are excluded from import/export
+- Older handles may already be stored in lowercase, so exact handle matching is guaranteed only
+  after re-saving or newly adding those handles
 
 ## Notes
 
-- Handle matching always stays enabled
-- Handle matching defaults to case-insensitive comparison and can be switched to exact matching
-- Older handle entries may already be stored in lowercase, so exact matching is guaranteed only
-  after re-saving or newly adding those handles
-- UID matching is optional and controlled by the `UID Detection` toggle
-- In the current implementation, `id` matching is active only while UID detection is enabled
+- Handle blocking always stays enabled
+- `id` rules participate only while `UID Detection` is enabled
 - UID lookup uses YouTube Data API v3 `channels.list` with the `forHandle` filter
-- Pair actions require a user-supplied API key saved locally from the manager dialog
-- Bulk pair actions only operate on selected `handle` entries
-- If UID lookup fails, handle blocking still works and the pair stays `unverified` or becomes
-  `stale`
-- Regex rules apply to handle text only, not comment body text
+- API-key testing uses the same API family with a fixed public channel probe
+- Search is manager-only; comment-hide hot-path lookup still uses cached sets
+- Regex rules only target handles, not comment text
 - Comment hiding is intentionally scoped to watch-page comments
-- Lightweight performance counters are exposed on `window.__ytCommentBlockerPerf`
-
----
+- Performance counters are exposed on `window.__ytCommentBlockerPerf`
 
 ## Userscript Metadata
 
 - `@name`: `YouTube Comment Blocker`
-- `@version`: `0.4.0-pre2`
+- `@version`: `0.4.0`
 - `@match`: `https://www.youtube.com/*`
 - `@grant`: `GM_getValue`, `GM_setValue`, `GM_addValueChangeListener`,
-  `GM_registerMenuCommand`
-
----
+  `GM_registerMenuCommand`, `GM_unregisterMenuCommand`
 
 ## Author
 

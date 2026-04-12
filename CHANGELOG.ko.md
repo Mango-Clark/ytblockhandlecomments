@@ -33,7 +33,7 @@
 
 - 없음
 
-## [0.4.0-pre2] - 2026-04-12
+## [0.4.0] - 2026-04-12
 
 ### Added
 
@@ -41,23 +41,26 @@
 - 차단 목록 row 체크박스, 현재 필터 결과 전체 선택, 선택 개수 표시 추가
 - 관리자 대화상자에 `all|handle|id|regex` 타입 필터와 handle 태그 필터 추가
 - 선택 항목 삭제와 선택 handle 대상 pair 생성/갱신 bulk action 추가
+- 인덱스 기반 substring 검색이 가능한 관리자 검색 추가
+- regex 행에 매칭 handle 개수, inline 확장, matching-handle 선택 기능 추가
+- 관리자와 watch 페이지 후속 dialog에 handle별 pair 실행 상세 결과 추가
+- `youtube_data_api_v3_config`에 API 키 테스트 진단 결과 저장 추가
+- 실시간 i18n 갱신용 menu 재등록과 dialog refresh hook 추가
+- 사용자 스크립트 grant에 `GM_unregisterMenuCommand` 추가
 
 ### Changed
 
 - handle 규칙이 저장된 casing을 보존하고 `handleCaseSensitive` 설정에 따라 비교되도록 변경
 - pair 메타데이터 매칭도 차단 규칙과 같은 handle 비교 정책을 따르도록 변경
 - 관리자 대화상자에 handle 대소문자 섹션과 확장된 목록 유지보수 툴바 추가
-- `app_settings_v1` 변경도 탭 간 동기화 대상에 포함되도록 확장
+- `app_settings_v1`와 `lang` 변경도 탭 간 동기화 대상에 포함되도록 확장
+- API 설정 저장소를 v2로 확장하고 마지막 키 테스트 결과를 유지하도록 변경
+- watch 페이지 pair 배너에서 update 후 상세 결과를 바로 볼 수 있도록 변경
 
 ### Fixed
 
 - 댓글 DOM 텍스트와 `/@...` 링크에서 추출한 handle이 case-sensitive 모드용 exact casing을 유지하도록 보정
 - 태그 필터 사용 시 관련 없는 `id` 또는 `regex` 행이 같이 보이던 동작을 막고, 해당 handle만 표시되도록 정리
-
-## [0.4.0-pre1] - 2026-04-12
-
-### Added
-
 - 새로운 `pair_meta_v1` 저장소를 사용하는 선택적 UID 감지 토글 추가
 - 관리자 대화상자에 handle↔UID pair 생성 및 갱신 액션 추가
 - 차단된 handle에 대한 pair 상태 배지와 메타데이터 표시 추가
@@ -65,18 +68,12 @@
 - pair 메타데이터 변경에 대한 탭 간 동기화 추가
 - 관리자 대화상자에 로컬 전용 YouTube Data API v3 API 키 저장 기능 추가
 - pair 생성/갱신이 `channels.list`의 `forHandle` 필터를 사용하도록 구현
-
-### Changed
-
 - 관리자 대화상자에 UID 섹션, pair 요약 카드, pair 검사 시각을 확장 추가
 - UID 조회 방식이 채널 페이지 스크래핑 대신 사용자 제공 API 키 기반 호출로 변경
 - `id` 규칙 매칭은 항상 활성 대신 UID 감지 토글에 따라 동작하도록 변경
 - `handle` 규칙 제거 시 연결된 UID 규칙과 pair 메타데이터도 함께 제거하도록 변경
 - API 키가 저장되기 전에는 관리자에서 pair 액션이 비활성화되도록 변경
 - 문서를 API 키 기반 UID 흐름과 로컬 전용 키 저장 방식에 맞춰 갱신
-
-### Fixed
-
 - UID 조회 실패 또는 pair 검증 실패 시 handle-only 차단이 안전한 fallback으로 계속 유지되도록 보강
 - UID 조회가 YouTube 채널 페이지 HTML 구조 변화에 덜 취약하도록 개선
 
