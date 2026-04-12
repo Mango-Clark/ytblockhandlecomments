@@ -11,6 +11,8 @@ All contributors (human or agent) must follow these rules when editing or adding
 ## Quick Checklist
 
 - Branch: work on `dev` (unless told otherwise).
+- Code updates: review and update all `*.md` files in the repository so Markdown docs stay in
+  sync with the current code.
 - Docs: update `README.md` first, then `README.ko.md`.
 - Changelog: update `CHANGELOG.md` (Keep a Changelog), then `CHANGELOG.ko.md`.
 - Version: bump in `VERSION` or package manifest when behavior changes are shipped.
@@ -20,31 +22,40 @@ All contributors (human or agent) must follow these rules when editing or adding
 
 ## Documentation Workflow
 
-1) README
-- Write `README.md` in English (overview, install, usage, examples, limitations).
-- Translate to Korean as `README.ko.md` after the English version is finalized.
+1) All Markdown files
 
-2) Changelog
-- Edit `CHANGELOG.md` in English following Keep a Changelog 1.1.0.
-- Maintain sections: Added, Changed, Deprecated, Removed, Fixed, Security.
-- Keep an `Unreleased` section at the top; move entries under a new version on release.
-- Date format: `YYYY-MM-DD`.
-- Translate corresponding changes into `CHANGELOG.ko.md`.
+   - When code changes, review every `*.md` file in the repository.
+   - Update all Markdown files that must stay aligned with the new behavior, UI, storage,
+   limitations, plans, or workflows before delivery.
 
-3) TODO
-- Review `TODO.md` for pending items.
-- Mark completed items with `- [x]` and add new tasks as needed.
+2) README
 
-4) File Structure Example
+   - Write `README.md` in English (overview, install, usage, examples, limitations).
+   - Translate to Korean as `README.ko.md` after the English version is finalized.
 
-```text
-├── README.md          # English documentation
-├── README.ko.md       # Korean translation of README
-├── CHANGELOG.md       # English changelog
-├── CHANGELOG.ko.md    # Korean translation of changelog
-├── TODO.md            # Task list
-└── AGENTS.md          # Agent instructions
-```
+3) Changelog
+
+   - Edit `CHANGELOG.md` in English following Keep a Changelog 1.1.0.
+   - Maintain sections: Added, Changed, Deprecated, Removed, Fixed, Security.
+   - Keep an `Unreleased` section at the top; move entries under a new version on release.
+   - Date format: `YYYY-MM-DD`.
+   - Translate corresponding changes into `CHANGELOG.ko.md`.
+
+4) TODO
+
+   - Review `TODO.md` for pending items.
+   - Mark completed items with `- [x]` and add new tasks as needed.
+
+5) File Structure Example
+
+   ```text
+   ├── README.md          # English documentation
+   ├── README.ko.md       # Korean translation of README
+   ├── CHANGELOG.md       # English changelog
+   ├── CHANGELOG.ko.md    # Korean translation of changelog
+   ├── TODO.md            # Task list
+   └── AGENTS.md          # Agent instructions
+   ```
 
 ## Translation Guidelines
 
@@ -62,6 +73,7 @@ All contributors (human or agent) must follow these rules when editing or adding
 - Do not add additional locales without explicit instructions.
 
 Order:
+
 1. English -> Korean
 2. English -> Others (if instructed)
 
@@ -115,4 +127,3 @@ Order:
 
 - Follow the most specific and recent instruction.
 - Precedence: direct user instructions > nested `AGENTS.md` > parent `AGENTS.md`.
-

@@ -2,11 +2,13 @@
 
 [English](README.md) | [한국어](README.ko.md)
 
+Full reference: [WIKI.md](WIKI.md) | [WIKI.ko.md](WIKI.ko.md)
+
 A Tampermonkey userscript that lets you block YouTube comments from specific author handles (@handle). Hidden comments disappear in real time, and the block list can be managed, imported, or exported via the menu.
 
 Quick install: open this raw URL in Tampermonkey to install/update
 
-- https://raw.githubusercontent.com/Mango-Clark/ytblockhandlecomments/refs/heads/master/ytblockhandlecomments.js
+- <https://raw.githubusercontent.com/Mango-Clark/ytblockhandlecomments/refs/heads/master/ytblockhandlecomments.js>
 
 ---
 

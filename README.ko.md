@@ -2,11 +2,13 @@
 
 [English](README.md) | [한국어](README.ko.md)
 
+상세 문서: [WIKI.md](WIKI.md) | [WIKI.ko.md](WIKI.ko.md)
+
 특정 사용자 핸들(@handle)의 댓글을 숨길 수 있는 Tampermonkey 사용자 스크립트입니다. 숨겨진 댓글은 실시간으로 사라지며, 차단 목록은 메뉴에서 관리·가져오기·내보내기가 가능합니다.
 
 빠른 설치: 아래 raw URL을 Tampermonkey로 열어 설치/업데이트하세요
 
-- https://raw.githubusercontent.com/Mango-Clark/ytblockhandlecomments/refs/heads/master/ytblockhandlecomments.js
+- <https://raw.githubusercontent.com/Mango-Clark/ytblockhandlecomments/refs/heads/master/ytblockhandlecomments.js>
 
 ---
 

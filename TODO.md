@@ -11,6 +11,9 @@
 - [ ] 언어 변경이 바로 안됨. 언어 변경 이후에 새로 고침을 해야지만 언어 변경이 됨. 변경 안되는 부분은 menuChange, menuClear.
 - [ ] regex 만족하는 개별 태그는 삭제.
 - [ ] i18n 실시간 반영: 열린 다이얼로그/메뉴 텍스트도 즉시 업데이트되도록 개선.
+- [ ] ⋯ 메뉴 주입용 MutationObserver가 document.body 전체 subtree를 계속 감시하지 않도록 범위를 줄이거나 필요할 때만 연결하도록 개선.
+- [ ] Dialog body의 string HTML 삽입 경로를 제거하거나 sanitize를 강제해 향후 XSS footgun을 막기.
+- [ ] 대소문자를 구분
 
 ## small
 
