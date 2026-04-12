@@ -1,10 +1,10 @@
-# 📚 YouTube Comment Blocker Wiki — v0.3.0
+# 📚 YouTube Comment Blocker Wiki — v0.4.0-pre1
 
 [English](WIKI.md) | [한국어](WIKI.ko.md)
 
-This document is the detailed reference for the project. `README.md` stays focused on quick
-install and day-to-day usage, while this wiki explains the current behavior, supported data
-formats, internal matching model, and known constraints in more detail.
+This document is the detailed reference for the current implementation. `README.md` stays focused
+on installation and day-to-day usage, while this wiki explains storage, matching, UID pair
+behavior, and known constraints in more detail.
 
 For the shorter overview, see [README.md](README.md).
 
@@ -12,57 +12,62 @@ For the shorter overview, see [README.md](README.md).
 
 ## 1. Overview
 
-YouTube Comment Blocker is a Tampermonkey userscript for hiding comments from selected YouTube
-channels. The script is centered on channel identity rather than comment text.
+The userscript hides YouTube comments by channel identity on watch pages.
 
-Current rule types:
+Supported rule types in `blocked_v2`:
 
-- `handle`: normalized `@handle` values such as `@examplechannel`
-- `id`: YouTube channel IDs such as `UCxxxxxxxxxxxx`
-- `regex`: regular expressions evaluated against the extracted handle text
+- `handle`: normalized `@handle`
+- `id`: YouTube channel ID such as `UC...`
+- `regex`: regular expression tested against the extracted handle text
 
-Current user-facing entry points:
+Supported pair metadata in `pair_meta_v1`:
 
-- Right-click a comment author's handle to block or unblock that handle
-- Open the comment `⋯` menu to use `Hide comments from this channel`
-- Open the block list manager from the Tampermonkey menu
-- Import or export rules from the manager dialog
+- `enableUidDetection`: on/off toggle for UID-based matching
+- `pairs[]`: stored handle↔UID relationship metadata
+- `verifiedAt`, `status`, `source`: validation and troubleshooting fields
 
-What the script does not do:
+Additional local config:
+
+- `youtube_data_api_v3_config`: stores the user-supplied API key locally for pair actions
+
+User-facing entry points:
+
+- Right-click a comment author's handle
+- Use the injected item in the comment `⋯` menu
+- Open `Manage block list` from the Tampermonkey menu
+- Use `Create Pair` / `Update Pair` inside the manager
+- Respond to the stale or mismatch banner on watch pages
+
+What the script still does not do:
 
 - It does not block comment text by keyword
-- It does not moderate uploads, chat, replies outside the current match scope, or server-side
-  account behavior
-- It does not currently expose a dedicated UI for manually typing channel IDs
+- It does not export or import pair metadata
+- It does not run background polling to refresh pairs automatically
 
 ---
 
-## 2. Supported Environment
+## 2. Environment
 
 The script is designed for:
 
-- A browser environment supported by Tampermonkey
-- YouTube desktop pages matched by `https://www.youtube.com/*`
-- Runtime activation after `document-idle`
+- Browsers supported by Tampermonkey
+- `https://www.youtube.com/*`
+- Runtime start at `document-idle`
 
-Practical behavior is narrower than the `@match` value:
+Actual comment-hiding behavior is intentionally narrower:
 
-- The comment-hiding observer logic is scoped to YouTube watch pages (`/watch`)
-- Comment scanning is attached to the comments host, not to every page on YouTube
-- The `⋯` menu enhancer watches for YouTube's popup menu renderer so it can inject one custom
-  menu item when a comment action menu opens
-
-If you browse other YouTube surfaces, the script may still be loaded by Tampermonkey, but the
-comment-hiding workflow is intentionally focused on watch-page comments.
+- Matching and hiding are scoped to YouTube watch pages (`/watch`)
+- Comment refresh attaches to the comments host, not every page surface
+- The `⋯` menu enhancer still watches YouTube popup creation on `document.body`
 
 ---
 
 ## 3. Installation And Updates
 
-### Install via the hosted raw script
+### Install from the raw script
 
 1. Install [Tampermonkey](https://www.tampermonkey.net/).
-2. Open the project's raw script URL in the browser:
+2. Open:
 
    ```text
    https://raw.githubusercontent.com/Mango-Clark/ytblockhandlecomments/refs/heads/master/ytblockhandlecomments.js
@@ -70,198 +75,215 @@ comment-hiding workflow is intentionally focused on watch-page comments.
 
 3. Confirm the install in Tampermonkey.
 
-### Install manually
-
-1. Create a new userscript in Tampermonkey.
-2. Replace the template with the contents of `ytblockhandlecomments.js`.
-3. Save the script.
-
-### Update behavior
-
-The userscript metadata includes both `@updateURL` and `@downloadURL`, pointing at the same raw
-GitHub file. In a normal Tampermonkey setup, this makes manual or automatic update checks easier.
-
-Current metadata summary:
+### Metadata summary
 
 - `@name`: `YouTube Comment Blocker`
-- `@version`: `0.3.0`
+- `@version`: `0.4.0-pre1`
 - `@match`: `https://www.youtube.com/*`
 - `@grant`: `GM_getValue`, `GM_setValue`, `GM_addValueChangeListener`,
   `GM_registerMenuCommand`
 
 ---
 
-## 4. Quick Start
+## 4. Common Workflows
 
-The shortest useful workflow is:
+### Block or unblock from a handle
 
-1. Open a YouTube video watch page.
-2. Scroll to the comments section.
-3. Right-click a comment author's handle such as `@examplechannel`.
-4. Confirm the block dialog.
-5. The matching comments are hidden in real time on the current page.
+1. Open a YouTube watch page.
+2. Right-click a comment author's handle.
+3. Confirm `Block` or `Unblock`.
 
-To manage saved entries later:
-
-1. Open Tampermonkey's menu for the page.
-2. Choose `Manage block list`.
-3. Review, remove, import, export, or add regex entries.
-
----
-
-## 5. Common Workflows
-
-### Block or unblock from the author handle
-
-When you right-click a comment author's handle, the script intercepts the handle element and opens
-its own confirmation dialog.
-
-- If the handle is not blocked, the dialog offers `Block`
-- If the handle is already blocked, the dialog offers `Unblock`
-- The saved rule type is always `handle`
-
-This is the fastest everyday flow and the main intended entry point.
+This always adds or removes a `handle` rule.
 
 ### Block or unblock from the `⋯` menu
 
-The script also enhances the YouTube comment action menu.
+The script remembers the handle for the last opened comment action menu and injects one extra item:
 
-- When you open the menu for a comment, the script remembers the last detected handle
-- When YouTube renders the popup menu, the script appends one extra item
-- The label toggles between `Hide comments from this channel` and
-  `Unhide this channel's comments`
+- `Hide comments from this channel`
+- `Unhide this channel's comments`
 
-This path also creates or removes a `handle` rule only.
+This also adds or removes a `handle` rule.
 
-### Manage the block list
+### Turn on UID detection
 
-From the Tampermonkey page menu, open:
+1. Open `Manage block list`.
+2. Save your YouTube Data API v3 API key.
+3. Turn on `UID Detection`.
+4. Existing handle rules keep working.
+5. `id` rules start participating in comment matching.
 
-- `🔍 Manage block list`
-- `🗑️ Clear block list`
-- `🌐 Language: KO/EN`
+### Create pairs
 
-`Manage block list` opens the custom dialog for reviewing all stored entries.
+1. Open the manager.
+2. Click `Create Pair`.
+3. The script resolves missing handle↔UID pairs.
+4. On success, it stores pair metadata and adds the matching `id` rule.
+5. On failure, handle blocking remains active and the pair becomes `unverified`.
 
-### Add a regex rule
+### Update pairs
 
-Inside the manager dialog, the sticky regex bar lets you add a regex rule directly.
-
-Supported input styles in the regex add form:
-
-- `^@spam`
-- `/^@promo/i`
-
-The regex add form validates the pattern before saving it.
-
-### Clear all rules
-
-`Clear block list` removes all saved entries from the main storage key. A confirmation dialog is
-shown first.
-
-### Change language
-
-The script supports Korean and English through a small built-in i18n dictionary.
-
-- The current language is read from `GM_getValue('lang')`
-- If no saved language exists, the script falls back to the browser language and defaults to `ko`
-  if needed
-- The menu command toggles between `ko` and `en`
-
-Some UI text updates are only visible the next time that UI is opened. See
-[Language Behavior And Cross-Tab Sync](#10-language-behavior-and-cross-tab-sync).
+1. Click `Update Pair` from the manager or the watch-page banner.
+2. Existing pairs are looked up again.
+3. If the UID is unchanged, `verifiedAt` is refreshed.
+4. If the UID differs, the pair becomes `mismatch`.
+5. Existing handle and stored `id` rules are not removed automatically on mismatch.
 
 ---
 
-## 6. Rule Types And Matching Model
+## 5. Matching Model
 
-The storage model supports three rule types. All three can coexist.
+### Always-on behavior
 
-### `handle` rules
+Handle matching is always enabled.
 
-Handle rules are normalized through the script's `norm()` helper.
+### Optional UID behavior
 
-- A value must begin with `@`
-- Whitespace is trimmed
-- The stored value is lowercased
-- Matching is case-insensitive in practice because the stored handle is normalized
+UID matching is controlled by `pair_meta_v1.enableUidDetection`.
 
-Examples:
+Current implementation detail:
+
+- `id` rules are only active while UID detection is enabled
+- Turning UID detection off keeps the stored `id` rules and pair metadata, but stops UID-based
+  comment matching
+
+### Per-comment matching order
+
+For each comment node:
+
+1. Channel ID match
+2. Handle match
+3. Regex match against the handle
+
+The first positive match toggles `tm-hidden`.
+
+### Extracted metadata
+
+Per comment node, the script tries to read:
+
+- `handle` from `#author-text > span`, `#author-handle`, or `a[href^="/@"]`
+- `id` from `a[href*="/channel/UC"]`
+
+That metadata is cached in a `WeakMap` and invalidated on refreshed nodes.
+
+---
+
+## 6. Pair Metadata Model
+
+Storage key:
 
 ```text
-@ExampleChannel   -> @examplechannel
- @spam.user       -> @spam.user
+pair_meta_v1
 ```
 
-### `id` rules
+Stored shape:
 
-Channel ID rules are validated against a `UC...` pattern before saving.
-
-- Example shape: `UCXXXXXXXXXXXXXXXXXXXXXX`
-- ID matching is preferred when a comment DOM node exposes a channel link with `/channel/UC...`
-- The current UI does not provide a dedicated manual ID input field
-- IDs are mainly useful through JSON import or advanced manual editing workflows
-
-### `regex` rules
-
-Regex rules are tested against the extracted handle text only.
-
-- They do not inspect the comment body
-- They do not inspect display names separately from handles
-- Invalid regex patterns are rejected before saving
-
-Examples:
-
-```text
-^@spam
-^@promo_.*
+```ts
+{
+  version: 1,
+  enableUidDetection: boolean,
+  lastPairCheckAt: number | null,
+  pairNotificationDismissedAt: number | null,
+  pairs: Array<{
+    handle: string,
+    uid: string,
+    verifiedAt: number | null,
+    status: 'verified' | 'stale' | 'mismatch' | 'unverified',
+    source: string,
+    lastResolvedUid?: string | null,
+    lastError?: string | null
+  }>
+}
 ```
 
-### Matching order
+Status meaning:
 
-For each comment node, the script evaluates in this order:
+- `verified`: the latest successful check matched the stored UID
+- `stale`: the pair has not been verified for 7 days
+- `mismatch`: the latest lookup returned a different UID
+- `unverified`: lookup failed or no verified UID is stored yet
 
-1. Channel ID
-2. Handle
-3. Regex against the handle
+Manager badges:
 
-The first positive match hides the comment node by toggling the `tm-hidden` class.
+- `handle-only`
+- `paired`
+- `stale`
+- `mismatch`
+- `unverified`
+
+The `handle-only` badge means the handle is blocked but there is no usable pair-backed UID rule for
+it yet.
+
+API key config storage:
+
+```ts
+{
+  version: 1,
+  apiKey: string
+}
+```
+
+The API key is stored separately from block rules and pair metadata and is not included in
+import/export.
 
 ---
 
-## 7. Block List Manager
+## 7. UID Lookup Strategy
 
-The manager dialog is the main maintenance UI for saved rules.
+Current lookup behavior:
 
-Features currently exposed there:
+1. Read the user-saved YouTube Data API v3 key from local Tampermonkey storage
+2. Call `GET https://www.googleapis.com/youtube/v3/channels`
+3. Send `part=id`, `forHandle=@handle`, `key=<apiKey>`
+4. Read `items[0].id` from the API response
 
-- List every saved rule in one scrollable dialog
-- Remove any saved rule with the per-row `Unblock` button
-- Add regex rules from the sticky header area
-- Open `regexr.com` in a new tab for regex building/testing
-- Open import or export dialogs
+This follows the official `channels.list` documentation, where `forHandle` identifies the channel
+associated with a YouTube handle and exactly one filter parameter should be supplied.
 
-Display format in the list:
+Fallback behavior:
 
-- Handle entries are shown as `@handle`
-- Channel IDs are shown as raw `UC...` values
-- Regex entries are shown as `/pattern/flags`
-
-What the manager does not currently do:
-
-- It does not let you edit an entry in place
-- It does not group entries by type
-- It does not provide search, sort, or bulk selection yet
+- If lookup fails, handle blocking still works
+- Failed or old pairs stay `unverified` or `stale`
+- The script does not silently delete existing pair data on lookup failure
+- If no API key is saved, pair creation and update actions are blocked
 
 ---
 
-## 8. Import And Export Formats
+## 8. Block List Manager
 
-The script supports both structured JSON and plain text flows.
+The manager dialog now contains three maintenance areas:
+
+### UID section
+
+- Local-only YouTube Data API key input
+- `UID Detection` toggle
+- `Create Pair`
+- `Update Pair`
+- Pair summary cards
+- Last pair-check timestamp
+
+### Regex section
+
+- Inline regex add form
+- `Build/Test Regex` button for `regexr.com`
+
+### Rule list
+
+- Shows all `handle`, `id`, and `regex` entries
+- Shows pair badges and metadata for handle entries
+- Supports per-row removal
+
+Removal behavior:
+
+- Removing a `handle` rule also removes its stored pair metadata and paired `id` rule
+- `Clear block list` clears both rule storage and pair metadata
+
+---
+
+## 9. Import And Export
+
+Supported import/export applies to `blocked_v2` only.
 
 ### JSON export
-
-The export dialog includes a JSON textarea using this shape:
 
 ```json
 {
@@ -275,14 +297,7 @@ The export dialog includes a JSON textarea using this shape:
 }
 ```
 
-This is the most reliable format for backup and round-trip import, especially for regex rules with
-flags.
-
 ### Plain-text export
-
-The export dialog also includes a plain-text textarea with one entry per line.
-
-Example:
 
 ```text
 @examplechannel
@@ -290,241 +305,103 @@ UC1234567890ABCDE
 /^@spam/i
 ```
 
-This view is convenient for reading or hand-editing simple lists.
-
 ### JSON import
 
-The import dialog accepts:
-
-- V2-style objects with an `items` array
-- Legacy V1-style objects with a `handles` array
-
-Examples:
-
-```json
-{
-  "version": 2,
-  "items": [
-    { "type": "handle", "value": "@examplechannel" },
-    { "type": "regex", "value": "^@promo", "flags": "i" }
-  ]
-}
-```
-
-```json
-{
-  "version": 1,
-  "handles": ["@examplechannel", "@anotherone"]
-}
-```
+- V2 objects with `items`
+- Legacy V1 objects with `handles`
 
 ### Plain-text import
-
-When the input is not valid JSON, the script splits the text by commas and newlines and interprets
-each part as one entry.
-
-Recognized plain-text forms:
 
 - `@handle`
 - `UC...`
 - `/regex/`
 
-Notes about plain-text regex import:
+Current boundary:
 
-- Plain text reliably recognizes slash-delimited regex without flags, such as `/^@spam/`
-- If you need regex flags like `i`, use JSON import for accurate preservation
-- JSON import/export is the safest backup format overall
-
-### Merge behavior
-
-Import does not wipe the current list automatically.
-
-- Imported entries are merged with existing entries
-- The save path validates and deduplicates the combined result
-- Invalid handles, invalid IDs, or invalid regex rules are dropped during normalization
+- Pair metadata is intentionally excluded from import/export in `v0.4.0-pre1`
+- The API key is also excluded from import/export and is stored locally only
 
 ---
 
-## 9. Storage Model And Migration
+## 10. Cross-Tab Sync And Notifications
 
-The primary storage key is:
+The script listens for remote Tampermonkey storage changes on:
 
-```text
-blocked_v2
-```
+- `blocked_v2`
+- `pair_meta_v1`
 
-Current stored shape:
+When another tab updates one of those values:
 
-```ts
-{
-  version: 2,
-  updatedAt: number,
-  items: Array<
-    | { type: 'id', value: string }
-    | { type: 'handle', value: string }
-    | { type: 'regex', value: string, flags?: string }
-  >
-}
-```
-
-Legacy keys still recognized during initialization:
-
-- `blockedHandles`
-- `blockedHandles_v1`
-
-Migration behavior:
-
-- The script loads v2, v1, and legacy entries
-- The combined list is normalized into the v2 schema
-- Duplicates are removed before saving back to `blocked_v2`
-
-Validation rules enforced by the save path:
-
-- Handles must normalize to a lowercased `@handle`
-- Channel IDs must match the script's `UC[0-9A-Za-z_-]{10,}` pattern
-- Regex rules must compile successfully
-
----
-
-## 10. Language Behavior And Cross-Tab Sync
-
-### Language behavior
-
-The script ships with Korean and English strings in the same file.
-
-Current behavior:
-
-- New dialogs use the current value returned by `getLang()`
-- The language toggle stores the next value in `GM_setValue('lang', next)`
-- The toast after changing language appears immediately
-
-Current limitation:
-
-- Already-open dialogs do not live-refresh
-- Tampermonkey menu labels are registered at startup, so some menu text may not refresh until the
-  script is reloaded or the page is refreshed
-
-### Cross-tab sync
-
-The script listens for remote `blocked_v2` changes through `GM_addValueChangeListener`.
-
-When another tab updates the block list:
-
-- The current tab updates its in-memory entries
+- The local in-memory state is refreshed
 - Lookup sets are rebuilt
-- A refresh is scheduled for the current comments host
-- A toast announces that the block list was synced from another tab
+- Current comments are rechecked
+- A toast announces the sync
 
-Cross-tab sync currently covers the block list storage, not a full live refresh of every other UI
-state.
+Watch-page notification behavior:
 
----
-
-## 11. Real-Time Hiding And Performance Design
-
-The script is designed to reduce unnecessary rescanning while still reacting quickly to new
-comments and YouTube SPA navigation.
-
-### High-level flow
-
-1. The app boots on the next animation frame after load.
-2. On `/watch`, it looks for the comments host.
-3. If the host does not exist yet, it observes the watch root until comments appear.
-4. Once attached, it observes comment-area mutations only.
-5. Added or changed comment roots are refreshed incrementally.
-6. Matching comment nodes receive `tm-hidden`.
-
-### Extracted metadata per comment
-
-For each comment node, the script tries to cache:
-
-- `handle` from `#author-text > span`, `#author-handle`, or `a[href^="/@"]`
-- `id` from `a[href*="/channel/UC"]`
-
-This metadata is stored in a `WeakMap` cache and invalidated only when needed.
-
-### Why both MutationObserver and IntersectionObserver are used
-
-- `MutationObserver` handles newly inserted comment nodes efficiently
-- `IntersectionObserver` reapplies hiding when observed nodes enter the viewport
-
-### Current performance counters
-
-The script exposes lightweight counters on:
-
-```js
-window.__ytCommentBlockerPerf
-```
-
-Current fields include:
-
-- `mutationBatches`
-- `fullRefreshes`
-- `incrementalRefreshes`
-- `scannedNodes`
-- `lastDurationMs`
-- `totalDurationMs`
-
-### Current performance tradeoffs
-
-- Comment observation is scoped to the watch-page comments host to reduce global page cost
-- Incremental refresh is preferred over full rescans when possible
-- The `⋯` menu injection path still uses a `document.body` subtree observer, which is functional
-  but broader than ideal
+- If UID detection is enabled and at least one pair is `stale` or `mismatch`, the script shows a
+  banner
+- The banner offers `Update Now` and `Later`
+- `Later` suppresses the banner for roughly one day
 
 ---
 
-## 12. Limitations, Notes, And Troubleshooting
+## 11. Real-Time Hiding And Performance
 
-### Current limitations
+High-level runtime flow:
 
-- Comment hiding is intentionally focused on watch-page comments
-- Regex rules apply to handles only, not comment text
-- The everyday UI creates `handle` rules; `id` rules are mainly an advanced import path
-- Some language changes are only visible after reopening UI or refreshing the page
-- Plain-text import is not the safest way to preserve regex flags; use JSON when accuracy matters
+1. The app starts on the next animation frame after load.
+2. On `/watch`, it finds or waits for the comments host.
+3. It observes only the comment area for new nodes.
+4. It refreshes affected comment roots incrementally.
+5. Matching comments receive `tm-hidden`.
 
-### If comments are not hiding
+Performance notes:
 
-Check the following:
+- Comment observation is scoped to the watch-page comments host
+- Incremental refresh is preferred over full rescans
+- `IntersectionObserver` is used to re-apply hiding for observed nodes entering the viewport
+- Lightweight counters are exposed on `window.__ytCommentBlockerPerf`
 
-1. Make sure you are on a YouTube video watch page (`/watch`).
-2. Scroll to the comments area so YouTube actually renders comments.
-3. Open `Manage block list` and confirm the entry exists.
-4. If you imported regex rules with flags, re-import them as JSON.
-5. Refresh the page after a fresh install or update if YouTube was already open.
+---
 
-### If the `⋯` menu item is missing
+## 12. Limitations And Troubleshooting
 
-- Open the menu from an actual comment item, not from another YouTube surface
-- Close and reopen the menu once if YouTube rendered it before the script captured the handle
-- Confirm Tampermonkey is enabled on `youtube.com`
+Current limitations:
 
-### If language text looks mixed
+- UID lookup depends on a valid YouTube Data API v3 key with quota available
+- Pair metadata is local-only and not part of import/export
+- Some menu text still requires reopening the UI or refreshing after a language change
+- Regex rules only target handles, not comment text
 
-- Close and reopen the custom dialog
-- Refresh the page so Tampermonkey menu labels are registered again in the new language
+If comments are not hiding:
+
+1. Confirm you are on a watch page.
+2. Confirm the rule exists in the manager.
+3. If you expect UID matching, confirm `UID Detection` is enabled.
+4. Confirm a valid API key is saved in the manager.
+5. If the pair is missing or `unverified`, run `Create Pair` or `Update Pair`.
+6. Refresh the page after a fresh install or update if YouTube was already open.
+
+If UID matching does not activate:
+
+1. Open the manager and check whether the handle shows `paired`, `stale`, or `mismatch`.
+2. If it shows `handle-only` or `unverified`, run `Create Pair`.
+3. If it shows `stale` or `mismatch`, run `Update Pair`.
+4. If lookup still fails, the script safely falls back to handle-only behavior.
 
 ---
 
 ## 13. Future Work
 
-The items below are planned or proposed work only. They are not implemented in `v0.3.0`.
-
-From `TODO.md`:
+Open items from `TODO.md` still relevant after `v0.4.0-pre1`:
 
 - Improve lookup efficiency with sorting and binary search
-- Refresh some i18n-controlled UI immediately after language changes
-- Narrow the `⋯` menu injection observer instead of watching `document.body` continuously
+- Refresh some menu and dialog labels immediately after language changes
+- Narrow the `⋯` menu observer instead of watching `document.body` continuously
 - Remove or harden the dialog string-HTML insertion path
-- Add richer selection/filtering options in the block list UI
+- Add richer list filtering or selection controls
+- Add API key validation/testing UX and better quota/error reporting
 
-From `docs/기획서.md`:
-
-- Optional UID-based detection as an extra layer on top of handle matching
-- Handle↔UID pair metadata
-- Stale or mismatch status for stored pairs
-- Manual pair creation/update flows and stale notifications
-
-Those UID/pair ideas are design-stage notes only. The current released script still operates on
-`handle`, `id`, and `regex` rules described above.
+The pair system is now implemented, but its lookup source and failure handling are still expected
+to evolve over time.

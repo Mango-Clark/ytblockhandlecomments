@@ -33,6 +33,32 @@
 
 - 없음
 
+## [0.4.0-pre1] - 2026-04-12
+
+### Added
+
+- 새로운 `pair_meta_v1` 저장소를 사용하는 선택적 UID 감지 토글 추가
+- 관리자 대화상자에 handle↔UID pair 생성 및 갱신 액션 추가
+- 차단된 handle에 대한 pair 상태 배지와 메타데이터 표시 추가
+- stale 또는 mismatch 항목이 있을 때 pair 검토를 유도하는 watch 페이지 배너 추가
+- pair 메타데이터 변경에 대한 탭 간 동기화 추가
+- 관리자 대화상자에 로컬 전용 YouTube Data API v3 API 키 저장 기능 추가
+- pair 생성/갱신이 `channels.list`의 `forHandle` 필터를 사용하도록 구현
+
+### Changed
+
+- 관리자 대화상자에 UID 섹션, pair 요약 카드, pair 검사 시각을 확장 추가
+- UID 조회 방식이 채널 페이지 스크래핑 대신 사용자 제공 API 키 기반 호출로 변경
+- `id` 규칙 매칭은 항상 활성 대신 UID 감지 토글에 따라 동작하도록 변경
+- `handle` 규칙 제거 시 연결된 UID 규칙과 pair 메타데이터도 함께 제거하도록 변경
+- API 키가 저장되기 전에는 관리자에서 pair 액션이 비활성화되도록 변경
+- 문서를 API 키 기반 UID 흐름과 로컬 전용 키 저장 방식에 맞춰 갱신
+
+### Fixed
+
+- UID 조회 실패 또는 pair 검증 실패 시 handle-only 차단이 안전한 fallback으로 계속 유지되도록 보강
+- UID 조회가 YouTube 채널 페이지 HTML 구조 변화에 덜 취약하도록 개선
+
 ## [0.3.0] – 2026-04-07
 
 ### Added

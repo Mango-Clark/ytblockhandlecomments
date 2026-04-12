@@ -1,85 +1,128 @@
-# 📌 YouTube Comment Blocker by Handle — v0.3.0
+# 📌 YouTube Comment Blocker — v0.4.0-pre1
 
 [English](README.md) | [한국어](README.ko.md)
 
 Full reference: [WIKI.md](WIKI.md) | [WIKI.ko.md](WIKI.ko.md)
 
-A Tampermonkey userscript that lets you block YouTube comments from specific author handles (@handle). Hidden comments disappear in real time, and the block list can be managed, imported, or exported via the menu.
+A Tampermonkey userscript for hiding YouTube comments by channel identity. Handle blocking remains
+the default flow, and `v0.4.0-pre1` uses YouTube Data API v3 `channels.list(forHandle)` for optional
+UID-based detection and handle↔UID pair management.
 
-Quick install: open this raw URL in Tampermonkey to install/update
+Quick install: open this raw URL in Tampermonkey to install or update
 
 - <https://raw.githubusercontent.com/Mango-Clark/ytblockhandlecomments/refs/heads/master/ytblockhandlecomments.js>
 
 ---
 
-## ✅ Features
+## Features
 
-- 🔇 Right-click an author handle to block or unblock
-- Adds "Hide comments from this channel" to the ⋯ menu automatically
-- Real-time updates scoped to watch-page comments using targeted MutationObserver + IntersectionObserver
-- Reduced YouTube-wide delay by scanning added comment nodes instead of rescanning the full page
-- 🔧 Block list popup:
-
-  - Review or unblock entries (handle, channel ID, or regex)
-  - Add regex patterns directly via an inline form
-  - Export as JSON (v2) or newline text
-  - Import from JSON (v2/v1) or newline text (@handle, /regex/flags, or channel ID)
-- 📝 Settings via `GM_registerMenuCommand`:
-
-  - `🔍 Manage block list`
-  - `🗑️ Clear block list`
-  - `🌐 Language: KO/EN`
+- Right-click an author handle to block or unblock it
+- Adds `Hide comments from this channel` to the comment `⋯` menu
+- Hides matching comments in real time on YouTube watch pages
+- Supports `handle`, `id`, and `regex` rules in `blocked_v2`
+- Adds optional `UID Detection` in the manager dialog
+- Adds a local-only YouTube Data API key section in the manager dialog
+- Stores handle↔UID pair metadata in `pair_meta_v1`
+- Provides `Create Pair` and `Update Pair` actions
+- Shows per-handle status badges: `handle-only`, `paired`, `stale`, `mismatch`, `unverified`
+- Shows a watch-page banner when stale or mismatch pairs need review
+- Import/export stays focused on block rules only; pair metadata is local-only
 
 ---
 
-## 🧠 Usage
+## Usage
 
-1. Install [Tampermonkey](https://www.tampermonkey.net/)
-2. Install via the raw URL above, or create a new userscript and paste the contents of `ytblockhandlecomments.js`
-3. On a YouTube video watch page:
+1. Install [Tampermonkey](https://www.tampermonkey.net/).
+2. Install from the raw URL above, or paste `ytblockhandlecomments.js` into a new userscript.
+3. Open a YouTube watch page.
+4. Right-click a comment author's handle to block or unblock it.
+5. Open `Tampermonkey -> YouTube Comment Blocker -> Manage block list`.
+6. Save your own YouTube Data API v3 key in the manager before running pair actions.
+7. Use the manager to toggle UID detection, create or update pairs, add regex rules, and
+   import/export rules.
 
-   - Right-click an author handle to block or unblock
-   - Right-click elsewhere → Tampermonkey → YouTube Comment Blocker by Handle → Manage/Clear block list
+Typical UID flow:
+
+1. Block one or more handles normally.
+2. Open `Manage block list`.
+3. Save your YouTube Data API v3 API key.
+4. Turn on `UID Detection`.
+5. Run `Create Pair` for missing pairs.
+6. Later run `Update Pair` when stale or mismatch items appear.
 
 ---
 
-## 💾 Storage
+## Storage
 
-- Storage key: `blocked_v2`
-- Storage value: `{ version: 2, updatedAt: number, items: Array<{ type: 'handle'|'id'|'regex', value: string, flags?: string }> }`
-- Migrates from legacy keys: `blockedHandles` (string[]/text) and `blockedHandles_v1`
-- Uses Tampermonkey `GM_getValue` and `GM_setValue`
-- Import/export: JSON (v2/v1) and newline text
+Main rule storage:
+
+```ts
+{
+  version: 2,
+  updatedAt: number,
+  items: Array<
+    | { type: 'handle', value: string }
+    | { type: 'id', value: string }
+    | { type: 'regex', value: string, flags?: string }
+  >
+}
+```
+
+Pair metadata storage:
+
+```ts
+{
+  version: 1,
+  enableUidDetection: boolean,
+  lastPairCheckAt: number | null,
+  pairNotificationDismissedAt: number | null,
+  pairs: Array<{
+    handle: string,
+    uid: string,
+    verifiedAt: number | null,
+    status: 'verified' | 'stale' | 'mismatch' | 'unverified',
+    source: string
+  }>
+}
+```
+
+Notes:
+
+- Rule storage key: `blocked_v2`
+- Pair metadata key: `pair_meta_v1`
+- API config key: `youtube_data_api_v3_config`
+- Legacy rule keys `blockedHandles` and `blockedHandles_v1` still migrate automatically
+- Pair metadata is not included in import/export in `v0.4.0-pre1`
+- The API key is stored locally in Tampermonkey and is not embedded in the script
 
 ---
 
-## 🧾 Userscript Metadata
+## Notes
 
-Key entries used by this script:
+- Handle matching always stays enabled
+- UID matching is optional and controlled by the `UID Detection` toggle
+- In the current implementation, `id` matching is active only while UID detection is enabled
+- UID lookup uses YouTube Data API v3 `channels.list` with the `forHandle` filter
+- Pair actions require a user-supplied API key saved locally from the manager dialog
+- If UID lookup fails, handle blocking still works and the pair stays `unverified` or becomes
+  `stale`
+- Regex rules apply to handle text only, not comment body text
+- Comment hiding is intentionally scoped to watch-page comments
+- Lightweight performance counters are exposed on `window.__ytCommentBlockerPerf`
 
-- `@name`: YouTube Comment Blocker by Handle
-- `@version`: 0.3.0
+---
+
+## Userscript Metadata
+
+- `@name`: `YouTube Comment Blocker`
+- `@version`: `0.4.0-pre1`
 - `@match`: `https://www.youtube.com/*`
-- `@grant`: `GM_getValue`, `GM_setValue`, `GM_addValueChangeListener`, `GM_registerMenuCommand`
-- `@updateURL`/`@downloadURL`: points to the raw GitHub URL for easy updates
+- `@grant`: `GM_getValue`, `GM_setValue`, `GM_addValueChangeListener`,
+  `GM_registerMenuCommand`
 
 ---
 
-## ⚠️ Limitations & Notes
-
-- Handles are normalized to lowercase (comparison is case-insensitive)
-- Channel ID blocking is preferred when available; handle is used as fallback
-- Storage is versioned and migrates legacy data automatically
-- Context menus use delegated events
-- Cross-tab synchronization via `GM_addValueChangeListener`
-- Comment observation is limited to watch pages and the comments host to reduce YouTube UI delay
-- Regex patterns apply to handle text only (not comment body)
-- Lightweight performance counters are exposed as `window.__ytCommentBlockerPerf`
-- Language toggle updates new dialogs/menus; some open UI may need reopen
-
----
-
-## 👤 Author
+## Author
 
 - **Mango_Clark**
 - License: MIT

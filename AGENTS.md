@@ -107,6 +107,7 @@ Order:
 
 - Use Semantic Versioning (SemVer) for releases.
 - Bump the version in `VERSION` or the package manifest when releasing changes.
+- Do not bump version without instructions.
 - Maintain `CHANGELOG.md` using Keep a Changelog format and section names.
 - Each release entry must include a version and date (e.g., `## [1.2.3] - 2025-08-17`).
 

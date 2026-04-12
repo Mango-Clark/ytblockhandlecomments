@@ -33,6 +33,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - None
 
+## [0.4.0-pre1] - 2026-04-12
+
+### Added
+
+- Optional UID detection toggle backed by new `pair_meta_v1` storage
+- Handle↔UID pair creation and refresh actions in the manager dialog
+- Pair status badges and metadata display for blocked handles
+- Watch-page banner prompting pair review when stale or mismatch items exist
+- Cross-tab synchronization for pair metadata updates
+- Local-only YouTube Data API v3 API key storage in the manager dialog
+- Pair creation and update now use `channels.list` with the `forHandle` filter
+
+### Changed
+
+- Expanded the manager dialog with a UID section, pair summary cards, and pair timestamps
+- UID resolution now requires a user-supplied API key instead of scraping channel pages
+- `id` rule matching is now controlled by the UID detection toggle instead of always being active
+- Removing a handle rule now also removes its paired UID rule and pair metadata
+- Pair actions are disabled in the manager until an API key is saved
+- Documentation now describes the API-key-based UID flow and local-only key storage
+
+### Fixed
+
+- Preserved handle-only blocking as a safe fallback when UID lookup fails or a pair cannot be verified
+- Reduced fragility from relying on YouTube channel-page HTML structure for UID lookup
+
 ## [0.3.0] – 2026-04-07
 
 ### Added
