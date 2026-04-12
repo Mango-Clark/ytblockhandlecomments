@@ -1,4 +1,4 @@
-# 📚 YouTube Comment Blocker 위키 — v0.4.0-pre1
+# 📚 YouTube Comment Blocker 위키 — v0.4.0-pre2
 
 [English](WIKI.md) | [한국어](WIKI.ko.md)
 
@@ -16,7 +16,7 @@
 
 `blocked_v2`에서 지원하는 규칙 타입:
 
-- `handle`: 정규화된 `@handle`
+- `handle`: 저장된 `@handle` 문자열
 - `id`: `UC...` 형태의 YouTube 채널 ID
 - `regex`: 추출된 handle 텍스트에 적용되는 정규식
 
@@ -28,6 +28,7 @@
 
 추가 로컬 설정:
 
+- `app_settings_v1`: `handleCaseSensitive` 저장
 - `youtube_data_api_v3_config`: pair 액션용 사용자 API 키를 로컬에 저장
 
 현재 사용자 진입점:
@@ -36,6 +37,7 @@
 - 댓글 `⋯` 메뉴에 주입된 항목 사용
 - Tampermonkey 메뉴의 `Manage block list`
 - 관리자 대화상자의 `Create Pair`, `Update Pair`
+- 관리자 대화상자의 목록 필터, 선택, bulk action
 - watch 페이지의 stale/mismatch 배너
 
 아직 하지 않는 일:
@@ -78,7 +80,7 @@
 ### 메타데이터 요약
 
 - `@name`: `YouTube Comment Blocker`
-- `@version`: `0.4.0-pre1`
+- `@version`: `0.4.0-pre2`
 - `@match`: `https://www.youtube.com/*`
 - `@grant`: `GM_getValue`, `GM_setValue`, `GM_addValueChangeListener`,
   `GM_registerMenuCommand`
@@ -120,6 +122,14 @@
 4. 성공하면 pair 메타데이터를 저장하고 대응되는 `id` 규칙도 추가합니다.
 5. 실패하면 handle 차단은 유지되고 pair는 `unverified`가 됩니다.
 
+### 목록 필터와 bulk action
+
+1. `Manage block list`를 엽니다.
+2. `all`, `handle`, `id`, `regex` 중 타입 필터를 고릅니다.
+3. 필요하면 `handle-only`, `paired`, `stale`, `mismatch`, `unverified` 태그로 handle만 더 좁힙니다.
+4. row 체크박스 또는 현재 필터 결과 전체 선택으로 항목을 고릅니다.
+5. `Delete selected`, `Create pair for selected handles`, `Update pair for selected handles`를 실행합니다.
+
 ### Pair 갱신
 
 1. 관리자나 watch 페이지 배너에서 `Update Pair`를 실행합니다.
@@ -135,6 +145,18 @@
 ### 항상 켜져 있는 동작
 
 Handle 매칭은 항상 활성 상태입니다.
+
+### 대소문자 구분
+
+Handle 비교는 `app_settings_v1.handleCaseSensitive`로 제어됩니다.
+
+- `false`: 소문자 정규화 후 비교
+- `true`: exact 대소문자 비교
+
+레거시 주의:
+
+- 이전 버전의 handle 항목은 이미 소문자로 저장되었을 수 있습니다
+- 따라서 exact 비교 보장은 해당 항목을 다시 저장하거나 새로 추가한 뒤부터 적용됩니다
 
 ### 선택적 UID 동작
 
@@ -224,6 +246,15 @@ API 키 설정 저장 형태:
 API 키는 차단 규칙 및 pair 메타데이터와 분리해 저장되며 import/export에는 포함되지
 않습니다.
 
+앱 설정 저장 형태:
+
+```ts
+{
+  version: 1,
+  handleCaseSensitive: boolean
+}
+```
+
 ---
 
 ## 7. UID 조회 전략
@@ -269,6 +300,11 @@ Fallback 동작:
 
 - 모든 `handle`, `id`, `regex` 항목 표시
 - handle 항목에는 pair 배지와 메타데이터 표시
+- row 체크박스와 현재 필터 결과 전체 선택 체크박스 추가
+- 선택 개수 표시
+- 타입 필터와 handle 태그 필터 지원
+- 선택 삭제와 선택 handle 대상 pair bulk action 지원
+- 필터/선택 상태는 대화상자가 열려 있는 동안만 유지
 - 행별 삭제 지원
 
 삭제 동작:
@@ -317,7 +353,7 @@ UC1234567890ABCDE
 
 현재 경계:
 
-- pair 메타데이터는 의도적으로 `v0.4.0-pre1` import/export 범위에서 제외됩니다
+- pair 메타데이터는 의도적으로 `v0.4.0-pre2` import/export 범위에서 제외됩니다
 - API 키도 import/export에 포함되지 않고 로컬에만 저장됩니다
 
 ---
@@ -328,6 +364,7 @@ UC1234567890ABCDE
 
 - `blocked_v2`
 - `pair_meta_v1`
+- `app_settings_v1`
 
 다른 탭에서 값이 바뀌면:
 
@@ -371,6 +408,7 @@ Watch 페이지 알림 동작:
 - Pair 메타데이터는 로컬 전용이며 import/export에 포함되지 않습니다
 - 일부 메뉴 텍스트는 언어 전환 후 UI 재오픈이나 새로고침이 필요합니다
 - Regex 규칙은 handle에만 적용되고 댓글 본문에는 적용되지 않습니다
+- 과거 소문자 저장 항목은 exact handle 비교를 위해 재저장이 필요할 수 있습니다
 
 댓글이 숨겨지지 않을 때:
 
@@ -392,13 +430,12 @@ UID 매칭이 활성화되지 않을 때:
 
 ## 13. 향후 작업
 
-`v0.4.0-pre1` 이후에도 남아 있는 `TODO.md` 기준 작업:
+`v0.4.0-pre2` 이후에도 남아 있는 `TODO.md` 기준 작업:
 
 - 정렬 및 이분 탐색 기반 lookup 효율 개선
 - 언어 변경 직후 일부 메뉴/다이얼로그 라벨 즉시 갱신
 - `document.body`를 계속 감시하지 않도록 `⋯` 메뉴 observer 범위 축소
 - Dialog의 string HTML 삽입 경로 제거 또는 강화
-- 목록 필터링/선택 기능 확장
 - API 키 검증/테스트 UX와 quota/오류 표시 개선
 
 Pair 시스템 자체는 구현되었지만, 조회 소스와 실패 처리 방식은 앞으로 더 다듬을 수 있습니다.

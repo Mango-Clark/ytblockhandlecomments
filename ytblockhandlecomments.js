@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube Comment Blocker
 // @namespace    YouTube_Comment_Blocker
-// @version      0.4.0-pre1
+// @version      0.4.0-pre2
 // @description  Block/unblock comment handles via right-click. Optional UID pairing via YouTube Data API, real-time hiding, custom popup, and block list management.
 // @homepage     https://github.com/Mango-Clark/ytblockhandlecomments/
 // @updateURL    https://raw.githubusercontent.com/Mango-Clark/ytblockhandlecomments/refs/heads/master/ytblockhandlecomments.js
@@ -24,7 +24,7 @@
 	style.textContent = `
     .tm-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#323232;color:#fff;padding:8px 16px;border-radius:6px;opacity:0;transition:opacity .2s ease;z-index:10000;font-size:15px;pointer-events:none}
     .tm-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:10000}
-    .tm-dialog{background:#fff;color:#000;padding:24px 28px;border-radius:12px;width:min(820px,92vw);max-width:820px;box-shadow:0 10px 30px rgba(0,0,0,.25);max-height:84vh;display:flex;flex-direction:column;font-size:14px}
+    .tm-dialog{background:#fff;color:#000;padding:24px 28px;border-radius:12px;width:min(980px,94vw);max-width:980px;box-shadow:0 10px 30px rgba(0,0,0,.25);max-height:84vh;display:flex;flex-direction:column;font-size:14px}
     .tm-dialog header{margin:0 0 14px 0;font-size:18px;font-weight:700}
     .tm-dialog .tm-content{flex:1 1 auto;overflow:auto;min-height:0}
     .tm-dialog footer{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;flex-wrap:wrap}
@@ -60,6 +60,16 @@
     .tm-summary-card{border-radius:10px;background:#f8f9fa;padding:10px 12px}
     .tm-summary-card strong{display:block;font-size:18px}
     .tm-summary-card span{font-size:12px;color:#5f6368}
+    .tm-toolbar{display:flex;flex-direction:column;gap:10px;margin-bottom:12px}
+    .tm-toolbar-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+    .tm-toolbar-group{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .tm-toolbar-group label{font-weight:600}
+    .tm-toolbar-group select{padding:7px 10px;border:1px solid #d0d7de;border-radius:8px;background:#fff;color:inherit}
+    .tm-tag-group{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .tm-tag-group label{display:inline-flex;align-items:center;gap:6px;font-weight:500}
+    .tm-counter{font-size:12px;color:#5f6368}
+    .tm-list-empty{padding:18px 0;text-align:center;color:#5f6368}
+    .tm-item-check{margin-top:2px}
     .tm-regex-bar{position:sticky;top:0;z-index:1;background:#fff;border:1px solid #e5e5e5;border-radius:12px;padding:12px 14px;margin-bottom:14px}
     .tm-regex-bar header{margin:0;font-size:16px;font-weight:700}
     .tm-regex-bar .row{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
@@ -78,6 +88,8 @@
       .tm-dialog{padding:18px}
       .tm-block-list li{flex-direction:column}
       .tm-block-list li button{align-self:flex-end}
+      .tm-toolbar-row,.tm-toolbar-group{align-items:stretch}
+      .tm-toolbar-group{flex-direction:column;align-items:flex-start}
       .tm-banner{left:12px;right:12px;top:auto;bottom:72px;max-width:none}
     }
     @media (prefers-color-scheme: dark){
@@ -87,6 +99,7 @@
       .tm-summary-card{background:#2a2a2a}
       .tm-block-list li{border-color:#333}
       .tm-block-meta,.tm-toggle-row p,.tm-summary-card span,.tm-muted{color:#c7c7c7}
+      .tm-counter,.tm-list-empty{color:#c7c7c7}
       .tm-badge{background:#303134;color:#f1f3f4}
       .tm-badge.handle-only{background:#4b3900;color:#ffd76a}
       .tm-badge.paired{background:#143823;color:#87d7a6}
@@ -96,7 +109,7 @@
       .tm-badge.uid{background:#16325c;color:#9bc2ff}
       .tm-banner{background:#2a2416;color:#ffe8ad;border-color:#8e6c25}
       .tm-banner .actions .secondary{background:#2a2416;color:#ffe8ad;border-color:#8e6c25}
-      .tm-regex-bar input{background:#111;color:#fff;border-color:#555}
+      .tm-regex-bar input,.tm-section input,.tm-toolbar-group select{background:#111;color:#fff;border-color:#555}
     }
   `;
 	document.head.appendChild(style);
@@ -104,11 +117,42 @@
 	/* ----------------------------------------------------------
 	 * 1. Utilities and i18n
 	 * ---------------------------------------------------------- */
-	const norm = (h) => {
+	const sanitizeHandle = (h) => {
 		if (!h) return null;
-		h = h.trim();
+		h = String(h).trim();
 		if (!h.startsWith('@')) return null;
-		return h.toLowerCase();
+		return h;
+	};
+	const norm = (h) => {
+		const handle = sanitizeHandle(h);
+		return handle ? handle.toLowerCase() : null;
+	};
+	const getHandleCompareKey = (h, caseSensitive = false) => {
+		const handle = sanitizeHandle(h);
+		if (!handle) return null;
+		return caseSensitive ? handle : handle.toLowerCase();
+	};
+	const getItemKey = (item) => {
+		if (!item || !item.type) return null;
+		if (item.type === 'handle') {
+			const handle = sanitizeHandle(item.value);
+			return handle ? `h:${handle}` : null;
+		}
+		if (item.type === 'id') {
+			const id = String(item.value || '').trim();
+			return isChannelId(id) ? `i:${id}` : null;
+		}
+		return item.type === 'regex' ? `r:${String(item.value)}/${item.flags || ''}` : null;
+	};
+	const decodeMaybe = (value) => {
+		try { return decodeURIComponent(value); } catch { return value; }
+	};
+	const findHandleItem = (items, handle, caseSensitive = false) => {
+		const key = getHandleCompareKey(handle, caseSensitive);
+		if (!key) return null;
+		return (items || []).find(item =>
+			item?.type === 'handle' && getHandleCompareKey(item.value, caseSensitive) === key
+		) || null;
 	};
 	const isChannelId = (value) => /^UC[0-9A-Za-z_-]{10,}$/.test(String(value || '').trim());
 	const COMMENT_SELECTOR = 'ytd-comment-thread-renderer, ytd-comment-renderer, ytd-comment-view-model';
@@ -197,6 +241,26 @@
 				`생성 ${created} / 갱신 ${refreshed} / mismatch ${mismatches} / 실패 ${failed} / UID 추가 ${addedIds}`,
 			pairLookupFailed: 'UID 조회 실패',
 			pairLookupNoUid: 'UID를 찾지 못했습니다.',
+			handleCaseLabel: 'Handle 대소문자 구분',
+			handleCaseHelp: '꺼져 있으면 소문자 기준으로 비교하고, 켜져 있으면 정확한 대소문자로 비교합니다.',
+			handleCaseLegacy: '기존 handle은 소문자로 저장됐을 수 있어 exact 보장은 새로 추가하거나 다시 저장한 항목부터 적용됩니다.',
+			typeFilterLabel: '타입',
+			typeAll: 'all',
+			typeHandle: 'handle',
+			typeId: 'id',
+			typeRegex: 'regex',
+			tagFilterLabel: '태그',
+			selectVisible: '현재 목록 전체 선택',
+			selectedCount: (n) => `선택 ${n}개`,
+			bulkActionLabel: '일괄 작업',
+			bulkDelete: '선택 삭제',
+			bulkCreatePairs: '선택 handle Pair 생성',
+			bulkUpdatePairs: '선택 handle Pair 갱신',
+			execute: '실행',
+			clearSelection: '선택 해제',
+			bulkDeleteResult: (n) => `${n}개 항목을 삭제했습니다`,
+			bulkHandleRequired: '선택된 handle이 없습니다.',
+			noFilteredEntries: '현재 필터에 맞는 항목이 없습니다.',
 			noEntries: '—'
 		},
 		en: {
@@ -278,6 +342,26 @@
 				`Created ${created} / Refreshed ${refreshed} / Mismatch ${mismatches} / Failed ${failed} / Added UID ${addedIds}`,
 			pairLookupFailed: 'UID lookup failed',
 			pairLookupNoUid: 'Could not find a UID.',
+			handleCaseLabel: 'Handle Case Sensitive',
+			handleCaseHelp: 'Off compares normalized lowercase handles. On compares exact handle casing.',
+			handleCaseLegacy: 'Older handles may have been stored in lowercase, so exact matching is guaranteed only after re-saving or newly adding them.',
+			typeFilterLabel: 'Type',
+			typeAll: 'all',
+			typeHandle: 'handle',
+			typeId: 'id',
+			typeRegex: 'regex',
+			tagFilterLabel: 'Tags',
+			selectVisible: 'Select all visible',
+			selectedCount: (n) => `Selected ${n}`,
+			bulkActionLabel: 'Bulk Action',
+			bulkDelete: 'Delete selected',
+			bulkCreatePairs: 'Create pair for selected handles',
+			bulkUpdatePairs: 'Update pair for selected handles',
+			execute: 'Run',
+			clearSelection: 'Clear selection',
+			bulkDeleteResult: (n) => `Deleted ${n} item(s)`,
+			bulkHandleRequired: 'No selected handle entries.',
+			noFilteredEntries: 'No entries match the current filters.',
 			noEntries: '—'
 		}
 	};
@@ -299,11 +383,57 @@
 	};
 
 	/* ----------------------------------------------------------
-	 * 2. Storage V2 (id/handle/regex) + migration
+	 * 2. App settings storage
+	 * ---------------------------------------------------------- */
+	class AppSettingsStorage {
+		constructor() {
+			this.KEY = 'app_settings_v1';
+			this._state = this._init();
+		}
+		_getGM(key, def) { try { return GM_getValue(key, def); } catch { return def; } }
+		_setGM(key, val) { try { GM_setValue(key, val); } catch { } }
+		_normalizeState(raw) {
+			const src = raw && typeof raw === 'object' ? raw : {};
+			return {
+				version: 1,
+				handleCaseSensitive: !!src.handleCaseSensitive
+			};
+		}
+		_init() {
+			return this._normalizeState(this._getGM(this.KEY, null));
+		}
+		getState() {
+			return { ...this._state };
+		}
+		setAllLocal(state) {
+			this._state = this._normalizeState(state);
+			return this.getState();
+		}
+		_saveState(nextState) {
+			const normalized = this._normalizeState(nextState);
+			if (this._state.handleCaseSensitive === normalized.handleCaseSensitive) {
+				this._state = normalized;
+				return this.getState();
+			}
+			this._state = normalized;
+			this._setGM(this.KEY, this._state);
+			return this.getState();
+		}
+		isHandleCaseSensitive() {
+			return !!this._state.handleCaseSensitive;
+		}
+		setHandleCaseSensitive(enabled) {
+			return this._saveState({ ...this._state, handleCaseSensitive: !!enabled });
+		}
+	}
+
+	/* ----------------------------------------------------------
+	 * 3. Storage V2 (id/handle/regex) + migration
 	 * ---------------------------------------------------------- */
 	class StorageV2 {
 		// v2 schema: { version: 2, updatedAt: number, items: Array<{type:'id'|'handle'|'regex', value:string, flags?:string}> }
-		constructor() {
+		constructor(settings) {
+			this.settings = settings;
 			this.KEY_LEGACY = 'blockedHandles';
 			this.KEY_V1 = 'blockedHandles_v1';
 			this.KEY_V2 = 'blocked_v2';
@@ -331,10 +461,13 @@
 		}
 		_saveV2(items) {
 			const normed = [];
+			const caseSensitive = this.settings?.isHandleCaseSensitive?.() || false;
 			for (const it of items) {
 				if (!it || !it.value) continue;
 				if (it.type === 'handle') {
-					const h = norm(it.value); if (!h) continue; normed.push({ type: 'handle', value: h });
+					const h = sanitizeHandle(it.value);
+					if (!h) continue;
+					normed.push({ type: 'handle', value: h });
 				} else if (it.type === 'id') {
 					const id = String(it.value).trim(); if (!isChannelId(id)) continue; normed.push({ type: 'id', value: id });
 				} else if (it.type === 'regex') {
@@ -345,7 +478,11 @@
 			const unique = [];
 			const seen = new Set();
 			for (const it of normed) {
-				const key = it.type === 'handle' ? `h:${it.value}` : it.type === 'id' ? `i:${it.value}` : `r:${it.value}/${it.flags || ''}`;
+				const key = it.type === 'handle'
+					? `h:${getHandleCompareKey(it.value, caseSensitive)}`
+					: it.type === 'id'
+						? `i:${it.value}`
+						: `r:${it.value}/${it.flags || ''}`;
 				if (seen.has(key)) continue; seen.add(key); unique.push(it);
 			}
 			if (this._arraysEqual(this._items, unique)) { this._items = unique; return unique; }
@@ -371,13 +508,17 @@
 		}
 		all() { return this._items.slice(); }
 		setAll(items) { return this._saveV2(items); }
-		addHandle(h) { const v = norm(h); if (!v) return false; return !!this._saveV2([...this._items, { type: 'handle', value: v }]); }
+		addHandle(h) {
+			const v = sanitizeHandle(h);
+			if (!v) return false;
+			return !!this._saveV2([...this._items, { type: 'handle', value: v }]);
+		}
 		addId(id) { id = (id || '').trim(); if (!isChannelId(id)) return false; return !!this._saveV2([...this._items, { type: 'id', value: id }]); }
 		addRegex(pattern, flags = '') { try { new RegExp(pattern, flags); } catch { return false; } return !!this._saveV2([...this._items, { type: 'regex', value: pattern, flags }]); }
 		remove(item) {
-			const key = item.type === 'handle' ? `h:${norm(item.value)}` : item.type === 'id' ? `i:${(item.value || '').trim()}` : `r:${String(item.value)}/${item.flags || ''}`;
+			const key = getItemKey(item);
 			return !!this._saveV2(this._items.filter(it => {
-				const k = it.type === 'handle' ? `h:${it.value}` : it.type === 'id' ? `i:${it.value}` : `r:${it.value}/${it.flags || ''}`;
+				const k = getItemKey(it);
 				return k !== key;
 			}));
 		}
@@ -385,10 +526,11 @@
 	}
 
 	/* ----------------------------------------------------------
-	 * 3. Pair metadata storage
+	 * 4. Pair metadata storage
 	 * ---------------------------------------------------------- */
 	class PairMetaStorage {
-		constructor() {
+		constructor(settings) {
+			this.settings = settings;
 			this.KEY = 'pair_meta_v1';
 			this._state = this._init();
 		}
@@ -411,7 +553,7 @@
 			return now - pair.verifiedAt >= PAIR_STALE_MS ? 'stale' : 'verified';
 		}
 		_normalizePair(raw, now = Date.now()) {
-			const handle = norm(raw?.handle);
+			const handle = sanitizeHandle(raw?.handle);
 			if (!handle) return null;
 			const uid = isChannelId(raw?.uid) ? String(raw.uid).trim() : '';
 			const verifiedAt = Number.isFinite(raw?.verifiedAt) && raw.verifiedAt > 0 ? raw.verifiedAt : null;
@@ -432,6 +574,7 @@
 		}
 		_normalizeState(raw) {
 			const src = raw && typeof raw === 'object' ? raw : {};
+			const caseSensitive = this.settings?.isHandleCaseSensitive?.() || false;
 			const next = {
 				version: 1,
 				enableUidDetection: !!src.enableUidDetection,
@@ -444,7 +587,7 @@
 			const dedup = new Map();
 			for (const pair of Array.isArray(src.pairs) ? src.pairs : []) {
 				const normalized = this._normalizePair(pair);
-				if (normalized) dedup.set(normalized.handle, normalized);
+				if (normalized) dedup.set(getHandleCompareKey(normalized.handle, caseSensitive), normalized);
 			}
 			next.pairs = Array.from(dedup.values());
 			return next;
@@ -520,23 +663,30 @@
 			return this._state.pairs.map(pair => ({ ...pair }));
 		}
 		getPair(handle) {
-			const normalized = norm(handle);
+			const normalized = getHandleCompareKey(handle, this.settings?.isHandleCaseSensitive?.() || false);
 			if (!normalized) return null;
-			return this._state.pairs.find(pair => pair.handle === normalized) || null;
+			return this._state.pairs.find(pair =>
+				getHandleCompareKey(pair.handle, this.settings?.isHandleCaseSensitive?.() || false) === normalized
+			) || null;
 		}
 		upsertPair(pair) {
 			const normalized = this._normalizePair(pair);
 			if (!normalized) return this.getState();
-			const nextPairs = this._state.pairs.filter(item => item.handle !== normalized.handle);
+			const compareKey = getHandleCompareKey(normalized.handle, this.settings?.isHandleCaseSensitive?.() || false);
+			const nextPairs = this._state.pairs.filter(item =>
+				getHandleCompareKey(item.handle, this.settings?.isHandleCaseSensitive?.() || false) !== compareKey
+			);
 			nextPairs.push(normalized);
 			return this._saveState({ ...this._state, pairs: nextPairs });
 		}
 		removePair(handle) {
-			const normalized = norm(handle);
+			const normalized = getHandleCompareKey(handle, this.settings?.isHandleCaseSensitive?.() || false);
 			if (!normalized) return this.getState();
 			return this._saveState({
 				...this._state,
-				pairs: this._state.pairs.filter(pair => pair.handle !== normalized)
+				pairs: this._state.pairs.filter(pair =>
+					getHandleCompareKey(pair.handle, this.settings?.isHandleCaseSensitive?.() || false) !== normalized
+				)
 			});
 		}
 		clearPairs() {
@@ -545,7 +695,7 @@
 	}
 
 	/* ----------------------------------------------------------
-	 * 4. API config storage
+	 * 5. API config storage
 	 * ---------------------------------------------------------- */
 	class ApiConfigStorage {
 		constructor() {
@@ -605,13 +755,14 @@
 	}
 
 	/* ----------------------------------------------------------
-	 * 5. Pair resolution and policy
+	 * 6. Pair resolution and policy
 	 * ---------------------------------------------------------- */
 	class PairService {
-		constructor(storage, pairStore, apiConfig) {
+		constructor(storage, pairStore, apiConfig, settings) {
 			this.storage = storage;
 			this.pairStore = pairStore;
 			this.apiConfig = apiConfig;
+			this.settings = settings;
 			this._busy = false;
 		}
 		getBlockedHandles() {
@@ -677,11 +828,21 @@
 			});
 			return this._processHandles(handles);
 		}
+		async createPairsForHandles(handles) {
+			const filtered = (handles || []).filter(handle => {
+				const code = this.getHandleStatus(handle).code;
+				return code === 'handle-only' || code === 'unverified';
+			});
+			return this._processHandles(filtered);
+		}
 		async updatePairs({ includeMissing = true } = {}) {
 			const handles = includeMissing
 				? this.getBlockedHandles()
 				: this.getBlockedHandles().filter(handle => !!this.pairStore.getPair(handle));
 			return this._processHandles(handles);
+		}
+		async updatePairsForHandles(handles) {
+			return this._processHandles(handles || []);
 		}
 		async _processHandles(handles) {
 			if (this._busy) return {
@@ -701,7 +862,15 @@
 				addedIds: 0,
 				skipped: 0
 			};
-			const uniqueHandles = Array.from(new Set(handles.map(norm).filter(Boolean)));
+			const uniqueHandles = [];
+			const seen = new Set();
+			for (const handle of handles || []) {
+				const key = getHandleCompareKey(handle, this.settings?.isHandleCaseSensitive?.() || false);
+				const value = sanitizeHandle(handle);
+				if (!key || !value || seen.has(key)) continue;
+				seen.add(key);
+				uniqueHandles.push(value);
+			}
 			try {
 				for (const handle of uniqueHandles) {
 					const existing = this.pairStore.getPair(handle);
@@ -788,7 +957,7 @@
 	}
 
 	/* ----------------------------------------------------------
-	 * 6. Toast & Dialog (safe UI)
+	 * 7. Toast & Dialog (safe UI)
 	 * ---------------------------------------------------------- */
 	class Toast {
 		static show(msg, ms = 2000) {
@@ -864,7 +1033,7 @@
 	}
 
 	/* ----------------------------------------------------------
-	 * 4. Handle extractor (robust to DOM changes)
+	 * 8. Handle extractor (robust to DOM changes)
 	 * ---------------------------------------------------------- */
 	class Extractor {
 		// Try multiple routes to get "@handle" from a comment root
@@ -874,14 +1043,14 @@
 			// 1) '#author-text > span' or '#author-handle'
 			const span = root.querySelector('#author-text > span, #author-handle');
 			const t = span?.textContent?.trim();
-			if (t?.startsWith('@')) return norm(t);
+			if (t?.startsWith('@')) return sanitizeHandle(t);
 
 			// 2) anchor with href '/@handle'
 			const a = root.querySelector('a[href^="/@"]');
 			if (a?.getAttribute) {
 				const href = a.getAttribute('href') || '';
-				const m = /^\/@([A-Za-z0-9._-]+)/.exec(href);
-				if (m) return norm('@' + m[1]);
+				const m = /^\/@([^/?#]+)/.exec(href);
+				if (m) return sanitizeHandle('@' + decodeMaybe(m[1]));
 			}
 			return null;
 		}
@@ -901,12 +1070,13 @@
 	}
 
 	/* ----------------------------------------------------------
-	 * 5. CommentHider (scoped refresh + cached metadata)
+	 * 9. CommentHider (scoped refresh + cached metadata)
 	 * ---------------------------------------------------------- */
 	class CommentHider {
-		constructor(storage, pairStore) {
+		constructor(storage, pairStore, settings) {
 			this.storage = storage;
 			this.pairStore = pairStore;
+			this.settings = settings;
 			this._idSet = new Set();
 			this._handleSet = new Set();
 			this._regexes = [];
@@ -929,11 +1099,15 @@
 		rebuildLookup() {
 			this._idSet.clear(); this._handleSet.clear(); this._regexes = [];
 			const useUidDetection = this.pairStore.isUidDetectionEnabled();
+			const caseSensitive = this.settings?.isHandleCaseSensitive?.() || false;
 			for (const it of this.storage.all()) {
 				if (it.type === 'id') {
 					if (useUidDetection) this._idSet.add(it.value);
 				}
-				else if (it.type === 'handle') this._handleSet.add(it.value);
+				else if (it.type === 'handle') {
+					const key = getHandleCompareKey(it.value, caseSensitive);
+					if (key) this._handleSet.add(key);
+				}
 				else if (it.type === 'regex') { try { this._regexes.push(new RegExp(it.value, it.flags || '')); } catch { } }
 			}
 		}
@@ -971,7 +1145,8 @@
 			const meta = this._getMeta(node);
 			if (meta.id && this._idSet.has(meta.id)) return true;
 			const h = meta.handle;
-			if (h && this._handleSet.has(h)) return true;
+			const handleKey = getHandleCompareKey(h, this.settings?.isHandleCaseSensitive?.() || false);
+			if (handleKey && this._handleSet.has(handleKey)) return true;
 			if (h) { for (const rx of this._regexes) { if (rx.test(h)) return true; } }
 			return false;
 		}
@@ -1077,7 +1252,7 @@
 		}
 
 		_addItem(menu, handle) {
-			const isBlocked = this.storage.all().some(it => it.type === 'handle' && it.value === handle);
+			const isBlocked = this.app.hasHandleRule(handle);
 			const item = Object.assign(document.createElement('tp-yt-paper-item'), {
 				className: 'style-scope ytd-menu-service-item-renderer tm-hide-channel',
 				role: 'menuitem'
@@ -1099,7 +1274,7 @@
 				});
 				if (!ok) return;
 				if (isBlocked) {
-					this.app.removeEntry({ type: 'handle', value: handle });
+					this.app.removeHandleRule(handle);
 					Toast.show(t('removed', handle));
 				}
 				else {
@@ -1145,8 +1320,33 @@
 		}
 		openList() {
 			this.app.pairStore.refreshStatuses();
-
 			const wrap = document.createElement('div');
+			const selection = new Set();
+			const tagFilters = new Set();
+			let busy = false;
+
+			const settingsSection = document.createElement('section');
+			settingsSection.className = 'tm-section';
+			const settingsTitle = document.createElement('h3');
+			settingsTitle.textContent = t('handleCaseLabel');
+			const settingsRow = document.createElement('div');
+			settingsRow.className = 'tm-toggle-row';
+			const settingsBox = document.createElement('div');
+			const caseLabel = document.createElement('label');
+			const caseToggle = document.createElement('input');
+			caseToggle.type = 'checkbox';
+			caseToggle.checked = this.app.settings.isHandleCaseSensitive();
+			const caseText = document.createElement('span');
+			caseText.textContent = t('handleCaseLabel');
+			caseLabel.append(caseToggle, caseText);
+			const caseHelp = document.createElement('p');
+			caseHelp.textContent = t('handleCaseHelp');
+			const caseLegacy = document.createElement('p');
+			caseLegacy.textContent = t('handleCaseLegacy');
+			settingsBox.append(caseLabel, caseHelp, caseLegacy);
+			settingsRow.append(settingsBox);
+			settingsSection.append(settingsTitle, settingsRow);
+
 			const apiSection = document.createElement('section');
 			apiSection.className = 'tm-section';
 			const apiTitle = document.createElement('h3');
@@ -1260,23 +1460,144 @@
 			const listSection = document.createElement('section');
 			listSection.className = 'tm-section';
 			const listTitle = document.createElement('h3');
-			listTitle.textContent = t('manageTitle', this.app.storage.all().length);
+			const toolbar = document.createElement('div');
+			toolbar.className = 'tm-toolbar';
+			const topToolbarRow = document.createElement('div');
+			topToolbarRow.className = 'tm-toolbar-row';
+			const topLeft = document.createElement('div');
+			topLeft.className = 'tm-toolbar-group';
+			const masterLabel = document.createElement('label');
+			const masterToggle = document.createElement('input');
+			masterToggle.type = 'checkbox';
+			const masterText = document.createElement('span');
+			masterText.textContent = t('selectVisible');
+			masterLabel.append(masterToggle, masterText);
+			const counter = document.createElement('div');
+			counter.className = 'tm-counter';
+			topLeft.append(masterLabel, counter);
+			const topRight = document.createElement('div');
+			topRight.className = 'tm-toolbar-group';
+			const typeLabel = document.createElement('label');
+			typeLabel.textContent = t('typeFilterLabel');
+			const typeSelect = document.createElement('select');
+			[
+				['all', t('typeAll')],
+				['handle', t('typeHandle')],
+				['id', t('typeId')],
+				['regex', t('typeRegex')]
+			].forEach(([value, label]) => {
+				const option = document.createElement('option');
+				option.value = value;
+				option.textContent = label;
+				typeSelect.appendChild(option);
+			});
+			topRight.append(typeLabel, typeSelect);
+			topToolbarRow.append(topLeft, topRight);
+			const middleToolbarRow = document.createElement('div');
+			middleToolbarRow.className = 'tm-toolbar-row';
+			const tagLabel = document.createElement('div');
+			tagLabel.className = 'tm-counter';
+			tagLabel.textContent = t('tagFilterLabel');
+			const tagGroup = document.createElement('div');
+			tagGroup.className = 'tm-tag-group';
+			['handle-only', 'paired', 'stale', 'mismatch', 'unverified'].forEach(code => {
+				const label = document.createElement('label');
+				const input = document.createElement('input');
+				input.type = 'checkbox';
+				input.addEventListener('change', () => {
+					if (input.checked) tagFilters.add(code);
+					else tagFilters.delete(code);
+					renderList();
+				});
+				const text = document.createElement('span');
+				text.textContent = this._makeBadge(code).textContent;
+				label.append(input, text);
+				tagGroup.appendChild(label);
+			});
+			middleToolbarRow.append(tagLabel, tagGroup);
+			const bottomToolbarRow = document.createElement('div');
+			bottomToolbarRow.className = 'tm-toolbar-row';
+			const bulkLeft = document.createElement('div');
+			bulkLeft.className = 'tm-toolbar-group';
+			const bulkLabel = document.createElement('label');
+			bulkLabel.textContent = t('bulkActionLabel');
+			const bulkSelect = document.createElement('select');
+			[
+				['delete', t('bulkDelete')],
+				['create', t('bulkCreatePairs')],
+				['update', t('bulkUpdatePairs')]
+			].forEach(([value, label]) => {
+				const option = document.createElement('option');
+				option.value = value;
+				option.textContent = label;
+				bulkSelect.appendChild(option);
+			});
+			const executeBtn = Object.assign(document.createElement('button'), {
+				textContent: t('execute'),
+				className: 'primary'
+			});
+			const clearSelectionBtn = Object.assign(document.createElement('button'), {
+				textContent: t('clearSelection'),
+				className: 'secondary'
+			});
+			bulkLeft.append(bulkLabel, bulkSelect, executeBtn, clearSelectionBtn);
+			bottomToolbarRow.append(bulkLeft);
+			toolbar.append(topToolbarRow, middleToolbarRow, bottomToolbarRow);
 			const list = Object.assign(document.createElement('ul'), { className: 'tm-block-list' });
-			listSection.append(listTitle, list);
-			wrap.append(apiSection, pairSection, form, listSection);
+			listSection.append(listTitle, toolbar, list);
+			wrap.append(settingsSection, apiSection, pairSection, form, listSection);
 
+			const getCurrentItems = () => this.app.storage.all();
+			const getStatusCode = (item) => item.type === 'handle'
+				? this.app.pairService.getHandleStatus(item.value).code
+				: null;
+			const pruneSelection = () => {
+				const valid = new Set(getCurrentItems().map(getItemKey).filter(Boolean));
+				for (const key of Array.from(selection)) {
+					if (!valid.has(key)) selection.delete(key);
+				}
+			};
+			const getSelectedItems = () => {
+				const items = getCurrentItems();
+				const keyed = new Map(items.map(item => [getItemKey(item), item]));
+				return Array.from(selection).map(key => keyed.get(key)).filter(Boolean);
+			};
+			const getVisibleItems = () => {
+				const items = getCurrentItems();
+				const typeValue = typeSelect.value || 'all';
+				return items.filter(item => {
+					if (typeValue !== 'all' && item.type !== typeValue) return false;
+					if (!tagFilters.size) return true;
+					if (item.type !== 'handle') return false;
+					return tagFilters.has(getStatusCode(item));
+				});
+			};
 			const syncApiStatus = () => {
 				apiInput.value = this.app.apiConfig.getApiKey();
 				apiStatus.textContent = this.app.apiConfig.hasApiKey()
 					? t('apiKeyStatusSaved', this.app.apiConfig.getMaskedApiKey())
 					: t('apiKeyStatusMissing');
 			};
-			const setButtonsBusy = (busy) => {
+			const syncActionState = () => {
+				pruneSelection();
 				const hasKey = this.app.apiConfig.hasApiKey();
+				const visibleItems = getVisibleItems();
+				const visibleKeys = visibleItems.map(getItemKey).filter(Boolean);
+				const selectedVisibleCount = visibleKeys.filter(key => selection.has(key)).length;
+				const selectedItems = getSelectedItems();
+				const selectedHandleCount = selectedItems.filter(item => item.type === 'handle').length;
+				const pairBulk = bulkSelect.value === 'create' || bulkSelect.value === 'update';
 				createBtn.disabled = busy || !hasKey;
 				updateBtn.disabled = busy || !hasKey;
 				createBtn.textContent = busy ? t('pairWorking') : t('pairCreate');
 				updateBtn.textContent = busy ? t('pairWorking') : t('pairUpdate');
+				masterToggle.disabled = busy || !visibleKeys.length;
+				masterToggle.checked = !!visibleKeys.length && selectedVisibleCount === visibleKeys.length;
+				masterToggle.indeterminate = selectedVisibleCount > 0 && selectedVisibleCount < visibleKeys.length;
+				executeBtn.disabled = busy || !selection.size || (pairBulk && (!hasKey || !selectedHandleCount));
+				clearSelectionBtn.disabled = busy || !selection.size;
+				bulkSelect.disabled = busy;
+				counter.textContent = `${t('selectedCount', selection.size)} | ${visibleItems.length}/${getCurrentItems().length}`;
 			};
 			const renderSummary = () => {
 				const summary = this.app.pairService.getSummary();
@@ -1300,23 +1621,36 @@
 				}));
 				lastCheck.textContent = t('pairLastCheck', formatDateTime(this.app.pairStore.getLastPairCheckAt()));
 				toggle.checked = this.app.pairStore.isUidDetectionEnabled();
+				caseToggle.checked = this.app.settings.isHandleCaseSensitive();
 				syncApiStatus();
-				setButtonsBusy(false);
+				syncActionState();
 			};
 			const renderList = () => {
-				const items = this.app.storage.all();
+				const allItems = getCurrentItems();
+				const items = getVisibleItems();
+				listTitle.textContent = t('manageTitle', allItems.length);
 				list.replaceChildren();
-				if (!items.length) {
+				if (!allItems.length || !items.length) {
 					const li = document.createElement('li');
-					li.style.justifyContent = 'center';
-					const span = document.createElement('span');
-					span.textContent = t('noEntries');
-					li.append(span);
+					li.className = 'tm-list-empty';
+					li.textContent = allItems.length ? t('noFilteredEntries') : t('noEntries');
 					list.appendChild(li);
+					syncActionState();
 					return;
 				}
 				for (const item of items) {
+					const itemKey = getItemKey(item);
 					const li = document.createElement('li');
+					const checkbox = document.createElement('input');
+					checkbox.type = 'checkbox';
+					checkbox.className = 'tm-item-check';
+					checkbox.checked = selection.has(itemKey);
+					checkbox.addEventListener('change', () => {
+						if (checkbox.checked) selection.add(itemKey);
+						else selection.delete(itemKey);
+						syncActionState();
+					});
+
 					const left = document.createElement('div');
 					left.className = 'tm-block-main';
 					const label = document.createElement('div');
@@ -1346,52 +1680,99 @@
 					}
 
 					const removeBtn = Object.assign(document.createElement('button'), { textContent: t('unblock') });
+					removeBtn.disabled = busy;
 					removeBtn.addEventListener('click', () => {
+						selection.delete(itemKey);
 						this.app.removeEntry(item);
 						renderAll();
 						Toast.show(t('removed', label.textContent));
 					});
 					left.append(label, badges);
 					if (meta.childNodes.length) left.appendChild(meta);
-					li.append(left, removeBtn);
+					li.append(checkbox, left, removeBtn);
 					list.appendChild(li);
 				}
+				syncActionState();
 			};
 			const renderAll = () => {
 				renderSummary();
 				renderList();
 			};
+			const setBusy = (nextBusy) => {
+				busy = !!nextBusy;
+				renderSummary();
+			};
 
+			caseToggle.addEventListener('change', () => {
+				this.app.settings.setHandleCaseSensitive(caseToggle.checked);
+				this.app.refreshAfterStorageChange();
+				renderAll();
+			});
 			toggle.addEventListener('change', () => {
 				this.app.pairStore.setUidDetectionEnabled(toggle.checked);
 				this.app.refreshAfterStorageChange();
 				renderAll();
 			});
+			typeSelect.addEventListener('change', renderList);
+			bulkSelect.addEventListener('change', syncActionState);
+			masterToggle.addEventListener('change', () => {
+				for (const item of getVisibleItems()) {
+					const key = getItemKey(item);
+					if (!key) continue;
+					if (masterToggle.checked) selection.add(key);
+					else selection.delete(key);
+				}
+				renderList();
+			});
+			clearSelectionBtn.addEventListener('click', () => {
+				selection.clear();
+				renderList();
+			});
 			saveApiBtn.addEventListener('click', () => {
 				this.app.apiConfig.setApiKey(apiInput.value);
 				this.app.refreshAfterStorageChange();
-				syncApiStatus();
-				setButtonsBusy(false);
+				renderAll();
 				Toast.show(t('apiKeySaved'));
 			});
 			clearApiBtn.addEventListener('click', () => {
 				this.app.apiConfig.clearApiKey();
 				this.app.refreshAfterStorageChange();
-				syncApiStatus();
-				setButtonsBusy(false);
+				renderAll();
 				Toast.show(t('apiKeyCleared'));
 			});
 			createBtn.addEventListener('click', async () => {
-				setButtonsBusy(true);
+				setBusy(true);
 				const stats = await this.app.runPairUpdate('create');
-				setButtonsBusy(false);
+				setBusy(false);
 				Toast.show(t('pairResult', stats), 3200);
 				renderAll();
 			});
 			updateBtn.addEventListener('click', async () => {
-				setButtonsBusy(true);
+				setBusy(true);
 				const stats = await this.app.runPairUpdate('update');
-				setButtonsBusy(false);
+				setBusy(false);
+				Toast.show(t('pairResult', stats), 3200);
+				renderAll();
+			});
+			executeBtn.addEventListener('click', async () => {
+				const selectedItems = getSelectedItems();
+				if (!selectedItems.length) return;
+				if (bulkSelect.value === 'delete') {
+					for (const item of selectedItems) this.app.removeEntry(item);
+					const removedCount = selectedItems.length;
+					selection.clear();
+					renderAll();
+					Toast.show(t('bulkDeleteResult', removedCount));
+					return;
+				}
+				const handles = selectedItems.filter(item => item.type === 'handle').map(item => item.value);
+				if (!handles.length) {
+					Toast.show(t('bulkHandleRequired'));
+					return;
+				}
+				setBusy(true);
+				const stats = await this.app.runPairUpdate(bulkSelect.value, handles);
+				setBusy(false);
 				Toast.show(t('pairResult', stats), 3200);
 				renderAll();
 			});
@@ -1482,11 +1863,12 @@
 	 * ---------------------------------------------------------- */
 	class App {
 		constructor() {
-			this.storage = new StorageV2();
-			this.pairStore = new PairMetaStorage();
+			this.settings = new AppSettingsStorage();
+			this.storage = new StorageV2(this.settings);
+			this.pairStore = new PairMetaStorage(this.settings);
 			this.apiConfig = new ApiConfigStorage();
-			this.pairService = new PairService(this.storage, this.pairStore, this.apiConfig);
-			this.hider = new CommentHider(this.storage, this.pairStore);
+			this.pairService = new PairService(this.storage, this.pairStore, this.apiConfig, this.settings);
+			this.hider = new CommentHider(this.storage, this.pairStore, this.settings);
 			this.menu = new MenuEnhancer(this);
 			this.manager = new BlockListManager(this);
 			this._commentsHost = null;
@@ -1501,9 +1883,25 @@
 			this._schedulePageSync();
 		}
 
+		findHandleRule(handle) {
+			return findHandleItem(this.storage.all(), handle, this.settings.isHandleCaseSensitive());
+		}
+
+		hasHandleRule(handle) {
+			return !!this.findHandleRule(handle);
+		}
+
 		addHandleRule(handle) {
-			this.storage.addHandle(handle);
-			this.refreshAfterStorageChange();
+			const ok = this.storage.addHandle(handle);
+			if (ok) this.refreshAfterStorageChange();
+			return ok;
+		}
+
+		removeHandleRule(handle) {
+			const item = this.findHandleRule(handle);
+			if (!item) return false;
+			this.removeEntry(item);
+			return true;
 		}
 
 		removeEntry(item) {
@@ -1524,10 +1922,10 @@
 			this._syncPairBanner();
 		}
 
-		async runPairUpdate(mode = 'update') {
+		async runPairUpdate(mode = 'update', handles = null) {
 			const stats = mode === 'create'
-				? await this.pairService.createMissingPairs()
-				: await this.pairService.updatePairs({ includeMissing: true });
+				? (handles ? await this.pairService.createPairsForHandles(handles) : await this.pairService.createMissingPairs())
+				: (handles ? await this.pairService.updatePairsForHandles(handles) : await this.pairService.updatePairs({ includeMissing: true }));
 			this.refreshAfterStorageChange();
 			return stats;
 		}
@@ -1539,12 +1937,12 @@
 				let hText = el.textContent?.trim();
 				if (!hText?.startsWith?.('@')) {
 					const href = el.getAttribute?.('href');
-					const m = href && /^\/@([A-Za-z0-9._-]+)/.exec(href);
-					if (m) hText = '@' + m[1];
+					const m = href && /^\/@([^/?#]+)/.exec(href);
+					if (m) hText = '@' + decodeMaybe(m[1]);
 				}
-				const handle = norm(hText);
+				const handle = sanitizeHandle(hText);
 				if (!handle) return;
-				const isBlocked = this.storage.all().some(it => it.type === 'handle' && it.value === handle);
+				const isBlocked = this.hasHandleRule(handle);
 
 				ev.preventDefault();
 				Dialog.show({
@@ -1561,7 +1959,7 @@
 				}).then(ok => {
 					if (!ok) return;
 					if (isBlocked) {
-						this.removeEntry({ type: 'handle', value: handle });
+						this.removeHandleRule(handle);
 						Toast.show(t('removed', handle));
 					}
 					else {
@@ -1695,6 +2093,11 @@
 				GM_addValueChangeListener('youtube_data_api_v3_config', (_k, _old, val, remote) => {
 					if (!remote) return;
 					this.apiConfig.setAllLocal(val);
+					this.refreshAfterStorageChange();
+				});
+				GM_addValueChangeListener('app_settings_v1', (_k, _old, val, remote) => {
+					if (!remote) return;
+					this.settings.setAllLocal(val);
 					this.refreshAfterStorageChange();
 				});
 			}

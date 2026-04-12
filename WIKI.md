@@ -1,4 +1,4 @@
-# 📚 YouTube Comment Blocker Wiki — v0.4.0-pre1
+# 📚 YouTube Comment Blocker Wiki — v0.4.0-pre2
 
 [English](WIKI.md) | [한국어](WIKI.ko.md)
 
@@ -16,7 +16,7 @@ The userscript hides YouTube comments by channel identity on watch pages.
 
 Supported rule types in `blocked_v2`:
 
-- `handle`: normalized `@handle`
+- `handle`: stored `@handle` string
 - `id`: YouTube channel ID such as `UC...`
 - `regex`: regular expression tested against the extracted handle text
 
@@ -28,6 +28,7 @@ Supported pair metadata in `pair_meta_v1`:
 
 Additional local config:
 
+- `app_settings_v1`: stores `handleCaseSensitive`
 - `youtube_data_api_v3_config`: stores the user-supplied API key locally for pair actions
 
 User-facing entry points:
@@ -36,6 +37,7 @@ User-facing entry points:
 - Use the injected item in the comment `⋯` menu
 - Open `Manage block list` from the Tampermonkey menu
 - Use `Create Pair` / `Update Pair` inside the manager
+- Use block-list filters, selection, and bulk actions inside the manager
 - Respond to the stale or mismatch banner on watch pages
 
 What the script still does not do:
@@ -78,7 +80,7 @@ Actual comment-hiding behavior is intentionally narrower:
 ### Metadata summary
 
 - `@name`: `YouTube Comment Blocker`
-- `@version`: `0.4.0-pre1`
+- `@version`: `0.4.0-pre2`
 - `@match`: `https://www.youtube.com/*`
 - `@grant`: `GM_getValue`, `GM_setValue`, `GM_addValueChangeListener`,
   `GM_registerMenuCommand`
@@ -120,6 +122,14 @@ This also adds or removes a `handle` rule.
 4. On success, it stores pair metadata and adds the matching `id` rule.
 5. On failure, handle blocking remains active and the pair becomes `unverified`.
 
+### Filter and bulk-run block-list actions
+
+1. Open `Manage block list`.
+2. Filter by `all`, `handle`, `id`, or `regex`.
+3. Optionally filter handle rows by `handle-only`, `paired`, `stale`, `mismatch`, or `unverified`.
+4. Select rows individually or use the visible-results master checkbox.
+5. Run `Delete selected`, `Create pair for selected handles`, or `Update pair for selected handles`.
+
 ### Update pairs
 
 1. Click `Update Pair` from the manager or the watch-page banner.
@@ -135,6 +145,18 @@ This also adds or removes a `handle` rule.
 ### Always-on behavior
 
 Handle matching is always enabled.
+
+### Case sensitivity
+
+Handle comparison is controlled by `app_settings_v1.handleCaseSensitive`.
+
+- `false`: compare normalized lowercase handles
+- `true`: compare exact handle casing
+
+Legacy note:
+
+- Older handle entries may already be stored in lowercase from earlier versions
+- Exact matching is therefore guaranteed only after re-saving or newly adding those handles
 
 ### Optional UID behavior
 
@@ -225,6 +247,15 @@ API key config storage:
 The API key is stored separately from block rules and pair metadata and is not included in
 import/export.
 
+App settings storage:
+
+```ts
+{
+  version: 1,
+  handleCaseSensitive: boolean
+}
+```
+
 ---
 
 ## 7. UID Lookup Strategy
@@ -270,6 +301,11 @@ The manager dialog now contains three maintenance areas:
 
 - Shows all `handle`, `id`, and `regex` entries
 - Shows pair badges and metadata for handle entries
+- Adds per-row checkboxes and a visible-results master checkbox
+- Shows a selected-item counter
+- Supports type filters and handle-tag filters
+- Supports bulk delete and bulk pair actions
+- Keeps filter/selection state only while the dialog is open
 - Supports per-row removal
 
 Removal behavior:
@@ -318,7 +354,7 @@ UC1234567890ABCDE
 
 Current boundary:
 
-- Pair metadata is intentionally excluded from import/export in `v0.4.0-pre1`
+- Pair metadata is intentionally excluded from import/export in `v0.4.0-pre2`
 - The API key is also excluded from import/export and is stored locally only
 
 ---
@@ -329,6 +365,7 @@ The script listens for remote Tampermonkey storage changes on:
 
 - `blocked_v2`
 - `pair_meta_v1`
+- `app_settings_v1`
 
 When another tab updates one of those values:
 
@@ -373,6 +410,7 @@ Current limitations:
 - Pair metadata is local-only and not part of import/export
 - Some menu text still requires reopening the UI or refreshing after a language change
 - Regex rules only target handles, not comment text
+- Exact handle matching for older lowercase-only entries may require re-saving those entries
 
 If comments are not hiding:
 
@@ -394,13 +432,12 @@ If UID matching does not activate:
 
 ## 13. Future Work
 
-Open items from `TODO.md` still relevant after `v0.4.0-pre1`:
+Open items from `TODO.md` still relevant after `v0.4.0-pre2`:
 
 - Improve lookup efficiency with sorting and binary search
 - Refresh some menu and dialog labels immediately after language changes
 - Narrow the `⋯` menu observer instead of watching `document.body` continuously
 - Remove or harden the dialog string-HTML insertion path
-- Add richer list filtering or selection controls
 - Add API key validation/testing UX and better quota/error reporting
 
 The pair system is now implemented, but its lookup source and failure handling are still expected

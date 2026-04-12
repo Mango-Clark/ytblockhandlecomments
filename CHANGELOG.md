@@ -33,6 +33,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - None
 
+## [0.4.0-pre2] - 2026-04-12
+
+### Added
+
+- New `app_settings_v1` storage for handle case-sensitivity settings
+- Block-list row checkboxes, visible-results select-all, and selected-count display
+- `all|handle|id|regex` type filtering and handle-tag filtering in the manager dialog
+- Bulk actions for deleting selected entries and creating/updating pairs for selected handles
+
+### Changed
+
+- Handle rules now preserve stored casing and compare according to `handleCaseSensitive`
+- Pair metadata matching now follows the same handle comparison policy as block rules
+- The manager dialog now includes a dedicated handle case-sensitivity section and an expanded
+  list-maintenance toolbar
+- Cross-tab sync now refreshes local state when `app_settings_v1` changes
+
+### Fixed
+
+- Matched handles from comment DOM text and `/@...` links now preserve exact casing for
+  case-sensitive mode
+- Filtered tag views now show only matching handle entries instead of unrelated `id` or `regex`
+  rows
+
 ## [0.4.0-pre1] - 2026-04-12
 
 ### Added

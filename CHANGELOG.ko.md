@@ -33,6 +33,27 @@
 
 - 없음
 
+## [0.4.0-pre2] - 2026-04-12
+
+### Added
+
+- handle 대소문자 구분 설정용 새 저장소 `app_settings_v1` 추가
+- 차단 목록 row 체크박스, 현재 필터 결과 전체 선택, 선택 개수 표시 추가
+- 관리자 대화상자에 `all|handle|id|regex` 타입 필터와 handle 태그 필터 추가
+- 선택 항목 삭제와 선택 handle 대상 pair 생성/갱신 bulk action 추가
+
+### Changed
+
+- handle 규칙이 저장된 casing을 보존하고 `handleCaseSensitive` 설정에 따라 비교되도록 변경
+- pair 메타데이터 매칭도 차단 규칙과 같은 handle 비교 정책을 따르도록 변경
+- 관리자 대화상자에 handle 대소문자 섹션과 확장된 목록 유지보수 툴바 추가
+- `app_settings_v1` 변경도 탭 간 동기화 대상에 포함되도록 확장
+
+### Fixed
+
+- 댓글 DOM 텍스트와 `/@...` 링크에서 추출한 handle이 case-sensitive 모드용 exact casing을 유지하도록 보정
+- 태그 필터 사용 시 관련 없는 `id` 또는 `regex` 행이 같이 보이던 동작을 막고, 해당 handle만 표시되도록 정리
+
 ## [0.4.0-pre1] - 2026-04-12
 
 ### Added
