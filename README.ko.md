@@ -1,4 +1,4 @@
-# 📌 핸들로 YouTube 댓글 차단 — v0.2.4
+# 📌 핸들로 YouTube 댓글 차단 — v0.3.0
 
 [English](README.md) | [한국어](README.ko.md)
 
@@ -14,7 +14,8 @@
 
 - 🔇 작성자 핸들을 우클릭하여 차단/해제
 - ⋯ 메뉴에 "이 채널 댓글 숨김" 항목 자동 추가
-- MutationObserver + IntersectionObserver로 실시간 처리 최적화
+- watch 페이지 댓글 영역만 대상으로 하는 MutationObserver + IntersectionObserver 실시간 처리
+- 전체 페이지 재스캔 대신 새로 추가된 댓글 노드 위주로 처리해 YouTube 전반 지연 감소
 - 🔧 차단 목록 팝업:
 
   - 항목 확인/해제(핸들, 채널 ID, 정규식)
@@ -33,7 +34,7 @@
 
 1. [Tampermonkey](https://www.tampermonkey.net/) 설치
 2. 위 raw URL로 설치하거나, 새 사용자 스크립트를 만들고 `ytblockhandlecomments.js` 내용을 붙여넣기
-3. YouTube 페이지에서 다음 사용 가능:
+3. YouTube 동영상 watch 페이지에서 다음 사용 가능:
 
    - 작성자 핸들을 우클릭하여 차단/해제
    - 핸들이 아닌 곳을 우클릭 → Tampermonkey → YouTube Comment Blocker by Handle → 차단 목록 관리/초기화
@@ -55,7 +56,7 @@
 이 스크립트에서 사용하는 주요 메타 항목:
 
 - `@name`: YouTube Comment Blocker by Handle
-- `@version`: 0.2.4
+- `@version`: 0.3.0
 - `@match`: `https://www.youtube.com/*`
 - `@grant`: `GM_getValue`, `GM_setValue`, `GM_addValueChangeListener`, `GM_registerMenuCommand`
 - `@updateURL`/`@downloadURL`: 업데이트를 위한 GitHub raw URL
@@ -69,7 +70,9 @@
 - 저장 구조는 버전이 있으며 레거시 데이터를 자동으로 마이그레이션함
 - 컨텍스트 메뉴는 DOM에 직접 바인딩하지 않고 **위임 이벤트**를 사용함
 - `GM_addValueChangeListener`를 통해 **탭 간 동기화**를 지원함
+- 댓글 관찰은 watch 페이지와 comments host로 제한되어 YouTube UI 지연을 줄임
 - 정규식은 핸들 텍스트에만 적용(댓글 본문 제외)
+- 가벼운 성능 카운터는 `window.__ytCommentBlockerPerf`로 확인 가능
 - 언어 전환은 새로 열린 대화상자/메뉴에 반영되며, 이미 열린 UI는 다시 열어야 할 수 있음
 
 ---

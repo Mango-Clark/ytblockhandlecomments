@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube Comment Blocker
 // @namespace    YouTube_Comment_Blocker
-// @version      0.2.4
+// @version      0.3.0
 // @description  Block/unblock comment handles via right-click. Real-time hiding, custom popup, toast alerts, and block list manage/import/export.
 // @homepage     https://github.com/Mango-Clark/ytblockhandlecomments/
 // @updateURL    https://raw.githubusercontent.com/Mango-Clark/ytblockhandlecomments/refs/heads/master/ytblockhandlecomments.js
@@ -58,6 +58,9 @@
 		if (!h.startsWith('@')) return null;
 		return h.toLowerCase();
 	};
+	const COMMENT_SELECTOR = 'ytd-comment-thread-renderer, ytd-comment-renderer, ytd-comment-view-model';
+	const COMMENTS_HOST_SELECTOR = 'ytd-comments#comments, ytd-comments';
+	const WATCH_ROOT_SELECTOR = 'ytd-watch-flexy, ytd-watch-grid, ytd-page-manager';
 
 	// Simple i18n dictionary (ko/en)
 	const I18N = {
@@ -339,7 +342,7 @@
 	}
 
 	/* ----------------------------------------------------------
-	 * 5. CommentHider (Set lookup + rAF debounced refresh)
+	 * 5. CommentHider (scoped refresh + cached metadata)
 	 * ---------------------------------------------------------- */
 	class CommentHider {
 		constructor(storage) {
@@ -347,12 +350,21 @@
 			this._idSet = new Set();
 			this._handleSet = new Set();
 			this._regexes = [];
+			this._metaCache = new WeakMap();
+			this._observed = new WeakSet();
 			this._pending = false;
-			// Note: previously used a WeakSet cache to avoid reprocessing nodes.
-			// This prevented real-time updates when the block list changed.
-			// We now compute visibility on each refresh to apply changes instantly.
+			this._pendingRoot = null;
 			this._io = null;
+			this._metrics = {
+				mutationBatches: 0,
+				fullRefreshes: 0,
+				incrementalRefreshes: 0,
+				scannedNodes: 0,
+				lastDurationMs: 0,
+				totalDurationMs: 0
+			};
 			this.rebuildLookup();
+			try { window.__ytCommentBlockerPerf = this._metrics; } catch { }
 		}
 		rebuildLookup() {
 			this._idSet.clear(); this._handleSet.clear(); this._regexes = [];
@@ -362,10 +374,40 @@
 				else if (it.type === 'regex') { try { this._regexes.push(new RegExp(it.value, it.flags || '')); } catch { } }
 			}
 		}
+		_getDefaultRoot() {
+			return document.querySelector(COMMENTS_HOST_SELECTOR);
+		}
+		_collectCommentNodes(root) {
+			if (!root) return [];
+			if (root.matches?.(COMMENT_SELECTOR)) return [root];
+			if (!root.querySelectorAll) return [];
+			return Array.from(root.querySelectorAll(COMMENT_SELECTOR));
+		}
+		_mergeRoots(a, b) {
+			if (!a) return b;
+			if (!b || a === b) return a;
+			if (a.contains?.(b)) return a;
+			if (b.contains?.(a)) return b;
+			return this._getDefaultRoot() || b;
+		}
+		_getMeta(node) {
+			const cached = this._metaCache.get(node);
+			if (cached) return cached;
+			const meta = {
+				id: Extractor.getChannelId(node),
+				handle: Extractor.getHandle(node)
+			};
+			this._metaCache.set(node, meta);
+			return meta;
+		}
+		invalidateNode(node) {
+			if (!node) return;
+			this._metaCache.delete(node);
+		}
 		_matches(node) {
-			const id = Extractor.getChannelId(node);
-			if (id && this._idSet.has(id)) return true;
-			const h = Extractor.getHandle(node);
+			const meta = this._getMeta(node);
+			if (meta.id && this._idSet.has(meta.id)) return true;
+			const h = meta.handle;
 			if (h && this._handleSet.has(h)) return true;
 			if (h) { for (const rx of this._regexes) { if (rx.test(h)) return true; } }
 			return false;
@@ -381,24 +423,64 @@
 			}, { root: null, rootMargin: '0px', threshold: 0 });
 			return this._io;
 		}
-		observeInScope(root) {
-			const scope = root || document;
-			const io = this._connectIO();
-			scope.querySelectorAll('ytd-comment-thread-renderer, ytd-comment-renderer, ytd-comment-view-model')
-				.forEach(n => io.observe(n));
+		resetObservation() {
+			if (this._io) this._io.disconnect();
+			this._io = null;
+			this._observed = new WeakSet();
+		}
+		_observeNode(node) {
+			if (!node || this._observed.has(node)) return;
+			this._observed.add(node);
+			this._connectIO().observe(node);
+		}
+		_recordRefresh(kind, count, startedAt) {
+			this._metrics[kind] += 1;
+			this._metrics.scannedNodes += count;
+			const duration = Math.round((performance.now() - startedAt) * 100) / 100;
+			this._metrics.lastDurationMs = duration;
+			this._metrics.totalDurationMs = Math.round((this._metrics.totalDurationMs + duration) * 100) / 100;
+		}
+		noteMutationBatch() {
+			this._metrics.mutationBatches += 1;
+		}
+		refreshNodes(nodes, { invalidate = true } = {}) {
+			const unique = new Set();
+			for (const node of nodes || []) {
+				if (node?.isConnected) unique.add(node);
+			}
+			if (!unique.size) return;
+			const startedAt = performance.now();
+			for (const node of unique) {
+				if (invalidate) this.invalidateNode(node);
+				this.applyHide(node);
+				this._observeNode(node);
+			}
+			this._recordRefresh('incrementalRefreshes', unique.size, startedAt);
 		}
 		doRefresh(root) {
-			// Apply visibility to all known comment nodes immediately (real-time update)
-			const scope = root || document;
-			scope.querySelectorAll('ytd-comment-thread-renderer, ytd-comment-renderer, ytd-comment-view-model')
-				.forEach(n => this.applyHide(n));
-			// Ensure we continue to observe for future nodes entering the viewport
-			this.observeInScope(root);
+			const scope = root || this._getDefaultRoot();
+			if (!scope) return;
+			const nodes = this._collectCommentNodes(scope);
+			if (!nodes.length) return;
+			const startedAt = performance.now();
+			for (const node of nodes) {
+				this.applyHide(node);
+				this._observeNode(node);
+			}
+			this._recordRefresh('fullRefreshes', nodes.length, startedAt);
 		}
 		refreshScheduled(root) {
+			const scope = root || this._getDefaultRoot();
+			if (!scope) return;
+			this._pendingRoot = this._mergeRoots(this._pendingRoot, scope);
 			if (this._pending) return;
 			this._pending = true;
-			requestAnimationFrame(() => { this._pending = false; this.doRefresh(root); });
+			requestAnimationFrame(() => {
+				const nextRoot = this._pendingRoot || this._getDefaultRoot();
+				this._pending = false;
+				this._pendingRoot = null;
+				if (nextRoot) this.doRefresh(nextRoot);
+			});
 		}
 	}
 
@@ -632,11 +714,15 @@
 			this.hider = new CommentHider(this.storage);
 			this.menu = new MenuEnhancer(this.storage, this.hider);
 			this.manager = new BlockListManager(this.storage, this.hider);
+			this._commentsHost = null;
+			this._commentObserver = null;
+			this._hostObserver = null;
+			this._pageSyncPending = false;
 			this._bindGlobalEvents();
-			this._observe();
+			this._bindNavigationEvents();
 			this._syncAcrossTabs();
-			this.hider.refreshScheduled();
 			this._registerMenu();
+			this._schedulePageSync();
 		}
 
 		_bindGlobalEvents() {
@@ -676,13 +762,106 @@
 			}, { capture: true });
 		}
 
-		_observe() {
-			// Observe DOM changes and refresh once per frame
-			new MutationObserver(muts => {
-				for (const m of muts) {
-					if (m.addedNodes && m.addedNodes.length) { this.hider.refreshScheduled(m.target); break; }
-				}
-			}).observe(document.documentElement, { childList: true, subtree: true });
+		_bindNavigationEvents() {
+			const onNavigate = () => this._schedulePageSync();
+			window.addEventListener('yt-navigate-finish', onNavigate, true);
+			window.addEventListener('popstate', onNavigate, true);
+			document.addEventListener('visibilitychange', () => {
+				if (!document.hidden) this._schedulePageSync();
+			});
+		}
+
+		_schedulePageSync() {
+			if (this._pageSyncPending) return;
+			this._pageSyncPending = true;
+			requestAnimationFrame(() => {
+				this._pageSyncPending = false;
+				this._syncPageState();
+			});
+		}
+
+		_isWatchPage() {
+			return location.pathname === '/watch';
+		}
+
+		_getWatchRoot() {
+			return document.querySelector(WATCH_ROOT_SELECTOR) || document.body;
+		}
+
+		_findCommentsHost() {
+			return document.querySelector(COMMENTS_HOST_SELECTOR);
+		}
+
+		_disconnectHostObserver() {
+			if (!this._hostObserver) return;
+			this._hostObserver.disconnect();
+			this._hostObserver = null;
+		}
+
+		_disconnectCommentObserver() {
+			if (this._commentObserver) this._commentObserver.disconnect();
+			this._commentObserver = null;
+			this._commentsHost = null;
+			this.hider.resetObservation();
+		}
+
+		_watchForCommentsHost() {
+			if (this._hostObserver || !this._isWatchPage()) return;
+			const root = this._getWatchRoot();
+			if (!root) return;
+			this._hostObserver = new MutationObserver(() => {
+				const host = this._findCommentsHost();
+				if (host) this._attachCommentsHost(host);
+			});
+			this._hostObserver.observe(root, { childList: true, subtree: true });
+		}
+
+		_collectRefreshRoots(node, roots) {
+			if (node?.nodeType !== 1) return;
+			if (node.matches?.(COMMENT_SELECTOR)) roots.add(node);
+			const currentRoot = Extractor.getCommentRoot(node);
+			if (currentRoot) roots.add(currentRoot);
+			node.querySelectorAll?.(COMMENT_SELECTOR).forEach(commentNode => roots.add(commentNode));
+		}
+
+		_handleCommentMutations(muts) {
+			const roots = new Set();
+			for (const m of muts) {
+				if (!m.addedNodes?.length) continue;
+				const targetRoot = Extractor.getCommentRoot(m.target);
+				if (targetRoot) roots.add(targetRoot);
+				for (const node of m.addedNodes) this._collectRefreshRoots(node, roots);
+			}
+			if (!roots.size) return;
+			this.hider.noteMutationBatch();
+			this.hider.refreshNodes(roots, { invalidate: true });
+		}
+
+		_attachCommentsHost(host) {
+			this._disconnectHostObserver();
+			if (!host) return;
+			if (this._commentsHost !== host || !this._commentObserver) {
+				if (this._commentObserver) this._commentObserver.disconnect();
+				this.hider.resetObservation();
+				this._commentsHost = host;
+				this._commentObserver = new MutationObserver(muts => this._handleCommentMutations(muts));
+				this._commentObserver.observe(host, { childList: true, subtree: true });
+			}
+			this.hider.refreshScheduled(host);
+		}
+
+		_syncPageState() {
+			if (!this._isWatchPage()) {
+				this._disconnectHostObserver();
+				this._disconnectCommentObserver();
+				return;
+			}
+			const host = this._findCommentsHost();
+			if (host) this._attachCommentsHost(host);
+			else {
+				this._disconnectCommentObserver();
+				this._watchForCommentsHost();
+			}
 		}
 
 		_syncAcrossTabs() {
