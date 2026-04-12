@@ -10,52 +10,123 @@
 ## [Unreleased]
 
 ### Added
+
 - 없음
 
 ### Changed
+
 - 없음
 
 ### Deprecated
+
 - 없음
 
 ### Removed
+
 - 없음
 
 ### Fixed
+
 - 없음
 
 ### Security
+
 - 없음
+
+## [0.4.0] - 2026-04-12
+
+### Added
+
+- handle 대소문자 구분 설정용 새 저장소 `app_settings_v1` 추가
+- 차단 목록 row 체크박스, 현재 필터 결과 전체 선택, 선택 개수 표시 추가
+- 관리자 대화상자에 `all|handle|id|regex` 타입 필터와 handle 태그 필터 추가
+- 선택 항목 삭제와 선택 handle 대상 pair 생성/갱신 bulk action 추가
+- 인덱스 기반 substring 검색이 가능한 관리자 검색 추가
+- regex 행에 매칭 handle 개수, inline 확장, matching-handle 선택 기능 추가
+- 관리자와 watch 페이지 후속 dialog에 handle별 pair 실행 상세 결과 추가
+- `youtube_data_api_v3_config`에 API 키 테스트 진단 결과 저장 추가
+- 실시간 i18n 갱신용 menu 재등록과 dialog refresh hook 추가
+- 사용자 스크립트 grant에 `GM_unregisterMenuCommand` 추가
+
+### Changed
+
+- handle 규칙이 저장된 casing을 보존하고 `handleCaseSensitive` 설정에 따라 비교되도록 변경
+- pair 메타데이터 매칭도 차단 규칙과 같은 handle 비교 정책을 따르도록 변경
+- 관리자 대화상자에 handle 대소문자 섹션과 확장된 목록 유지보수 툴바 추가
+- `app_settings_v1`와 `lang` 변경도 탭 간 동기화 대상에 포함되도록 확장
+- API 설정 저장소를 v2로 확장하고 마지막 키 테스트 결과를 유지하도록 변경
+- watch 페이지 pair 배너에서 update 후 상세 결과를 바로 볼 수 있도록 변경
+- 관리자 대화상자에서 visible/selected 규칙 계산을 공유하는 렌더 단위 view state로 정리
+- regex 행 매칭이 dialog-session 캐시를 사용하고, 전체 match 배열은 expand 또는
+  `Select matching handles` 때만 계산되도록 변경
+- selection-only 동작은 규칙 목록 DOM 전체를 다시 만들지 않고 보이는 checkbox, counter,
+  bulk action 상태만 갱신하도록 변경
+- 댓글 숨김 page pipeline을 `/watch` 전용에서 `/watch`와 `/shorts/<id>` 지원으로 확장
+- 명시적인 page-mode helper 기준으로 page sync와 comments host discovery를 재구성
+- Shorts에서도 기존 comment matching / mutation 경로를 재사용하면서 pair banner는
+  계속 watch-only로 유지
+
+### Fixed
+
+- 댓글 DOM 텍스트와 `/@...` 링크에서 추출한 handle이 case-sensitive 모드용 exact casing을 유지하도록 보정
+- 태그 필터 사용 시 관련 없는 `id` 또는 `regex` 행이 같이 보이던 동작을 막고, 해당 handle만 표시되도록 정리
+- 새로운 `pair_meta_v1` 저장소를 사용하는 선택적 UID 감지 토글 추가
+- 관리자 대화상자에 handle↔UID pair 생성 및 갱신 액션 추가
+- 차단된 handle에 대한 pair 상태 배지와 메타데이터 표시 추가
+- stale 또는 mismatch 항목이 있을 때 pair 검토를 유도하는 watch 페이지 배너 추가
+- pair 메타데이터 변경에 대한 탭 간 동기화 추가
+- 관리자 대화상자에 로컬 전용 YouTube Data API v3 API 키 저장 기능 추가
+- pair 생성/갱신이 `channels.list`의 `forHandle` 필터를 사용하도록 구현
+- 관리자 대화상자에 UID 섹션, pair 요약 카드, pair 검사 시각을 확장 추가
+- UID 조회 방식이 채널 페이지 스크래핑 대신 사용자 제공 API 키 기반 호출로 변경
+- `id` 규칙 매칭은 항상 활성 대신 UID 감지 토글에 따라 동작하도록 변경
+- `handle` 규칙 제거 시 연결된 UID 규칙과 pair 메타데이터도 함께 제거하도록 변경
+- API 키가 저장되기 전에는 관리자에서 pair 액션이 비활성화되도록 변경
+- 문서를 API 키 기반 UID 흐름과 로컬 전용 키 저장 방식에 맞춰 갱신
+- UID 조회 실패 또는 pair 검증 실패 시 handle-only 차단이 안전한 fallback으로 계속 유지되도록 보강
+- UID 조회가 YouTube 채널 페이지 HTML 구조 변화에 덜 취약하도록 개선
+- regex 행 선택 시 전체 목록 재렌더를 피해서 `Select matching handles` 지연의 주원인 제거
+- 같은 상호작용 안에서 search/selection 상태를 여러 번 다시 계산하던 중복 작업 감소
+- watch-only page gating 때문에 건너뛰던 Shorts 페이지의 차단 댓글과 대댓글 숨김을 지원
+- storage 변경 시 현재 연결된 comments host를 기준으로 refresh하여, 이미 host가 붙은
+  Shorts에서는 block 직후 즉시 숨김이 반영되도록 보정
 
 ## [0.3.0] – 2026-04-07
 
 ### Added
+
 - `window.__ytCommentBlockerPerf`로 확인할 수 있는 가벼운 성능 카운터 추가
 
 ### Changed
+
 - 전체 페이지 반응 대신 watch 페이지와 comments host만 댓글 관찰 대상으로 제한
 - 넓은 subtree 재스캔 대신 영향받은 댓글 루트만 증분 처리하도록 새로고침 방식 변경
 - 댓글별 handle/channel 메타데이터를 노드 단위로 캐시하고 `IntersectionObserver.observe()` 등록을 중복 방지
 
 ### Fixed
+
 - 전역 DOM 감시와 반복 댓글 재스캔 때문에 발생하던 YouTube UI 지연 감소
 
 ## [0.2.4] – 2025-08-17
 
 ### Added
+
 - 사용자 스크립트 메타데이터: `@homepage` 추가
 
 ### Changed
+
 - 사용자 스크립트 메타데이터: `@namespace` 수정
 
 ## [0.2.3] – 2025-08-17
 
 ### Fixed
+
 - 페이지 새로고침 없이 즉시 차단/해제가 반영되도록, 새로고침 시 기존 댓글 노드를 재평가하고 업데이트를 막던 캐시 가드를 제거했습니다.
 
 ## [0.2.2] – 2025-08-15
 
 ### Changed
+
 - 문서: README(영문/한국어) 표시 버전을 v0.2.2로 갱신
 - 문서: 원클릭 설치용 raw URL과 메타데이터 섹션 추가
 - 문서: 언어 전환 시 이미 열린 UI에 대한 안내 명확화
@@ -63,11 +134,13 @@
 ## [0.2.1] – 2025-08-15
 
 ### Added
+
 - 차단 목록 대화상자에 정규식 직접 입력 폼 추가
 - regexr.com으로 연결되는 “정규식 만들기/테스트” 버튼 추가
 - 스크롤에 영향받지 않는 상단 고정(Sticky) 정규식 툴바 분리
 
 ### Changed
+
 - 정규식 영역 버튼 높이를 낮춰 UI 간결화
 - README/변경사항에 양방향 언어 링크바 추가
 - 사용자 스크립트 @namespace 및 @updateURL/@downloadURL을 GitHub로 갱신
@@ -75,6 +148,7 @@
 ## [0.2.0] – 2025-08-15
 
 ### Added
+
 - 채널 ID 기반 차단(가능 시 ID 우선, 핸들 폴백)
 - 핸들에 대한 정규식 차단(검증 및 가져오기/내보내기 지원)
 - i18n(한국어/영어) 및 접근성(ARIA, aria-live) 개선
@@ -82,51 +156,62 @@
 - 언어 전환 Tampermonkey 메뉴 추가
 
 ### Changed
+
 - 저장소를 v2 스키마로 업그레이드 `{version:2, items:[{type:'id'|'handle'|'regex', ...}]}` (자동 마이그레이션)
 - 인라인 스타일 대신 클래스 토글로 일괄 업데이트
 
 ### Fixed
+
 - rAF 디바운스와 스코프 기반 새로고침으로 불필요한 전체 스캔 감소
 
 ## [0.1.5] – 2025-08-15
 
 ### Fixed
+
 - 탭 간 동기화 최적화: 원격 업데이트 수신 시 다시 쓰기를 방지하여 많은 탭에서 동기화 이벤트가 연쇄적으로 발생하며 지연이 커지는 문제 해결
 
 ### Changed
+
 - 차단 목록이 변하지 않은 경우 중복 저장을 피하도록 내부 저장 로직 개선
 
 ## [0.1.4] – 2025-08-14
 
 ### Changed
+
 - 차단 목록 다이얼로그의 가져오기/내보내기/닫기 버튼이 스크롤 없이 항상 보이도록 고정됨
 
 ## [0.1.3] – 2025-08-14
 
 ### Changed
+
 - 기본 다이얼로그 UI를 확대하여 가독성 향상
 
 ### Fixed
+
 - 차단 목록 내보내기 다이얼로그 너비 확장
 - 내보낸 텍스트가 이제 각 핸들을 줄바꿈하여 표시함
 
 ## [0.1.2] – 2025-08-08
 
 ### Added
+
 - 사용자 스크립트에 `@updateURL`과 `@downloadURL` 메타데이터 추가
 - 저장소 버전 관리, 위임 컨텍스트 메뉴 이벤트, 탭 간 동기화, JSON 가져오기/내보내기 문서화
 
 ### Changed
+
 - README를 영어로 재작성하고 한국어 번역본 추가
 
 ## [0.1.1] – 2025-08-08
 
 ### Fixed
+
 - README에서 "Tampermonkey" 철자 수정
 
 ## [0.1.0] – 2025-08-08
 
 ### Added
+
 - 클래스 기반 OOP 구조로 전체 코드 리팩토링
 - 자동 메뉴 주입 기능을 `MenuEnhancer` 클래스로 분리
 - 차단 목록 내보내기에 JSON 및 줄바꿈 텍스트 포맷 제공
@@ -138,21 +223,26 @@
 - MutationObserver와 requestAnimationFrame 기반 디바운스로 성능 향상
 
 ### Changed
+
 - DOM 직접 바인딩 방식에서 위임 이벤트 처리로 변경
 - 목록 UI를 동적으로 렌더링하도록 개선
 
 ### Deprecated
+
 - `blockedHandles` 키는 유지하되 내부적으로는 사용하지 않음
 
 ### Fixed
+
 - 일부 댓글 스레드에서 차단이 누락되던 문제 해결
 
 ### Security
+
 - 다이얼로그에 텍스트 노드를 우선 사용하여 XSS 위험 감소
 
 ## [0.0.1] – 2025-07-06
 
 ### Added
+
 - 댓글 작성자 `@handle`을 우클릭하여 차단/해제 기능
 - 실시간 댓글 차단을 위한 `MutationObserver` 도입
 - 차단된 핸들을 팝업에서 확인·해제 가능한 차단 목록 UI

@@ -1,18 +1,13 @@
 # TODO
 
-## IMPORTANT
-
-- [x] 차단이 실시간으로 적용이 안됨. 차단 이후 새로고침 또는 다른 비디오로 넘어가야함. (v0.2.3에서 해결)
-- [x] 전체 YouTube DOM 감시로 인한 지연을 줄이기 위해 watch 페이지 댓글 영역만 관찰하도록 최적화. (v0.3.0에서 해결)
-
 ## Normal
 
-- [ ] 검색을 O(logn)으로 할 수 있도록 정렬 및 이분 탐색.
-- [ ] 언어 변경이 바로 안됨. 언어 변경 이후에 새로 고침을 해야지만 언어 변경이 됨. 변경 안되는 부분은 menuChange, menuClear.
-- [ ] regex 만족하는 개별 태그는 삭제.
-- [ ] i18n 실시간 반영: 열린 다이얼로그/메뉴 텍스트도 즉시 업데이트되도록 개선.
+- [ ] Add automated regression coverage for manager search, live i18n refresh, and pair result UI.
+- [ ] Consider virtualizing very large regex match lists in the manager when block lists grow.
+- [ ] Surface more structured quota guidance when the API test detects repeated `quota` failures.
 
-## small
+## Small
 
-- [ ] 차단목록 선택
-- [ ] 차단목록 (regex, handle, 모두) 선택하는 옵션.
+- [ ] Polish the pair result detail view with sorting or filtering by outcome.
+- [ ] Add copy/export helpers for failed handle names from the last pair run.
+- [ ] Consider row-level updates for regex expand/collapse if large lists still feel heavy.

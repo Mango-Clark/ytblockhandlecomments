@@ -11,40 +11,75 @@ All contributors (human or agent) must follow these rules when editing or adding
 ## Quick Checklist
 
 - Branch: work on `dev` (unless told otherwise).
+- Code updates: review and update all `*.md` files in the repository so Markdown docs stay in
+  sync with the current code.
 - Docs: update `README.md` first, then `README.ko.md`.
+- Wiki: update `WIKI.md` first, then `WIKI.ko.md` when detailed behavior or storage changes.
+- Plans: update implementation/planning docs under `docs/` when roadmap or design docs change.
 - Changelog: update `CHANGELOG.md` (Keep a Changelog), then `CHANGELOG.ko.md`.
 - Version: bump in `VERSION` or package manifest when behavior changes are shipped.
-- TODO: review `TODO.md`, update checkboxes, add items if needed.
+- TODO: review `TODO.md`, update checkboxes, add items if needed, erase items that are done in prior verion.
 - Validation: ensure `git status` is clean before committing or opening a PR.
 - Review: request maintainer review for code or changelog changes.
 
 ## Documentation Workflow
 
-1) README
-- Write `README.md` in English (overview, install, usage, examples, limitations).
-- Translate to Korean as `README.ko.md` after the English version is finalized.
+1) All Markdown files
 
-2) Changelog
-- Edit `CHANGELOG.md` in English following Keep a Changelog 1.1.0.
-- Maintain sections: Added, Changed, Deprecated, Removed, Fixed, Security.
-- Keep an `Unreleased` section at the top; move entries under a new version on release.
-- Date format: `YYYY-MM-DD`.
-- Translate corresponding changes into `CHANGELOG.ko.md`.
+   - When code changes, review every `*.md` file in the repository.
+   - Update all Markdown files that must stay aligned with the new behavior, UI, storage,
+   limitations, plans, or workflows before delivery.
 
-3) TODO
-- Review `TODO.md` for pending items.
-- Mark completed items with `- [x]` and add new tasks as needed.
+2) README
 
-4) File Structure Example
+   - Write `README.md` in English (overview, install, usage, examples, limitations).
+   - Translate to Korean as `README.ko.md` after the English version is finalized.
 
-```text
-├── README.md          # English documentation
-├── README.ko.md       # Korean translation of README
-├── CHANGELOG.md       # English changelog
-├── CHANGELOG.ko.md    # Korean translation of changelog
-├── TODO.md            # Task list
-└── AGENTS.md          # Agent instructions
-```
+3) WIKI
+
+   - Keep `WIKI.md` aligned with the current implementation details.
+   - Update `WIKI.ko.md` immediately after the English wiki is finalized.
+   - Use the wiki for detailed storage, matching, troubleshooting, and limitation notes.
+
+4) Planning Docs
+
+   - Keep design or planning docs under `docs/` aligned with current intent.
+   - Example files include `docs/기획서.md` and technical analysis notes such as
+     `docs/performance-analysis.md`.
+   - Planning docs may describe future work, so distinguish clearly between implemented behavior
+     and planned behavior.
+
+5) Changelog
+
+   - Edit `CHANGELOG.md` in English following Keep a Changelog 1.1.0.
+   - Maintain sections: Added, Changed, Deprecated, Removed, Fixed, Security.
+   - Keep an `Unreleased` section at the top; move entries under a new version on release.
+   - Date format: `YYYY-MM-DD`.
+   - Translate corresponding changes into `CHANGELOG.ko.md`.
+
+6) TODO
+
+   - Review `TODO.md` for pending items.
+   - Mark completed items with `- [x]` and add new tasks as needed.
+   - Erase completed items with `- [x]` that is completed in previous version. Active deletion only when version is bumped. For example, if bumped version is `0.2.0-pre2` or `0.2.0`, then erase untill `0.1.x`.
+
+7) File Structure Example
+
+   ```text
+   ├── README.md                   # English overview and usage
+   ├── README.ko.md                # Korean translation of README
+   ├── WIKI.md                     # English detailed reference
+   ├── WIKI.ko.md                  # Korean detailed reference
+   ├── CHANGELOG.md                # English changelog
+   ├── CHANGELOG.ko.md             # Korean changelog
+   ├── TODO.md                     # Task list
+   ├── AGENTS.md                   # Agent instructions
+   ├── docs/
+   │   ├── 기획서.md               # Current planning/design document
+   │   └── performance-analysis.md # Technical analysis notes
+   └── credentials/
+       └── YouTube Data API v3.txt # Local reference notes, not shipped credentials
+   ```
 
 ## Translation Guidelines
 
@@ -62,6 +97,7 @@ All contributors (human or agent) must follow these rules when editing or adding
 - Do not add additional locales without explicit instructions.
 
 Order:
+
 1. English -> Korean
 2. English -> Others (if instructed)
 
@@ -95,6 +131,7 @@ Order:
 
 - Use Semantic Versioning (SemVer) for releases.
 - Bump the version in `VERSION` or the package manifest when releasing changes.
+- Do not bump version without instructions.
 - Maintain `CHANGELOG.md` using Keep a Changelog format and section names.
 - Each release entry must include a version and date (e.g., `## [1.2.3] - 2025-08-17`).
 
@@ -115,4 +152,3 @@ Order:
 
 - Follow the most specific and recent instruction.
 - Precedence: direct user instructions > nested `AGENTS.md` > parent `AGENTS.md`.
-
