@@ -33,6 +33,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - None
 
+## [0.4.1] - 2026-04-12
+
+### Changed
+
+- Refactored the manager dialog to reuse a shared per-render view state for visible and selected
+  rule calculations
+- Regex-row matching now uses dialog-session caching and computes full match arrays only on expand
+  or `Select matching handles`
+- Selection-only actions now update visible checkboxes, counters, and bulk-action state without
+  rebuilding the full rule list DOM
+
+### Fixed
+
+- Removed the main `Select matching handles` latency source by avoiding whole-list rerenders on
+  regex-row selection
+- Reduced repeated manager work from rebuilding search/selection state multiple times within the
+  same interaction cycle
+
 ## [0.4.0] - 2026-04-12
 
 ### Added

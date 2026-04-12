@@ -1,12 +1,12 @@
-# 📌 YouTube Comment Blocker — v0.4.0
+# 📌 YouTube Comment Blocker — v0.4.1
 
 [English](README.md) | [한국어](README.ko.md)
 
 Full reference: [WIKI.md](WIKI.md) | [WIKI.ko.md](WIKI.ko.md)
 
-A Tampermonkey userscript for hiding YouTube comments by channel identity. `v0.4.0` finishes the
-planned block-list manager work: safer dialogs, lighter menu observation, live i18n refresh,
-API-key validation, searchable rules, regex match helpers, and detailed pair-run results.
+A Tampermonkey userscript for hiding YouTube comments by channel identity. `v0.4.1` keeps the
+`v0.4.0` manager feature set and tightens the slowest regex-selection path with cached match work,
+shared manager view state, and selection-only UI updates.
 
 Quick install:
 
@@ -23,6 +23,7 @@ Quick install:
 - Supports case-sensitive handle matching
 - Supports block-list search, type filters, tag filters, row selection, and bulk actions
 - Shows regex rows with matched-handle counts and one-click matching-handle selection
+- Reuses cached regex match results so matching-handle selection no longer rebuilds the full list
 - Shows handle-level pair results after create/update runs
 - Refreshes manager UI, dialogs, banner text, and menu labels after language changes
 
@@ -123,6 +124,7 @@ Notes:
 - UID lookup uses YouTube Data API v3 `channels.list` with the `forHandle` filter
 - API-key testing uses the same API family with a fixed public channel probe
 - Search is manager-only; comment-hide hot-path lookup still uses cached sets
+- Regex selection now updates visible checkboxes and counters without full-list rerendering
 - Regex rules only target handles, not comment text
 - Comment hiding is intentionally scoped to watch-page comments
 - Performance counters are exposed on `window.__ytCommentBlockerPerf`
@@ -130,7 +132,7 @@ Notes:
 ## Userscript Metadata
 
 - `@name`: `YouTube Comment Blocker`
-- `@version`: `0.4.0`
+- `@version`: `0.4.1`
 - `@match`: `https://www.youtube.com/*`
 - `@grant`: `GM_getValue`, `GM_setValue`, `GM_addValueChangeListener`,
   `GM_registerMenuCommand`, `GM_unregisterMenuCommand`

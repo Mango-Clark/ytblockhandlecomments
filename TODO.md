@@ -10,3 +10,4 @@
 
 - [ ] Polish the pair result detail view with sorting or filtering by outcome.
 - [ ] Add copy/export helpers for failed handle names from the last pair run.
+- [ ] Consider row-level updates for regex expand/collapse if large lists still feel heavy.

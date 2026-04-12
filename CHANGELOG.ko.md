@@ -33,6 +33,21 @@
 
 - 없음
 
+## [0.4.1] - 2026-04-12
+
+### Changed
+
+- 관리자 대화상자에서 visible/selected 규칙 계산을 공유하는 렌더 단위 view state로 정리
+- regex 행 매칭이 dialog-session 캐시를 사용하고, 전체 match 배열은 expand 또는
+  `Select matching handles` 때만 계산되도록 변경
+- selection-only 동작은 규칙 목록 DOM 전체를 다시 만들지 않고 보이는 checkbox, counter,
+  bulk action 상태만 갱신하도록 변경
+
+### Fixed
+
+- regex 행 선택 시 전체 목록 재렌더를 피해서 `Select matching handles` 지연의 주원인 제거
+- 같은 상호작용 안에서 search/selection 상태를 여러 번 다시 계산하던 중복 작업 감소
+
 ## [0.4.0] - 2026-04-12
 
 ### Added

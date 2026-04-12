@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube Comment Blocker
 // @namespace    YouTube_Comment_Blocker
-// @version      0.4.0
+// @version      0.4.1
 // @description  Block/unblock comment handles via right-click. Optional UID pairing via YouTube Data API, real-time hiding, custom popup, and block list management.
 // @homepage     https://github.com/Mango-Clark/ytblockhandlecomments/
 // @updateURL    https://raw.githubusercontent.com/Mango-Clark/ytblockhandlecomments/refs/heads/master/ytblockhandlecomments.js
@@ -1926,6 +1926,7 @@
 				input.addEventListener('change', () => {
 					if (input.checked) tagFilters.add(code);
 					else tagFilters.delete(code);
+					invalidateViewState({ clearRegex: true });
 					renderList();
 				});
 				const text = document.createElement('span');
@@ -1964,32 +1965,173 @@
 			listSection.append(listTitle, toolbar, list);
 			wrap.append(settingsSection, apiSection, pairSection, form, listSection);
 
+			const regexMatchCache = new Map();
+			const rowRefs = new Map();
+			let baseViewStateCache = null;
+			let viewStateCache = null;
+			let selectionVersion = 0;
 			const getCurrentItems = () => this.app.storage.all();
 			const getStatusCode = (item) => item.type === 'handle'
 				? this.app.pairService.getHandleStatus(item.value).code
 				: null;
-			const pruneSelection = () => {
-				const valid = new Set(getCurrentItems().map(getItemKey).filter(Boolean));
-				for (const key of Array.from(selection)) {
-					if (!valid.has(key)) selection.delete(key);
+			const markSelectionChanged = () => {
+				selectionVersion += 1;
+				viewStateCache = null;
+			};
+			const setSelectionValue = (key, selected) => {
+				if (!key) return false;
+				if (selected) {
+					if (selection.has(key)) return false;
+					selection.add(key);
+					markSelectionChanged();
+					return true;
 				}
+				if (!selection.has(key)) return false;
+				selection.delete(key);
+				markSelectionChanged();
+				return true;
 			};
-			const getSelectedItems = () => {
-				const items = getCurrentItems();
-				const keyed = new Map(items.map(item => [getItemKey(item), item]));
-				return Array.from(selection).map(key => keyed.get(key)).filter(Boolean);
+			const invalidateViewState = ({ clearRegex = false } = {}) => {
+				baseViewStateCache = null;
+				viewStateCache = null;
+				rowRefs.clear();
+				if (clearRegex) regexMatchCache.clear();
 			};
-			const getVisibleItems = () => {
-				const items = getCurrentItems();
-				const searchIndex = buildManagerSearchIndex(items);
+			const getItemsRevision = (items) => (items || [])
+				.map(item => `${item.type}:${item.value}:${item.flags || ''}`)
+				.join('\u001f');
+			const getPairRevision = (items) => (items || [])
+				.filter(item => item.type === 'handle')
+				.map(item => {
+					const status = this.app.pairService.getHandleStatus(item.value);
+					const pair = status?.pair || null;
+					return [
+						getItemKey(item),
+						status?.code || '',
+						pair?.uid || '',
+						pair?.verifiedAt || '',
+						pair?.lastResolvedUid || '',
+						pair?.lastError || '',
+						pair?.source || ''
+					].join(':');
+				})
+				.join('\u001e');
+			const pruneSelection = (keyedItems) => {
+				const valid = keyedItems || new Map(getCurrentItems().map(item => [getItemKey(item), item]));
+				let changed = false;
+				for (const key of Array.from(selection)) {
+					if (!valid.has(key)) {
+						selection.delete(key);
+						changed = true;
+					}
+				}
+				if (changed) markSelectionChanged();
+			};
+			const buildBaseViewState = () => {
+				const allItems = getCurrentItems();
+				const keyedItems = new Map(allItems.map(item => [getItemKey(item), item]));
+				const handleItems = allItems.filter(item => item.type === 'handle');
+				const searchIndex = buildManagerSearchIndex(allItems);
 				const searched = searchManagerIndex(searchIndex, searchQuery);
 				const typeValue = typeSelect.value || 'all';
-				return searched.filter(item => {
+				const visibleItems = searched.filter(item => {
 					if (typeValue !== 'all' && item.type !== typeValue) return false;
 					if (!tagFilters.size) return true;
 					if (item.type !== 'handle') return false;
 					return tagFilters.has(getStatusCode(item));
 				});
+				const visibleKeys = visibleItems.map(getItemKey).filter(Boolean);
+				return {
+					signature: [
+						getItemsRevision(allItems),
+						getPairRevision(handleItems),
+						String(this.app.settings.isHandleCaseSensitive()),
+						(typeSelect.value || 'all'),
+						String(searchQuery || '').trim().toLowerCase(),
+						Array.from(tagFilters).sort().join(',')
+					].join('|'),
+					itemsRevision: getItemsRevision(allItems),
+					allItems,
+					keyedItems,
+					handleItems,
+					visibleItems,
+					visibleKeys,
+					visibleKeySet: new Set(visibleKeys)
+				};
+			};
+			const computeViewState = (force = false) => {
+				if (force || !baseViewStateCache) baseViewStateCache = buildBaseViewState();
+				pruneSelection(baseViewStateCache.keyedItems);
+				if (
+					!force &&
+					viewStateCache &&
+					viewStateCache.baseSignature === baseViewStateCache.signature &&
+					viewStateCache.selectionVersion === selectionVersion
+				) {
+					return viewStateCache;
+				}
+				const selectedItems = Array.from(selection)
+					.map(key => baseViewStateCache.keyedItems.get(key))
+					.filter(Boolean);
+				const selectedHandleCount = selectedItems.filter(item => item.type === 'handle').length;
+				const selectedVisibleCount = baseViewStateCache.visibleKeys.filter(key => selection.has(key)).length;
+				viewStateCache = {
+					...baseViewStateCache,
+					baseSignature: baseViewStateCache.signature,
+					selectionVersion,
+					selectedItems,
+					selectedHandleCount,
+					selectedVisibleCount
+				};
+				return viewStateCache;
+			};
+			const getRegexMatchState = (regexItem, viewState, mode = 'count') => {
+				if (!regexItem || regexItem.type !== 'regex') return { matchCount: 0, matches: mode === 'full' ? [] : null };
+				const cacheKey = [
+					getItemKey(regexItem),
+					viewState?.itemsRevision || '',
+					String(this.app.settings.isHandleCaseSensitive())
+				].join('|');
+				let entry = regexMatchCache.get(cacheKey);
+				if (!entry) {
+					entry = {
+						revision: viewState?.itemsRevision || '',
+						caseSensitive: this.app.settings.isHandleCaseSensitive(),
+						matchCount: null,
+						matches: null
+					};
+					regexMatchCache.set(cacheKey, entry);
+				}
+				if (mode === 'full' && Array.isArray(entry.matches)) return entry;
+				if (mode === 'count' && typeof entry.matchCount === 'number') return entry;
+				let rx = null;
+				try { rx = new RegExp(regexItem.value, regexItem.flags || ''); } catch {
+					entry.matchCount = 0;
+					if (mode === 'full') entry.matches = [];
+					return entry;
+				}
+				if (mode === 'full') {
+					const matches = [];
+					for (const item of viewState.handleItems) {
+						rx.lastIndex = 0;
+						if (rx.test(item.value)) matches.push(item);
+					}
+					entry.matches = matches;
+					entry.matchCount = matches.length;
+					return entry;
+				}
+				let matchCount = 0;
+				for (const item of viewState.handleItems) {
+					rx.lastIndex = 0;
+					if (rx.test(item.value)) matchCount += 1;
+				}
+				entry.matchCount = matchCount;
+				return entry;
+			};
+			const syncVisibleSelection = () => {
+				for (const [itemKey, refs] of rowRefs.entries()) {
+					if (refs?.checkbox) refs.checkbox.checked = selection.has(itemKey);
+				}
 			};
 			const syncApiStatus = () => {
 				apiInput.value = this.app.apiConfig.getApiKey();
@@ -1998,14 +2140,8 @@
 					: t('apiKeyStatusMissing');
 				this._renderApiTestStatus(apiTestStatus, this.app.apiConfig.getLastTestResult(), apiTestBusy);
 			};
-			const syncActionState = () => {
-				pruneSelection();
+			const syncActionState = (viewState = computeViewState()) => {
 				const hasKey = this.app.apiConfig.hasApiKey();
-				const visibleItems = getVisibleItems();
-				const visibleKeys = visibleItems.map(getItemKey).filter(Boolean);
-				const selectedVisibleCount = visibleKeys.filter(key => selection.has(key)).length;
-				const selectedItems = getSelectedItems();
-				const selectedHandleCount = selectedItems.filter(item => item.type === 'handle').length;
 				const pairBulk = bulkSelect.value === 'create' || bulkSelect.value === 'update';
 				createBtn.disabled = busy || !hasKey;
 				updateBtn.disabled = busy || !hasKey;
@@ -2013,16 +2149,16 @@
 				updateBtn.textContent = busy ? t('pairWorking') : t('pairUpdate');
 				testApiBtn.disabled = apiTestBusy || !hasKey;
 				testApiBtn.textContent = apiTestBusy ? t('apiKeyTestRunning') : t('apiKeyTest');
-				masterToggle.disabled = busy || !visibleKeys.length;
-				masterToggle.checked = !!visibleKeys.length && selectedVisibleCount === visibleKeys.length;
-				masterToggle.indeterminate = selectedVisibleCount > 0 && selectedVisibleCount < visibleKeys.length;
-				executeBtn.disabled = busy || !selection.size || (pairBulk && (!hasKey || !selectedHandleCount));
+				masterToggle.disabled = busy || !viewState.visibleKeys.length;
+				masterToggle.checked = !!viewState.visibleKeys.length && viewState.selectedVisibleCount === viewState.visibleKeys.length;
+				masterToggle.indeterminate = viewState.selectedVisibleCount > 0 && viewState.selectedVisibleCount < viewState.visibleKeys.length;
+				executeBtn.disabled = busy || !selection.size || (pairBulk && (!hasKey || !viewState.selectedHandleCount));
 				clearSelectionBtn.disabled = busy || !selection.size;
 				bulkSelect.disabled = busy;
 				counter.textContent = t('pairResultSummary', {
 					selected: selection.size,
-					visible: visibleItems.length,
-					total: getCurrentItems().length
+					visible: viewState.visibleItems.length,
+					total: viewState.allItems.length
 				});
 			};
 			const renderSummary = () => {
@@ -2050,25 +2186,23 @@
 				caseToggle.checked = this.app.settings.isHandleCaseSensitive();
 				syncApiStatus();
 				this._renderPairResultList(pairResultPanel, this.app.getLastPairRunResult());
-				syncActionState();
+				syncActionState(computeViewState());
 			};
-			const renderList = () => {
-				const allItems = getCurrentItems();
-				const items = getVisibleItems();
-				listTitle.textContent = t('manageTitle', allItems.length);
+			const renderList = (viewState = computeViewState()) => {
+				listTitle.textContent = t('manageTitle', viewState.allItems.length);
+				rowRefs.clear();
 				list.replaceChildren();
-				if (!allItems.length || !items.length) {
+				if (!viewState.allItems.length || !viewState.visibleItems.length) {
 					const li = document.createElement('li');
 					li.className = 'tm-list-empty';
-					li.textContent = allItems.length
+					li.textContent = viewState.allItems.length
 						? (searchQuery ? t('searchNoMatches') : t('noFilteredEntries'))
 						: t('noEntries');
 					list.appendChild(li);
-					syncActionState();
+					syncActionState(viewState);
 					return;
 				}
-				const handleItems = allItems.filter(item => item.type === 'handle');
-				for (const item of items) {
+				for (const item of viewState.visibleItems) {
 					const itemKey = getItemKey(item);
 					const li = document.createElement('li');
 					const checkbox = document.createElement('input');
@@ -2076,10 +2210,10 @@
 					checkbox.className = 'tm-item-check';
 					checkbox.checked = selection.has(itemKey);
 					checkbox.addEventListener('change', () => {
-						if (checkbox.checked) selection.add(itemKey);
-						else selection.delete(itemKey);
+						setSelectionValue(itemKey, checkbox.checked);
 						syncActionState();
 					});
+					rowRefs.set(itemKey, { checkbox });
 
 					const left = document.createElement('div');
 					left.className = 'tm-block-main';
@@ -2111,34 +2245,51 @@
 						regexSummary.className = 'tm-regex-summary';
 						const regexActions = document.createElement('div');
 						regexActions.className = 'tm-regex-actions';
-						const matches = this._getRegexMatches(item, handleItems);
+						const regexState = getRegexMatchState(
+							item,
+							viewState,
+							expandedRegexKeys.has(itemKey) ? 'full' : 'count'
+						);
 						const countLine = document.createElement('div');
 						countLine.className = 'tm-inline-note';
-						countLine.textContent = t('regexMatchedCount', matches.length);
+						countLine.textContent = t('regexMatchedCount', regexState.matchCount || 0);
 						const selectMatchesBtn = Object.assign(document.createElement('button'), {
 							textContent: t('regexSelectMatches')
 						});
-						selectMatchesBtn.disabled = !matches.length || busy;
+						selectMatchesBtn.disabled = !(regexState.matchCount || 0) || busy;
 						selectMatchesBtn.addEventListener('click', () => {
-							for (const match of matches) {
+							const currentViewState = computeViewState();
+							const matchState = getRegexMatchState(item, currentViewState, 'full');
+							let changed = false;
+							for (const match of matchState.matches || []) {
 								const matchKey = getItemKey(match);
-								if (matchKey) selection.add(matchKey);
+								if (!matchKey || selection.has(matchKey)) continue;
+								selection.add(matchKey);
+								changed = true;
 							}
-							Toast.show(t('regexSelectedMatches', matches.length));
-							renderList();
+							if (changed) markSelectionChanged();
+							syncVisibleSelection();
+							syncActionState();
+							Toast.show(t('regexSelectedMatches', matchState.matchCount || 0));
 						});
 						const toggleRegexBtn = Object.assign(document.createElement('button'), {
 							textContent: expandedRegexKeys.has(itemKey) ? t('regexCollapse') : t('regexExpand')
 						});
-						toggleRegexBtn.disabled = !matches.length;
+						toggleRegexBtn.disabled = !(regexState.matchCount || 0);
 						toggleRegexBtn.addEventListener('click', () => {
-							if (expandedRegexKeys.has(itemKey)) expandedRegexKeys.delete(itemKey);
-							else expandedRegexKeys.add(itemKey);
+							if (expandedRegexKeys.has(itemKey)) {
+								expandedRegexKeys.delete(itemKey);
+								showAllRegexKeys.delete(itemKey);
+							} else {
+								expandedRegexKeys.add(itemKey);
+							}
 							renderList();
 						});
 						regexActions.append(countLine, selectMatchesBtn, toggleRegexBtn);
 						regexSummary.appendChild(regexActions);
 						if (expandedRegexKeys.has(itemKey)) {
+							const fullMatchState = getRegexMatchState(item, viewState, 'full');
+							const matches = fullMatchState.matches || [];
 							const listWrap = document.createElement('ul');
 							listWrap.className = 'tm-regex-match-list';
 							const limit = showAllRegexKeys.has(itemKey) ? matches.length : 20;
@@ -2173,7 +2324,7 @@
 					const removeBtn = Object.assign(document.createElement('button'), { textContent: t('unblock') });
 					removeBtn.disabled = busy;
 					removeBtn.addEventListener('click', () => {
-						selection.delete(itemKey);
+						setSelectionValue(itemKey, false);
 						this.app.removeEntry(item);
 						renderAll();
 						Toast.show(t('removed', label.textContent));
@@ -2183,9 +2334,10 @@
 					li.append(checkbox, left, removeBtn);
 					list.appendChild(li);
 				}
-				syncActionState();
+				syncActionState(viewState);
 			};
 			const renderAll = () => {
+				invalidateViewState({ clearRegex: true });
 				renderSummary();
 				renderList();
 			};
@@ -2247,22 +2399,39 @@
 			});
 			searchInput.addEventListener('input', () => {
 				searchQuery = searchInput.value || '';
+				invalidateViewState({ clearRegex: true });
 				renderList();
 			});
-			typeSelect.addEventListener('change', renderList);
-			bulkSelect.addEventListener('change', syncActionState);
+			typeSelect.addEventListener('change', () => {
+				invalidateViewState({ clearRegex: true });
+				renderList();
+			});
+			bulkSelect.addEventListener('change', () => syncActionState());
 			masterToggle.addEventListener('change', () => {
-				for (const item of getVisibleItems()) {
+				const viewState = computeViewState();
+				let changed = false;
+				for (const item of viewState.visibleItems) {
 					const key = getItemKey(item);
 					if (!key) continue;
-					if (masterToggle.checked) selection.add(key);
-					else selection.delete(key);
+					if (masterToggle.checked) {
+						if (selection.has(key)) continue;
+						selection.add(key);
+						changed = true;
+					} else if (selection.has(key)) {
+						selection.delete(key);
+						changed = true;
+					}
 				}
-				renderList();
+				if (changed) markSelectionChanged();
+				syncVisibleSelection();
+				syncActionState();
 			});
 			clearSelectionBtn.addEventListener('click', () => {
+				if (!selection.size) return;
 				selection.clear();
-				renderList();
+				markSelectionChanged();
+				syncVisibleSelection();
+				syncActionState();
 			});
 			saveApiBtn.addEventListener('click', () => {
 				this.app.apiConfig.setApiKey(apiInput.value);
@@ -2299,12 +2468,13 @@
 				renderAll();
 			});
 			executeBtn.addEventListener('click', async () => {
-				const selectedItems = getSelectedItems();
+				const selectedItems = computeViewState().selectedItems;
 				if (!selectedItems.length) return;
 				if (bulkSelect.value === 'delete') {
 					for (const item of selectedItems) this.app.removeEntry(item);
 					const removedCount = selectedItems.length;
 					selection.clear();
+					markSelectionChanged();
 					renderAll();
 					Toast.show(t('bulkDeleteResult', removedCount));
 					return;

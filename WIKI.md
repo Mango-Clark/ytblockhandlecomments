@@ -1,4 +1,4 @@
-# 📚 YouTube Comment Blocker Wiki — v0.4.0
+# 📚 YouTube Comment Blocker Wiki — v0.4.1
 
 [English](WIKI.md) | [한국어](WIKI.ko.md)
 
@@ -36,7 +36,7 @@ Out of scope:
 
 ## 2. Metadata And Runtime
 
-- `@version`: `0.4.0`
+- `@version`: `0.4.1`
 - `@match`: `https://www.youtube.com/*`
 - `@grant`: `GM_getValue`, `GM_setValue`, `GM_addValueChangeListener`,
   `GM_registerMenuCommand`, `GM_unregisterMenuCommand`
@@ -182,6 +182,8 @@ Regex rows:
 - Support `Select matching handles`
 - Expand inline handle list
 - Show first 20 matches by default, with `Show all`
+- Cache count-only results for collapsed rows and full match arrays only on expand/select
+- Update visible selection UI without rebuilding the full list for selection-only actions
 
 Pair results:
 
@@ -258,5 +260,6 @@ If pair maintenance fails:
 
 ## 11. Remaining Work
 
-After `v0.4.0`, the large manager, security, and i18n TODO items are considered implemented.
-Future work should focus on incremental improvements rather than baseline feature completion.
+After `v0.4.1`, the large manager, security, i18n, and regex-selection performance TODO items are
+considered implemented. Future work should focus on incremental improvements rather than baseline
+feature completion.
