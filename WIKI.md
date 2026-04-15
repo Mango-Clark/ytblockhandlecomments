@@ -1,4 +1,4 @@
-# 📚 YouTube Comment Blocker Wiki — v0.4.1
+# 📚 YouTube Comment Blocker Wiki — v0.4.2
 
 [English](WIKI.md) | [한국어](WIKI.ko.md)
 
@@ -6,7 +6,7 @@ This document describes the current implementation in more detail than `README.m
 
 ## 1. Overview
 
-The userscript hides YouTube comments by channel identity on watch pages.
+The userscript hides YouTube comments by channel identity on watch pages and Shorts pages.
 
 Supported rule types in `blocked_v2`:
 
@@ -28,6 +28,11 @@ User-facing entry points:
 - `Manage block list` Tampermonkey menu command
 - Watch-page pair review banner
 
+Supported page modes for comment hiding:
+
+- `watch`
+- `shorts`
+
 Out of scope:
 
 - Comment-body keyword blocking
@@ -36,13 +41,13 @@ Out of scope:
 
 ## 2. Metadata And Runtime
 
-- `@version`: `0.4.1`
+- `@version`: `0.4.2`
 - `@match`: `https://www.youtube.com/*`
 - `@grant`: `GM_getValue`, `GM_setValue`, `GM_addValueChangeListener`,
   `GM_registerMenuCommand`, `GM_unregisterMenuCommand`
 - Runtime starts at `document-idle`
 
-Comment matching and hiding remain intentionally scoped to watch-page comments.
+Comment matching and hiding remain intentionally scoped to watch-page and Shorts comments.
 
 ## 3. Storage Model
 
@@ -215,6 +220,13 @@ Menu injection:
 - A short-lived observer starts only after a relevant menu-button click
 - It disconnects after popup handling, timeout, or navigation
 
+Comment observation:
+
+- `watch` still uses the existing `ytd-comments#comments, ytd-comments` host lookup
+- `shorts` uses comment-node-driven host discovery and only promotes a shared container when it is
+  narrower than broad page containers such as `body`, `html`, or `ytd-app`
+- Pair banner gating remains watch-only
+
 ## 8. Cross-Tab Sync
 
 Remote Tampermonkey changes refresh local state for:
@@ -246,7 +258,7 @@ Supported JSON shapes:
 
 If comments are not hiding:
 
-1. Confirm you are on a watch page.
+1. Confirm you are on a watch page or Shorts page.
 2. Confirm the rule exists in the manager.
 3. If expecting UID matching, confirm `UID Detection` is on.
 4. Confirm the API key is saved.
@@ -260,6 +272,6 @@ If pair maintenance fails:
 
 ## 11. Remaining Work
 
-After `v0.4.1`, the large manager, security, i18n, and regex-selection performance TODO items are
-considered implemented. Future work should focus on incremental improvements rather than baseline
-feature completion.
+After `v0.4.2`, the large manager, security, i18n, regex-selection performance, and Shorts
+comment-hiding TODO items are considered implemented. Future work should focus on incremental
+improvements rather than baseline feature completion.

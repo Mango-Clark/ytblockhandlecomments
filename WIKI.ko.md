@@ -1,4 +1,4 @@
-# 📚 YouTube Comment Blocker 위키 — v0.4.1
+# 📚 YouTube Comment Blocker 위키 — v0.4.2
 
 [English](WIKI.md) | [한국어](WIKI.ko.md)
 
@@ -6,7 +6,8 @@
 
 ## 1. 개요
 
-이 사용자 스크립트는 watch 페이지에서 YouTube 댓글을 채널 식별자 기준으로 숨깁니다.
+이 사용자 스크립트는 watch 페이지와 Shorts 페이지에서 YouTube 댓글을 채널 식별자
+기준으로 숨깁니다.
 
 `blocked_v2`에서 지원하는 규칙 타입:
 
@@ -28,6 +29,11 @@
 - Tampermonkey 메뉴의 `Manage block list`
 - watch 페이지 pair 검토 배너
 
+댓글 숨김 지원 page mode:
+
+- `watch`
+- `shorts`
+
 범위 밖 기능:
 
 - 댓글 본문 키워드 차단
@@ -36,13 +42,13 @@
 
 ## 2. 메타데이터와 런타임
 
-- `@version`: `0.4.1`
+- `@version`: `0.4.2`
 - `@match`: `https://www.youtube.com/*`
 - `@grant`: `GM_getValue`, `GM_setValue`, `GM_addValueChangeListener`,
   `GM_registerMenuCommand`, `GM_unregisterMenuCommand`
 - 실행 시점: `document-idle`
 
-댓글 매칭과 숨김은 계속 watch 페이지 댓글 범위로 제한됩니다.
+댓글 매칭과 숨김은 계속 watch 페이지와 Shorts 댓글 범위로 제한됩니다.
 
 ## 3. 저장 구조
 
@@ -215,6 +221,13 @@ Pair 결과:
 - 관련 버튼 클릭 후에만 짧은 수명 observer를 붙입니다
 - popup 처리, timeout, navigation 시 observer를 끕니다
 
+댓글 관찰:
+
+- `watch`는 기존 `ytd-comments#comments, ytd-comments` host 탐색을 유지합니다
+- `shorts`는 comment node 중심으로 host를 찾고, `body`, `html`, `ytd-app` 같은 넓은
+  container보다 더 좁은 공통 container가 있을 때만 comment observer를 붙입니다
+- pair banner gating은 계속 watch-only입니다
+
 ## 8. 탭 간 동기화
 
 다음 Tampermonkey 값이 다른 탭에서 바뀌면 로컬 상태를 갱신합니다.
@@ -246,7 +259,7 @@ Pair 결과:
 
 댓글이 숨겨지지 않을 때:
 
-1. watch 페이지인지 확인합니다.
+1. watch 페이지 또는 Shorts 페이지인지 확인합니다.
 2. 관리자에 규칙이 있는지 확인합니다.
 3. UID 매칭을 기대한다면 `UID Detection`이 켜져 있는지 확인합니다.
 4. API 키가 저장돼 있는지 확인합니다.
@@ -260,6 +273,6 @@ Pair 유지보수가 실패할 때:
 
 ## 11. 이후 작업
 
-`v0.4.1` 이후에는 큰 관리자/보안/i18n/regex-selection 성능 TODO가 기본적으로
-마무리된 상태로 봅니다. 이후 작업은 베이스라인 미구현이 아니라 점진적 개선 중심으로
-다룹니다.
+`v0.4.2` 이후에는 큰 관리자/보안/i18n/regex-selection 성능/Shorts 댓글 숨김 TODO가
+기본적으로 마무리된 상태로 봅니다. 이후 작업은 베이스라인 미구현이 아니라 점진적
+개선 중심으로 다룹니다.

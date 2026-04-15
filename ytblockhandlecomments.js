@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube Comment Blocker
 // @namespace    YouTube_Comment_Blocker
-// @version      0.4.1
+// @version      0.4.2
 // @description  Block/unblock comment handles via right-click. Optional UID pairing via YouTube Data API, real-time hiding, custom popup, and block list management.
 // @homepage     https://github.com/Mango-Clark/ytblockhandlecomments/
 // @updateURL    https://raw.githubusercontent.com/Mango-Clark/ytblockhandlecomments/refs/heads/master/ytblockhandlecomments.js
@@ -175,6 +175,7 @@
 	const COMMENT_SELECTOR = 'ytd-comment-thread-renderer, ytd-comment-renderer, ytd-comment-view-model';
 	const COMMENTS_HOST_SELECTOR = 'ytd-comments#comments, ytd-comments';
 	const WATCH_ROOT_SELECTOR = 'ytd-watch-flexy, ytd-watch-grid, ytd-page-manager';
+	const SHORTS_ROOT_SELECTOR = 'ytd-reel-video-renderer, ytd-shorts, ytd-app, ytd-page-manager';
 	const PAIR_STALE_MS = 7 * 24 * 60 * 60 * 1000;
 	const PAIR_NOTICE_COOLDOWN_MS = 24 * 60 * 60 * 1000;
 
@@ -2658,7 +2659,9 @@
 
 		refreshAfterStorageChange() {
 			this.hider.rebuildLookup();
-			this.hider.refreshScheduled();
+			const mode = this._getPageMode();
+			const host = this._commentsHost?.isConnected ? this._commentsHost : this._findCommentsHost(mode);
+			this.hider.refreshScheduled(host || undefined);
 			this._syncPairBanner();
 			Dialog.refreshAll();
 		}
@@ -2757,16 +2760,86 @@
 			});
 		}
 
-		_isWatchPage() {
-			return location.pathname === '/watch';
+		_getPageMode() {
+			const path = location.pathname || '';
+			if (path === '/watch') return 'watch';
+			if (/^\/shorts\/[^/]+/.test(path)) return 'shorts';
+			return 'unsupported';
 		}
 
-		_getWatchRoot() {
-			return document.querySelector(WATCH_ROOT_SELECTOR) || document.body;
+		_getPageRoot(mode) {
+			if (mode === 'watch') return document.querySelector(WATCH_ROOT_SELECTOR) || document.body;
+			if (mode === 'shorts') return document.querySelector(SHORTS_ROOT_SELECTOR) || document.body;
+			return null;
 		}
 
-		_findCommentsHost() {
-			return document.querySelector(COMMENTS_HOST_SELECTOR);
+		_findCommentsHost(mode) {
+			if (mode === 'watch') return document.querySelector(COMMENTS_HOST_SELECTOR);
+			if (mode === 'shorts') return this._findShortsCommentsHost();
+			return null;
+		}
+
+		_getAncestorChain(node) {
+			const chain = [];
+			let current = node;
+			while (current?.nodeType === 1) {
+				chain.push(current);
+				current = current.parentElement;
+			}
+			return chain;
+		}
+
+		_findLowestSharedAncestor(nodes) {
+			const items = (nodes || []).filter(node => node?.nodeType === 1);
+			if (!items.length) return null;
+			const firstChain = this._getAncestorChain(items[0]);
+			for (const candidate of firstChain) {
+				if (items.every(node => candidate === node || candidate.contains?.(node))) return candidate;
+			}
+			return null;
+		}
+
+		_isBroadCommentsHost(node) {
+			if (!node || node.nodeType !== 1) return true;
+			const tag = (node.tagName || '').toLowerCase();
+			return node === document.body || node === document.documentElement || tag === 'ytd-app';
+		}
+
+		_refineSharedCommentsHost(ancestor, commentRoots) {
+			let current = ancestor;
+			const roots = (commentRoots || []).filter(node => node?.nodeType === 1);
+			if (!current || !roots.length) return null;
+			while (current && this._isBroadCommentsHost(current)) {
+				const nextCandidates = new Set();
+				for (const root of roots) {
+					let cursor = root;
+					while (cursor?.parentElement && cursor.parentElement !== current) {
+						cursor = cursor.parentElement;
+					}
+					if (!cursor || cursor.parentElement !== current) return null;
+					nextCandidates.add(cursor);
+					if (nextCandidates.size > 1) return null;
+				}
+				current = nextCandidates.values().next().value || null;
+			}
+			return current && !this._isBroadCommentsHost(current) ? current : null;
+		}
+
+		_findShortsCommentsHost() {
+			const commentNodes = Array.from(document.querySelectorAll(COMMENT_SELECTOR))
+				.filter(node => node?.isConnected);
+			if (!commentNodes.length) return null;
+			const commentRoots = commentNodes
+				.map(node => Extractor.getCommentRoot(node) || node)
+				.filter(node => node?.nodeType === 1);
+			if (!commentRoots.length) return null;
+			if (commentRoots.length === 1) {
+				const host = commentRoots[0];
+				return this._isBroadCommentsHost(host) ? null : host;
+			}
+			const sharedAncestor = this._findLowestSharedAncestor(commentRoots);
+			if (!sharedAncestor) return null;
+			return this._refineSharedCommentsHost(sharedAncestor, commentRoots);
 		}
 
 		_disconnectHostObserver() {
@@ -2782,12 +2855,16 @@
 			this.hider.resetObservation();
 		}
 
-		_watchForCommentsHost() {
-			if (this._hostObserver || !this._isWatchPage()) return;
-			const root = this._getWatchRoot();
+		_watchForCommentsHost(mode, root) {
+			if (this._hostObserver || mode === 'unsupported') return;
 			if (!root) return;
 			this._hostObserver = new MutationObserver(() => {
-				const host = this._findCommentsHost();
+				const currentMode = this._getPageMode();
+				if (currentMode !== mode) {
+					this._disconnectHostObserver();
+					return;
+				}
+				const host = this._findCommentsHost(currentMode);
 				if (host) this._attachCommentsHost(host);
 			});
 			this._hostObserver.observe(root, { childList: true, subtree: true });
@@ -2828,17 +2905,18 @@
 		}
 
 		_syncPageState() {
-			if (!this._isWatchPage()) {
+			const mode = this._getPageMode();
+			if (mode === 'unsupported') {
 				this._disconnectHostObserver();
 				this._disconnectCommentObserver();
 				this._syncPairBanner();
 				return;
 			}
-			const host = this._findCommentsHost();
+			const host = this._findCommentsHost(mode);
 			if (host) this._attachCommentsHost(host);
 			else {
 				this._disconnectCommentObserver();
-				this._watchForCommentsHost();
+				this._watchForCommentsHost(mode, this._getPageRoot(mode));
 			}
 			this._syncPairBanner();
 		}
@@ -2877,7 +2955,7 @@
 		}
 
 		_syncPairBanner() {
-			if (!this._isWatchPage() || !this.pairService.shouldNotify()) {
+			if (this._getPageMode() !== 'watch' || !this.pairService.shouldNotify()) {
 				this._pairBanner?.remove();
 				this._pairBanner = null;
 				return;

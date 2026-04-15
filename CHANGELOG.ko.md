@@ -33,6 +33,21 @@
 
 - 없음
 
+## [0.4.2] - 2026-04-15
+
+### Changed
+
+- 댓글 숨김 page pipeline을 `/watch` 전용에서 `/watch`와 `/shorts/<id>` 지원으로 확장
+- 명시적인 page-mode helper 기준으로 page sync와 comments host discovery를 재구성
+- Shorts에서도 기존 comment matching / mutation 경로를 재사용하면서 pair banner는
+  계속 watch-only로 유지
+
+### Fixed
+
+- watch-only page gating 때문에 건너뛰던 Shorts 페이지의 차단 댓글과 대댓글 숨김을 지원
+- storage 변경 시 현재 연결된 comments host를 기준으로 refresh하여, 이미 host가 붙은
+  Shorts에서는 block 직후 즉시 숨김이 반영되도록 보정
+
 ## [0.4.1] - 2026-04-12
 
 ### Changed

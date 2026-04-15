@@ -1,12 +1,12 @@
-# 📌 YouTube Comment Blocker — v0.4.1
+# 📌 YouTube Comment Blocker — v0.4.2
 
 [English](README.md) | [한국어](README.ko.md)
 
 Full reference: [WIKI.md](WIKI.md) | [WIKI.ko.md](WIKI.ko.md)
 
-A Tampermonkey userscript for hiding YouTube comments by channel identity. `v0.4.1` keeps the
-`v0.4.0` manager feature set and tightens the slowest regex-selection path with cached match work,
-shared manager view state, and selection-only UI updates.
+A Tampermonkey userscript for hiding YouTube comments by channel identity. `v0.4.2` keeps the
+`v0.4.x` manager feature set and expands the comment-hiding pipeline from watch pages to Shorts
+pages while preserving watch-only auxiliary UI such as the pair banner.
 
 Quick install:
 
@@ -16,7 +16,7 @@ Quick install:
 
 - Right-click an author handle to block or unblock it
 - Adds `Hide comments from this channel` to the comment `⋯` menu
-- Hides matching comments in real time on YouTube watch pages
+- Hides matching comments in real time on YouTube watch pages and Shorts pages
 - Supports `handle`, `id`, and `regex` rules in `blocked_v2`
 - Supports optional UID detection with handle↔UID metadata in `pair_meta_v1`
 - Stores a local-only YouTube Data API v3 key and validates it before pair maintenance
@@ -31,7 +31,7 @@ Quick install:
 
 1. Install [Tampermonkey](https://www.tampermonkey.net/).
 2. Install from the raw URL above, or paste `ytblockhandlecomments.js` into a new userscript.
-3. Open a YouTube watch page.
+3. Open a YouTube watch page or Shorts page.
 4. Right-click a comment author's handle, or use the comment `⋯` menu, to block/unblock.
 5. Open `Tampermonkey -> YouTube Comment Blocker -> Manage block list`.
 6. Save your YouTube Data API v3 key and optionally run `Test API Key`.
@@ -126,13 +126,14 @@ Notes:
 - Search is manager-only; comment-hide hot-path lookup still uses cached sets
 - Regex selection now updates visible checkboxes and counters without full-list rerendering
 - Regex rules only target handles, not comment text
-- Comment hiding is intentionally scoped to watch-page comments
+- Comment hiding is intentionally scoped to watch-page and Shorts comments
+- The pair review banner remains intentionally scoped to watch pages
 - Performance counters are exposed on `window.__ytCommentBlockerPerf`
 
 ## Userscript Metadata
 
 - `@name`: `YouTube Comment Blocker`
-- `@version`: `0.4.1`
+- `@version`: `0.4.2`
 - `@match`: `https://www.youtube.com/*`
 - `@grant`: `GM_getValue`, `GM_setValue`, `GM_addValueChangeListener`,
   `GM_registerMenuCommand`, `GM_unregisterMenuCommand`

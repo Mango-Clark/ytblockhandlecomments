@@ -33,6 +33,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - None
 
+## [0.4.2] - 2026-04-15
+
+### Changed
+
+- Expanded the comment-hiding page pipeline from `/watch` to both `/watch` and `/shorts/<id>`
+- Refactored page sync and comments-host discovery around an explicit page-mode helper
+- Kept pair-banner behavior watch-only while reusing the same comment matching and mutation path on
+  Shorts
+
+### Fixed
+
+- Blocked comments and replies can now be hidden on supported Shorts pages instead of being skipped
+  by watch-only page gating
+- Storage-triggered refresh now targets the active attached comments host, allowing immediate
+  post-block hiding on Shorts when a host is already connected
+
 ## [0.4.1] - 2026-04-12
 
 ### Changed

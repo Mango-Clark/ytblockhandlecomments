@@ -1,13 +1,13 @@
-# 📌 YouTube Comment Blocker — v0.4.1
+# 📌 YouTube Comment Blocker — v0.4.2
 
 [English](README.md) | [한국어](README.ko.md)
 
 상세 문서: [WIKI.md](WIKI.md) | [WIKI.ko.md](WIKI.ko.md)
 
 YouTube 댓글을 채널 식별자 기준으로 숨기는 Tampermonkey 사용자 스크립트입니다.
-기본 흐름은 여전히 handle 차단이며, `v0.4.1`은 `v0.4.0`의 관리자 기능을 유지한 채
-regex 행의 `matching handle 선택` 경로를 캐시와 incremental UI update 기준으로
-최적화했습니다.
+기본 흐름은 여전히 handle 차단이며, `v0.4.2`는 `v0.4.x`의 관리자 기능을 유지한 채
+댓글 숨김 범위를 watch 페이지에서 Shorts 페이지까지 확장하고, pair banner 같은
+watch 전용 보조 UI는 그대로 유지합니다.
 
 빠른 설치: 아래 raw URL을 Tampermonkey로 열어 설치 또는 업데이트하세요
 
@@ -19,7 +19,7 @@ regex 행의 `matching handle 선택` 경로를 캐시와 incremental UI update 
 
 - 작성자 handle을 우클릭해 차단 또는 해제
 - 댓글 `⋯` 메뉴에 `Hide comments from this channel` 항목 추가
-- YouTube watch 페이지에서 댓글을 실시간으로 숨김
+- YouTube watch 페이지와 Shorts 페이지에서 댓글을 실시간으로 숨김
 - `blocked_v2`에 `handle`, `id`, `regex` 규칙 저장
 - 관리자 대화상자에 선택적 `UID Detection` 토글 추가
 - 관리자 대화상자에 로컬 전용 YouTube Data API 키 입력 섹션 추가
@@ -40,7 +40,7 @@ regex 행의 `matching handle 선택` 경로를 캐시와 incremental UI update 
 
 1. [Tampermonkey](https://www.tampermonkey.net/)를 설치합니다.
 2. 위 raw URL로 설치하거나, 새 사용자 스크립트에 `ytblockhandlecomments.js`를 붙여넣습니다.
-3. YouTube watch 페이지를 엽니다.
+3. YouTube watch 페이지 또는 Shorts 페이지를 엽니다.
 4. 댓글 작성자 handle을 우클릭해 차단 또는 해제합니다.
 5. `Tampermonkey -> YouTube Comment Blocker -> Manage block list`를 엽니다.
 6. Pair 기능을 쓰기 전에 YouTube Data API v3 API 키를 저장합니다.
@@ -109,7 +109,7 @@ Pair 메타 저장소:
 - 앱 설정 저장 키: `app_settings_v1`
 - API 설정 저장 키: `youtube_data_api_v3_config`
 - 레거시 규칙 키 `blockedHandles`, `blockedHandles_v1`는 계속 자동 마이그레이션됩니다
-- `v0.4.1`에서도 pair 메타데이터를 import/export에 포함하지 않습니다
+- `v0.4.2`에서도 pair 메타데이터를 import/export에 포함하지 않습니다
 - API 키는 Tampermonkey 로컬 저장소에만 저장되며 스크립트 코드에 포함되지 않습니다
 
 ---
@@ -128,7 +128,8 @@ Pair 메타 저장소:
 - regex 선택은 현재 보이는 checkbox와 counter만 즉시 갱신하고 전체 목록을 다시 만들지 않습니다
 - UID 조회가 실패해도 handle 차단은 계속 동작하며, pair는 `unverified` 또는 `stale` 상태로 남습니다
 - regex 규칙은 댓글 본문이 아니라 handle 텍스트에만 적용됩니다
-- 댓글 숨김은 의도적으로 watch 페이지 댓글 범위에 한정됩니다
+- 댓글 숨김은 의도적으로 watch 페이지와 Shorts 댓글 범위에 한정됩니다
+- pair 검토 배너는 의도적으로 watch 페이지에만 표시됩니다
 - 가벼운 성능 카운터는 `window.__ytCommentBlockerPerf`에서 확인할 수 있습니다
 
 ---
@@ -136,7 +137,7 @@ Pair 메타 저장소:
 ## 사용자 스크립트 메타데이터
 
 - `@name`: `YouTube Comment Blocker`
-- `@version`: `0.4.1`
+- `@version`: `0.4.2`
 - `@match`: `https://www.youtube.com/*`
 - `@grant`: `GM_getValue`, `GM_setValue`, `GM_addValueChangeListener`,
   `GM_registerMenuCommand`, `GM_unregisterMenuCommand`
