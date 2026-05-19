@@ -225,6 +225,8 @@ Comment observation:
 - `watch` still uses the existing `ytd-comments#comments, ytd-comments` host lookup
 - `shorts` uses comment-node-driven host discovery and only promotes a shared container when it is
   narrower than broad page containers such as `body`, `html`, or `ytd-app`
+- Page-key changes reset transient `IntersectionObserver` registrations and comment metadata
+  caches so reused YouTube comments hosts do not retain detached comment nodes across many videos
 - Pair banner gating remains watch-only
 
 ## 8. Cross-Tab Sync

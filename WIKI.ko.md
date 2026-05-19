@@ -226,6 +226,9 @@ Pair 결과:
 - `watch`는 기존 `ytd-comments#comments, ytd-comments` host 탐색을 유지합니다
 - `shorts`는 comment node 중심으로 host를 찾고, `body`, `html`, `ytd-app` 같은 넓은
   container보다 더 좁은 공통 container가 있을 때만 comment observer를 붙입니다
+- page key가 바뀌면 임시 `IntersectionObserver` 등록과 댓글 메타데이터 캐시를
+  초기화해 YouTube가 comments host를 재사용해도 여러 영상에 걸쳐 분리된 댓글 노드를
+  붙잡지 않도록 합니다
 - pair banner gating은 계속 watch-only입니다
 
 ## 8. 탭 간 동기화

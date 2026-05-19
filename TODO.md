@@ -3,6 +3,7 @@
 ## Normal
 
 - [ ] Add automated regression coverage for manager search, live i18n refresh, and pair result UI.
+- [ ] Add a long-session navigation memory regression check for reused YouTube comment hosts.
 - [ ] Consider virtualizing very large regex match lists in the manager when block lists grow.
 - [ ] Surface more structured quota guidance when the API test detects repeated `quota` failures.
 

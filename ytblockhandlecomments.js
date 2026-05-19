@@ -1396,6 +1396,7 @@
 			this._observed = new WeakSet();
 			this._pending = false;
 			this._pendingRoot = null;
+			this._pendingFrame = null;
 			this._io = null;
 			this._metrics = {
 				mutationBatches: 0,
@@ -1483,6 +1484,16 @@
 			this._io = null;
 			this._observed = new WeakSet();
 		}
+		resetTransientState() {
+			if (this._pendingFrame !== null) {
+				cancelAnimationFrame(this._pendingFrame);
+				this._pendingFrame = null;
+			}
+			this.resetObservation();
+			this._metaCache = new WeakMap();
+			this._pending = false;
+			this._pendingRoot = null;
+		}
 		_observeNode(node) {
 			if (!node || this._observed.has(node)) return;
 			this._observed.add(node);
@@ -1530,9 +1541,10 @@
 			this._pendingRoot = this._mergeRoots(this._pendingRoot, scope);
 			if (this._pending) return;
 			this._pending = true;
-			requestAnimationFrame(() => {
+			this._pendingFrame = requestAnimationFrame(() => {
 				const nextRoot = this._pendingRoot || this._getDefaultRoot();
 				this._pending = false;
+				this._pendingFrame = null;
 				this._pendingRoot = null;
 				if (nextRoot) this.doRefresh(nextRoot);
 			});
@@ -2616,6 +2628,7 @@
 			this._commentObserver = null;
 			this._hostObserver = null;
 			this._pageSyncPending = false;
+			this._pageKey = null;
 			this._pairBanner = null;
 			this._bindGlobalEvents();
 			this._bindNavigationEvents();
@@ -2767,6 +2780,18 @@
 			return 'unsupported';
 		}
 
+		_getPageKey(mode) {
+			if (mode === 'watch') {
+				const videoId = new URLSearchParams(location.search || '').get('v') || '';
+				return `watch:${videoId}`;
+			}
+			if (mode === 'shorts') {
+				const match = /^\/shorts\/([^/?#]+)/.exec(location.pathname || '');
+				return `shorts:${match?.[1] || ''}`;
+			}
+			return `unsupported:${location.pathname || ''}`;
+		}
+
 		_getPageRoot(mode) {
 			if (mode === 'watch') return document.querySelector(WATCH_ROOT_SELECTOR) || document.body;
 			if (mode === 'shorts') return document.querySelector(SHORTS_ROOT_SELECTOR) || document.body;
@@ -2906,6 +2931,11 @@
 
 		_syncPageState() {
 			const mode = this._getPageMode();
+			const pageKey = this._getPageKey(mode);
+			if (this._pageKey !== pageKey) {
+				this._pageKey = pageKey;
+				this.hider.resetTransientState();
+			}
 			if (mode === 'unsupported') {
 				this._disconnectHostObserver();
 				this._disconnectCommentObserver();

@@ -128,6 +128,8 @@ Notes:
 - Regex rules only target handles, not comment text
 - Comment hiding is intentionally scoped to watch-page and Shorts comments
 - The pair review banner remains intentionally scoped to watch pages
+- Navigation resets transient comment observers and metadata caches so long YouTube sessions do not
+  retain old comment DOM nodes
 - Performance counters are exposed on `window.__ytCommentBlockerPerf`
 
 ## Userscript Metadata

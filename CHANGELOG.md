@@ -27,7 +27,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- None
+- Reset transient comment observers and metadata caches on video navigation so long YouTube
+  sessions do not retain detached comment DOM nodes.
 
 ### Security
 

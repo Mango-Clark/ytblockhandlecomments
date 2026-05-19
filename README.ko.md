@@ -130,6 +130,8 @@ Pair 메타 저장소:
 - regex 규칙은 댓글 본문이 아니라 handle 텍스트에만 적용됩니다
 - 댓글 숨김은 의도적으로 watch 페이지와 Shorts 댓글 범위에 한정됩니다
 - pair 검토 배너는 의도적으로 watch 페이지에만 표시됩니다
+- 탐색 시 임시 댓글 observer와 메타데이터 캐시를 초기화해 긴 YouTube 세션에서 오래된
+  댓글 DOM 노드를 붙잡지 않도록 합니다
 - 가벼운 성능 카운터는 `window.__ytCommentBlockerPerf`에서 확인할 수 있습니다
 
 ---
