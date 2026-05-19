@@ -1,23 +1,24 @@
 # AGENTS.md
 
-Instructions for OpenAI Codex agent in this repo.
+This file contains instructions for the OpenAI Codex agent. Follow these rules when
+working in this repository.
 
 ## Purpose
 
-Keep docs, versioning, Git workflows consistent. All contributors follow rules when editing
-or adding files.
+Define documentation, versioning, and Git workflows to keep the repository consistent.
+All contributors (human or agent) must follow these rules when editing or adding files.
 
 ## Quick Checklist
 
 - Branch: work on `dev` (unless told otherwise).
-- Code updates: review/update all `*.md` so docs stay synced with current code.
+- Code updates: review and update all `*.md` files in the repository so Markdown docs stay in
+  sync with the current code.
 - Docs: update `README.md` first, then `README.ko.md`.
-- Wiki: update `WIKI.md` first, then `WIKI.ko.md` when behavior/storage details change.
-- Plans: update implementation/planning docs under `docs/` when roadmap/design changes.
+- Wiki: update `WIKI.md` first, then `WIKI.ko.md` when detailed behavior or storage changes.
+- Plans: update implementation/planning docs under `docs/` when roadmap or design docs change.
 - Changelog: update `CHANGELOG.md` (Keep a Changelog), then `CHANGELOG.ko.md`.
-- Version: bump `VERSION` or package manifest when shipping behavior changes.
-- TODO: review `TODO.md`, update checkboxes, add needed items, erase items done in prior
-  verion.
+- Version: bump in `VERSION` or package manifest when behavior changes are shipped.
+- TODO: review `TODO.md`, update checkboxes, add items if needed, erase items that are done in prior verion.
 - Validation: ensure `git status` is clean before committing or opening a PR.
 - Review: request maintainer review for code or changelog changes.
 
@@ -25,40 +26,42 @@ or adding files.
 
 1) All Markdown files
 
-   - On code changes, review every repo `*.md`.
-   - Update Markdown that must align with behavior, UI, storage, limits, plans, workflows.
+   - When code changes, review every `*.md` file in the repository.
+   - Update all Markdown files that must stay aligned with the new behavior, UI, storage,
+   limitations, plans, or workflows before delivery.
 
 2) README
 
    - Write `README.md` in English (overview, install, usage, examples, limitations).
-   - Translate to Korean as `README.ko.md` after English final.
+   - Translate to Korean as `README.ko.md` after the English version is finalized.
 
 3) WIKI
 
-   - Keep `WIKI.md` aligned with current implementation details.
-   - Update `WIKI.ko.md` right after English wiki final.
-   - Use wiki for storage, matching, troubleshooting, limitation details.
+   - Keep `WIKI.md` aligned with the current implementation details.
+   - Update `WIKI.ko.md` immediately after the English wiki is finalized.
+   - Use the wiki for detailed storage, matching, troubleshooting, and limitation notes.
 
 4) Planning Docs
 
-   - Keep design/planning docs under `docs/` aligned with current intent.
-   - Example files: `docs/기획서.md`, `docs/performance-analysis.md`.
-   - Planning docs may describe future work; clearly separate implemented vs planned behavior.
+   - Keep design or planning docs under `docs/` aligned with current intent.
+   - Example files include `docs/기획서.md` and technical analysis notes such as
+     `docs/performance-analysis.md`.
+   - Planning docs may describe future work, so distinguish clearly between implemented behavior
+     and planned behavior.
 
 5) Changelog
 
    - Edit `CHANGELOG.md` in English following Keep a Changelog 1.1.0.
    - Maintain sections: Added, Changed, Deprecated, Removed, Fixed, Security.
-   - Keep `Unreleased` at top; move entries under new version on release.
+   - Keep an `Unreleased` section at the top; move entries under a new version on release.
    - Date format: `YYYY-MM-DD`.
-   - Translate matching changes into `CHANGELOG.ko.md`.
+   - Translate corresponding changes into `CHANGELOG.ko.md`.
 
 6) TODO
 
    - Review `TODO.md` for pending items.
    - Mark completed items with `- [x]` and add new tasks as needed.
-   - Erase completed `- [x]` items from previous version only when version bumped. Example:
-     if bumped version is `0.2.0-pre2` or `0.2.0`, erase until `0.1.x`.
+   - Erase completed items with `- [x]` that is completed in previous version. Active deletion only when version is bumped. For example, if bumped version is `0.2.0-pre2` or `0.2.0`, then erase untill `0.1.x`.
 
 7) File Structure Example
 
@@ -80,17 +83,17 @@ or adding files.
 
 ## Translation Guidelines
 
-- Translate meaning faithfully into Korean; clarity over literal wording.
-- Keep standard technical terms in English (e.g., merge, rebase, tag).
+- Translate meaning faithfully into Korean; prefer clarity over literal phrasing.
+- Keep technical terms in English when they are standard (e.g., merge, rebase, tag).
 - Do not translate code identifiers, CLI flags, API names, or file paths.
-- Preserve code blocks, inline code, examples exactly as in English docs.
-- Keep dates, version numbers, formatting consistent with English originals.
-- Use same section order/headings across languages.
+- Preserve code blocks, inline code, and examples exactly as in English docs.
+- Keep dates, version numbers, and formatting consistent with English originals.
+- Apply the same section order and headings between languages.
 
 ### Translation Sync and Order
 
-- Always update English doc first.
-- Update Korean translation immediately after English changes.
+- Always update the English document first.
+- Update the Korean translation immediately after English changes.
 - Do not add additional locales without explicit instructions.
 
 Order:
@@ -111,11 +114,11 @@ Order:
 - Recommended branch names: `feature/<slug>`, `fix/<slug>`, `docs/<slug>`.
 - Do not push to or modify `master`.
 - Do not rewrite published history on shared branches (no force-push for public commits).
-- Commit only with clean worktree. Validate with `git status`.
+- Commit only when the worktree is clean. Validate with `git status`.
 
 ### Pre-Commit Validation
 
-- Ensure only intended files changed: review `git diff --stat`.
+- Ensure only intended files are changed: review `git diff --stat`.
 - Verify English and Korean docs are in sync for any changed sections.
 - Update version and changelog together when releasing user-visible changes.
 
@@ -127,9 +130,9 @@ Order:
 ## Versioning and Changelog
 
 - Use Semantic Versioning (SemVer) for releases.
-- Bump version in `VERSION` or package manifest when releasing changes.
+- Bump the version in `VERSION` or the package manifest when releasing changes.
 - Do not bump version without instructions.
-- Maintain `CHANGELOG.md` with Keep a Changelog format and section names.
+- Maintain `CHANGELOG.md` using Keep a Changelog format and section names.
 - Each release entry must include a version and date (e.g., `## [1.2.3] - 2025-08-17`).
 
 ## Contribution Guidelines
@@ -141,7 +144,7 @@ Order:
 
 ## Documentation Quality
 
-- Prefer concise active voice.
+- Prefer concise sentences in active voice.
 - Use Markdown best practices: headings, code fences, and lists.
 - Keep line length under 100 characters for readability.
 
