@@ -11,6 +11,32 @@
 
 ### Added
 
+- 없음
+
+### Changed
+
+- 없음
+
+### Deprecated
+
+- 없음
+
+### Removed
+
+- 없음
+
+### Fixed
+
+- 없음
+
+### Security
+
+- 없음
+
+## [0.6.0] - 2026-05-20
+
+### Added
+
 - 외부 의존성 없는 `node:test` 기반 회귀 테스트 하네스와 로컬 DOM shim 추가.
 - pair 실행 결과 필터/정렬과 실패 handle 복사/내보내기 helper 추가.
 - YouTube Data API quota 테스트 실패가 반복될 때 구조화된 quota 안내 추가.

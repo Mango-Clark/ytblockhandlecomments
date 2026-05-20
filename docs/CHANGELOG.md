@@ -11,6 +11,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- None
+
+### Changed
+
+- None
+
+### Deprecated
+
+- None
+
+### Removed
+
+- None
+
+### Fixed
+
+- None
+
+### Security
+
+- None
+
+## [0.6.0] - 2026-05-20
+
+### Added
+
 - Added a no-dependency `node:test` harness with a local DOM shim for userscript regression tests.
 - Added pair-run result filtering, sorting, and failed-handle copy/export helpers.
 - Added structured quota guidance after repeated YouTube Data API quota test failures.

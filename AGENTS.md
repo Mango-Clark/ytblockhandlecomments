@@ -40,6 +40,8 @@ Keep docs, versioning, Git workflow aligned. Change files only when code or repo
 - No history rewrite on shared branches.
 - Temporary branches OK. Merge back before delivery.
 - Use clear branch names: `feature/<slug>`, `fix/<slug>`, `docs/<slug>`.
+- Release tags must use `vMAJOR.MINOR.PATCH`, e.g. `v0.6.0`.
+- Keep historical and new release tag naming consistent; do not mix `0.6.0` and `v0.6.0`.
 - Validate with `git status` and `git diff --stat`.
 
 ## Changelog
