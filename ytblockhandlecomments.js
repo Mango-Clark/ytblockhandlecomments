@@ -1832,6 +1832,7 @@
 			return handles.filter(item => safeRegexTest(rx, item.value));
 		}
 		_renderPairResultList(container, stats) {
+			const previousOpen = container.querySelector('details')?.open;
 			container.replaceChildren();
 			if (!stats?.items?.length) {
 				container.textContent = t('pairResultEmpty');
@@ -1840,7 +1841,7 @@
 			}
 			container.className = 'tm-result-panel';
 			const details = document.createElement('details');
-			details.open = true;
+			details.open = typeof previousOpen === 'boolean' ? previousOpen : true;
 			const summary = document.createElement('summary');
 			summary.textContent = t('pairResultDetails');
 			const list = document.createElement('ul');

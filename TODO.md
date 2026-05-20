@@ -1,5 +1,9 @@
 # TODO
 
+## Important
+
+- [x] 차단 해제 버튼을 누르면 닫혀있는 최근 Pair 실행 결과 창이 계속 펼쳐짐. 해결바람.
+
 ## Normal
 
 - [ ] Add automated regression coverage for manager search, live i18n refresh, and pair result UI.
