@@ -15,6 +15,32 @@
 
 ### Changed
 
+- 없음
+
+### Deprecated
+
+- 없음
+
+### Removed
+
+- 없음
+
+### Fixed
+
+- 없음
+
+### Security
+
+- 없음
+
+## [0.5.1] - 2026-05-20
+
+### Added
+
+- 없음
+
+### Changed
+
 - UID mismatch 처리 시 오래된 저장 UID 규칙을 계속 두지 않고 최신 조회 UID로
   교체하도록 변경.
 

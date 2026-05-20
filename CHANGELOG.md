@@ -15,6 +15,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- None
+
+### Deprecated
+
+- None
+
+### Removed
+
+- None
+
+### Fixed
+
+- None
+
+### Security
+
+- None
+
+## [0.5.1] - 2026-05-20
+
+### Added
+
+- None
+
+### Changed
+
 - UID mismatch handling now replaces stale stored UID rules with the latest resolved UID instead
   of leaving the old channel ID active.
 

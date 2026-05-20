@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube Comment Blocker
 // @namespace    YouTube_Comment_Blocker
-// @version      0.5.0
+// @version      0.5.1
 // @description  Block/unblock comment handles via right-click. Optional UID pairing via YouTube Data API, real-time hiding, custom popup, and block list management.
 // @homepage     https://github.com/Mango-Clark/ytblockhandlecomments/
 // @updateURL    https://raw.githubusercontent.com/Mango-Clark/ytblockhandlecomments/refs/heads/master/ytblockhandlecomments.js
@@ -226,7 +226,7 @@
 	const SHORTS_ROOT_SELECTOR = 'ytd-reel-video-renderer, ytd-shorts, ytd-app, ytd-page-manager';
 	const PAIR_STALE_MS = 7 * 24 * 60 * 60 * 1000;
 	const PAIR_NOTICE_COOLDOWN_MS = 24 * 60 * 60 * 1000;
-	const FALLBACK_SCRIPT_VERSION = '0.5.0';
+	const FALLBACK_SCRIPT_VERSION = '0.5.1';
 	const getScriptVersion = () => {
 		try {
 			if (typeof GM_info === 'object' && GM_info?.script?.version) return GM_info.script.version;

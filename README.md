@@ -1,10 +1,10 @@
-# 📌 YouTube Comment Blocker — v0.5.0
+# 📌 YouTube Comment Blocker — v0.5.1
 
 [English](README.md) | [한국어](README.ko.md)
 
 Full reference: [WIKI.md](WIKI.md) | [WIKI.ko.md](WIKI.ko.md)
 
-A Tampermonkey userscript for hiding YouTube comments by channel identity. `v0.5.0` keeps the
+A Tampermonkey userscript for hiding YouTube comments by channel identity. `v0.5.1` keeps the
 `v0.4.x` manager and Shorts support, then adds long-session memory cleanup, lower-noise pair
 updates, and visible script version information in the manager dialog.
 
@@ -143,7 +143,7 @@ Notes:
 ## Userscript Metadata
 
 - `@name`: `YouTube Comment Blocker`
-- `@version`: `0.5.0`
+- `@version`: `0.5.1`
 - `@match`: `https://www.youtube.com/*`
 - `@grant`: `GM_getValue`, `GM_setValue`, `GM_addValueChangeListener`,
   `GM_registerMenuCommand`, `GM_unregisterMenuCommand`
