@@ -11,12 +11,11 @@
 
 ### Added
 
-- 관리자 대화상자에 현재 userscript 버전 표시 추가.
+- 없음
 
 ### Changed
 
-- 기본 `Update Pair`가 stale 주기 전의 fresh verified pair를 건너뛰도록 변경하고,
-  선택 handle bulk update는 명시적 사용자 요청으로 계속 강제 갱신되도록 유지.
+- 없음
 
 ### Deprecated
 
@@ -28,12 +27,27 @@
 
 ### Fixed
 
-- 영상 탐색 시 임시 댓글 observer와 메타데이터 캐시를 초기화해 긴 YouTube 세션에서
-  분리된 댓글 DOM 노드를 계속 붙잡지 않도록 수정.
+- 없음
 
 ### Security
 
 - 없음
+
+## [0.5.0] - 2026-05-20
+
+### Added
+
+- 관리자 대화상자에 현재 userscript 버전 표시 추가.
+
+### Changed
+
+- 기본 `Update Pair`가 stale 주기 전의 fresh verified pair를 건너뛰도록 변경하고,
+  선택 handle bulk update는 명시적 사용자 요청으로 계속 강제 갱신되도록 유지.
+
+### Fixed
+
+- 영상 탐색 시 임시 댓글 observer와 메타데이터 캐시를 초기화해 긴 YouTube 세션에서
+  분리된 댓글 DOM 노드를 계속 붙잡지 않도록 수정.
 
 ## [0.4.0] - 2026-04-12
 

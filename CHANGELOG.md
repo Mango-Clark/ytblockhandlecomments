@@ -11,12 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Manager dialog now shows the current userscript version.
+- None
 
 ### Changed
 
-- Default `Update Pair` now skips fresh verified pairs until their stale interval expires, while
-  selected-handle bulk updates still force refreshes for explicit user requests.
+- None
 
 ### Deprecated
 
@@ -28,12 +27,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Reset transient comment observers and metadata caches on video navigation so long YouTube
-  sessions do not retain detached comment DOM nodes.
+- None
 
 ### Security
 
 - None
+
+## [0.5.0] - 2026-05-20
+
+### Added
+
+- Manager dialog now shows the current userscript version.
+
+### Changed
+
+- Default `Update Pair` now skips fresh verified pairs until their stale interval expires, while
+  selected-handle bulk updates still force refreshes for explicit user requests.
+
+### Fixed
+
+- Reset transient comment observers and metadata caches on video navigation so long YouTube
+  sessions do not retain detached comment DOM nodes.
 
 ## [0.4.0] - 2026-04-12
 
