@@ -17,6 +17,7 @@
 - `npm run check:build`는 루트 userscript와 `src/`가 동기화되어 있는지 확인합니다.
 - Chrome/Tampermonkey는 `src/` 파일을 직접 로드하지 않고 생성된 루트 userscript만
   사용합니다.
+- 생성된 루트 userscript는 설치/업데이트 payload를 줄이기 위해 압축됩니다.
 - 동작을 바꾸는 커밋은 변경된 `src/` 파일과 다시 빌드된 `ytblockhandlecomments.js`를
   함께 포함해야 합니다.
 

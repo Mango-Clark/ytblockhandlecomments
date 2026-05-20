@@ -18,6 +18,7 @@ Source layout:
 - Run `npm run build` to regenerate `ytblockhandlecomments.js`
 - Run `npm run check:build` to verify the root userscript matches `src/`
 - Tampermonkey installs only the root `ytblockhandlecomments.js`; `src/` is development source
+- The generated root userscript is compacted; keep readable edits in `src/`
 - Commit both changed `src/` files and the rebuilt root userscript
 
 ## Documentation

@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Covered manager search, dialog i18n refresh, pair result disclosure state, navigation observer
   reset, pair update skip/force behavior, and regex safety/import literal round-trips with
   automated tests.
+- Build now writes a compact root userscript while keeping readable source in `src/`.
 - Moved support documentation into `docs/` and updated internal links while keeping repository
   landing pages in the root `README*.md`.
 - Expanded regex match lists now page results and update only the affected regex row.

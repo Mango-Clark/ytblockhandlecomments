@@ -17,6 +17,7 @@ Source layout:
 - `npm run check:build` verifies the root userscript is in sync.
 - Chrome/Tampermonkey does not load `src/` files directly; it uses only the generated root
   userscript.
+- The generated root userscript is compacted to reduce install/update payload size.
 - Commits that change source behavior should include both the changed `src/` files and the rebuilt
   `ytblockhandlecomments.js`.
 
