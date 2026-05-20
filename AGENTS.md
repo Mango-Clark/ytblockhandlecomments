@@ -10,11 +10,11 @@ Keep docs, versioning, Git workflow aligned. Change files only when code or repo
 
 - Work on `dev` unless user says else.
 - Update `README.md` first, then `README.ko.md`.
-- Update `WIKI.md` first, then `WIKI.ko.md` when behavior/storage changes.
-- Update `CHANGELOG.md` first, then `CHANGELOG.ko.md`.
+- Update `docs/WIKI.md` first, then `docs/WIKI.ko.md` when behavior/storage changes.
+- Update `docs/CHANGELOG.md` first, then `docs/CHANGELOG.ko.md`.
 - Review every `*.md` when code changes.
 - Bump `VERSION` or package manifest only when shipping user-visible change.
-- Check `TODO.md`. Mark done items. Remove old done items when version bumps.
+- Check `docs/TODO.md`. Mark done items. Remove old done items when version bumps.
 - Keep `git status` clean before PR or commit.
 - Request maintainer review for code or changelog changes.
 - Commit often. Small commits. Keep worktree clean.

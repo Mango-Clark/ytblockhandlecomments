@@ -2,7 +2,7 @@
 
 [English](README.md) | [한국어](README.ko.md)
 
-Full reference: [WIKI.md](WIKI.md) | [WIKI.ko.md](WIKI.ko.md)
+Full reference: [WIKI.md](docs/WIKI.md) | [WIKI.ko.md](docs/WIKI.ko.md)
 
 A Tampermonkey userscript for hiding YouTube comments by channel identity. `v0.5.1` keeps the
 `v0.4.x` manager and Shorts support, then adds long-session memory cleanup, lower-noise pair
@@ -11,6 +11,13 @@ updates, and visible script version information in the manager dialog.
 Quick install:
 
 - <https://raw.githubusercontent.com/Mango-Clark/ytblockhandlecomments/refs/heads/master/ytblockhandlecomments.js>
+
+## Documentation
+
+- Wiki: [docs/WIKI.md](docs/WIKI.md) | [docs/WIKI.ko.md](docs/WIKI.ko.md)
+- Changelog: [docs/CHANGELOG.md](docs/CHANGELOG.md) | [docs/CHANGELOG.ko.md](docs/CHANGELOG.ko.md)
+- TODO: [docs/TODO.md](docs/TODO.md)
+- About review helper: [docs/ABOUT.md](docs/ABOUT.md)
 
 ## Features
 

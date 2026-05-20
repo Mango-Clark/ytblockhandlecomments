@@ -2,7 +2,8 @@
 
 [English](WIKI.md) | [한국어](WIKI.ko.md)
 
-This document describes the current implementation in more detail than `README.md`.
+This document describes the current implementation in more detail than
+[`README.md`](../README.md).
 
 ## 1. Overview
 

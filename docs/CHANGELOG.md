@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Covered manager search, dialog i18n refresh, pair result disclosure state, navigation observer
   reset, pair update skip/force behavior, and regex safety/import literal round-trips with
   automated tests.
+- Moved support documentation into `docs/` and updated internal links while keeping repository
+  landing pages in the root `README*.md`.
 
 ### Deprecated
 

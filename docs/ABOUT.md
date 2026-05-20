@@ -29,7 +29,7 @@ event handling, and YouTube SPA behavior.
 ## Expected Review Output
 
 - If the sub-agent confirms a vulnerability or a worthwhile improvement opportunity, it may add a
-  concise follow-up item to `TODO.md` before presenting the final review.
+  concise follow-up item to `docs/TODO.md` before presenting the final review.
 - Report findings first, ordered by severity.
 - For each finding, include the risk, why it matters, and a concrete file or behavior reference.
 - Keep any overall summary brief and place it after the findings.
@@ -38,7 +38,8 @@ event handling, and YouTube SPA behavior.
 ## Boundaries
 
 - Do not rewrite code, patch files, or broaden the task into implementation.
-- `TODO.md` updates are allowed only for confirmed vulnerabilities or concrete improvement items,
+- `docs/TODO.md` updates are allowed only for confirmed vulnerabilities or concrete improvement
+  items,
   not for speculative notes or duplicate entries.
 - Do not optimize for style-only feedback unless it clearly affects security, performance, or
   reviewability of a risky change.

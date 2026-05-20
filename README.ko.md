@@ -2,7 +2,7 @@
 
 [English](README.md) | [한국어](README.ko.md)
 
-상세 문서: [WIKI.md](WIKI.md) | [WIKI.ko.md](WIKI.ko.md)
+상세 문서: [WIKI.md](docs/WIKI.md) | [WIKI.ko.md](docs/WIKI.ko.md)
 
 YouTube 댓글을 채널 식별자 기준으로 숨기는 Tampermonkey 사용자 스크립트입니다.
 기본 흐름은 여전히 handle 차단이며, `v0.5.1`은 `v0.4.x`의 관리자와 Shorts 지원을
@@ -12,6 +12,13 @@ YouTube 댓글을 채널 식별자 기준으로 숨기는 Tampermonkey 사용자
 빠른 설치: 아래 raw URL을 Tampermonkey로 열어 설치 또는 업데이트하세요
 
 - <https://raw.githubusercontent.com/Mango-Clark/ytblockhandlecomments/refs/heads/master/ytblockhandlecomments.js>
+
+## 문서
+
+- 위키: [docs/WIKI.md](docs/WIKI.md) | [docs/WIKI.ko.md](docs/WIKI.ko.md)
+- 변경사항: [docs/CHANGELOG.md](docs/CHANGELOG.md) | [docs/CHANGELOG.ko.md](docs/CHANGELOG.ko.md)
+- TODO: [docs/TODO.md](docs/TODO.md)
+- 리뷰 헬퍼 설명: [docs/ABOUT.md](docs/ABOUT.md)
 
 ---
 

@@ -17,6 +17,8 @@
 
 - 관리자 검색, 대화상자 i18n refresh, pair 결과 disclosure 상태, 탐색 observer reset,
   pair update skip/force 동작, regex safety/import literal 왕복을 자동 테스트로 커버.
+- 지원 문서를 `docs/`로 이동하고 내부 링크를 갱신했으며, 저장소 랜딩 페이지인
+  루트 `README*.md`는 유지.
 
 ### Deprecated
 
