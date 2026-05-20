@@ -17,6 +17,8 @@ Keep docs, versioning, Git workflow aligned. Change files only when code or repo
 - Check `docs/TODO.md`. Mark done items. Remove old done items when version bumps.
 - Edit userscript source in `src/`, then run `npm run build`.
 - Keep root `ytblockhandlecomments.js` in sync with `npm run check:build`.
+- Tampermonkey loads only root `ytblockhandlecomments.js`, not `src/`.
+- Commit changed `src/` files together with rebuilt `ytblockhandlecomments.js`.
 - Keep `git status` clean before PR or commit.
 - Request maintainer review for code or changelog changes.
 - Commit after each small patch or root-cause fix.

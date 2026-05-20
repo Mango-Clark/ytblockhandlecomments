@@ -18,6 +18,8 @@ YouTube 댓글을 채널 식별자 기준으로 숨기는 Tampermonkey 사용자
 - 역할별 소스 파일은 `src/`에서 수정합니다
 - `npm run build`로 `ytblockhandlecomments.js`를 다시 생성합니다
 - `npm run check:build`로 루트 userscript와 `src/`의 동기화를 확인합니다
+- Tampermonkey는 루트 `ytblockhandlecomments.js`만 설치하며, `src/`는 개발용 소스입니다
+- 변경한 `src/` 파일과 다시 빌드된 루트 userscript를 함께 커밋합니다
 
 ## 문서
 

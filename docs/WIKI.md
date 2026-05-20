@@ -15,6 +15,10 @@ Source layout:
 - `ytblockhandlecomments.js` remains the single Tampermonkey distribution file.
 - `npm run build` regenerates the root userscript from `src/`.
 - `npm run check:build` verifies the root userscript is in sync.
+- Chrome/Tampermonkey does not load `src/` files directly; it uses only the generated root
+  userscript.
+- Commits that change source behavior should include both the changed `src/` files and the rebuilt
+  `ytblockhandlecomments.js`.
 
 Supported rule types in `blocked_v2`:
 
