@@ -80,8 +80,12 @@ Patch rule:
 
 ## Commit
 
-- Commit messages in English, imperative mood.
-- Keep subject short.
+- Use Conventional Commits: `<type>(<scope>): <imperative summary>`.
+- Allowed types: `feat`, `fix`, `refactor`, `perf`, `docs`, `test`, `chore`, `build`, `ci`, `style`, `revert`.
+- Scope is optional but should be consistent for repeated areas, e.g. `manager`, `docs`, `build`.
+- Commit messages in English.
+- Use imperative mood after the colon.
+- Keep subject under 50 chars when feasible.
 - Include body only when why is not obvious.
 - Prefer one commit per focused patch.
 - Before starting the next patch, commit the previous completed patch.
