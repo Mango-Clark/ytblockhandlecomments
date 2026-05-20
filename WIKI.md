@@ -134,6 +134,8 @@ Optional UID behavior:
 - Controlled by `pair_meta_v1.enableUidDetection`
 - `id` rules are active only while UID detection is enabled
 - Turning UID detection off keeps stored `id` rules and pair metadata
+- Runtime UID matching compares stored `id` rules to channel IDs already present in the comment DOM;
+  it does not call the YouTube Data API
 
 Per-comment matching order:
 
@@ -162,6 +164,13 @@ Fallback behavior:
 - Handle blocking still works when UID lookup fails
 - Failed pairs stay `unverified` or `stale`
 - Existing pair data is not silently removed on lookup failure
+
+API minimization:
+
+- `Create Pair` looks up only missing or unverified handle pairs
+- Default `Update Pair` skips fresh verified pairs until the stale interval expires
+- Selected-handle bulk `Update Pair` is treated as an explicit user request and refreshes selected
+  handles even if their pair is still fresh
 
 ## 6. Manager Dialog
 

@@ -15,7 +15,8 @@
 
 ### Changed
 
-- 없음
+- 기본 `Update Pair`가 stale 주기 전의 fresh verified pair를 건너뛰도록 변경하고,
+  선택 handle bulk update는 명시적 사용자 요청으로 계속 강제 갱신되도록 유지.
 
 ### Deprecated
 

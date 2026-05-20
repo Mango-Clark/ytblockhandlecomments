@@ -122,6 +122,9 @@ Notes:
 - Handle blocking always stays enabled
 - `id` rules participate only while `UID Detection` is enabled
 - UID lookup uses YouTube Data API v3 `channels.list` with the `forHandle` filter
+- UID matching is local after pair data exists; API calls happen only during pair actions
+- `Update Pair` skips fresh verified pairs until their stale interval expires, while selected-handle
+  bulk updates still force a lookup for those selected handles
 - API-key testing uses the same API family with a fixed public channel probe
 - Search is manager-only; comment-hide hot-path lookup still uses cached sets
 - Regex selection now updates visible checkboxes and counters without full-list rerendering

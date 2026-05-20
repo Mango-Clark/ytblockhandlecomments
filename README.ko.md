@@ -123,6 +123,10 @@ Pair 메타 저장소:
 - UID 매칭은 `UID Detection` 토글로 켜고 끌 수 있습니다
 - 현재 구현에서는 UID 감지가 켜져 있을 때만 `id` 규칙 매칭이 활성화됩니다
 - UID 조회는 YouTube Data API v3 `channels.list`의 `forHandle` 필터를 사용합니다
+- pair 데이터가 있으면 UID 매칭은 로컬에서만 수행되며, API 호출은 pair 작업 중에만
+  발생합니다
+- `Update Pair`는 stale 주기가 지나지 않은 verified pair를 건너뛰고, 선택 handle
+  bulk update는 선택한 항목에 대해 강제 조회합니다
 - pair 생성/갱신에는 관리자 대화상자에 저장한 사용자 본인 API 키가 필요합니다
 - bulk pair 액션은 선택된 `handle` 항목에만 적용됩니다
 - regex 선택은 현재 보이는 checkbox와 counter만 즉시 갱신하고 전체 목록을 다시 만들지 않습니다

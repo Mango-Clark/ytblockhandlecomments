@@ -266,8 +266,9 @@
 				`stale ${stale}건, mismatch ${mismatch}건이 있어 Update Pair가 필요합니다.`,
 			updateNow: '지금 업데이트',
 			later: '나중에',
-			pairResult: ({ created, refreshed, mismatches, failed, addedIds }) =>
-				`생성 ${created} / 갱신 ${refreshed} / mismatch ${mismatches} / 실패 ${failed} / UID 추가 ${addedIds}`,
+			pairResult: ({ created, refreshed, mismatches, failed, addedIds, skipped }) =>
+				`생성 ${created} / 갱신 ${refreshed} / mismatch ${mismatches} / 실패 ${failed} / UID 추가 ${addedIds} / skip ${skipped || 0}`,
+			pairSkippedFresh: '아직 갱신 주기 내에 있어 API 조회를 건너뜀',
 			pairResultDetails: '최근 Pair 실행 결과',
 			pairResultEmpty: '아직 Pair 실행 기록이 없습니다.',
 			pairResultDialogTitle: 'Pair 실행 상세',
@@ -398,8 +399,9 @@
 				`${stale} stale pair(s) and ${mismatch} mismatch pair(s) need an update.`,
 			updateNow: 'Update Now',
 			later: 'Later',
-			pairResult: ({ created, refreshed, mismatches, failed, addedIds }) =>
-				`Created ${created} / Refreshed ${refreshed} / Mismatch ${mismatches} / Failed ${failed} / Added UID ${addedIds}`,
+			pairResult: ({ created, refreshed, mismatches, failed, addedIds, skipped }) =>
+				`Created ${created} / Refreshed ${refreshed} / Mismatch ${mismatches} / Failed ${failed} / Added UID ${addedIds} / Skipped ${skipped || 0}`,
+			pairSkippedFresh: 'Skipped API lookup because the pair is still within the refresh interval',
 			pairResultDetails: 'Last Pair Run',
 			pairResultEmpty: 'No pair run has completed yet.',
 			pairResultDialogTitle: 'Pair Run Details',
@@ -1039,11 +1041,40 @@
 			});
 			return this._processHandles(filtered);
 		}
+		_shouldRefreshHandle(handle, { includeMissing = true } = {}) {
+			const status = this.getHandleStatus(handle).code;
+			if (status === 'paired') return false;
+			if (status === 'handle-only') return includeMissing;
+			return status === 'stale' || status === 'mismatch' || status === 'unverified';
+		}
 		async updatePairs({ includeMissing = true } = {}) {
-			const handles = includeMissing
-				? this.getBlockedHandles()
-				: this.getBlockedHandles().filter(handle => !!this.pairStore.getPair(handle));
-			return this._processHandles(handles);
+			const handles = [];
+			const skipped = [];
+			for (const handle of this.getBlockedHandles()) {
+				const hasPair = !!this.pairStore.getPair(handle);
+				if (!includeMissing && !hasPair) continue;
+				if (this._shouldRefreshHandle(handle, { includeMissing })) handles.push(handle);
+				else skipped.push({
+					handle,
+					outcome: 'skipped',
+					message: t('pairSkippedFresh')
+				});
+			}
+			if (!handles.length) {
+				return {
+					created: 0,
+					refreshed: 0,
+					mismatches: 0,
+					failed: 0,
+					addedIds: 0,
+					skipped: skipped.length,
+					items: skipped
+				};
+			}
+			const stats = await this._processHandles(handles);
+			stats.skipped += skipped.length;
+			stats.items.push(...skipped);
+			return stats;
 		}
 		async updatePairsForHandles(handles) {
 			return this._processHandles(handles || []);

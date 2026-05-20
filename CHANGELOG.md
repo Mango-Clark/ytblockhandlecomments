@@ -15,7 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- None
+- Default `Update Pair` now skips fresh verified pairs until their stale interval expires, while
+  selected-handle bulk updates still force refreshes for explicit user requests.
 
 ### Deprecated
 

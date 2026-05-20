@@ -135,6 +135,8 @@ API 설정:
 - `pair_meta_v1.enableUidDetection`으로 제어합니다
 - `id` 규칙은 UID 감지가 켜져 있을 때만 매칭에 참여합니다
 - UID 감지를 꺼도 저장된 `id` 규칙과 pair 메타데이터는 유지됩니다
+- 런타임 UID 매칭은 저장된 `id` 규칙과 댓글 DOM에 이미 있는 channel ID를 로컬에서
+  비교하며 YouTube Data API를 호출하지 않습니다
 
 댓글별 매칭 순서:
 
@@ -163,6 +165,13 @@ Fallback 동작:
 - UID 조회가 실패해도 handle 차단은 계속 동작합니다
 - 실패한 pair는 `unverified` 또는 `stale` 상태로 남습니다
 - 조회 실패만으로 기존 pair 데이터를 조용히 삭제하지 않습니다
+
+API 호출 최소화:
+
+- `Create Pair`는 missing 또는 unverified handle pair만 조회합니다
+- 기본 `Update Pair`는 stale 주기가 지나기 전의 fresh verified pair를 건너뜁니다
+- 선택 handle bulk `Update Pair`는 명시적 사용자 요청으로 보고, 선택한 handle은 fresh
+  상태여도 다시 조회합니다
 
 ## 6. 관리자 대화상자
 
