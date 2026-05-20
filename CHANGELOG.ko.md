@@ -11,11 +11,12 @@
 
 ### Added
 
-- 없음
+- 외부 의존성 없는 `node:test` 기반 회귀 테스트 하네스와 로컬 DOM shim 추가.
 
 ### Changed
 
-- 없음
+- 관리자 검색, 대화상자 i18n refresh, pair 결과 disclosure 상태, 탐색 observer reset,
+  pair update skip/force 동작, regex safety/import literal 왕복을 자동 테스트로 커버.
 
 ### Deprecated
 

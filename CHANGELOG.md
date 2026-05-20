@@ -11,11 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- None
+- Added a no-dependency `node:test` harness with a local DOM shim for userscript regression tests.
 
 ### Changed
 
-- None
+- Covered manager search, dialog i18n refresh, pair result disclosure state, navigation observer
+  reset, pair update skip/force behavior, and regex safety/import literal round-trips with
+  automated tests.
 
 ### Deprecated
 

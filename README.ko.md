@@ -116,6 +116,15 @@ Pair 메타 저장소:
 
 ---
 
+## 테스트
+
+- `node --test` 실행
+- 외부 의존성 없이 `node:test`와 작은 DOM shim으로 회귀 테스트를 실행합니다
+- 현재 범위: 관리자 검색, 대화상자 i18n refresh, pair 결과 UI 상태, 탐색 observer reset,
+  pair update skip/force 동작, regex safety/import literal
+
+---
+
 ## 참고 사항
 
 - handle 매칭은 항상 활성 상태로 유지됩니다

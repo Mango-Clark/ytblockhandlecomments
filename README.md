@@ -119,6 +119,13 @@ Notes:
 - Older handles may already be stored in lowercase, so exact handle matching is guaranteed only
   after re-saving or newly adding those handles
 
+## Testing
+
+- Run `node --test`
+- The repo uses a local no-deps `node:test` harness with a small DOM shim
+- Current regression coverage includes manager search, dialog i18n refresh, pair result UI state,
+  navigation observer reset, pair update skip/force behavior, and regex safety/import literals
+
 ## Notes
 
 - Handle blocking always stays enabled
