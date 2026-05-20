@@ -122,6 +122,8 @@ API 설정:
 
 - handle 차단은 항상 유지됩니다
 - regex 규칙은 추출된 handle 텍스트에만 적용됩니다
+- regex 규칙은 pattern 길이, flag, 대상 길이, 위험한 backtracking 형태에 대한 safety
+  제한을 넘으면 저장하지 않습니다
 
 대소문자 구분:
 
@@ -165,6 +167,8 @@ Fallback 동작:
 - UID 조회가 실패해도 handle 차단은 계속 동작합니다
 - 실패한 pair는 `unverified` 또는 `stale` 상태로 남습니다
 - 조회 실패만으로 기존 pair 데이터를 조용히 삭제하지 않습니다
+- pair update에서 다른 UID가 조회되면 저장된 pair와 `id` 규칙을 최신 UID로 교체해
+  stale ID가 예전 채널에 계속 매칭되지 않도록 합니다
 
 API 호출 최소화:
 
@@ -262,6 +266,10 @@ Pair 결과:
 - `@handle`
 - `UC...`
 - `/regex/`
+- `/regex/flags`
+
+Regex literal은 export 시 `/`를 `\/`로 escape하고, import 시 escaped 형태를
+받아들입니다.
 
 지원하는 JSON 형태:
 

@@ -18,6 +18,7 @@ Quick install:
 - Adds `Hide comments from this channel` to the comment `⋯` menu
 - Hides matching comments in real time on YouTube watch pages and Shorts pages
 - Supports `handle`, `id`, and `regex` rules in `blocked_v2`
+- Applies regex length, flag, target, and heuristic safety checks before storing or matching rules
 - Supports optional UID detection with handle↔UID metadata in `pair_meta_v1`
 - Stores a local-only YouTube Data API v3 key and validates it before pair maintenance
 - Supports case-sensitive handle matching
@@ -126,10 +127,13 @@ Notes:
 - UID matching is local after pair data exists; API calls happen only during pair actions
 - `Update Pair` skips fresh verified pairs until their stale interval expires, while selected-handle
   bulk updates still force a lookup for those selected handles
+- If a pair update resolves a different UID, the old `id` rule is replaced so stale IDs stop
+  matching old channels
 - API-key testing uses the same API family with a fixed public channel probe
 - Search is manager-only; comment-hide hot-path lookup still uses cached sets
 - Regex selection now updates visible checkboxes and counters without full-list rerendering
 - Regex rules only target handles, not comment text
+- Plain-text import/export round-trips regex literals as `/pattern/flags`
 - Comment hiding is intentionally scoped to watch-page and Shorts comments
 - The pair review banner remains intentionally scoped to watch pages
 - Navigation resets transient comment observers and metadata caches so long YouTube sessions do not

@@ -121,6 +121,8 @@ Always-on behavior:
 
 - Handle matching always stays enabled
 - Regex rules are tested against extracted handle text only
+- Regex rules are rejected when they exceed safety limits for pattern length, flags, target length,
+  or known high-risk backtracking shapes
 
 Case sensitivity:
 
@@ -164,6 +166,8 @@ Fallback behavior:
 - Handle blocking still works when UID lookup fails
 - Failed pairs stay `unverified` or `stale`
 - Existing pair data is not silently removed on lookup failure
+- When a pair update resolves a different UID, the stored pair and `id` rule are replaced with the
+  latest UID so stale IDs no longer keep matching the old channel
 
 API minimization:
 
@@ -260,6 +264,9 @@ Supported plain-text entries:
 - `@handle`
 - `UC...`
 - `/regex/`
+- `/regex/flags`
+
+Regex literals escape `/` as `\/` on export and accept the escaped form on import.
 
 Supported JSON shapes:
 

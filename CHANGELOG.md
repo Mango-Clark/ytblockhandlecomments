@@ -15,7 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- None
+- UID mismatch handling now replaces stale stored UID rules with the latest resolved UID instead
+  of leaving the old channel ID active.
 
 ### Deprecated
 
@@ -27,11 +28,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- None
+- Plain-text regex import now accepts exported `/pattern/flags` literals and escaped slash
+  patterns.
 
 ### Security
 
-- None
+- Added regex pattern, flag, target-length, and heuristic safety checks to reduce page freezes
+  from catastrophic user regexes during comment matching and manager scans.
 
 ## [0.5.0] - 2026-05-20
 

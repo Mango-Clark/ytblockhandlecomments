@@ -172,6 +172,59 @@
 		) || null;
 	};
 	const isChannelId = (value) => /^UC[0-9A-Za-z_-]{10,}$/.test(String(value || '').trim());
+	const SAFE_REGEX_MAX_PATTERN = 256;
+	const SAFE_REGEX_MAX_TARGET = 128;
+	const SAFE_REGEX_MAX_RUNTIME_MS = 5;
+	const SAFE_REGEX_FLAGS = /^[gimsuy]*$/;
+	const UNSAFE_REGEX_PATTERNS = [
+		/\([^)]*[+*][^)]*\)[+*{]/,
+		/\([^)]*\{[^)]*,[^)]*\}[^)]*\)[+*{]/,
+		/(?:\.\*){2,}/,
+		/(?:\[[^\]]+\][+*]){2,}/
+	];
+	const validateRegexSpec = (pattern, flags = '') => {
+		const value = String(pattern || '');
+		const flagText = String(flags || '');
+		if (!value || value.length > SAFE_REGEX_MAX_PATTERN) return null;
+		if (flagText.length > 6 || !SAFE_REGEX_FLAGS.test(flagText) || new Set(flagText).size !== flagText.length) return null;
+		if (UNSAFE_REGEX_PATTERNS.some(rx => rx.test(value))) return null;
+		try {
+			const rx = new RegExp(value, flagText);
+			const probe = `${'a'.repeat(48)}!`;
+			const startedAt = performance.now();
+			rx.lastIndex = 0;
+			rx.test(probe);
+			if (performance.now() - startedAt > SAFE_REGEX_MAX_RUNTIME_MS) return null;
+			return { pattern: value, flags: flagText };
+		} catch {
+			return null;
+		}
+	};
+	const parseRegexLiteral = (text) => {
+		const s = String(text || '').trim();
+		if (!s.startsWith('/')) return null;
+		let escaped = false;
+		for (let i = s.length - 1; i > 0; i--) {
+			const ch = s[i];
+			if (ch === '/' && !escaped) return { pattern: s.slice(1, i).replace(/\\\//g, '/'), flags: s.slice(i + 1) };
+			escaped = ch === '\\' && !escaped;
+			if (ch !== '\\') escaped = false;
+		}
+		return null;
+	};
+	const exportRegexLiteral = (item) => `/${String(item.value || '').replace(/\//g, '\\/')}/${item.flags || ''}`;
+	const safeRegexTest = (rx, value) => {
+		if (!rx || !value) return false;
+		const target = String(value).slice(0, SAFE_REGEX_MAX_TARGET);
+		const startedAt = performance.now();
+		try {
+			rx.lastIndex = 0;
+			const matched = rx.test(target);
+			return (performance.now() - startedAt) <= SAFE_REGEX_MAX_RUNTIME_MS && matched;
+		} catch {
+			return false;
+		}
+	};
 	const COMMENT_SELECTOR = 'ytd-comment-thread-renderer, ytd-comment-renderer, ytd-comment-view-model';
 	const COMMENTS_HOST_SELECTOR = 'ytd-comments#comments, ytd-comments';
 	const WATCH_ROOT_SELECTOR = 'ytd-watch-flexy, ytd-watch-grid, ytd-page-manager';
@@ -278,6 +331,7 @@
 			pairResult: ({ created, refreshed, mismatches, failed, addedIds, skipped }) =>
 				`생성 ${created} / 갱신 ${refreshed} / mismatch ${mismatches} / 실패 ${failed} / UID 추가 ${addedIds} / skip ${skipped || 0}`,
 			pairSkippedFresh: '아직 갱신 주기 내에 있어 API 조회를 건너뜀',
+			pairUidReplaced: 'mismatch 감지 후 UID 규칙을 교체했습니다',
 			pairResultDetails: '최근 Pair 실행 결과',
 			pairResultEmpty: '아직 Pair 실행 기록이 없습니다.',
 			pairResultDialogTitle: 'Pair 실행 상세',
@@ -413,6 +467,7 @@
 			pairResult: ({ created, refreshed, mismatches, failed, addedIds, skipped }) =>
 				`Created ${created} / Refreshed ${refreshed} / Mismatch ${mismatches} / Failed ${failed} / Added UID ${addedIds} / Skipped ${skipped || 0}`,
 			pairSkippedFresh: 'Skipped API lookup because the pair is still within the refresh interval',
+			pairUidReplaced: 'Replaced the UID rule after a mismatch',
 			pairResultDetails: 'Last Pair Run',
 			pairResultEmpty: 'No pair run has completed yet.',
 			pairResultDialogTitle: 'Pair Run Details',
@@ -657,7 +712,8 @@
 				} else if (it.type === 'id') {
 					const id = String(it.value).trim(); if (!isChannelId(id)) continue; normed.push({ type: 'id', value: id });
 				} else if (it.type === 'regex') {
-					try { const p = String(it.value); const flags = (it.flags || ''); new RegExp(p, flags); normed.push({ type: 'regex', value: p, flags }); } catch { }
+					const spec = validateRegexSpec(it.value, it.flags || '');
+					if (spec) normed.push({ type: 'regex', value: spec.pattern, flags: spec.flags });
 				}
 			}
 			// dedupe
@@ -700,7 +756,11 @@
 			return !!this._saveV2([...this._items, { type: 'handle', value: v }]);
 		}
 		addId(id) { id = (id || '').trim(); if (!isChannelId(id)) return false; return !!this._saveV2([...this._items, { type: 'id', value: id }]); }
-		addRegex(pattern, flags = '') { try { new RegExp(pattern, flags); } catch { return false; } return !!this._saveV2([...this._items, { type: 'regex', value: pattern, flags }]); }
+		addRegex(pattern, flags = '') {
+			const spec = validateRegexSpec(pattern, flags);
+			if (!spec) return false;
+			return !!this._saveV2([...this._items, { type: 'regex', value: spec.pattern, flags: spec.flags }]);
+		}
 		remove(item) {
 			const key = getItemKey(item);
 			return !!this._saveV2(this._items.filter(it => {
@@ -1132,18 +1192,22 @@
 							this.pairStore.upsertPair({
 								...existing,
 								handle,
-								status: 'mismatch',
+								uid: resolved.uid,
+								verifiedAt: Date.now(),
+								status: 'verified',
 								lastResolvedUid: resolved.uid,
 								lastError: null,
 								source: resolved.source || existing.source || 'youtube-data-api-v3'
 							});
+							if (this.hasBlockedId(existing.uid)) this.storage.remove({ type: 'id', value: existing.uid });
+							if (!this.hasBlockedId(resolved.uid) && this.storage.addId(resolved.uid)) stats.addedIds += 1;
 							stats.mismatches += 1;
 							stats.items.push({
 								handle,
 								outcome: 'mismatch',
 								uid: existing.uid,
 								resolvedUid: resolved.uid,
-								message: t('pairLookupFailed')
+								message: t('pairUidReplaced')
 							});
 							continue;
 						}
@@ -1463,7 +1527,10 @@
 					const key = getHandleCompareKey(it.value, caseSensitive);
 					if (key) this._handleSet.add(key);
 				}
-				else if (it.type === 'regex') { try { this._regexes.push(new RegExp(it.value, it.flags || '')); } catch { } }
+				else if (it.type === 'regex') {
+					const spec = validateRegexSpec(it.value, it.flags || '');
+					if (spec) this._regexes.push(new RegExp(spec.pattern, spec.flags));
+				}
 			}
 		}
 		_getDefaultRoot() {
@@ -1504,8 +1571,7 @@
 			if (handleKey && this._handleSet.has(handleKey)) return true;
 			if (h) {
 				for (const rx of this._regexes) {
-					rx.lastIndex = 0;
-					if (rx.test(h)) return true;
+					if (safeRegexTest(rx, h)) return true;
 				}
 			}
 			return false;
@@ -1723,12 +1789,10 @@
 		_getRegexMatches(regexItem, items) {
 			if (!regexItem || regexItem.type !== 'regex') return [];
 			const handles = (items || []).filter(item => item.type === 'handle');
-			let rx = null;
-			try { rx = new RegExp(regexItem.value, regexItem.flags || ''); } catch { return []; }
-			return handles.filter(item => {
-				rx.lastIndex = 0;
-				return rx.test(item.value);
-			});
+			const spec = validateRegexSpec(regexItem.value, regexItem.flags || '');
+			if (!spec) return [];
+			const rx = new RegExp(spec.pattern, spec.flags);
+			return handles.filter(item => safeRegexTest(rx, item.value));
 		}
 		_renderPairResultList(container, stats) {
 			container.replaceChildren();
@@ -2166,17 +2230,17 @@
 				}
 				if (mode === 'full' && Array.isArray(entry.matches)) return entry;
 				if (mode === 'count' && typeof entry.matchCount === 'number') return entry;
-				let rx = null;
-				try { rx = new RegExp(regexItem.value, regexItem.flags || ''); } catch {
+				const spec = validateRegexSpec(regexItem.value, regexItem.flags || '');
+				if (!spec) {
 					entry.matchCount = 0;
 					if (mode === 'full') entry.matches = [];
 					return entry;
 				}
+				const rx = new RegExp(spec.pattern, spec.flags);
 				if (mode === 'full') {
 					const matches = [];
 					for (const item of viewState.handleItems) {
-						rx.lastIndex = 0;
-						if (rx.test(item.value)) matches.push(item);
+						if (safeRegexTest(rx, item.value)) matches.push(item);
 					}
 					entry.matches = matches;
 					entry.matchCount = matches.length;
@@ -2184,8 +2248,7 @@
 				}
 				let matchCount = 0;
 				for (const item of viewState.handleItems) {
-					rx.lastIndex = 0;
-					if (rx.test(item.value)) matchCount += 1;
+					if (safeRegexTest(rx, item.value)) matchCount += 1;
 				}
 				entry.matchCount = matchCount;
 				return entry;
@@ -2558,9 +2621,9 @@
 				let pattern = (patternInput.value || '').trim();
 				let flags = (flagsInput.value || '').trim();
 				if (!pattern) return;
-				const m = /^\/(.*)\/([gimsuy]*)$/.exec(pattern);
-				if (m) { pattern = m[1]; flags = m[2] || ''; }
-				try { new RegExp(pattern, flags); } catch { Toast.show(t('invalidRegex')); return; }
+				const literal = parseRegexLiteral(pattern);
+				if (literal) { pattern = literal.pattern; flags = literal.flags || ''; }
+				if (!validateRegexSpec(pattern, flags)) { Toast.show(t('invalidRegex')); return; }
 				const ok = this.app.storage.addRegex(pattern, flags);
 				if (!ok) { Toast.show(t('exists')); return; }
 				this.app.refreshAfterStorageChange();
@@ -2601,7 +2664,7 @@
 			const ta1 = document.createElement('textarea'); ta1.readOnly = true; ta1.value = json;
 			const h4b = document.createElement('h4'); h4b.textContent = t('text');
 			const ta2 = document.createElement('textarea'); ta2.readOnly = true;
-			ta2.value = this.app.storage.all().map(it => it.type === 'regex' ? `/${it.value}/${it.flags || ''}` : it.value).join('\n');
+			ta2.value = this.app.storage.all().map(it => it.type === 'regex' ? exportRegexLiteral(it) : it.value).join('\n');
 			body.append(p, h4a, ta1, h4b, ta2);
 			Dialog.show({
 				title: t('export'),
@@ -2645,7 +2708,8 @@
 						const parts = txt.split(/[,\n]+/);
 						items = parts.map(s => s.trim()).filter(Boolean).map(s => {
 							if (s.startsWith('@')) return { type: 'handle', value: s };
-							if (s.startsWith('/') && s.endsWith('/')) { const m = /^\/(.*)\/(.*)$/.exec(s); return m ? { type: 'regex', value: m[1], flags: m[2] } : null; }
+							const literal = parseRegexLiteral(s);
+							if (literal) return { type: 'regex', value: literal.pattern, flags: literal.flags };
 							if (isChannelId(s)) return { type: 'id', value: s };
 							return { type: 'handle', value: s };
 						}).filter(Boolean);

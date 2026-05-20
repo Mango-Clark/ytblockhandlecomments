@@ -21,6 +21,7 @@ YouTube 댓글을 채널 식별자 기준으로 숨기는 Tampermonkey 사용자
 - 댓글 `⋯` 메뉴에 `Hide comments from this channel` 항목 추가
 - YouTube watch 페이지와 Shorts 페이지에서 댓글을 실시간으로 숨김
 - `blocked_v2`에 `handle`, `id`, `regex` 규칙 저장
+- regex 규칙 저장/매칭 전에 길이, flag, 대상 길이, 휴리스틱 safety 검사를 적용
 - 관리자 대화상자에 선택적 `UID Detection` 토글 추가
 - 관리자 대화상자에 로컬 전용 YouTube Data API 키 입력 섹션 추가
 - `pair_meta_v1`에 handle↔UID pair 메타데이터 저장
@@ -128,11 +129,14 @@ Pair 메타 저장소:
   발생합니다
 - `Update Pair`는 stale 주기가 지나지 않은 verified pair를 건너뛰고, 선택 handle
   bulk update는 선택한 항목에 대해 강제 조회합니다
+- pair update에서 다른 UID가 조회되면 오래된 `id` 규칙을 교체해 stale UID가 예전
+  채널에 계속 매칭되지 않도록 합니다
 - pair 생성/갱신에는 관리자 대화상자에 저장한 사용자 본인 API 키가 필요합니다
 - bulk pair 액션은 선택된 `handle` 항목에만 적용됩니다
 - regex 선택은 현재 보이는 checkbox와 counter만 즉시 갱신하고 전체 목록을 다시 만들지 않습니다
 - UID 조회가 실패해도 handle 차단은 계속 동작하며, pair는 `unverified` 또는 `stale` 상태로 남습니다
 - regex 규칙은 댓글 본문이 아니라 handle 텍스트에만 적용됩니다
+- plain-text import/export는 regex literal을 `/pattern/flags` 형태로 왕복합니다
 - 댓글 숨김은 의도적으로 watch 페이지와 Shorts 댓글 범위에 한정됩니다
 - pair 검토 배너는 의도적으로 watch 페이지에만 표시됩니다
 - 탐색 시 임시 댓글 observer와 메타데이터 캐시를 초기화해 긴 YouTube 세션에서 오래된

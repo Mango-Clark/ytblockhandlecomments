@@ -15,7 +15,8 @@
 
 ### Changed
 
-- 없음
+- UID mismatch 처리 시 오래된 저장 UID 규칙을 계속 두지 않고 최신 조회 UID로
+  교체하도록 변경.
 
 ### Deprecated
 
@@ -27,11 +28,13 @@
 
 ### Fixed
 
-- 없음
+- plain-text regex import가 export된 `/pattern/flags` literal과 escaped slash 패턴을
+  받아들이도록 수정.
 
 ### Security
 
-- 없음
+- 댓글 매칭과 관리자 scan 중 catastrophic user regex로 페이지가 멈출 위험을 줄이기
+  위해 regex pattern, flag, 대상 길이, 휴리스틱 safety 검사를 추가.
 
 ## [0.5.0] - 2026-05-20
 
