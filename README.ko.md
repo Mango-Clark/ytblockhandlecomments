@@ -29,6 +29,7 @@ watch 전용 보조 UI는 그대로 유지합니다.
 - 관리자 대화상자에 로컬 `Handle Case Sensitive` 설정 추가
 - 차단 목록에 row 체크박스, 필터 기준 전체 선택, 선택 개수 표시 추가
 - 차단 목록에 `all|handle|id|regex` 타입 필터와 handle 태그 필터 추가
+- 관리자 대화상자에 현재 userscript 버전 표시
 - 선택 항목 삭제, 선택 handle 대상 pair 생성/갱신 bulk 액션 추가
 - regex 매칭 결과 캐시로 `matching handle 선택` 시 전체 목록 재생성을 피함
 - stale 또는 mismatch pair가 있으면 watch 페이지에 검토 배너 표시

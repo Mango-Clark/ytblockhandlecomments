@@ -22,6 +22,7 @@ Quick install:
 - Stores a local-only YouTube Data API v3 key and validates it before pair maintenance
 - Supports case-sensitive handle matching
 - Supports block-list search, type filters, tag filters, row selection, and bulk actions
+- Shows the current userscript version in the manager dialog
 - Shows regex rows with matched-handle counts and one-click matching-handle selection
 - Reuses cached regex match results so matching-handle selection no longer rebuilds the full list
 - Shows handle-level pair results after create/update runs

@@ -177,6 +177,7 @@ API 호출 최소화:
 
 섹션:
 
+- 현재 userscript 버전을 보여주는 script info 섹션
 - handle 대소문자 구분 섹션
 - YouTube Data API v3 섹션
 - UID detection / pair summary 섹션

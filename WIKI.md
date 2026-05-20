@@ -176,6 +176,7 @@ API minimization:
 
 Sections:
 
+- Script info section with the current userscript version
 - Handle case-sensitivity section
 - YouTube Data API v3 section
 - UID detection / pair summary section

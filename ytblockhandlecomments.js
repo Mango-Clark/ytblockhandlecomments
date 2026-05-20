@@ -178,6 +178,13 @@
 	const SHORTS_ROOT_SELECTOR = 'ytd-reel-video-renderer, ytd-shorts, ytd-app, ytd-page-manager';
 	const PAIR_STALE_MS = 7 * 24 * 60 * 60 * 1000;
 	const PAIR_NOTICE_COOLDOWN_MS = 24 * 60 * 60 * 1000;
+	const FALLBACK_SCRIPT_VERSION = '0.4.0';
+	const getScriptVersion = () => {
+		try {
+			if (typeof GM_info === 'object' && GM_info?.script?.version) return GM_info.script.version;
+		} catch { }
+		return FALLBACK_SCRIPT_VERSION;
+	};
 
 	const I18N = {
 		ko: {
@@ -195,6 +202,8 @@
 			confirmClear: '모든 차단 핸들을 초기화할까요?',
 			menuManage: '🔍 차단 목록 관리',
 			menuClear: '🗑️ 차단 목록 초기화',
+			versionTitle: '스크립트 정보',
+			versionValue: (version) => `버전: ${version}`,
 			syncToast: '차단 목록이 다른 탭과 동기화되었습니다.',
 			pairSyncToast: 'UID pair 설정이 다른 탭과 동기화되었습니다.',
 			exportHint: 'JSON 또는 라인별 텍스트로 복사하세요.',
@@ -328,6 +337,8 @@
 			confirmClear: 'Reset all blocked entries?',
 			menuManage: '🔍 Manage block list',
 			menuClear: '🗑️ Clear block list',
+			versionTitle: 'Script Info',
+			versionValue: (version) => `Version: ${version}`,
 			syncToast: 'Block list synced from another tab.',
 			pairSyncToast: 'UID pair settings synced from another tab.',
 			exportHint: 'Copy as JSON or line text.',
@@ -1794,6 +1805,13 @@
 			let apiTestBusy = false;
 			let searchQuery = '';
 
+			const versionSection = document.createElement('section');
+			versionSection.className = 'tm-section';
+			const versionTitle = document.createElement('h3');
+			const versionText = document.createElement('div');
+			versionText.className = 'tm-muted';
+			versionSection.append(versionTitle, versionText);
+
 			const settingsSection = document.createElement('section');
 			settingsSection.className = 'tm-section';
 			const settingsTitle = document.createElement('h3');
@@ -2007,7 +2025,7 @@
 			toolbar.append(topToolbarRow, middleToolbarRow, bottomToolbarRow);
 			const list = Object.assign(document.createElement('ul'), { className: 'tm-block-list' });
 			listSection.append(listTitle, toolbar, list);
-			wrap.append(settingsSection, apiSection, pairSection, form, listSection);
+			wrap.append(versionSection, settingsSection, apiSection, pairSection, form, listSection);
 
 			const regexMatchCache = new Map();
 			const rowRefs = new Map();
@@ -2386,6 +2404,8 @@
 				renderList();
 			};
 			const applyLanguage = () => {
+				versionTitle.textContent = t('versionTitle');
+				versionText.textContent = t('versionValue', getScriptVersion());
 				settingsTitle.textContent = t('handleCaseLabel');
 				caseText.textContent = t('handleCaseLabel');
 				caseHelp.textContent = t('handleCaseHelp');

@@ -11,7 +11,7 @@
 
 ### Added
 
-- 없음
+- 관리자 대화상자에 현재 userscript 버전 표시 추가.
 
 ### Changed
 
