@@ -177,8 +177,8 @@
 	const SAFE_REGEX_MAX_RUNTIME_MS = 5;
 	const SAFE_REGEX_FLAGS = /^[gimsuy]*$/;
 	const UNSAFE_REGEX_PATTERNS = [
-		/\([^)]*[+*][^)]*\)[+*{]/,
-		/\([^)]*\{[^)]*,[^)]*\}[^)]*\)[+*{]/,
+		/\((?:\\.|[^()\\])*(?:[+*?]|\{\d*,?\d*\})(?:\\.|[^()\\])*\)(?:[+*?]|\{)/,
+		/\((?:\\.|[^()\\])+\|(?:\\.|[^()\\])+\)(?:[+*?]|\{)/,
 		/(?:\.\*){2,}/,
 		/(?:\[[^\]]+\][+*]){2,}/
 	];
@@ -189,12 +189,7 @@
 		if (flagText.length > 6 || !SAFE_REGEX_FLAGS.test(flagText) || new Set(flagText).size !== flagText.length) return null;
 		if (UNSAFE_REGEX_PATTERNS.some(rx => rx.test(value))) return null;
 		try {
-			const rx = new RegExp(value, flagText);
-			const probe = `${'a'.repeat(48)}!`;
-			const startedAt = performance.now();
-			rx.lastIndex = 0;
-			rx.test(probe);
-			if (performance.now() - startedAt > SAFE_REGEX_MAX_RUNTIME_MS) return null;
+			new RegExp(value, flagText);
 			return { pattern: value, flags: flagText };
 		} catch {
 			return null;
@@ -759,7 +754,9 @@
 		addRegex(pattern, flags = '') {
 			const spec = validateRegexSpec(pattern, flags);
 			if (!spec) return false;
-			return !!this._saveV2([...this._items, { type: 'regex', value: spec.pattern, flags: spec.flags }]);
+			const before = this._items.length;
+			this._saveV2([...this._items, { type: 'regex', value: spec.pattern, flags: spec.flags }]);
+			return this._items.length > before;
 		}
 		remove(item) {
 			const key = getItemKey(item);
@@ -935,6 +932,18 @@
 				)
 			});
 		}
+		removePairs(handles) {
+			const keys = new Set((handles || [])
+				.map(handle => getHandleCompareKey(handle, this.settings?.isHandleCaseSensitive?.() || false))
+				.filter(Boolean));
+			if (!keys.size) return this.getState();
+			return this._saveState({
+				...this._state,
+				pairs: this._state.pairs.filter(pair =>
+					!keys.has(getHandleCompareKey(pair.handle, this.settings?.isHandleCaseSensitive?.() || false))
+				)
+			});
+		}
 		clearPairs() {
 			return this._saveState({ ...this._state, pairs: [] });
 		}
@@ -1045,20 +1054,25 @@
 		getBlockedHandles() {
 			return this.storage.all().filter(item => item.type === 'handle').map(item => item.value);
 		}
-		hasBlockedId(uid) {
-			return this.storage.all().some(item => item.type === 'id' && item.value === uid);
+		getBlockedIdSet(items = this.storage.all()) {
+			return new Set((items || []).filter(item => item.type === 'id').map(item => item.value));
 		}
-		getHandleStatus(handle) {
+		hasBlockedId(uid, blockedIds = null) {
+			return blockedIds ? blockedIds.has(uid) : this.storage.all().some(item => item.type === 'id' && item.value === uid);
+		}
+		getHandleStatus(handle, blockedIds = null) {
 			const pair = this.pairStore.getPair(handle);
 			if (!pair) return { code: 'handle-only', pair: null };
 			if (pair.status === 'mismatch') return { code: 'mismatch', pair };
 			if (pair.status === 'unverified' || !pair.uid) return { code: 'unverified', pair };
-			if (!this.hasBlockedId(pair.uid)) return { code: 'handle-only', pair };
+			if (!this.hasBlockedId(pair.uid, blockedIds)) return { code: 'handle-only', pair };
 			if (pair.status === 'stale') return { code: 'stale', pair };
 			return { code: 'paired', pair };
 		}
 		getSummary() {
 			this.pairStore.refreshStatuses();
+			const allItems = this.storage.all();
+			const blockedIds = this.getBlockedIdSet(allItems);
 			const summary = {
 				handles: 0,
 				paired: 0,
@@ -1068,9 +1082,9 @@
 				unverified: 0,
 				pairNeeded: 0
 			};
-			for (const handle of this.getBlockedHandles()) {
+			for (const handle of allItems.filter(item => item.type === 'handle').map(item => item.value)) {
 				summary.handles += 1;
-				const status = this.getHandleStatus(handle).code;
+				const status = this.getHandleStatus(handle, blockedIds).code;
 				if (status === 'paired') summary.paired += 1;
 				else if (status === 'stale') summary.stale += 1;
 				else if (status === 'mismatch') summary.mismatch += 1;
@@ -1094,6 +1108,17 @@
 			const pair = this.pairStore.getPair(handle);
 			if (pair?.uid) this.storage.remove({ type: 'id', value: pair.uid });
 			this.pairStore.removePair(handle);
+		}
+		collectHandleArtifactIds(handles) {
+			const ids = new Set();
+			for (const handle of handles || []) {
+				const pair = this.pairStore.getPair(handle);
+				if (pair?.uid) ids.add(pair.uid);
+			}
+			return ids;
+		}
+		removeHandlePairs(handles) {
+			this.pairStore.removePairs(handles || []);
 		}
 		clearPairArtifacts() {
 			this.pairStore.clearPairs();
@@ -1424,6 +1449,11 @@
 				const onKey = (e) => {
 					if (e.key === 'Escape') { e.preventDefault(); close(false); }
 					else if (e.key === 'Enter') {
+						const target = e.target;
+						if (target && (
+							['TEXTAREA', 'INPUT', 'SELECT'].includes(target.tagName) ||
+							target.isContentEditable
+						)) return;
 						const primary = buttons.find(b => b.primary)?.value ?? true;
 						e.preventDefault(); close(primary);
 					} else if (e.key === 'Tab') {
@@ -1499,7 +1529,7 @@
 			this._handleSet = new Set();
 			this._regexes = [];
 			this._metaCache = new WeakMap();
-			this._observed = new WeakSet();
+			this._observed = new Set();
 			this._pending = false;
 			this._pendingRoot = null;
 			this._pendingFrame = null;
@@ -1590,7 +1620,7 @@
 		resetObservation() {
 			if (this._io) this._io.disconnect();
 			this._io = null;
-			this._observed = new WeakSet();
+			this._observed = new Set();
 		}
 		resetTransientState() {
 			if (this._pendingFrame !== null) {
@@ -1606,6 +1636,13 @@
 			if (!node || this._observed.has(node)) return;
 			this._observed.add(node);
 			this._connectIO().observe(node);
+		}
+		unobserveNodes(nodes) {
+			if (!this._io) return;
+			for (const node of nodes || []) {
+				if (!this._observed.delete(node)) continue;
+				this._io.unobserve(node);
+			}
 		}
 		_recordRefresh(kind, count, startedAt) {
 			this._metrics[kind] += 1;
@@ -2097,8 +2134,8 @@
 			let viewStateCache = null;
 			let selectionVersion = 0;
 			const getCurrentItems = () => this.app.storage.all();
-			const getStatusCode = (item) => item.type === 'handle'
-				? this.app.pairService.getHandleStatus(item.value).code
+			const getStatusCode = (item, blockedIds = null) => item.type === 'handle'
+				? this.app.pairService.getHandleStatus(item.value, blockedIds).code
 				: null;
 			const markSelectionChanged = () => {
 				selectionVersion += 1;
@@ -2126,10 +2163,10 @@
 			const getItemsRevision = (items) => (items || [])
 				.map(item => `${item.type}:${item.value}:${item.flags || ''}`)
 				.join('\u001f');
-			const getPairRevision = (items) => (items || [])
+			const getPairRevision = (items, blockedIds = null) => (items || [])
 				.filter(item => item.type === 'handle')
 				.map(item => {
-					const status = this.app.pairService.getHandleStatus(item.value);
+					const status = this.app.pairService.getHandleStatus(item.value, blockedIds);
 					const pair = status?.pair || null;
 					return [
 						getItemKey(item),
@@ -2155,6 +2192,7 @@
 			};
 			const buildBaseViewState = () => {
 				const allItems = getCurrentItems();
+				const blockedIds = this.app.pairService.getBlockedIdSet(allItems);
 				const keyedItems = new Map(allItems.map(item => [getItemKey(item), item]));
 				const handleItems = allItems.filter(item => item.type === 'handle');
 				const searchIndex = buildManagerSearchIndex(allItems);
@@ -2164,13 +2202,13 @@
 					if (typeValue !== 'all' && item.type !== typeValue) return false;
 					if (!tagFilters.size) return true;
 					if (item.type !== 'handle') return false;
-					return tagFilters.has(getStatusCode(item));
+					return tagFilters.has(getStatusCode(item, blockedIds));
 				});
 				const visibleKeys = visibleItems.map(getItemKey).filter(Boolean);
 				return {
 					signature: [
 						getItemsRevision(allItems),
-						getPairRevision(handleItems),
+						getPairRevision(handleItems, blockedIds),
 						String(this.app.settings.isHandleCaseSensitive()),
 						(typeSelect.value || 'all'),
 						String(searchQuery || '').trim().toLowerCase(),
@@ -2180,6 +2218,7 @@
 					allItems,
 					keyedItems,
 					handleItems,
+					blockedIds,
 					visibleItems,
 					visibleKeys,
 					visibleKeySet: new Set(visibleKeys)
@@ -2351,7 +2390,7 @@
 					meta.className = 'tm-block-meta';
 
 					if (item.type === 'handle') {
-						const status = this.app.pairService.getHandleStatus(item.value);
+						const status = this.app.pairService.getHandleStatus(item.value, viewState.blockedIds);
 						badges.appendChild(this._makeBadge(status.code));
 						if (status.pair?.uid) meta.appendChild(this._createMetaLine(t('metaUid', status.pair.uid)));
 						if (status.pair?.verifiedAt) {
@@ -2598,7 +2637,7 @@
 				const selectedItems = computeViewState().selectedItems;
 				if (!selectedItems.length) return;
 				if (bulkSelect.value === 'delete') {
-					for (const item of selectedItems) this.app.removeEntry(item);
+					this.app.removeEntries(selectedItems);
 					const removedCount = selectedItems.length;
 					selection.clear();
 					markSelectionChanged();
@@ -2705,7 +2744,11 @@
 						if (obj && Array.isArray(obj.items)) items = obj.items;
 						else if (obj && Array.isArray(obj.handles)) items = obj.handles.map(h => ({ type: 'handle', value: h }));
 					} catch {
-						const parts = txt.split(/[,\n]+/);
+						const parts = txt.split(/\n+/).flatMap(line => {
+							const trimmed = line.trim();
+							const literal = parseRegexLiteral(trimmed);
+							return literal ? [trimmed] : trimmed.split(',');
+						});
 						items = parts.map(s => s.trim()).filter(Boolean).map(s => {
 							if (s.startsWith('@')) return { type: 'handle', value: s };
 							const literal = parseRegexLiteral(s);
@@ -2714,9 +2757,11 @@
 							return { type: 'handle', value: s };
 						}).filter(Boolean);
 					}
+					const before = this.app.storage.all().length;
 					this.app.storage.setAll([...this.app.storage.all(), ...items]);
+					const count = this.app.storage.all().length - before;
 					this.app.refreshAfterStorageChange();
-					return { ok: true, count: items.length };
+					return { ok: true, count };
 				}
 			}).then(res => {
 				if (res && res.ok) Toast.show(t('importedCount', res.count));
@@ -2776,6 +2821,20 @@
 		removeEntry(item) {
 			if (item.type === 'handle') this.pairService.removeHandleArtifacts(item.value);
 			this.storage.remove(item);
+			this.refreshAfterStorageChange();
+		}
+
+		removeEntries(items) {
+			const selectedItems = (items || []).filter(Boolean);
+			if (!selectedItems.length) return;
+			const removeKeys = new Set(selectedItems.map(getItemKey).filter(Boolean));
+			const handles = selectedItems.filter(item => item.type === 'handle').map(item => item.value);
+			const artifactIds = this.pairService.collectHandleArtifactIds(handles);
+			this.pairService.removeHandlePairs(handles);
+			this.storage.setAll(this.storage.all().filter(item => {
+				if (removeKeys.has(getItemKey(item))) return false;
+				return item.type !== 'id' || !artifactIds.has(item.value);
+			}));
 			this.refreshAfterStorageChange();
 		}
 
@@ -2998,16 +3057,25 @@
 		_watchForCommentsHost(mode, root) {
 			if (this._hostObserver || mode === 'unsupported') return;
 			if (!root) return;
-			this._hostObserver = new MutationObserver(() => {
-				const currentMode = this._getPageMode();
-				if (currentMode !== mode) {
-					this._disconnectHostObserver();
-					return;
-				}
-				const host = this._findCommentsHost(currentMode);
-				if (host) this._attachCommentsHost(host);
+			let hostLookupPending = false;
+			let observer = null;
+			observer = new MutationObserver(() => {
+				if (hostLookupPending) return;
+				hostLookupPending = true;
+				requestAnimationFrame(() => {
+					hostLookupPending = false;
+					if (this._hostObserver !== observer) return;
+					const currentMode = this._getPageMode();
+					if (currentMode !== mode) {
+						this._disconnectHostObserver();
+						return;
+					}
+					const host = this._findCommentsHost(currentMode);
+					if (host) this._attachCommentsHost(host);
+				});
 			});
-			this._hostObserver.observe(root, { childList: true, subtree: true });
+			this._hostObserver = observer;
+			observer.observe(root, { childList: true, subtree: true });
 		}
 
 		_collectRefreshRoots(node, roots) {
@@ -3020,12 +3088,16 @@
 
 		_handleCommentMutations(muts) {
 			const roots = new Set();
+			const removedRoots = new Set();
 			for (const m of muts) {
-				if (!m.addedNodes?.length) continue;
-				const targetRoot = Extractor.getCommentRoot(m.target);
-				if (targetRoot) roots.add(targetRoot);
-				for (const node of m.addedNodes) this._collectRefreshRoots(node, roots);
+				if (m.addedNodes?.length) {
+					const targetRoot = Extractor.getCommentRoot(m.target);
+					if (targetRoot) roots.add(targetRoot);
+					for (const node of m.addedNodes) this._collectRefreshRoots(node, roots);
+				}
+				for (const node of m.removedNodes || []) this._collectRefreshRoots(node, removedRoots);
 			}
+			this.hider.unobserveNodes(removedRoots);
 			if (!roots.size) return;
 			this.hider.noteMutationBatch();
 			this.hider.refreshNodes(roots, { invalidate: true });
