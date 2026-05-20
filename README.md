@@ -12,6 +12,12 @@ Quick install:
 
 - <https://raw.githubusercontent.com/Mango-Clark/ytblockhandlecomments/refs/heads/master/ytblockhandlecomments.js>
 
+Source layout:
+
+- Edit role-based source files in `src/`
+- Run `npm run build` to regenerate `ytblockhandlecomments.js`
+- Run `npm run check:build` to verify the root userscript matches `src/`
+
 ## Documentation
 
 - Wiki: [docs/WIKI.md](docs/WIKI.md) | [docs/WIKI.ko.md](docs/WIKI.ko.md)
@@ -33,7 +39,10 @@ Quick install:
 - Shows the current userscript version in the manager dialog
 - Shows regex rows with matched-handle counts and one-click matching-handle selection
 - Reuses cached regex match results so matching-handle selection no longer rebuilds the full list
+- Pages expanded regex match lists in the manager so very large match sets do not render at once
 - Shows handle-level pair results after create/update runs
+- Supports filtering/sorting pair results and copying/exporting failed handles
+- Shows structured quota guidance after repeated API-key quota failures
 - Refreshes manager UI, dialogs, banner text, and menu labels after language changes
 
 ## Usage
@@ -129,9 +138,11 @@ Notes:
 ## Testing
 
 - Run `node --test`
+- Run `npm run check:build`
 - The repo uses a local no-deps `node:test` harness with a small DOM shim
 - Current regression coverage includes manager search, dialog i18n refresh, pair result UI state,
-  navigation observer reset, pair update skip/force behavior, and regex safety/import literals
+  pair result sorting/filtering helpers, quota guidance counters, navigation observer reset, pair
+  update skip/force behavior, and regex safety/import literals
 
 ## Notes
 
@@ -146,6 +157,9 @@ Notes:
 - API-key testing uses the same API family with a fixed public channel probe
 - Search is manager-only; comment-hide hot-path lookup still uses cached sets
 - Regex selection now updates visible checkboxes and counters without full-list rerendering
+- Regex expand/collapse and match-list pagination update only the affected row
+- API-key tests track repeated `quota` failures and show reset-window guidance in the manager
+- Pair run details can be filtered/sorted, and failed handles can be copied or exported
 - Regex rules only target handles, not comment text
 - Plain-text import/export round-trips regex literals as `/pattern/flags`
 - Comment hiding is intentionally scoped to watch-page and Shorts comments

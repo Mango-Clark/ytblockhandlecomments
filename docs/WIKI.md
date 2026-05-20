@@ -9,6 +9,13 @@ This document describes the current implementation in more detail than
 
 The userscript hides YouTube comments by channel identity on watch pages and Shorts pages.
 
+Source layout:
+
+- `src/` contains role-based source slices.
+- `ytblockhandlecomments.js` remains the single Tampermonkey distribution file.
+- `npm run build` regenerates the root userscript from `src/`.
+- `npm run check:build` verifies the root userscript is in sync.
+
 Supported rule types in `blocked_v2`:
 
 - `handle`
@@ -101,6 +108,8 @@ API config:
 {
   version: 2,
   apiKey: string,
+  quotaFailureCount: number,
+  lastQuotaFailureAt: number | null,
   lastTestResult: {
     checkedAt: number,
     ok: boolean,
@@ -201,14 +210,17 @@ Regex rows:
 - Show matched blocked-handle count
 - Support `Select matching handles`
 - Expand inline handle list
-- Show first 20 matches by default, with `Show all`
+- Show first 20 matches by default, with paged `Show more`
 - Cache count-only results for collapsed rows and full match arrays only on expand/select
-- Update visible selection UI without rebuilding the full list for selection-only actions
+- Update visible selection UI and regex expand/collapse state without rebuilding the full list for
+  row-only actions
 
 Pair results:
 
 - Pair runs return summary counts plus per-handle outcomes
 - Manager shows `Last Pair Run`
+- Pair run details support outcome filtering, run-order/outcome/handle sorting, and failed-handle
+  copy/export
 - Watch-page banner updates can open a detail dialog
 
 Removal behavior:
@@ -289,6 +301,9 @@ If pair maintenance fails:
 1. Run `Test API Key`.
 2. Check the saved `lastTestResult` category and message.
 3. Review `Last Pair Run` for handle-level failures or mismatches.
+
+If API-key tests repeatedly report `quota`, the manager tracks consecutive quota failures and
+shows guidance with an estimated 24-hour reset window from the latest quota failure.
 
 ## 11. Remaining Work
 

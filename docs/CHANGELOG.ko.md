@@ -12,6 +12,10 @@
 ### Added
 
 - 외부 의존성 없는 `node:test` 기반 회귀 테스트 하네스와 로컬 DOM shim 추가.
+- pair 실행 결과 필터/정렬과 실패 handle 복사/내보내기 helper 추가.
+- YouTube Data API quota 테스트 실패가 반복될 때 구조화된 quota 안내 추가.
+- 루트 userscript 배포 파일을 생성/검증하는 무의존성 build/check 스크립트와 역할별
+  `src/` 소스 파일 추가.
 
 ### Changed
 
@@ -19,6 +23,7 @@
   pair update skip/force 동작, regex safety/import literal 왕복을 자동 테스트로 커버.
 - 지원 문서를 `docs/`로 이동하고 내부 링크를 갱신했으며, 저장소 랜딩 페이지인
   루트 `README*.md`는 유지.
+- 펼친 regex 매칭 목록은 결과를 페이지 단위로 표시하고 해당 regex 행만 갱신하도록 변경.
 
 ### Deprecated
 

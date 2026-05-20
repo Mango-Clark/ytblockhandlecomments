@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added a no-dependency `node:test` harness with a local DOM shim for userscript regression tests.
+- Added pair-run result filtering, sorting, and failed-handle copy/export helpers.
+- Added structured quota guidance after repeated YouTube Data API quota test failures.
+- Added role-based `src/` source files with a no-dependency build/check script for the root
+  userscript distribution file.
 
 ### Changed
 
@@ -20,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   automated tests.
 - Moved support documentation into `docs/` and updated internal links while keeping repository
   landing pages in the root `README*.md`.
+- Expanded regex match lists now page results and update only the affected regex row.
 
 ### Deprecated
 

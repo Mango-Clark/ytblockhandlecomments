@@ -42,6 +42,23 @@ test('pair result details preserve collapsed state across rerender', () => {
 	assert.equal(container.querySelector('details').open, false);
 });
 
+test('pair result helpers filter, sort, and extract failed handles', () => {
+	const { api } = loadUserscript();
+	const manager = new api.BlockListManager({});
+	const stats = {
+		items: [
+			{ handle: '@beta', outcome: 'updated' },
+			{ handle: '@alpha', outcome: 'failed' },
+			{ handle: '@gamma', outcome: 'failed' }
+		]
+	};
+
+	const failedByHandle = manager._getPairResultItems(stats, { filter: 'failed', sort: 'handle' });
+
+	assert.deepEqual(failedByHandle.map(item => item.handle), ['@alpha', '@gamma']);
+	assert.deepEqual(manager._getFailedPairHandles(stats), ['@alpha', '@gamma']);
+});
+
 test('dialog refresh reruns translated labels after language change', async () => {
 	const { api, setLang } = loadUserscript();
 	let refreshContext = null;

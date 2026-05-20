@@ -64,3 +64,30 @@ test('selected-handle pair update still forces refresh', async () => {
 	assert.deepEqual(seen, ['@alpha']);
 	assert.equal(stats.refreshed, 1);
 });
+
+test('api config tracks repeated quota failures for guidance', () => {
+	const { api } = loadUserscript();
+	const apiConfig = new api.ApiConfigStorage();
+
+	apiConfig.setLastTestResult({
+		checkedAt: 1000,
+		ok: false,
+		category: 'quota',
+		httpStatus: 403,
+		message: 'quota exceeded'
+	});
+	assert.equal(apiConfig.getQuotaGuidance(), null);
+
+	apiConfig.setLastTestResult({
+		checkedAt: 2000,
+		ok: false,
+		category: 'quota',
+		httpStatus: 403,
+		message: 'quota exceeded'
+	});
+
+	const guidance = apiConfig.getQuotaGuidance();
+	assert.equal(guidance.count, 2);
+	assert.equal(guidance.lastFailureAt, 2000);
+	assert.equal(guidance.resetAt, 86402000);
+});

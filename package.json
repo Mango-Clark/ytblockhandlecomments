@@ -2,6 +2,8 @@
   "name": "ytblockhandlecomments",
   "private": true,
   "scripts": {
+    "build": "node scripts/build-userscript.js",
+    "check:build": "node scripts/build-userscript.js --check",
     "test": "node --test"
   }
 }

@@ -177,6 +177,8 @@
 	const SAFE_REGEX_MAX_TARGET = 128;
 	const SAFE_REGEX_MAX_RUNTIME_MS = 5;
 	const SAFE_REGEX_FLAGS = /^[gimsuy]*$/;
+	const REGEX_MATCH_INITIAL_LIMIT = 20;
+	const REGEX_MATCH_PAGE_SIZE = 50;
 	const UNSAFE_REGEX_PATTERNS = [
 		/\((?:\\.|[^()\\])*(?:[+*?]|\{\d*,?\d*\})(?:\\.|[^()\\])*\)(?:[+*?]|\{)/,
 		/\((?:\\.|[^()\\])+\|(?:\\.|[^()\\])+\)(?:[+*?]|\{)/,
@@ -296,6 +298,9 @@
 			apiKeyTestForbidden: '권한 거부',
 			apiKeyTestNetwork: '네트워크 실패',
 			apiKeyTestUnknown: '알 수 없음',
+			apiQuotaGuidanceTitle: 'Quota 안내',
+			apiQuotaGuidance: ({ count, reset }) =>
+				`반복 quota 실패 ${count}회. Google Cloud Console에서 YouTube Data API 할당량을 확인하고, 필요하면 quota reset 이후(${reset}) 다시 테스트하세요.`,
 			pairCreate: 'Pair 생성',
 			pairUpdate: 'Update Pair',
 			pairWorking: '처리 중...',
@@ -336,6 +341,17 @@
 			pairOutcomeMismatch: 'mismatch',
 			pairOutcomeFailed: '실패',
 			pairOutcomeSkipped: 'skip',
+			pairResultFilterLabel: '결과 필터',
+			pairResultFilterAll: '전체',
+			pairResultSortLabel: '정렬',
+			pairResultSortOriginal: '실행 순서',
+			pairResultSortOutcome: '결과별',
+			pairResultSortHandle: 'handle',
+			pairResultCopyFailed: '실패 handle 복사',
+			pairResultExportFailed: '실패 handle 내보내기',
+			pairResultFailedTitle: '실패 handle',
+			pairResultFailedEmpty: '실패한 handle이 없습니다.',
+			pairResultFailedCopied: (n) => `${n}개 실패 handle을 복사했습니다`,
 			pairResultSummary: ({ selected, visible, total }) => `선택 ${selected} / 표시 ${visible} / 전체 ${total}`,
 			pairLookupFailed: 'UID 조회 실패',
 			pairLookupNoUid: 'UID를 찾지 못했습니다.',
@@ -366,6 +382,7 @@
 			regexExpand: '펼치기',
 			regexCollapse: '접기',
 			regexShowAll: '전체 보기',
+			regexShowMore: (shown, total) => `${shown}/${total}개 표시, 더 보기`,
 			regexShowLess: '접기',
 			regexNoMatches: '현재 매칭되는 handle이 없습니다.',
 			regexSelectedMatches: (n) => `${n}개 handle을 선택했습니다`,
@@ -432,6 +449,9 @@
 			apiKeyTestForbidden: 'Forbidden',
 			apiKeyTestNetwork: 'Network failure',
 			apiKeyTestUnknown: 'Unknown',
+			apiQuotaGuidanceTitle: 'Quota guidance',
+			apiQuotaGuidance: ({ count, reset }) =>
+				`Repeated quota failures: ${count}. Check YouTube Data API quota in Google Cloud Console, then test again after the quota reset window (${reset}).`,
 			pairCreate: 'Create Pair',
 			pairUpdate: 'Update Pair',
 			pairWorking: 'Working...',
@@ -472,6 +492,17 @@
 			pairOutcomeMismatch: 'mismatch',
 			pairOutcomeFailed: 'failed',
 			pairOutcomeSkipped: 'skipped',
+			pairResultFilterLabel: 'Result filter',
+			pairResultFilterAll: 'All',
+			pairResultSortLabel: 'Sort',
+			pairResultSortOriginal: 'Run order',
+			pairResultSortOutcome: 'Outcome',
+			pairResultSortHandle: 'Handle',
+			pairResultCopyFailed: 'Copy failed handles',
+			pairResultExportFailed: 'Export failed handles',
+			pairResultFailedTitle: 'Failed handles',
+			pairResultFailedEmpty: 'No failed handles.',
+			pairResultFailedCopied: (n) => `Copied ${n} failed handle(s)`,
 			pairResultSummary: ({ selected, visible, total }) => `Selected ${selected} / Visible ${visible} / Total ${total}`,
 			pairLookupFailed: 'UID lookup failed',
 			pairLookupNoUid: 'Could not find a UID.',
@@ -502,6 +533,7 @@
 			regexExpand: 'Expand',
 			regexCollapse: 'Collapse',
 			regexShowAll: 'Show all',
+			regexShowMore: (shown, total) => `Show more (${shown}/${total})`,
 			regexShowLess: 'Show less',
 			regexNoMatches: 'No blocked handles currently match this regex.',
 			regexSelectedMatches: (n) => `Selected ${n} matching handle(s)`,
@@ -961,7 +993,7 @@
 		_getGM(key, def) { try { return GM_getValue(key, def); } catch { return def; } }
 		_setGM(key, val) { try { GM_setValue(key, val); } catch { } }
 		_defaultState() {
-			return { version: 2, apiKey: '', lastTestResult: null };
+			return { version: 2, apiKey: '', lastTestResult: null, quotaFailureCount: 0, lastQuotaFailureAt: null };
 		}
 		_normalizeTestResult(raw) {
 			if (!raw || typeof raw !== 'object') return null;
@@ -983,7 +1015,11 @@
 			return {
 				version: 2,
 				apiKey: typeof src.apiKey === 'string' ? src.apiKey.trim() : '',
-				lastTestResult: this._normalizeTestResult(src.lastTestResult)
+				lastTestResult: this._normalizeTestResult(src.lastTestResult),
+				quotaFailureCount: Number.isFinite(src.quotaFailureCount) && src.quotaFailureCount > 0
+					? Math.floor(src.quotaFailureCount)
+					: 0,
+				lastQuotaFailureAt: Number.isFinite(src.lastQuotaFailureAt) ? src.lastQuotaFailureAt : null
 			};
 		}
 		_init() {
@@ -999,7 +1035,12 @@
 		_saveState(nextState) {
 			const normalized = this._normalizeState(nextState);
 			const sameResult = JSON.stringify(this._state.lastTestResult) === JSON.stringify(normalized.lastTestResult);
-			if (this._state.apiKey === normalized.apiKey && sameResult) {
+			if (
+				this._state.apiKey === normalized.apiKey &&
+				sameResult &&
+				this._state.quotaFailureCount === normalized.quotaFailureCount &&
+				(this._state.lastQuotaFailureAt || null) === (normalized.lastQuotaFailureAt || null)
+			) {
 				this._state = normalized;
 				return this.getState();
 			}
@@ -1016,22 +1057,41 @@
 		getLastTestResult() {
 			return this._state.lastTestResult ? { ...this._state.lastTestResult } : null;
 		}
+		getQuotaGuidance() {
+			if (this._state.quotaFailureCount < 2 || !this._state.lastQuotaFailureAt) return null;
+			return {
+				count: this._state.quotaFailureCount,
+				lastFailureAt: this._state.lastQuotaFailureAt,
+				resetAt: this._state.lastQuotaFailureAt + 24 * 60 * 60 * 1000
+			};
+		}
 		setApiKey(apiKey) {
 			const nextKey = String(apiKey || '').trim();
 			return this._saveState({
 				...this._state,
 				apiKey: nextKey,
-				lastTestResult: this._state.apiKey === nextKey ? this._state.lastTestResult : null
+				lastTestResult: this._state.apiKey === nextKey ? this._state.lastTestResult : null,
+				quotaFailureCount: this._state.apiKey === nextKey ? this._state.quotaFailureCount : 0,
+				lastQuotaFailureAt: this._state.apiKey === nextKey ? this._state.lastQuotaFailureAt : null
 			});
 		}
 		clearApiKey() {
-			return this._saveState({ ...this._state, apiKey: '', lastTestResult: null });
+			return this._saveState({ ...this._state, apiKey: '', lastTestResult: null, quotaFailureCount: 0, lastQuotaFailureAt: null });
 		}
 		setLastTestResult(result) {
-			return this._saveState({ ...this._state, lastTestResult: this._normalizeTestResult(result) });
+			const normalized = this._normalizeTestResult(result);
+			const quotaFailureCount = normalized?.category === 'quota'
+				? this._state.quotaFailureCount + 1
+				: (normalized?.ok ? 0 : this._state.quotaFailureCount);
+			return this._saveState({
+				...this._state,
+				lastTestResult: normalized,
+				quotaFailureCount,
+				lastQuotaFailureAt: normalized?.category === 'quota' ? normalized.checkedAt : this._state.lastQuotaFailureAt
+			});
 		}
 		clearLastTestResult() {
-			return this._saveState({ ...this._state, lastTestResult: null });
+			return this._saveState({ ...this._state, lastTestResult: null, quotaFailureCount: 0, lastQuotaFailureAt: null });
 		}
 		getMaskedApiKey() {
 			const key = this.getApiKey();
@@ -1832,8 +1892,71 @@
 			const rx = new RegExp(spec.pattern, spec.flags);
 			return handles.filter(item => safeRegexTest(rx, item.value));
 		}
+		_getPairResultItems(stats, options = {}) {
+			const items = Array.isArray(stats?.items) ? stats.items.slice() : [];
+			const filter = options.filter || 'all';
+			const sort = options.sort || 'original';
+			const filtered = filter === 'all' ? items : items.filter(item => item.outcome === filter);
+			if (sort === 'handle') {
+				filtered.sort((a, b) => String(a.handle || '').localeCompare(String(b.handle || '')));
+			} else if (sort === 'outcome') {
+				const order = ['failed', 'mismatch', 'created', 'updated', 'skipped'];
+				filtered.sort((a, b) => {
+					const ai = order.indexOf(a.outcome);
+					const bi = order.indexOf(b.outcome);
+					return (ai < 0 ? order.length : ai) - (bi < 0 ? order.length : bi)
+						|| String(a.handle || '').localeCompare(String(b.handle || ''));
+				});
+			}
+			return filtered;
+		}
+		_getFailedPairHandles(stats) {
+			return (stats?.items || [])
+				.filter(item => item?.outcome === 'failed' && item.handle)
+				.map(item => item.handle);
+		}
+		_copyText(text) {
+			const value = String(text || '');
+			try {
+				if (navigator.clipboard?.writeText) return navigator.clipboard.writeText(value);
+			} catch { }
+			const ta = document.createElement('textarea');
+			ta.value = value;
+			ta.setAttribute('readonly', 'readonly');
+			ta.style.position = 'fixed';
+			ta.style.left = '-9999px';
+			document.body.appendChild(ta);
+			try {
+				ta.focus();
+				if (typeof ta.select === 'function') ta.select();
+				if (typeof document.execCommand === 'function') document.execCommand('copy');
+			} catch { }
+			ta.remove();
+			return Promise.resolve();
+		}
+		_showFailedPairExport(handles) {
+			const body = document.createElement('div');
+			const p = document.createElement('p');
+			p.textContent = handles.length ? t('exportHint') : t('pairResultFailedEmpty');
+			const ta = document.createElement('textarea');
+			ta.readOnly = true;
+			ta.value = handles.join('\n');
+			body.append(p, ta);
+			Dialog.show({
+				title: t('pairResultFailedTitle'),
+				body,
+				buttons: [{ label: t('close'), value: false, primary: true }],
+				onRefresh: (ctx) => {
+					ctx.setTitle(t('pairResultFailedTitle'));
+					p.textContent = handles.length ? t('exportHint') : t('pairResultFailedEmpty');
+					ctx.buttons[0].textContent = t('close');
+				}
+			});
+		}
 		_renderPairResultList(container, stats) {
 			const previousOpen = container.querySelector('details')?.open;
+			const state = container.__pairResultState || { filter: 'all', sort: 'original' };
+			container.__pairResultState = state;
 			container.replaceChildren();
 			if (!stats?.items?.length) {
 				container.textContent = t('pairResultEmpty');
@@ -1845,9 +1968,59 @@
 			details.open = typeof previousOpen === 'boolean' ? previousOpen : true;
 			const summary = document.createElement('summary');
 			summary.textContent = t('pairResultDetails');
+			const controls = document.createElement('div');
+			controls.className = 'tm-inline-actions';
+			const filterLabel = document.createElement('label');
+			filterLabel.textContent = t('pairResultFilterLabel');
+			const filterSelect = document.createElement('select');
+			const outcomes = ['all', 'created', 'updated', 'mismatch', 'failed', 'skipped'];
+			for (const outcome of outcomes) {
+				const option = document.createElement('option');
+				option.value = outcome;
+				option.textContent = outcome === 'all' ? t('pairResultFilterAll') : this._getPairOutcomeLabel(outcome);
+				filterSelect.appendChild(option);
+			}
+			filterSelect.value = state.filter;
+			const sortLabel = document.createElement('label');
+			sortLabel.textContent = t('pairResultSortLabel');
+			const sortSelect = document.createElement('select');
+			[
+				['original', t('pairResultSortOriginal')],
+				['outcome', t('pairResultSortOutcome')],
+				['handle', t('pairResultSortHandle')]
+			].forEach(([value, label]) => {
+				const option = document.createElement('option');
+				option.value = value;
+				option.textContent = label;
+				sortSelect.appendChild(option);
+			});
+			sortSelect.value = state.sort;
+			const failedHandles = this._getFailedPairHandles(stats);
+			const copyFailedBtn = Object.assign(document.createElement('button'), {
+				textContent: t('pairResultCopyFailed'),
+				disabled: !failedHandles.length
+			});
+			const exportFailedBtn = Object.assign(document.createElement('button'), {
+				textContent: t('pairResultExportFailed'),
+				disabled: !failedHandles.length
+			});
+			filterSelect.addEventListener('change', () => {
+				state.filter = filterSelect.value || 'all';
+				this._renderPairResultList(container, stats);
+			});
+			sortSelect.addEventListener('change', () => {
+				state.sort = sortSelect.value || 'original';
+				this._renderPairResultList(container, stats);
+			});
+			copyFailedBtn.addEventListener('click', () => {
+				this._copyText(failedHandles.join('\n'));
+				Toast.show(t('pairResultFailedCopied', failedHandles.length));
+			});
+			exportFailedBtn.addEventListener('click', () => this._showFailedPairExport(failedHandles));
+			controls.append(filterLabel, filterSelect, sortLabel, sortSelect, copyFailedBtn, exportFailedBtn);
 			const list = document.createElement('ul');
 			list.className = 'tm-result-list';
-			for (const item of stats.items) {
+			for (const item of this._getPairResultItems(stats, state)) {
 				const li = document.createElement('li');
 				const title = document.createElement('div');
 				title.innerHTML = '';
@@ -1865,7 +2038,7 @@
 				if (item.message) li.appendChild(this._createMetaLine(item.message));
 				list.appendChild(li);
 			}
-			details.append(summary, list);
+			details.append(summary, controls, list);
 			container.appendChild(details);
 		}
 		_renderApiTestStatus(container, result, isRunning) {
@@ -1881,7 +2054,23 @@
 			}
 			const category = getApiTestCategoryLabel(result.category);
 			const statusText = result.httpStatus ? String(result.httpStatus) : '';
-			container.textContent = `${t('apiKeyTestLabel')}: ${t('apiKeyTestResult', category, result.message, statusText)} (${formatDateTime(result.checkedAt) || ''})`;
+			const line = document.createElement('div');
+			line.textContent = `${t('apiKeyTestLabel')}: ${t('apiKeyTestResult', category, result.message, statusText)} (${formatDateTime(result.checkedAt) || ''})`;
+			container.appendChild(line);
+			const guidance = this.app?.apiConfig?.getQuotaGuidance?.();
+			if (guidance) {
+				const quota = document.createElement('div');
+				quota.className = 'tm-inline-note';
+				const strong = document.createElement('strong');
+				strong.textContent = t('apiQuotaGuidanceTitle');
+				const body = document.createElement('div');
+				body.textContent = t('apiQuotaGuidance', {
+					count: guidance.count,
+					reset: formatDateTime(guidance.resetAt) || ''
+				});
+				quota.append(strong, body);
+				container.appendChild(quota);
+			}
 		}
 		_showPairResultDialog(stats) {
 			const body = document.createElement('div');
@@ -1903,7 +2092,7 @@
 			const selection = new Set();
 			const tagFilters = new Set();
 			const expandedRegexKeys = new Set();
-			const showAllRegexKeys = new Set();
+			const showAllRegexKeys = new Map();
 			let busy = false;
 			let apiTestBusy = false;
 			let searchQuery = '';
@@ -2409,81 +2598,96 @@
 						badges.appendChild(this._makeBadge('regex'));
 						const regexSummary = document.createElement('div');
 						regexSummary.className = 'tm-regex-summary';
-						const regexActions = document.createElement('div');
-						regexActions.className = 'tm-regex-actions';
-						const regexState = getRegexMatchState(
-							item,
-							viewState,
-							expandedRegexKeys.has(itemKey) ? 'full' : 'count'
-						);
-						const countLine = document.createElement('div');
-						countLine.className = 'tm-inline-note';
-						countLine.textContent = t('regexMatchedCount', regexState.matchCount || 0);
-						const selectMatchesBtn = Object.assign(document.createElement('button'), {
-							textContent: t('regexSelectMatches')
-						});
-						selectMatchesBtn.disabled = !(regexState.matchCount || 0) || busy;
-						selectMatchesBtn.addEventListener('click', () => {
+						const renderRegexSummary = () => {
 							const currentViewState = computeViewState();
-							const matchState = getRegexMatchState(item, currentViewState, 'full');
-							let changed = false;
-							for (const match of matchState.matches || []) {
-								const matchKey = getItemKey(match);
-								if (!matchKey || selection.has(matchKey)) continue;
-								selection.add(matchKey);
-								changed = true;
-							}
-							if (changed) markSelectionChanged();
-							syncVisibleSelection();
-							syncActionState();
-							Toast.show(t('regexSelectedMatches', matchState.matchCount || 0));
-						});
-						const toggleRegexBtn = Object.assign(document.createElement('button'), {
-							textContent: expandedRegexKeys.has(itemKey) ? t('regexCollapse') : t('regexExpand')
-						});
-						toggleRegexBtn.disabled = !(regexState.matchCount || 0);
-						toggleRegexBtn.addEventListener('click', () => {
-							if (expandedRegexKeys.has(itemKey)) {
-								expandedRegexKeys.delete(itemKey);
-								showAllRegexKeys.delete(itemKey);
-							} else {
-								expandedRegexKeys.add(itemKey);
-							}
-							renderList();
-						});
-						regexActions.append(countLine, selectMatchesBtn, toggleRegexBtn);
-						regexSummary.appendChild(regexActions);
-						if (expandedRegexKeys.has(itemKey)) {
-							const fullMatchState = getRegexMatchState(item, viewState, 'full');
+							const regexActions = document.createElement('div');
+							regexActions.className = 'tm-regex-actions';
+							const regexState = getRegexMatchState(
+								item,
+								currentViewState,
+								expandedRegexKeys.has(itemKey) ? 'full' : 'count'
+							);
+							const countLine = document.createElement('div');
+							countLine.className = 'tm-inline-note';
+							countLine.textContent = t('regexMatchedCount', regexState.matchCount || 0);
+							const selectMatchesBtn = Object.assign(document.createElement('button'), {
+								textContent: t('regexSelectMatches')
+							});
+							selectMatchesBtn.disabled = !(regexState.matchCount || 0) || busy;
+							selectMatchesBtn.addEventListener('click', () => {
+								const matchState = getRegexMatchState(item, computeViewState(), 'full');
+								let changed = false;
+								for (const match of matchState.matches || []) {
+									const matchKey = getItemKey(match);
+									if (!matchKey || selection.has(matchKey)) continue;
+									selection.add(matchKey);
+									changed = true;
+								}
+								if (changed) markSelectionChanged();
+								syncVisibleSelection();
+								syncActionState();
+								Toast.show(t('regexSelectedMatches', matchState.matchCount || 0));
+							});
+							const toggleRegexBtn = Object.assign(document.createElement('button'), {
+								textContent: expandedRegexKeys.has(itemKey) ? t('regexCollapse') : t('regexExpand')
+							});
+							toggleRegexBtn.disabled = !(regexState.matchCount || 0);
+							toggleRegexBtn.addEventListener('click', () => {
+								if (expandedRegexKeys.has(itemKey)) {
+									expandedRegexKeys.delete(itemKey);
+									showAllRegexKeys.delete(itemKey);
+								} else {
+									expandedRegexKeys.add(itemKey);
+									showAllRegexKeys.set(itemKey, REGEX_MATCH_INITIAL_LIMIT);
+								}
+								renderRegexSummary();
+							});
+							regexActions.append(countLine, selectMatchesBtn, toggleRegexBtn);
+							regexSummary.replaceChildren(regexActions);
+							if (!expandedRegexKeys.has(itemKey)) return;
+							const fullMatchState = getRegexMatchState(item, currentViewState, 'full');
 							const matches = fullMatchState.matches || [];
-							const listWrap = document.createElement('ul');
-							listWrap.className = 'tm-regex-match-list';
-							const limit = showAllRegexKeys.has(itemKey) ? matches.length : 20;
-							for (const match of matches.slice(0, limit)) {
-								const row = document.createElement('li');
-								row.textContent = match.value;
-								listWrap.appendChild(row);
-							}
 							if (!matches.length) {
 								const empty = document.createElement('div');
 								empty.className = 'tm-inline-note';
 								empty.textContent = t('regexNoMatches');
 								regexSummary.appendChild(empty);
-							} else {
-								regexSummary.appendChild(listWrap);
-								if (matches.length > 20) {
-									const showAllBtn = Object.assign(document.createElement('button'), {
-										textContent: showAllRegexKeys.has(itemKey) ? t('regexShowLess') : t('regexShowAll')
-									});
-									showAllBtn.addEventListener('click', () => {
-										if (showAllRegexKeys.has(itemKey)) showAllRegexKeys.delete(itemKey);
-										else showAllRegexKeys.add(itemKey);
-										renderList();
-									});
-									regexSummary.appendChild(showAllBtn);
-								}
+								return;
 							}
-						}
+							const listWrap = document.createElement('ul');
+							listWrap.className = 'tm-regex-match-list';
+							const storedLimit = Number(showAllRegexKeys.get(itemKey));
+							const limit = Math.min(
+								matches.length,
+								Number.isFinite(storedLimit) && storedLimit > 0 ? storedLimit : REGEX_MATCH_INITIAL_LIMIT
+							);
+							for (const match of matches.slice(0, limit)) {
+								const row = document.createElement('li');
+								row.textContent = match.value;
+								listWrap.appendChild(row);
+							}
+							regexSummary.appendChild(listWrap);
+							if (limit < matches.length) {
+								const showMoreBtn = Object.assign(document.createElement('button'), {
+									textContent: t('regexShowMore', limit, matches.length)
+								});
+								showMoreBtn.addEventListener('click', () => {
+									showAllRegexKeys.set(itemKey, Math.min(matches.length, limit + REGEX_MATCH_PAGE_SIZE));
+									renderRegexSummary();
+								});
+								regexSummary.appendChild(showMoreBtn);
+							} else if (matches.length > REGEX_MATCH_INITIAL_LIMIT) {
+								const showLessBtn = Object.assign(document.createElement('button'), {
+									textContent: t('regexShowLess')
+								});
+								showLessBtn.addEventListener('click', () => {
+									showAllRegexKeys.set(itemKey, REGEX_MATCH_INITIAL_LIMIT);
+									renderRegexSummary();
+								});
+								regexSummary.appendChild(showLessBtn);
+							}
+						};
+						renderRegexSummary();
 						meta.appendChild(regexSummary);
 					}
 

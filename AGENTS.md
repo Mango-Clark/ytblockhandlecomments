@@ -15,9 +15,14 @@ Keep docs, versioning, Git workflow aligned. Change files only when code or repo
 - Review every `*.md` when code changes.
 - Bump `VERSION` or package manifest only when shipping user-visible change.
 - Check `docs/TODO.md`. Mark done items. Remove old done items when version bumps.
+- Edit userscript source in `src/`, then run `npm run build`.
+- Keep root `ytblockhandlecomments.js` in sync with `npm run check:build`.
 - Keep `git status` clean before PR or commit.
 - Request maintainer review for code or changelog changes.
-- Commit often. Small commits. Keep worktree clean.
+- Commit after each small patch or root-cause fix.
+- Do not batch unrelated fixes into one commit.
+- Commit docs-only, tests-only, build/tooling, and behavior changes separately when feasible.
+- Keep worktree clean.
 
 ## Docs
 
@@ -78,6 +83,8 @@ Patch rule:
 - Commit messages in English, imperative mood.
 - Keep subject short.
 - Include body only when why is not obvious.
+- Prefer one commit per focused patch.
+- Before starting the next patch, commit the previous completed patch.
 
 ## Precedence
 

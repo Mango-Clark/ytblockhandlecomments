@@ -9,6 +9,13 @@
 이 사용자 스크립트는 watch 페이지와 Shorts 페이지에서 YouTube 댓글을 채널 식별자
 기준으로 숨깁니다.
 
+소스 구조:
+
+- `src/`는 역할별 소스 조각을 담습니다.
+- `ytblockhandlecomments.js`는 단일 Tampermonkey 배포 파일로 유지합니다.
+- `npm run build`는 `src/`에서 루트 userscript를 다시 생성합니다.
+- `npm run check:build`는 루트 userscript와 `src/`가 동기화되어 있는지 확인합니다.
+
 `blocked_v2`에서 지원하는 규칙 타입:
 
 - `handle`
@@ -101,6 +108,8 @@ API 설정:
 {
   version: 2,
   apiKey: string,
+  quotaFailureCount: number,
+  lastQuotaFailureAt: number | null,
   lastTestResult: {
     checkedAt: number,
     ok: boolean,
@@ -201,14 +210,17 @@ Regex 행:
 - 매칭되는 차단 handle 개수 표시
 - `Select matching handles` 지원
 - inline handle 목록 펼치기 지원
-- 기본 20개만 표시하고 `Show all`로 전체 확장
+- 기본 20개만 표시하고 `Show more`로 페이지 단위 확장
 - 접힌 regex 행은 count 중심 캐시를 쓰고, 전체 match 배열은 expand/select 때만 계산
-- selection-only 동작은 전체 목록 재생성 없이 보이는 checkbox와 액션 상태만 갱신
+- selection-only와 regex 펼침/접힘은 전체 목록 재생성 없이 보이는 checkbox와 해당 행
+  상태만 갱신
 
 Pair 결과:
 
 - pair 실행은 요약 수치와 handle별 outcome을 함께 반환합니다
 - 관리자에는 `Last Pair Run` 패널이 표시됩니다
+- pair 실행 상세는 outcome 필터, 실행 순서/outcome/handle 정렬, 실패 handle
+  복사/내보내기를 지원합니다
 - watch 페이지 배너에서 실행한 update는 상세 dialog를 열 수 있습니다
 
 삭제 동작:
@@ -291,6 +303,9 @@ Pair 유지보수가 실패할 때:
 1. `Test API Key`를 실행합니다.
 2. 저장된 `lastTestResult` category와 메시지를 확인합니다.
 3. `Last Pair Run`에서 handle별 실패나 mismatch를 확인합니다.
+
+API 키 테스트가 반복해서 `quota`를 보고하면 관리자는 연속 quota 실패 횟수를 추적하고
+마지막 quota 실패 시점 기준 24시간 reset window 안내를 표시합니다.
 
 ## 11. 이후 작업
 

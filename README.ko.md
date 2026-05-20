@@ -13,6 +13,12 @@ YouTube 댓글을 채널 식별자 기준으로 숨기는 Tampermonkey 사용자
 
 - <https://raw.githubusercontent.com/Mango-Clark/ytblockhandlecomments/refs/heads/master/ytblockhandlecomments.js>
 
+소스 구조:
+
+- 역할별 소스 파일은 `src/`에서 수정합니다
+- `npm run build`로 `ytblockhandlecomments.js`를 다시 생성합니다
+- `npm run check:build`로 루트 userscript와 `src/`의 동기화를 확인합니다
+
 ## 문서
 
 - 위키: [docs/WIKI.md](docs/WIKI.md) | [docs/WIKI.ko.md](docs/WIKI.ko.md)
@@ -40,6 +46,9 @@ YouTube 댓글을 채널 식별자 기준으로 숨기는 Tampermonkey 사용자
 - 관리자 대화상자에 현재 userscript 버전 표시
 - 선택 항목 삭제, 선택 handle 대상 pair 생성/갱신 bulk 액션 추가
 - regex 매칭 결과 캐시로 `matching handle 선택` 시 전체 목록 재생성을 피함
+- 펼친 regex 매칭 목록은 페이지 단위로 표시해 큰 목록을 한 번에 렌더링하지 않음
+- 최근 pair 실행 결과를 필터/정렬하고 실패 handle을 복사/내보내기 가능
+- API 키 테스트에서 quota 실패가 반복되면 구조화된 안내 표시
 - stale 또는 mismatch pair가 있으면 watch 페이지에 검토 배너 표시
 - import/export는 차단 규칙만 다루고, pair 메타데이터는 로컬 전용으로 유지
 
@@ -126,9 +135,11 @@ Pair 메타 저장소:
 ## 테스트
 
 - `node --test` 실행
+- `npm run check:build` 실행
 - 외부 의존성 없이 `node:test`와 작은 DOM shim으로 회귀 테스트를 실행합니다
-- 현재 범위: 관리자 검색, 대화상자 i18n refresh, pair 결과 UI 상태, 탐색 observer reset,
-  pair update skip/force 동작, regex safety/import literal
+- 현재 범위: 관리자 검색, 대화상자 i18n refresh, pair 결과 UI 상태, pair 결과 정렬/필터
+  helper, quota 안내 counter, 탐색 observer reset, pair update skip/force 동작,
+  regex safety/import literal
 
 ---
 
@@ -150,6 +161,9 @@ Pair 메타 저장소:
 - pair 생성/갱신에는 관리자 대화상자에 저장한 사용자 본인 API 키가 필요합니다
 - bulk pair 액션은 선택된 `handle` 항목에만 적용됩니다
 - regex 선택은 현재 보이는 checkbox와 counter만 즉시 갱신하고 전체 목록을 다시 만들지 않습니다
+- regex 펼침/접힘과 매칭 목록 페이지 이동은 해당 행만 갱신합니다
+- API 키 테스트는 반복 `quota` 실패를 추적하고 관리자에 reset window 안내를 표시합니다
+- pair 실행 상세는 필터/정렬할 수 있고 실패 handle을 복사하거나 내보낼 수 있습니다
 - UID 조회가 실패해도 handle 차단은 계속 동작하며, pair는 `unverified` 또는 `stale` 상태로 남습니다
 - regex 규칙은 댓글 본문이 아니라 handle 텍스트에만 적용됩니다
 - plain-text import/export는 regex literal을 `/pattern/flags` 형태로 왕복합니다
