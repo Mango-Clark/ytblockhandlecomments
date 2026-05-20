@@ -71,9 +71,6 @@ or adding files.
    ├── CHANGELOG.ko.md             # Korean changelog
    ├── TODO.md                     # Task list
    ├── AGENTS.md                   # Agent instructions
-   ├── docs/
-   │   ├── 기획서.md               # Current planning/design document
-   │   └── performance-analysis.md # Technical analysis notes
    └── credentials/
        └── YouTube Data API v3.txt # Local reference notes, not shipped credentials
    ```
@@ -123,6 +120,34 @@ Order:
 
 - Documentation-only changes: one review is sufficient.
 - Code or changelog changes: require maintainer approval.
+
+## Audit and Autofix
+
+- Zero changes is valid.
+- Do not create changes only to satisfy autofix.
+- Edit only for concrete `path:line` bugs.
+
+### Finding Threshold
+
+Allowed:
+
+- Security bug.
+- Perf bug with realistic hot path or freeze.
+- QOL/correctness bug with broken behavior.
+
+Disallowed:
+
+- Style-only change.
+- Broad refactor.
+- Speculative improvement.
+- Dependency addition without clear need.
+
+### Patch Rule
+
+- One root cause per patch.
+- Smallest diff.
+- Run relevant tests/lint.
+- If uncertain, report finding instead of editing.
 
 ## Versioning and Changelog
 
