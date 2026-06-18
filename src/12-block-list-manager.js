@@ -1093,7 +1093,12 @@
 				},
 				onBeforeClose: (val) => {
 					if (val !== 'import') return null;
-					const txt = (ta.value || '').trim();
+					const rawText = ta.value || '';
+					if (rawText.length > 1024 * 1024) {
+						Toast.show(getLang() === 'ko' ? '가져오기 입력이 너무 큽니다.' : 'Import text is too large.');
+						return { ok: false, count: 0 };
+					}
+					const txt = rawText.trim();
 					if (!txt) return { ok: false, count: 0 };
 
 					let items = [];
