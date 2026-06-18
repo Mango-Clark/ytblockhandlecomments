@@ -38,6 +38,8 @@ Source layout:
 - Supports optional UID detection with handle↔UID metadata in `pair_meta_v1`
 - Stores a local-only YouTube Data API v3 key and validates it before pair maintenance
 - Supports case-sensitive handle matching
+- Supports a separate settings dialog with API, UID, regex auto-add, and debug counters
+- Can auto-save handles first hidden by regex so later checks use handle matching
 - Supports block-list search, type filters, tag filters, row selection, and bulk actions
 - Shows the current userscript version in the manager dialog
 - Shows regex rows with matched-handle counts and one-click matching-handle selection
@@ -108,7 +110,8 @@ App settings:
 ```ts
 {
   version: 1,
-  handleCaseSensitive: boolean
+  handleCaseSensitive: boolean,
+  autoAddRegexHandles: boolean
 }
 ```
 
@@ -161,6 +164,8 @@ Notes:
   matching old channels
 - API-key testing uses the same API family with a fixed public channel probe
 - Search is manager-only; comment-hide hot-path lookup still uses cached sets
+- Regex auto-add stores a matched handle as a `handle` rule, so later matches avoid a second regex
+  pass for that channel
 - Regex selection now updates visible checkboxes and counters without full-list rerendering
 - Regex expand/collapse and match-list pagination update only the affected row
 - API-key tests track repeated `quota` failures and show reset-window guidance in the manager
@@ -171,7 +176,7 @@ Notes:
 - The pair review banner remains intentionally scoped to watch pages
 - Navigation resets transient comment observers and metadata caches so long YouTube sessions do not
   retain old comment DOM nodes
-- Performance counters are exposed on `window.__ytCommentBlockerPerf`
+- Performance counters are exposed in the settings dialog and on `window.__ytCommentBlockerPerf`
 
 ## Userscript Metadata
 

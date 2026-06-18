@@ -11,7 +11,9 @@
 
 ### Added
 
-- 없음
+- API, UID detection, regex 자동 추가, debug counter를 다루는 별도 설정 dialog 추가.
+- regex로 매칭된 handle을 자동 추가하는 옵션을 추가해, 같은 채널의 이후 댓글은 regex
+  전에 handle 매칭을 사용하도록 함.
 
 ### Changed
 

@@ -238,6 +238,212 @@
 				}
 			});
 		}
+		openSettings() {
+			const body = document.createElement('div');
+			const settingsSection = document.createElement('section');
+			settingsSection.className = 'tm-section';
+			const settingsTitle = document.createElement('h3');
+			const caseLabel = document.createElement('label');
+			const caseToggle = document.createElement('input');
+			caseToggle.type = 'checkbox';
+			const caseText = document.createElement('span');
+			caseLabel.append(caseToggle, caseText);
+			const caseHelp = document.createElement('p');
+			const caseLegacy = document.createElement('p');
+			const autoLabel = document.createElement('label');
+			const autoToggle = document.createElement('input');
+			autoToggle.type = 'checkbox';
+			const autoText = document.createElement('span');
+			autoLabel.append(autoToggle, autoText);
+			const autoHelp = document.createElement('p');
+			settingsSection.append(settingsTitle, caseLabel, caseHelp, caseLegacy, autoLabel, autoHelp);
+
+			const apiSection = document.createElement('section');
+			apiSection.className = 'tm-section';
+			const apiTitle = document.createElement('h3');
+			const apiLabel = document.createElement('label');
+			const apiInput = document.createElement('input');
+			apiInput.type = 'password';
+			apiInput.style.minWidth = '280px';
+			apiInput.style.width = 'min(420px, 100%)';
+			const apiHelp = document.createElement('p');
+			const apiStatus = document.createElement('div');
+			apiStatus.className = 'tm-muted';
+			const apiTestStatus = document.createElement('div');
+			apiTestStatus.className = 'tm-inline-note';
+			const apiActions = document.createElement('div');
+			apiActions.className = 'tm-inline-actions';
+			const saveApiBtn = Object.assign(document.createElement('button'), { className: 'primary' });
+			const testApiBtn = Object.assign(document.createElement('button'), { className: 'secondary' });
+			const clearApiBtn = Object.assign(document.createElement('button'), { className: 'secondary' });
+			apiActions.append(saveApiBtn, testApiBtn, clearApiBtn);
+			apiSection.append(apiTitle, apiLabel, apiInput, apiHelp, apiStatus, apiTestStatus, apiActions);
+
+			const pairSection = document.createElement('section');
+			pairSection.className = 'tm-section';
+			const pairTitle = document.createElement('h3');
+			const toggleLabel = document.createElement('label');
+			const uidToggle = document.createElement('input');
+			uidToggle.type = 'checkbox';
+			const uidText = document.createElement('span');
+			toggleLabel.append(uidToggle, uidText);
+			const toggleHelp = document.createElement('p');
+			const pairActions = document.createElement('div');
+			pairActions.className = 'tm-inline-actions';
+			const createBtn = Object.assign(document.createElement('button'), { className: 'secondary' });
+			const updateBtn = Object.assign(document.createElement('button'), { className: 'primary' });
+			pairActions.append(createBtn, updateBtn);
+			const lastCheck = document.createElement('div');
+			lastCheck.className = 'tm-muted';
+			const summaryGrid = document.createElement('div');
+			summaryGrid.className = 'tm-summary-grid';
+			const pairResultPanel = document.createElement('div');
+			pairSection.append(pairTitle, toggleLabel, toggleHelp, pairActions, lastCheck, summaryGrid, pairResultPanel);
+
+			const debugSection = document.createElement('section');
+			debugSection.className = 'tm-section';
+			const debugTitle = document.createElement('h3');
+			const debugList = document.createElement('div');
+			debugList.className = 'tm-inline-note';
+			debugSection.append(debugTitle, debugList);
+			body.append(settingsSection, apiSection, pairSection, debugSection);
+
+			let apiTestBusy = false;
+			let pairBusy = false;
+			const renderApiStatus = () => {
+				const hasKey = this.app.apiConfig.hasApiKey();
+				apiInput.value = this.app.apiConfig.getApiKey();
+				apiStatus.textContent = hasKey
+					? t('apiKeyStatusSaved', this.app.apiConfig.getMaskedApiKey())
+					: t('apiKeyStatusMissing');
+				this._renderApiTestStatus(apiTestStatus, this.app.apiConfig.getLastTestResult(), apiTestBusy);
+				testApiBtn.disabled = apiTestBusy || !hasKey;
+				testApiBtn.textContent = apiTestBusy ? t('apiKeyTestRunning') : t('apiKeyTest');
+				createBtn.disabled = pairBusy || !hasKey;
+				updateBtn.disabled = pairBusy || !hasKey;
+			};
+			const renderPairSummary = () => {
+				const summary = this.app.pairService.getSummary();
+				const cards = [
+					{ label: t('pairSummaryHandles'), value: summary.handles },
+					{ label: t('pairSummaryPaired'), value: summary.paired },
+					{ label: t('pairSummaryNeeded'), value: summary.pairNeeded },
+					{ label: t('pairSummaryStale'), value: summary.stale },
+					{ label: t('pairSummaryMismatch'), value: summary.mismatch },
+					{ label: t('pairSummaryUnverified'), value: summary.unverified }
+				];
+				summaryGrid.replaceChildren(...cards.map(card => {
+					const box = document.createElement('div');
+					box.className = 'tm-summary-card';
+					const strong = document.createElement('strong');
+					strong.textContent = String(card.value);
+					const span = document.createElement('span');
+					span.textContent = card.label;
+					box.append(strong, span);
+					return box;
+				}));
+				lastCheck.textContent = t('pairLastCheck', formatDateTime(this.app.pairStore.getLastPairCheckAt()));
+				this._renderPairResultList(pairResultPanel, this.app.getLastPairRunResult());
+			};
+			const renderDebug = () => {
+				const metrics = window.__ytCommentBlockerPerf || {};
+				const lines = [
+					['mutationBatches', metrics.mutationBatches || 0],
+					['fullRefreshes', metrics.fullRefreshes || 0],
+					['incrementalRefreshes', metrics.incrementalRefreshes || 0],
+					['scannedNodes', metrics.scannedNodes || 0],
+					['autoAddedRegexHandles', metrics.autoAddedRegexHandles || 0],
+					['lastDurationMs', metrics.lastDurationMs || 0],
+					['totalDurationMs', metrics.totalDurationMs || 0]
+				];
+				debugList.replaceChildren(...lines.map(([label, value]) => this._createMetaLine(t('debugMetric', label, value))));
+			};
+			const renderAll = () => {
+				caseToggle.checked = this.app.settings.isHandleCaseSensitive();
+				autoToggle.checked = this.app.settings.isAutoAddRegexHandlesEnabled();
+				uidToggle.checked = this.app.pairStore.isUidDetectionEnabled();
+				renderApiStatus();
+				renderPairSummary();
+				renderDebug();
+			};
+			const applyLanguage = () => {
+				settingsTitle.textContent = t('settingsTitle');
+				caseText.textContent = t('handleCaseLabel');
+				caseHelp.textContent = t('handleCaseHelp');
+				caseLegacy.textContent = t('handleCaseLegacy');
+				autoText.textContent = t('autoAddRegexLabel');
+				autoHelp.textContent = t('autoAddRegexHelp');
+				apiTitle.textContent = t('apiKeyTitle');
+				apiLabel.textContent = t('apiKeyLabel');
+				apiInput.placeholder = t('apiKeyPlaceholder');
+				apiHelp.textContent = t('apiKeyHelp');
+				saveApiBtn.textContent = t('apiKeySave');
+				clearApiBtn.textContent = t('apiKeyClear');
+				pairTitle.textContent = t('uidDetectionLabel');
+				uidText.textContent = t('uidDetectionLabel');
+				toggleHelp.textContent = t('uidDetectionHelp');
+				createBtn.textContent = pairBusy ? t('pairWorking') : t('pairCreate');
+				updateBtn.textContent = pairBusy ? t('pairWorking') : t('pairUpdate');
+				debugTitle.textContent = t('debugTitle');
+				renderAll();
+			};
+			caseToggle.addEventListener('change', () => {
+				this.app.settings.setHandleCaseSensitive(caseToggle.checked);
+				this.app.refreshAfterStorageChange();
+				renderAll();
+			});
+			autoToggle.addEventListener('change', () => {
+				this.app.settings.setAutoAddRegexHandlesEnabled(autoToggle.checked);
+				this.app.refreshAfterStorageChange();
+				renderAll();
+			});
+			uidToggle.addEventListener('change', () => {
+				this.app.pairStore.setUidDetectionEnabled(uidToggle.checked);
+				this.app.refreshAfterStorageChange();
+				renderAll();
+			});
+			saveApiBtn.addEventListener('click', () => {
+				this.app.apiConfig.setApiKey(apiInput.value);
+				this.app.refreshAfterStorageChange();
+				renderAll();
+				Toast.show(t('apiKeySaved'));
+			});
+			testApiBtn.addEventListener('click', async () => {
+				apiTestBusy = true;
+				renderAll();
+				const result = await this.app.testApiKey();
+				apiTestBusy = false;
+				renderAll();
+				Toast.show(t('apiKeyTestResult', getApiTestCategoryLabel(result.category), result.message, result.httpStatus ? String(result.httpStatus) : ''), 3200);
+			});
+			clearApiBtn.addEventListener('click', () => {
+				this.app.apiConfig.clearApiKey();
+				this.app.refreshAfterStorageChange();
+				renderAll();
+				Toast.show(t('apiKeyCleared'));
+			});
+			const runPair = async (mode) => {
+				pairBusy = true;
+				applyLanguage();
+				const stats = await this.app.runPairUpdate(mode);
+				pairBusy = false;
+				applyLanguage();
+				Toast.show(t('pairResult', stats), 3200);
+			};
+			createBtn.addEventListener('click', () => runPair('create'));
+			updateBtn.addEventListener('click', () => runPair('update'));
+			applyLanguage();
+			Dialog.show({
+				title: t('settingsTitle'),
+				body,
+				buttons: [{ label: t('close'), value: false, primary: true }],
+				onRefresh: (ctx) => {
+					ctx.setTitle(t('settingsTitle'));
+					ctx.buttons[0].textContent = t('close');
+					applyLanguage();
+				}
+			});
+		}
 		openList() {
 			this.app.pairStore.refreshStatuses();
 			const wrap = document.createElement('div');
@@ -469,7 +675,7 @@
 			toolbar.append(topToolbarRow, middleToolbarRow, bottomToolbarRow);
 			const list = Object.assign(document.createElement('ul'), { className: 'tm-block-list' });
 			listSection.append(listTitle, toolbar, list);
-			wrap.append(versionSection, settingsSection, apiSection, pairSection, form, listSection);
+			wrap.append(versionSection, form, listSection);
 
 			const regexMatchCache = new Map();
 			const rowRefs = new Map();

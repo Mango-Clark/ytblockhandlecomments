@@ -103,7 +103,8 @@ App settings:
 ```ts
 {
   version: 1,
-  handleCaseSensitive: boolean
+  handleCaseSensitive: boolean,
+  autoAddRegexHandles: boolean
 }
 ```
 
@@ -153,6 +154,8 @@ Optional UID behavior:
 - Turning UID detection off keeps stored `id` rules and pair metadata
 - Runtime UID matching compares stored `id` rules to channel IDs already present in the comment DOM;
   it does not call the YouTube Data API
+- Optional regex auto-add stores a regex-matched handle as a `handle` rule, so subsequent comments
+  from the same channel are checked by handle before regex
 
 Per-comment matching order:
 
@@ -198,9 +201,6 @@ API minimization:
 Sections:
 
 - Script info section with the current userscript version
-- Handle case-sensitivity section
-- YouTube Data API v3 section
-- UID detection / pair summary section
 - Regex add section
 - Rule list section
 
@@ -236,6 +236,14 @@ Removal behavior:
 - `Clear block list` clears rules and pair metadata
 
 ## 7. Dialogs, Menus, And Live i18n
+
+Settings dialog:
+
+- Handle case sensitivity
+- Regex matched-handle auto-add
+- YouTube Data API v3 key/test controls
+- UID detection, pair summary, and pair actions
+- Debug counters from `window.__ytCommentBlockerPerf`
 
 Security:
 

@@ -12,7 +12,8 @@
 			const src = raw && typeof raw === 'object' ? raw : {};
 			return {
 				version: 1,
-				handleCaseSensitive: !!src.handleCaseSensitive
+				handleCaseSensitive: !!src.handleCaseSensitive,
+				autoAddRegexHandles: !!src.autoAddRegexHandles
 			};
 		}
 		_init() {
@@ -27,7 +28,10 @@
 		}
 		_saveState(nextState) {
 			const normalized = this._normalizeState(nextState);
-			if (this._state.handleCaseSensitive === normalized.handleCaseSensitive) {
+			if (
+				this._state.handleCaseSensitive === normalized.handleCaseSensitive &&
+				this._state.autoAddRegexHandles === normalized.autoAddRegexHandles
+			) {
 				this._state = normalized;
 				return this.getState();
 			}
@@ -40,6 +44,12 @@
 		}
 		setHandleCaseSensitive(enabled) {
 			return this._saveState({ ...this._state, handleCaseSensitive: !!enabled });
+		}
+		isAutoAddRegexHandlesEnabled() {
+			return !!this._state.autoAddRegexHandles;
+		}
+		setAutoAddRegexHandlesEnabled(enabled) {
+			return this._saveState({ ...this._state, autoAddRegexHandles: !!enabled });
 		}
 	}
 

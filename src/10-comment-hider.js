@@ -20,6 +20,7 @@
 				fullRefreshes: 0,
 				incrementalRefreshes: 0,
 				scannedNodes: 0,
+				autoAddedRegexHandles: 0,
 				lastDurationMs: 0,
 				totalDurationMs: 0
 			};
@@ -42,6 +43,14 @@
 					const spec = validateRegexSpec(it.value, it.flags || '');
 					if (spec) this._regexes.push(new RegExp(spec.pattern, spec.flags));
 				}
+			}
+		}
+		_autoAddRegexHandle(handle, handleKey) {
+			if (!this.settings?.isAutoAddRegexHandlesEnabled?.() || !handle || !handleKey) return;
+			if (this._handleSet.has(handleKey)) return;
+			if (this.storage.addHandle(handle)) {
+				this._handleSet.add(handleKey);
+				this._metrics.autoAddedRegexHandles += 1;
 			}
 		}
 		_getDefaultRoot() {
@@ -82,7 +91,10 @@
 			if (handleKey && this._handleSet.has(handleKey)) return true;
 			if (h) {
 				for (const rx of this._regexes) {
-					if (safeRegexTest(rx, h)) return true;
+					if (safeRegexTest(rx, h)) {
+						this._autoAddRegexHandle(h, handleKey);
+						return true;
+					}
 				}
 			}
 			return false;

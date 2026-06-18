@@ -44,6 +44,8 @@ YouTube 댓글을 채널 식별자 기준으로 숨기는 Tampermonkey 사용자
 - `Create Pair`, `Update Pair` 액션 제공
 - handle별 상태 배지 제공: `handle-only`, `paired`, `stale`, `mismatch`, `unverified`
 - 관리자 대화상자에 로컬 `Handle Case Sensitive` 설정 추가
+- API, UID, regex 자동 추가, debug counter를 다루는 별도 설정 창 추가
+- regex로 처음 숨긴 handle을 자동으로 저장해 이후에는 handle 매칭으로 확인 가능
 - 차단 목록에 row 체크박스, 필터 기준 전체 선택, 선택 개수 표시 추가
 - 차단 목록에 `all|handle|id|regex` 타입 필터와 handle 태그 필터 추가
 - 관리자 대화상자에 현재 userscript 버전 표시
@@ -119,7 +121,8 @@ Pair 메타 저장소:
 ```ts
 {
   version: 1,
-  handleCaseSensitive: boolean
+  handleCaseSensitive: boolean,
+  autoAddRegexHandles: boolean
 }
 ```
 
@@ -157,6 +160,8 @@ Pair 메타 저장소:
 - UID 조회는 YouTube Data API v3 `channels.list`의 `forHandle` 필터를 사용합니다
 - pair 데이터가 있으면 UID 매칭은 로컬에서만 수행되며, API 호출은 pair 작업 중에만
   발생합니다
+- regex 자동 추가를 켜면 regex로 매칭된 handle을 `handle` 규칙으로 저장해, 같은
+  채널은 이후 regex를 다시 거치지 않고 handle로 확인합니다
 - `Update Pair`는 stale 주기가 지나지 않은 verified pair를 건너뛰고, 선택 handle
   bulk update는 선택한 항목에 대해 강제 조회합니다
 - watch 페이지 pair 검토 배너는 `나중에` 또는 최근 pair 검사 후 stale 주기 동안 다시
@@ -176,7 +181,7 @@ Pair 메타 저장소:
 - pair 검토 배너는 의도적으로 watch 페이지에만 표시됩니다
 - 탐색 시 임시 댓글 observer와 메타데이터 캐시를 초기화해 긴 YouTube 세션에서 오래된
   댓글 DOM 노드를 붙잡지 않도록 합니다
-- 가벼운 성능 카운터는 `window.__ytCommentBlockerPerf`에서 확인할 수 있습니다
+- 가벼운 성능 카운터는 설정 창과 `window.__ytCommentBlockerPerf`에서 확인할 수 있습니다
 
 ---
 

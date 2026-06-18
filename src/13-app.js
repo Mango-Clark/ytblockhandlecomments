@@ -454,6 +454,7 @@
 					}
 				}
 				const manageId = GM_registerMenuCommand(t('menuManage') || 'Manage', () => this.manager.openList());
+				const settingsId = GM_registerMenuCommand(t('menuSettings') || 'Settings', () => this.manager.openSettings());
 				const clearId = GM_registerMenuCommand(t('menuClear') || 'Clear', () => {
 					Dialog.show({
 						title: t('clear') || 'Reset',
@@ -477,7 +478,7 @@
 					Toast.show('Lang: ' + next.toUpperCase());
 					this.refreshLanguageUi();
 				});
-				this._menuCommandIds = [manageId, clearId, langId].filter(Boolean);
+				this._menuCommandIds = [manageId, settingsId, clearId, langId].filter(Boolean);
 			} catch { /* Tampermonkey menu may be unavailable in some envs */ }
 		}
 	}

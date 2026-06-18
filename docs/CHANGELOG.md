@@ -11,7 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- None
+- Added a separate settings dialog for API, UID detection, regex auto-add, and debug counters.
+- Added optional regex matched-handle auto-add so future comments from that channel use handle
+  matching before regex.
 
 ### Changed
 

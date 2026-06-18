@@ -103,7 +103,8 @@ Pair 메타데이터:
 ```ts
 {
   version: 1,
-  handleCaseSensitive: boolean
+  handleCaseSensitive: boolean,
+  autoAddRegexHandles: boolean
 }
 ```
 
@@ -153,6 +154,8 @@ API 설정:
 - UID 감지를 꺼도 저장된 `id` 규칙과 pair 메타데이터는 유지됩니다
 - 런타임 UID 매칭은 저장된 `id` 규칙과 댓글 DOM에 이미 있는 channel ID를 로컬에서
   비교하며 YouTube Data API를 호출하지 않습니다
+- regex 자동 추가를 켜면 regex로 매칭된 handle을 `handle` 규칙으로 저장해, 같은
+  채널의 다음 댓글은 regex 전에 handle 기준으로 확인합니다
 
 댓글별 매칭 순서:
 
@@ -198,9 +201,6 @@ API 호출 최소화:
 섹션:
 
 - 현재 userscript 버전을 보여주는 script info 섹션
-- handle 대소문자 구분 섹션
-- YouTube Data API v3 섹션
-- UID detection / pair summary 섹션
 - regex 추가 섹션
 - 규칙 목록 섹션
 
@@ -236,6 +236,14 @@ Pair 결과:
 - `Clear block list`는 규칙과 pair 메타데이터를 함께 비웁니다
 
 ## 7. Dialog, 메뉴, 실시간 i18n
+
+설정 dialog:
+
+- handle 대소문자 구분
+- regex 매칭 handle 자동 추가
+- YouTube Data API v3 키/테스트 제어
+- UID detection, pair 요약, pair 액션
+- `window.__ytCommentBlockerPerf` 기반 debug counter
 
 보안:
 
