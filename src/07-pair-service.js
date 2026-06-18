@@ -18,6 +18,16 @@
 		hasBlockedId(uid, blockedIds = null) {
 			return blockedIds ? blockedIds.has(uid) : this.storage.all().some(item => item.type === 'id' && item.value === uid);
 		}
+		_uidUsedByOtherPair(uid, excludedHandles = []) {
+			if (!isChannelId(uid)) return false;
+			const caseSensitive = this.settings?.isHandleCaseSensitive?.() || false;
+			const excluded = new Set((excludedHandles || [])
+				.map(handle => getHandleCompareKey(handle, caseSensitive))
+				.filter(Boolean));
+			return this.pairStore.allPairs().some(pair =>
+				pair.uid === uid && !excluded.has(getHandleCompareKey(pair.handle, caseSensitive))
+			);
+		}
 		getHandleStatus(handle, blockedIds = null) {
 			const pair = this.pairStore.getPair(handle);
 			if (!pair) return { code: 'handle-only', pair: null };
@@ -66,14 +76,17 @@
 		}
 		removeHandleArtifacts(handle) {
 			const pair = this.pairStore.getPair(handle);
-			if (pair?.uid) this.storage.remove({ type: 'id', value: pair.uid });
+			if (pair?.uid && !this._uidUsedByOtherPair(pair.uid, [handle])) {
+				this.storage.remove({ type: 'id', value: pair.uid });
+			}
 			this.pairStore.removePair(handle);
 		}
 		collectHandleArtifactIds(handles) {
 			const ids = new Set();
+			const excludedHandles = handles || [];
 			for (const handle of handles || []) {
 				const pair = this.pairStore.getPair(handle);
-				if (pair?.uid) ids.add(pair.uid);
+				if (pair?.uid && !this._uidUsedByOtherPair(pair.uid, excludedHandles)) ids.add(pair.uid);
 			}
 			return ids;
 		}
@@ -184,7 +197,9 @@
 								lastError: null,
 								source: resolved.source || existing.source || 'youtube-data-api-v3'
 							});
-							if (this.hasBlockedId(existing.uid)) this.storage.remove({ type: 'id', value: existing.uid });
+							if (this.hasBlockedId(existing.uid) && !this._uidUsedByOtherPair(existing.uid)) {
+								this.storage.remove({ type: 'id', value: existing.uid });
+							}
 							if (!this.hasBlockedId(resolved.uid) && this.storage.addId(resolved.uid)) stats.addedIds += 1;
 							stats.mismatches += 1;
 							stats.items.push({
