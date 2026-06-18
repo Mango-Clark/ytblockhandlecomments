@@ -284,7 +284,7 @@
 				url.searchParams.set('id', 'UC_x5XG1OV2P6uZZ5FSM9Ttw');
 				url.searchParams.set('key', apiKey);
 				url.searchParams.set('hl', getLang() === 'ko' ? 'ko' : 'en');
-				const response = await fetch(url.toString(), { cache: 'no-store' });
+				const response = await fetch(url.toString(), { cache: 'no-store', referrerPolicy: 'no-referrer' });
 				let payload = null;
 				try { payload = await response.json(); } catch { }
 				const reason = payload?.error?.errors?.[0]?.reason || '';
@@ -332,7 +332,7 @@
 			url.searchParams.set('key', apiKey);
 			url.searchParams.set('hl', getLang() === 'ko' ? 'ko' : 'en');
 
-			const response = await fetch(url.toString(), { cache: 'no-store' });
+			const response = await fetch(url.toString(), { cache: 'no-store', referrerPolicy: 'no-referrer' });
 			let payload = null;
 			try { payload = await response.json(); } catch { }
 
