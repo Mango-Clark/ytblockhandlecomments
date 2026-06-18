@@ -87,9 +87,17 @@
 		addHandle(h) {
 			const v = sanitizeHandle(h);
 			if (!v) return false;
-			return !!this._saveV2([...this._items, { type: 'handle', value: v }]);
+			const before = this._items.length;
+			this._saveV2([...this._items, { type: 'handle', value: v }]);
+			return this._items.length > before;
 		}
-		addId(id) { id = (id || '').trim(); if (!isChannelId(id)) return false; return !!this._saveV2([...this._items, { type: 'id', value: id }]); }
+		addId(id) {
+			id = (id || '').trim();
+			if (!isChannelId(id)) return false;
+			const before = this._items.length;
+			this._saveV2([...this._items, { type: 'id', value: id }]);
+			return this._items.length > before;
+		}
 		addRegex(pattern, flags = '') {
 			const spec = validateRegexSpec(pattern, flags);
 			if (!spec) return false;
@@ -99,10 +107,12 @@
 		}
 		remove(item) {
 			const key = getItemKey(item);
-			return !!this._saveV2(this._items.filter(it => {
+			const before = this._items.length;
+			this._saveV2(this._items.filter(it => {
 				const k = getItemKey(it);
 				return k !== key;
 			}));
+			return this._items.length < before;
 		}
 		clear() { this._saveV2([]); }
 	}
