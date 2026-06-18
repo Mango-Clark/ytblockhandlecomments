@@ -11,6 +11,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- None
+
+### Changed
+
+- None
+
+### Deprecated
+
+- None
+
+### Removed
+
+- None
+
+### Fixed
+
+- None
+
+### Security
+
+- None
+
+## [0.7.0] - 2026-06-18
+
+### Added
+
 - Added a separate settings dialog for API, UID detection, regex auto-add, and debug counters.
 - Added optional regex matched-handle auto-add so future comments from that channel use handle
   matching before regex.
@@ -29,12 +55,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Shared UID deletion now keeps matching rules while other pairs still use the same UID.
+- Remote `blocked_v2` sync now normalizes and deduplicates items locally.
 - The watch-page pair review banner now stays hidden for the full stale interval after `Later` or
-  a recent pair check, preventing repeated `Update Pair` prompts before the next refresh window.
+  a recent pair check.
+- Invalid imports now stay open so validation failures are visible.
 
 ### Security
 
-- None
+- API fetches now use `referrerPolicy: 'no-referrer'`.
+- Import text is capped before `JSON.parse` runs.
+- Pasted API keys are sanitized before storage.
 
 ## [0.6.0] - 2026-05-20
 

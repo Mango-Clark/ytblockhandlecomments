@@ -11,6 +11,32 @@
 
 ### Added
 
+- 없음
+
+### Changed
+
+- 없음
+
+### Deprecated
+
+- 없음
+
+### Removed
+
+- 없음
+
+### Fixed
+
+- 없음
+
+### Security
+
+- 없음
+
+## [0.7.0] - 2026-06-18
+
+### Added
+
 - API, UID detection, regex 자동 추가, debug counter를 다루는 별도 설정 dialog 추가.
 - regex로 매칭된 handle을 자동 추가하는 옵션을 추가해, 같은 채널의 이후 댓글은 regex
   전에 handle 매칭을 사용하도록 함.
@@ -29,12 +55,17 @@
 
 ### Fixed
 
+- 공유 UID 삭제 시 다른 pair가 같은 UID를 쓰고 있으면 관련 규칙이 유지되도록 수정.
+- 원격 `blocked_v2` 동기화 시 항목을 로컬에서 다시 정규화하고 중복 제거하도록 수정.
 - watch 페이지 pair 검토 배너가 `나중에` 또는 최근 pair 검사 후 stale 주기 전체 동안
-  숨겨져, 다음 갱신 시점 전 `Update Pair` 알림이 반복 표시되지 않도록 수정.
+  숨겨지도록 수정.
+- 잘못된 import는 검증 실패가 보이도록 열린 상태를 유지하도록 수정.
 
 ### Security
 
-- 없음
+- API fetch에 `referrerPolicy: 'no-referrer'`를 적용.
+- `JSON.parse` 전에 import 텍스트 크기를 제한.
+- 붙여넣은 API key를 저장 전에 정규화.
 
 ## [0.6.0] - 2026-05-20
 

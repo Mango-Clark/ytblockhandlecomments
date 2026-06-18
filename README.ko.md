@@ -1,13 +1,14 @@
-# 📌 YouTube Comment Blocker — v0.6.0
+# 📌 YouTube Comment Blocker — v0.7.0
 
 [English](README.md) | [한국어](README.ko.md)
 
 상세 문서: [WIKI.md](docs/WIKI.md) | [WIKI.ko.md](docs/WIKI.ko.md)
 
 YouTube 댓글을 채널 식별자 기준으로 숨기는 Tampermonkey 사용자 스크립트입니다.
-기본 흐름은 여전히 handle 차단이며, `v0.6.0`은 `v0.5.x`의 안전성 및 pair 유지보수
-수정을 유지하면서 pair 결과 도구, quota 안내, 페이지 단위 regex 매칭 목록, 역할별
-소스 파일, 압축된 userscript 생성물을 추가합니다.
+기본 흐름은 여전히 handle 차단이며, `v0.7.0`은 `v0.6.x`의 안전성, 설정, pair 유지보수
+수정을 유지하면서 별도 설정 창, regex 자동 추가, debug counter, pair 결과 도구,
+quota 안내, 페이지 단위 regex 매칭 목록, 역할별 소스 파일, 압축된 userscript 생성물을
+추가합니다.
 
 빠른 설치: 아래 raw URL을 Tampermonkey로 열어 설치 또는 업데이트하세요
 
@@ -133,7 +134,7 @@ Pair 메타 저장소:
 - 앱 설정 저장 키: `app_settings_v1`
 - API 설정 저장 키: `youtube_data_api_v3_config`
 - 레거시 규칙 키 `blockedHandles`, `blockedHandles_v1`는 계속 자동 마이그레이션됩니다
-- `v0.6.0`에서도 pair 메타데이터를 import/export에 포함하지 않습니다
+- `v0.7.0`에서도 pair 메타데이터를 import/export에 포함하지 않습니다
 - API 키는 Tampermonkey 로컬 저장소에만 저장되며 스크립트 코드에 포함되지 않습니다
 
 ---
@@ -188,7 +189,7 @@ Pair 메타 저장소:
 ## 사용자 스크립트 메타데이터
 
 - `@name`: `YouTube Comment Blocker`
-- `@version`: `0.6.0`
+- `@version`: `0.7.0`
 - `@match`: `https://www.youtube.com/*`
 - `@grant`: `GM_getValue`, `GM_setValue`, `GM_addValueChangeListener`,
   `GM_registerMenuCommand`, `GM_unregisterMenuCommand`
