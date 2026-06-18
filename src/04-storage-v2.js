@@ -30,10 +30,10 @@
 			if (!v || typeof v !== 'object' || v.version !== 2 || !Array.isArray(v.items)) return [];
 			return v.items.filter(it => it && typeof it.value === 'string' && ['id', 'handle', 'regex'].includes(it.type));
 		}
-		_saveV2(items) {
+		_normalizeItems(items) {
 			const normed = [];
 			const caseSensitive = this.settings?.isHandleCaseSensitive?.() || false;
-			for (const it of items) {
+			for (const it of items || []) {
 				if (!it || !it.value) continue;
 				if (it.type === 'handle') {
 					const h = sanitizeHandle(it.value);
@@ -57,12 +57,16 @@
 						: `r:${it.value}/${it.flags || ''}`;
 				if (seen.has(key)) continue; seen.add(key); unique.push(it);
 			}
+			return unique;
+		}
+		_saveV2(items) {
+			const unique = this._normalizeItems(items);
 			if (this._arraysEqual(this._items, unique)) { this._items = unique; return unique; }
 			this._setGM(this.KEY_V2, { version: 2, updatedAt: Date.now(), items: unique });
 			this._items = unique; return unique;
 		}
 
-		setAllLocal(items) { this._items = items.slice(); return this._items; }
+		setAllLocal(items) { this._items = this._normalizeItems(items); return this.all(); }
 
 		_arraysEqual(a, b) {
 			if (a === b) return true;
