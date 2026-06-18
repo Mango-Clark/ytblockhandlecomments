@@ -26,11 +26,19 @@
 					: (category === 'ok' ? 'OK' : 'Unknown')
 			};
 		}
+		_normalizeApiKey(value) {
+			let text = String(value || '').trim();
+			try {
+				const url = new URL(text);
+				text = url.searchParams.get('key') || '';
+			} catch { }
+			return text.replace(/\s+/g, '');
+		}
 		_normalizeState(raw) {
 			const src = raw && typeof raw === 'object' ? raw : {};
 			return {
 				version: 2,
-				apiKey: typeof src.apiKey === 'string' ? src.apiKey.trim() : '',
+				apiKey: this._normalizeApiKey(src.apiKey),
 				lastTestResult: this._normalizeTestResult(src.lastTestResult),
 				quotaFailureCount: Number.isFinite(src.quotaFailureCount) && src.quotaFailureCount > 0
 					? Math.floor(src.quotaFailureCount)
@@ -82,7 +90,7 @@
 			};
 		}
 		setApiKey(apiKey) {
-			const nextKey = String(apiKey || '').trim();
+			const nextKey = this._normalizeApiKey(apiKey);
 			return this._saveState({
 				...this._state,
 				apiKey: nextKey,
