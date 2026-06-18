@@ -39,6 +39,15 @@ class FakeNode {
 		if (this.parentNode) this.parentNode.removeChild(this);
 	}
 
+	contains(node) {
+		let current = node;
+		while (current) {
+			if (current === this) return true;
+			current = current.parentNode;
+		}
+		return false;
+	}
+
 	get firstChild() {
 		return this.childNodes[0] || null;
 	}
@@ -155,11 +164,19 @@ class FakeElement extends FakeNode {
 	getAttribute(name) {
 		if (name === 'class') return this.className || null;
 		if (name === 'id') return this.id || null;
+		if (String(name).startsWith('data-')) {
+			const dataKey = String(name).slice(5).replace(/-([a-z])/g, (_m, ch) => ch.toUpperCase());
+			if (Object.prototype.hasOwnProperty.call(this.dataset, dataKey)) return this.dataset[dataKey];
+		}
 		return this.attributes.has(name) ? this.attributes.get(name) : null;
 	}
 
 	get children() {
 		return this.childNodes.filter(node => node.nodeType === 1);
+	}
+
+	get parentElement() {
+		return this.parentNode?.nodeType === 1 ? this.parentNode : null;
 	}
 
 	get options() {
@@ -194,6 +211,15 @@ class FakeElement extends FakeNode {
 
 	matches(selector) {
 		return matchesSelector(this, selector);
+	}
+
+	closest(selector) {
+		let current = this;
+		while (current?.nodeType === 1) {
+			if (current.matches(selector)) return current;
+			current = current.parentElement;
+		}
+		return null;
 	}
 
 	querySelector(selector) {
@@ -246,19 +272,67 @@ function normalizeSelector(selector) {
 function matchesSimple(element, selector) {
 	if (!selector) return false;
 	if (selector.includes(' ') || selector.includes('>')) return false;
-	if (selector.startsWith('#')) return element.id === selector.slice(1);
-	if (selector.startsWith('[')) {
-		const match = /^\[([^=\]]+)(?:="([^"]*)")?\]$/.exec(selector);
-		if (!match) return false;
-		const [, attr, value] = match;
-		const current = element.getAttribute(attr);
-		return value === undefined ? current != null : current === value;
+	let rest = selector;
+	const tagMatch = /^([a-zA-Z][\w-]*)/.exec(rest);
+	if (tagMatch) {
+		if (element.tagName.toLowerCase() !== tagMatch[1].toLowerCase()) return false;
+		rest = rest.slice(tagMatch[0].length);
 	}
-	return element.tagName.toLowerCase() === selector.toLowerCase();
+	while (rest) {
+		if (rest.startsWith('#')) {
+			const match = /^#([\w-]+)/.exec(rest);
+			if (!match || element.id !== match[1]) return false;
+			rest = rest.slice(match[0].length);
+			continue;
+		}
+		if (rest.startsWith('.')) {
+			const match = /^\.([\w-]+)/.exec(rest);
+			if (!match || !element.classList.contains(match[1])) return false;
+			rest = rest.slice(match[0].length);
+			continue;
+		}
+		if (rest.startsWith('[')) {
+			const match = /^\[([^\^\*=\]]+)(?:(\^=|\*=|=)"([^"]*)")?\]/.exec(rest);
+			if (!match) return false;
+			const [, attr, op, value] = match;
+			const current = element.getAttribute(attr);
+			if (current == null) return false;
+			if (op === '=' && current !== value) return false;
+			if (op === '^=' && !current.startsWith(value)) return false;
+			if (op === '*=' && !current.includes(value)) return false;
+			rest = rest.slice(match[0].length);
+			continue;
+		}
+		return false;
+	}
+	return !!tagMatch || selector.startsWith('#') || selector.startsWith('.') || selector.startsWith('[');
+}
+
+function matchesComplex(element, selector) {
+	const childParts = selector.split('>').map(part => part.trim()).filter(Boolean);
+	if (childParts.length > 1) {
+		let current = element;
+		for (let i = childParts.length - 1; i >= 0; i--) {
+			if (!current || !matchesSimple(current, childParts[i])) return false;
+			current = current.parentElement;
+		}
+		return true;
+	}
+	const descendantParts = selector.split(/\s+/).map(part => part.trim()).filter(Boolean);
+	if (descendantParts.length > 1) {
+		let current = element;
+		for (let i = descendantParts.length - 1; i >= 0; i--) {
+			while (current && !matchesSimple(current, descendantParts[i])) current = current.parentElement;
+			if (!current) return false;
+			current = current.parentElement;
+		}
+		return true;
+	}
+	return matchesSimple(element, selector);
 }
 
 function matchesSelector(element, selector) {
-	return normalizeSelector(selector).some(part => matchesSimple(element, part));
+	return normalizeSelector(selector).some(part => matchesComplex(element, part));
 }
 
 function querySelectorAllFrom(root, selector) {
