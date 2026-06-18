@@ -52,6 +52,7 @@
 				};
 				const close = (val) => {
 					try { if (onBeforeClose) val = onBeforeClose(val, dialog); } catch { }
+					if (val && typeof val === 'object' && val.ok === false) return;
 					backdrop.remove(); document.removeEventListener('keydown', onKey);
 					Dialog._instances.delete(instance);
 					resolve(val);
