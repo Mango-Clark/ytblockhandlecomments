@@ -190,6 +190,8 @@ API minimization:
 - Default `Update Pair` skips fresh verified pairs until the stale interval expires
 - Selected-handle bulk `Update Pair` is treated as an explicit user request and refreshes selected
   handles even if their pair is still fresh
+- Watch-page pair review prompts are suppressed for the same stale interval after `Later` or a
+  recent pair check
 
 ## 6. Manager Dialog
 

@@ -155,6 +155,8 @@ Notes:
 - UID matching is local after pair data exists; API calls happen only during pair actions
 - `Update Pair` skips fresh verified pairs until their stale interval expires, while selected-handle
   bulk updates still force a lookup for those selected handles
+- The watch-page pair review banner stays quiet for the stale interval after `Later` or a recent
+  pair check
 - If a pair update resolves a different UID, the old `id` rule is replaced so stale IDs stop
   matching old channels
 - API-key testing uses the same API family with a fixed public channel probe

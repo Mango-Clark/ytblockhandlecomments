@@ -91,3 +91,47 @@ test('api config tracks repeated quota failures for guidance', () => {
 	assert.equal(guidance.lastFailureAt, 2000);
 	assert.equal(guidance.resetAt, 86402000);
 });
+
+test('pair notice stays dismissed for the stale interval', () => {
+	const { storage, pairStore, service } = createService();
+	const now = Date.now();
+	const dayMs = 24 * 60 * 60 * 1000;
+	storage.addHandle('@alpha');
+	storage.addId('UC1234567890');
+	pairStore.setUidDetectionEnabled(true);
+	pairStore.upsertPair({
+		handle: '@alpha',
+		uid: 'UC1234567890',
+		verifiedAt: now - (8 * dayMs),
+		status: 'verified',
+		source: 'youtube-data-api-v3'
+	});
+
+	pairStore.dismissNotification(now - (2 * dayMs));
+	assert.equal(service.shouldNotify(), false);
+
+	pairStore.dismissNotification(now - (8 * dayMs));
+	assert.equal(service.shouldNotify(), true);
+});
+
+test('pair notice waits after a recent pair check', () => {
+	const { storage, pairStore, service } = createService();
+	const now = Date.now();
+	const dayMs = 24 * 60 * 60 * 1000;
+	storage.addHandle('@alpha');
+	storage.addId('UC1234567890');
+	pairStore.setUidDetectionEnabled(true);
+	pairStore.upsertPair({
+		handle: '@alpha',
+		uid: 'UC1234567890',
+		verifiedAt: now - (8 * dayMs),
+		status: 'verified',
+		source: 'youtube-data-api-v3'
+	});
+
+	pairStore.setLastPairCheckAt(now - (2 * dayMs));
+	assert.equal(service.shouldNotify(), false);
+
+	pairStore.setLastPairCheckAt(now - (8 * dayMs));
+	assert.equal(service.shouldNotify(), true);
+});

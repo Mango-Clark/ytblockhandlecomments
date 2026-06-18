@@ -56,6 +56,8 @@
 			if (!this.pairStore.isUidDetectionEnabled()) return false;
 			const summary = this.getSummary();
 			if (!summary.stale && !summary.mismatch) return false;
+			const lastCheckAt = this.pairStore.getLastPairCheckAt();
+			if (lastCheckAt && (Date.now() - lastCheckAt) < PAIR_NOTICE_COOLDOWN_MS) return false;
 			const dismissedAt = this.pairStore.getNotificationDismissedAt();
 			return !dismissedAt || (Date.now() - dismissedAt) >= PAIR_NOTICE_COOLDOWN_MS;
 		}

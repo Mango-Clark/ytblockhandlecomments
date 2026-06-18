@@ -27,7 +27,8 @@
 
 ### Fixed
 
-- 없음
+- watch 페이지 pair 검토 배너가 `나중에` 또는 최근 pair 검사 후 stale 주기 전체 동안
+  숨겨져, 다음 갱신 시점 전 `Update Pair` 알림이 반복 표시되지 않도록 수정.
 
 ### Security
 

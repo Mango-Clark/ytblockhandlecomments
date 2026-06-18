@@ -190,6 +190,8 @@ API 호출 최소화:
 - 기본 `Update Pair`는 stale 주기가 지나기 전의 fresh verified pair를 건너뜁니다
 - 선택 handle bulk `Update Pair`는 명시적 사용자 요청으로 보고, 선택한 handle은 fresh
   상태여도 다시 조회합니다
+- watch 페이지 pair 검토 알림은 `나중에` 또는 최근 pair 검사 후 같은 stale 주기 동안
+  표시되지 않습니다
 
 ## 6. 관리자 대화상자
 

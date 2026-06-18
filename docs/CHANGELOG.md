@@ -27,7 +27,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- None
+- The watch-page pair review banner now stays hidden for the full stale interval after `Later` or
+  a recent pair check, preventing repeated `Update Pair` prompts before the next refresh window.
 
 ### Security
 

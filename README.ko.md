@@ -159,6 +159,8 @@ Pair 메타 저장소:
   발생합니다
 - `Update Pair`는 stale 주기가 지나지 않은 verified pair를 건너뛰고, 선택 handle
   bulk update는 선택한 항목에 대해 강제 조회합니다
+- watch 페이지 pair 검토 배너는 `나중에` 또는 최근 pair 검사 후 stale 주기 동안 다시
+  표시되지 않습니다
 - pair update에서 다른 UID가 조회되면 오래된 `id` 규칙을 교체해 stale UID가 예전
   채널에 계속 매칭되지 않도록 합니다
 - pair 생성/갱신에는 관리자 대화상자에 저장한 사용자 본인 API 키가 필요합니다
