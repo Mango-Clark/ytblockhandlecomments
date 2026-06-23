@@ -62,7 +62,7 @@ Out of scope:
 - Runtime starts at `document-idle`
 
 Comment matching and hiding remain intentionally scoped to watch-page and Shorts comments. Auto
-dislike is configurable as off, only when a comment is newly hidden, or always while a blocked
+dislike defaults to off and is configurable as off, only when a comment is newly hidden, or always while a blocked
 comment is hidden; already pressed dislike buttons are not toggled.
 
 ## 3. Storage Model
@@ -133,6 +133,7 @@ API config:
 Notes:
 
 - Legacy `blockedHandles` and `blockedHandles_v1` still migrate automatically
+- Default `app_settings_v1.dislikeMode` is `none`
 - Pair metadata and API config are excluded from import/export
 
 ## 4. Matching Model

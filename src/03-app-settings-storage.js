@@ -14,7 +14,7 @@
 				version: 1,
 				handleCaseSensitive: !!src.handleCaseSensitive,
 				autoAddRegexHandles: !!src.autoAddRegexHandles,
-				dislikeMode: ['none', 'new-hidden', 'always'].includes(src.dislikeMode) ? src.dislikeMode : 'new-hidden'
+				dislikeMode: ['none', 'new-hidden', 'always'].includes(src.dislikeMode) ? src.dislikeMode : 'none'
 			};
 		}
 		_init() {
@@ -54,7 +54,7 @@
 			return this._saveState({ ...this._state, autoAddRegexHandles: !!enabled });
 		}
 		getDislikeMode() {
-			return this._state.dislikeMode || 'new-hidden';
+			return this._state.dislikeMode || 'none';
 		}
 		setDislikeMode(mode) {
 			return this._saveState({ ...this._state, dislikeMode: mode });

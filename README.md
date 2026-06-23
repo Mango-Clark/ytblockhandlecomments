@@ -34,7 +34,7 @@ Source layout:
 - Right-click an author handle to block or unblock it
 - Adds `Hide comments from this channel` to the comment `⋯` menu
 - Hides matching comments in real time on YouTube watch pages and Shorts pages
-- Configurable comment auto-dislike mode: off, only when newly hidden, or always while hidden
+- Configurable comment auto-dislike mode, defaulting to off: off, only when newly hidden, or always while hidden
 - Supports `handle`, `id`, and `regex` rules in `blocked_v2`
 - Applies regex length, flag, target, and heuristic safety checks before storing or matching rules
 - Supports optional UID detection with handle↔UID metadata in `pair_meta_v1`
@@ -140,6 +140,7 @@ Notes:
 - Pair metadata key: `pair_meta_v1`
 - App settings key: `app_settings_v1`
 - API config key: `youtube_data_api_v3_config`
+- Default `dislikeMode` is `none`
 - Pair metadata and API config are excluded from import/export
 - Older handles may already be stored in lowercase, so exact handle matching is guaranteed only
   after re-saving or newly adding those handles

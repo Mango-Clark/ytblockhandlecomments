@@ -15,6 +15,7 @@
 
 ### Changed
 
+- 자동 싫어요 모드 기본값을 안함으로 변경했습니다.
 - 한국어와 영어 i18n dictionary를 별도 source file로 분리했습니다.
 
 ### Deprecated

@@ -18,7 +18,7 @@ function createBlockedComment(document, handle = '@alpha') {
 	return { comment, dislike };
 }
 
-test('blocked comments are disliked once before hiding', () => {
+test('default dislike mode hides without auto dislike', () => {
 	const { api, document } = loadUserscript();
 	const settings = new api.AppSettingsStorage();
 	const storage = new api.StorageV2(settings);
@@ -28,6 +28,26 @@ test('blocked comments are disliked once before hiding', () => {
 	let clicks = 0;
 
 	dislike.addEventListener('click', () => { clicks += 1; });
+	storage.addHandle('@alpha');
+	hider.rebuildLookup();
+
+	hider.applyHide(comment);
+	assert.equal(clicks, 0);
+	assert.equal(comment.classList.contains('tm-hidden'), true);
+	assert.equal(settings.getDislikeMode(), 'none');
+});
+
+test('new-hidden dislike mode dislikes once before hiding', () => {
+	const { api, document } = loadUserscript();
+	const settings = new api.AppSettingsStorage();
+	const storage = new api.StorageV2(settings);
+	const pairStore = new api.PairMetaStorage(settings);
+	const hider = new api.CommentHider(storage, pairStore, settings);
+	const { comment, dislike } = createBlockedComment(document);
+	let clicks = 0;
+
+	dislike.addEventListener('click', () => { clicks += 1; });
+	settings.setDislikeMode('new-hidden');
 	storage.addHandle('@alpha');
 	hider.rebuildLookup();
 

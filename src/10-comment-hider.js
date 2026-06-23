@@ -128,7 +128,7 @@
 		applyHide(node) {
 			if (!node) return;
 			const shouldHide = this._matches(node);
-			const dislikeMode = this.settings?.getDislikeMode?.() || 'new-hidden';
+			const dislikeMode = this.settings?.getDislikeMode?.() || 'none';
 			if (
 				shouldHide &&
 				dislikeMode !== 'none' &&
