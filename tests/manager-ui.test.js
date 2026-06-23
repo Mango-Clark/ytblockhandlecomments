@@ -82,3 +82,11 @@ test('dialog refresh reruns translated labels after language change', async () =
 	refreshContext.buttons[0].click();
 	await body;
 });
+
+test('i18n dictionaries provide Korean and English labels', () => {
+	const { api, setLang } = loadUserscript();
+
+	assert.equal(api.t('close'), '닫기');
+	setLang('en');
+	assert.equal(api.t('close'), 'Close');
+});

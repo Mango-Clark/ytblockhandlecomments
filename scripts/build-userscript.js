@@ -8,6 +8,8 @@ const outputPath = path.join(root, 'ytblockhandlecomments.js');
 const sourceFiles = [
 	'00-userscript-header.js',
 	'01-global-styles.js',
+	'02-i18n-ko.js',
+	'02-i18n-en.js',
 	'02-utils-i18n.js',
 	'03-app-settings-storage.js',
 	'04-storage-v2.js',

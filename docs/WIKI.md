@@ -11,7 +11,8 @@ The userscript hides YouTube comments by channel identity on watch pages and Sho
 
 Source layout:
 
-- `src/` contains role-based source slices.
+- `src/` contains role-based source slices, with Korean and English i18n dictionaries split into
+  separate files.
 - `ytblockhandlecomments.js` remains the single Tampermonkey distribution file.
 - `npm run build` regenerates the root userscript from `src/`.
 - `npm run check:build` verifies the root userscript is in sync.

@@ -15,7 +15,7 @@
 
 ### Changed
 
-- 없음
+- 한국어와 영어 i18n dictionary를 별도 source file로 분리했습니다.
 
 ### Deprecated
 

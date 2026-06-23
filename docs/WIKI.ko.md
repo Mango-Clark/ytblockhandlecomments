@@ -11,7 +11,8 @@
 
 소스 구조:
 
-- `src/`는 역할별 소스 조각을 담습니다.
+- `src/`는 역할별 소스 조각을 담으며, 한국어와 영어 i18n dictionary는 별도 파일로
+  분리합니다.
 - `ytblockhandlecomments.js`는 단일 Tampermonkey 배포 파일로 유지합니다.
 - `npm run build`는 `src/`에서 루트 userscript를 다시 생성합니다.
 - `npm run check:build`는 루트 userscript와 `src/`가 동기화되어 있는지 확인합니다.

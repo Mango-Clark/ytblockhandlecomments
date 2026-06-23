@@ -11,4 +11,4 @@
 
 ## Small
 
-- None
+- [x] i18n file 언어마다 분리하기.
