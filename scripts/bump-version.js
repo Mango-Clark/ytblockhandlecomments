@@ -1,0 +1,121 @@
+'use strict';
+
+const fs = require('node:fs');
+const path = require('node:path');
+
+const root = path.resolve(__dirname, '..');
+const version = process.argv.find(arg => /^\d+\.\d+\.\d+$/.test(arg));
+const check = process.argv.includes('--check');
+const today = new Date().toISOString().slice(0, 10);
+
+if (!version) {
+	console.error('Usage: npm run bump:version -- <MAJOR.MINOR.PATCH> [--check]');
+	process.exit(1);
+}
+
+const replaceRequired = (text, pattern, replacement, label) => {
+	if (!pattern.test(text)) throw new Error(`Missing version target: ${label}`);
+	return text.replace(pattern, replacement);
+};
+
+const replaceAllRequired = (text, replacements, file) => replacements.reduce(
+	(current, [pattern, replacement, label]) => replaceRequired(current, pattern, replacement, `${file} ${label}`),
+	text
+);
+
+const releaseChangelog = (text, file) => {
+	if (text.includes(`## [${version}] - `)) return text;
+	const match = /^## \[Unreleased\]\n([\s\S]*?)(?=\n## \[)/m.exec(text);
+	if (!match) throw new Error(`Missing Unreleased section: ${file}`);
+	const unreleasedBody = match[1].trimEnd();
+	const freshUnreleased = match[0].replace(unreleasedBody, unreleasedBody.replace(/- (?!None\b).+/g, '- None'));
+	const releaseSection = `## [${version}] - ${today}\n${unreleasedBody}\n\n`;
+	return text.slice(0, match.index) + freshUnreleased + '\n\n' + releaseSection + text.slice(match.index + match[0].length);
+};
+
+const files = [
+	{
+		path: 'src/00-userscript-header.js',
+		replace: (text) => replaceRequired(text, /(\/\/ @version\s+)\d+\.\d+\.\d+/, `$1${version}`, '@version')
+	},
+	{
+		path: 'src/02-utils-i18n.js',
+		replace: (text) => replaceRequired(text, /(FALLBACK_SCRIPT_VERSION = ')\d+\.\d+\.\d+(')/, `$1${version}$2`, 'FALLBACK_SCRIPT_VERSION')
+	},
+	{
+		path: 'README.md',
+		replace: (text) => replaceAllRequired(text, [
+			[/(# .+ \u2014 )v\d+\.\d+\.\d+/, `$1v${version}`, 'title'],
+			[/(`)v\d+\.\d+\.\d+(` keeps)/, `$1v${version}$2`, 'intro'],
+			[/(`@version`: `)\d+\.\d+\.\d+(`)/, `$1${version}$2`, '@version']
+		], 'README.md')
+	},
+	{
+		path: 'README.ko.md',
+		replace: (text) => replaceAllRequired(text, [
+			[/(# .+ \u2014 )v\d+\.\d+\.\d+/, `$1v${version}`, 'title'],
+			[/(`)v\d+\.\d+\.\d+(`은)/, `$1v${version}$2`, 'intro'],
+			[/(`)v\d+\.\d+\.\d+(`에서도)/, `$1v${version}$2`, 'import-export note'],
+			[/(`@version`: `)\d+\.\d+\.\d+(`)/, `$1${version}$2`, '@version']
+		], 'README.ko.md')
+	},
+	{
+		path: 'docs/WIKI.md',
+		replace: (text) => replaceAllRequired(text, [
+			[/(# .+ \u2014 )v\d+\.\d+\.\d+/, `$1v${version}`, 'title'],
+			[/(`@version`: `)\d+\.\d+\.\d+(`)/, `$1${version}$2`, '@version'],
+			[/(After `)v\d+\.\d+\.\d+(`)/, `$1v${version}$2`, 'post-version note']
+		], 'docs/WIKI.md')
+	},
+	{
+		path: 'docs/WIKI.ko.md',
+		replace: (text) => replaceAllRequired(text, [
+			[/(# .+ \u2014 )v\d+\.\d+\.\d+/, `$1v${version}`, 'title'],
+			[/(`@version`: `)\d+\.\d+\.\d+(`)/, `$1${version}$2`, '@version'],
+			[/(`)v\d+\.\d+\.\d+(` 이후에는)/, `$1v${version}$2`, 'post-version note']
+		], 'docs/WIKI.ko.md')
+	},
+	{
+		path: 'docs/CHANGELOG.md',
+		replace: (text) => releaseChangelog(text, 'docs/CHANGELOG.md')
+	},
+	{
+		path: 'docs/CHANGELOG.ko.md',
+		replace: (text) => releaseChangelog(text, 'docs/CHANGELOG.ko.md')
+	},
+	{
+		path: 'docs/TODO.md',
+		writeOnly: true,
+		replace: (text) => text
+			.split(/\r?\n/)
+			.filter(line => !/^\s*-\s*\[x\]\s+/i.test(line))
+			.join('\n')
+	}
+];
+
+let changed = false;
+
+for (const item of files) {
+	if (check && item.writeOnly) continue;
+	const fullPath = path.join(root, item.path);
+	const before = fs.readFileSync(fullPath, 'utf8').replace(/\r\n/g, '\n');
+	let after;
+	try {
+		after = item.replace(before);
+	} catch (error) {
+		console.error(error.message);
+		process.exit(1);
+	}
+	if (after === before) continue;
+	changed = true;
+	if (!check) fs.writeFileSync(fullPath, after, 'utf8');
+}
+
+if (check && changed) {
+	console.error(`Version docs are not bumped to ${version}. Run npm run bump:version -- ${version}`);
+	process.exit(1);
+}
+
+if (!check) {
+	console.log(`Updated version references to ${version}. Run npm run build next.`);
+}

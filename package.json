@@ -2,6 +2,7 @@
   "name": "ytblockhandlecomments",
   "private": true,
   "scripts": {
+    "bump:version": "node scripts/bump-version.js",
     "build": "node scripts/build-userscript.js",
     "check:build": "node scripts/build-userscript.js --check",
     "test": "node --test"

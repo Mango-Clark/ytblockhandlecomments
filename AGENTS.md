@@ -14,6 +14,7 @@ Keep docs, versioning, Git workflow aligned. Change files only when code or repo
 - Update `docs/CHANGELOG.md` first, then `docs/CHANGELOG.ko.md`.
 - Review every `*.md` when code changes.
 - Bump `VERSION` or package manifest only when shipping user-visible change.
+- Use `npm run bump:version -- <MAJOR.MINOR.PATCH>` for mechanical version/docs references.
 - Check `docs/TODO.md`. Mark done items. Remove old done items when version bumps.
 - Edit userscript source in `src/`, then run `npm run build`.
 - Keep root `ytblockhandlecomments.js` in sync with `npm run check:build`.
