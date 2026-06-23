@@ -85,6 +85,7 @@ Patch rule:
 
 ## Commit
 
+- Always commit after a patch.
 - Use Conventional Commits: `<type>(<scope>): <imperative summary>`.
 - Allowed types: `feat`, `fix`, `refactor`, `perf`, `docs`, `test`, `chore`, `build`, `ci`, `style`, `revert`.
 - Scope is optional but should be consistent for repeated areas, e.g. `manager`, `docs`, `build`.
