@@ -34,6 +34,7 @@ Source layout:
 - Right-click an author handle to block or unblock it
 - Adds `Hide comments from this channel` to the comment `⋯` menu
 - Hides matching comments in real time on YouTube watch pages and Shorts pages
+- Clicks the comment dislike button before hiding a newly blocked comment when available
 - Supports `handle`, `id`, and `regex` rules in `blocked_v2`
 - Applies regex length, flag, target, and heuristic safety checks before storing or matching rules
 - Supports optional UID detection with handle↔UID metadata in `pair_meta_v1`

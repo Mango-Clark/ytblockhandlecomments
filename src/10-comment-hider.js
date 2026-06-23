@@ -10,6 +10,7 @@
 			this._handleSet = new Set();
 			this._regexes = [];
 			this._metaCache = new WeakMap();
+			this._autoDisliked = new WeakSet();
 			this._observed = new Set();
 			this._pending = false;
 			this._pendingRoot = null;
@@ -99,9 +100,36 @@
 			}
 			return false;
 		}
+		_getDislikeButton(node) {
+			const selectors = [
+				'ytd-toggle-button-renderer#dislike-button button',
+				'#dislike-button button',
+				'button[aria-label*="Dislike"]',
+				'button[aria-label*="dislike"]',
+				'button[aria-label*="싫어요"]'
+			];
+			for (const selector of selectors) {
+				const button = node.querySelector?.(selector);
+				if (button) return button;
+			}
+			return null;
+		}
+		_isDislikeActive(button) {
+			return button?.getAttribute?.('aria-pressed') === 'true';
+		}
+		_autoDislikeBeforeHide(node) {
+			if (!node || this._autoDisliked.has(node)) return;
+			const button = this._getDislikeButton(node);
+			if (!button || button.disabled) return;
+			this._autoDisliked.add(node);
+			if (this._isDislikeActive(button)) return;
+			button.click?.();
+		}
 		applyHide(node) {
 			if (!node) return;
-			node.classList.toggle('tm-hidden', this._matches(node));
+			const shouldHide = this._matches(node);
+			if (shouldHide && !node.classList.contains('tm-hidden')) this._autoDislikeBeforeHide(node);
+			node.classList.toggle('tm-hidden', shouldHide);
 		}
 		_connectIO() {
 			if (this._io) return this._io;
@@ -122,6 +150,7 @@
 			}
 			this.resetObservation();
 			this._metaCache = new WeakMap();
+			this._autoDisliked = new WeakSet();
 			this._pending = false;
 			this._pendingRoot = null;
 		}

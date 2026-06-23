@@ -60,7 +60,9 @@ Out of scope:
   `GM_registerMenuCommand`, `GM_unregisterMenuCommand`
 - Runtime starts at `document-idle`
 
-Comment matching and hiding remain intentionally scoped to watch-page and Shorts comments.
+Comment matching and hiding remain intentionally scoped to watch-page and Shorts comments. When a
+comment is newly hidden, the script clicks YouTube's comment dislike button first if the button is
+available and not already pressed.
 
 ## 3. Storage Model
 

@@ -60,7 +60,8 @@
   `GM_registerMenuCommand`, `GM_unregisterMenuCommand`
 - 실행 시점: `document-idle`
 
-댓글 매칭과 숨김은 계속 watch 페이지와 Shorts 댓글 범위로 제한됩니다.
+댓글 매칭과 숨김은 계속 watch 페이지와 Shorts 댓글 범위로 제한됩니다. 댓글을 새로 숨길 때
+YouTube 댓글 싫어요 버튼이 있고 이미 눌린 상태가 아니면 숨기기 전에 먼저 클릭합니다.
 
 ## 3. 저장 구조
 

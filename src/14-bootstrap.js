@@ -8,6 +8,7 @@
 			PairMetaStorage,
 			ApiConfigStorage,
 			PairService,
+			CommentHider,
 			Dialog,
 			BlockListManager,
 			App,
