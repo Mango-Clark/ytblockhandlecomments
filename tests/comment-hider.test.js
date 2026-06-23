@@ -39,6 +39,49 @@ test('blocked comments are disliked once before hiding', () => {
 	assert.equal(clicks, 1);
 });
 
+test('dislike mode can disable auto dislike', () => {
+	const { api, document } = loadUserscript();
+	const settings = new api.AppSettingsStorage();
+	const storage = new api.StorageV2(settings);
+	const pairStore = new api.PairMetaStorage(settings);
+	const hider = new api.CommentHider(storage, pairStore, settings);
+	const { comment, dislike } = createBlockedComment(document);
+	let clicks = 0;
+
+	dislike.addEventListener('click', () => { clicks += 1; });
+	settings.setDislikeMode('none');
+	storage.addHandle('@alpha');
+	hider.rebuildLookup();
+
+	hider.applyHide(comment);
+
+	assert.equal(clicks, 0);
+	assert.equal(comment.classList.contains('tm-hidden'), true);
+});
+
+test('always dislike mode tries hidden comments once', () => {
+	const { api, document } = loadUserscript();
+	const settings = new api.AppSettingsStorage();
+	const storage = new api.StorageV2(settings);
+	const pairStore = new api.PairMetaStorage(settings);
+	const hider = new api.CommentHider(storage, pairStore, settings);
+	const { comment, dislike } = createBlockedComment(document);
+	let clicks = 0;
+
+	dislike.addEventListener('click', () => { clicks += 1; });
+	settings.setDislikeMode('none');
+	storage.addHandle('@alpha');
+	hider.rebuildLookup();
+	hider.applyHide(comment);
+
+	settings.setDislikeMode('always');
+	hider.applyHide(comment);
+	hider.applyHide(comment);
+
+	assert.equal(clicks, 1);
+	assert.equal(comment.classList.contains('tm-hidden'), true);
+});
+
 test('already disliked comments are hidden without toggling dislike off', () => {
 	const { api, document } = loadUserscript();
 	const settings = new api.AppSettingsStorage();

@@ -61,9 +61,9 @@ Out of scope:
   `GM_registerMenuCommand`, `GM_unregisterMenuCommand`
 - Runtime starts at `document-idle`
 
-Comment matching and hiding remain intentionally scoped to watch-page and Shorts comments. When a
-comment is newly hidden, the script clicks YouTube's comment dislike button first if the button is
-available and not already pressed.
+Comment matching and hiding remain intentionally scoped to watch-page and Shorts comments. Auto
+dislike is configurable as off, only when a comment is newly hidden, or always while a blocked
+comment is hidden; already pressed dislike buttons are not toggled.
 
 ## 3. Storage Model
 
@@ -107,7 +107,8 @@ App settings:
 {
   version: 1,
   handleCaseSensitive: boolean,
-  autoAddRegexHandles: boolean
+  autoAddRegexHandles: boolean,
+  dislikeMode: 'none' | 'new-hidden' | 'always'
 }
 ```
 
@@ -244,6 +245,7 @@ Settings dialog:
 
 - Handle case sensitivity
 - Regex matched-handle auto-add
+- Auto-dislike mode
 - YouTube Data API v3 key/test controls
 - UID detection, pair summary, and pair actions
 - Debug counters from `window.__ytCommentBlockerPerf`

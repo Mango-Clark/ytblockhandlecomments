@@ -13,7 +13,8 @@
 			return {
 				version: 1,
 				handleCaseSensitive: !!src.handleCaseSensitive,
-				autoAddRegexHandles: !!src.autoAddRegexHandles
+				autoAddRegexHandles: !!src.autoAddRegexHandles,
+				dislikeMode: ['none', 'new-hidden', 'always'].includes(src.dislikeMode) ? src.dislikeMode : 'new-hidden'
 			};
 		}
 		_init() {
@@ -30,7 +31,8 @@
 			const normalized = this._normalizeState(nextState);
 			if (
 				this._state.handleCaseSensitive === normalized.handleCaseSensitive &&
-				this._state.autoAddRegexHandles === normalized.autoAddRegexHandles
+				this._state.autoAddRegexHandles === normalized.autoAddRegexHandles &&
+				this._state.dislikeMode === normalized.dislikeMode
 			) {
 				this._state = normalized;
 				return this.getState();
@@ -50,6 +52,12 @@
 		}
 		setAutoAddRegexHandlesEnabled(enabled) {
 			return this._saveState({ ...this._state, autoAddRegexHandles: !!enabled });
+		}
+		getDislikeMode() {
+			return this._state.dislikeMode || 'new-hidden';
+		}
+		setDislikeMode(mode) {
+			return this._saveState({ ...this._state, dislikeMode: mode });
 		}
 	}
 

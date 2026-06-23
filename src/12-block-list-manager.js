@@ -256,7 +256,17 @@
 			const autoText = document.createElement('span');
 			autoLabel.append(autoToggle, autoText);
 			const autoHelp = document.createElement('p');
-			settingsSection.append(settingsTitle, caseLabel, caseHelp, caseLegacy, autoLabel, autoHelp);
+			const dislikeLabel = document.createElement('label');
+			const dislikeSelect = document.createElement('select');
+			const dislikeText = document.createElement('span');
+			['none', 'new-hidden', 'always'].forEach(value => {
+				const option = document.createElement('option');
+				option.value = value;
+				dislikeSelect.appendChild(option);
+			});
+			dislikeLabel.append(dislikeText, dislikeSelect);
+			const dislikeHelp = document.createElement('p');
+			settingsSection.append(settingsTitle, caseLabel, caseHelp, caseLegacy, autoLabel, autoHelp, dislikeLabel, dislikeHelp);
 
 			const apiSection = document.createElement('section');
 			apiSection.className = 'tm-section';
@@ -361,6 +371,7 @@
 			const renderAll = () => {
 				caseToggle.checked = this.app.settings.isHandleCaseSensitive();
 				autoToggle.checked = this.app.settings.isAutoAddRegexHandlesEnabled();
+				dislikeSelect.value = this.app.settings.getDislikeMode();
 				uidToggle.checked = this.app.pairStore.isUidDetectionEnabled();
 				renderApiStatus();
 				renderPairSummary();
@@ -373,6 +384,11 @@
 				caseLegacy.textContent = t('handleCaseLegacy');
 				autoText.textContent = t('autoAddRegexLabel');
 				autoHelp.textContent = t('autoAddRegexHelp');
+				dislikeText.textContent = t('dislikeModeLabel') + ': ';
+				dislikeSelect.options[0].textContent = t('dislikeModeNone');
+				dislikeSelect.options[1].textContent = t('dislikeModeNewHidden');
+				dislikeSelect.options[2].textContent = t('dislikeModeAlways');
+				dislikeHelp.textContent = t('dislikeModeHelp');
 				apiTitle.textContent = t('apiKeyTitle');
 				apiLabel.textContent = t('apiKeyLabel');
 				apiInput.placeholder = t('apiKeyPlaceholder');
@@ -394,6 +410,11 @@
 			});
 			autoToggle.addEventListener('change', () => {
 				this.app.settings.setAutoAddRegexHandlesEnabled(autoToggle.checked);
+				this.app.refreshAfterStorageChange();
+				renderAll();
+			});
+			dislikeSelect.addEventListener('change', () => {
+				this.app.settings.setDislikeMode(dislikeSelect.value);
 				this.app.refreshAfterStorageChange();
 				renderAll();
 			});

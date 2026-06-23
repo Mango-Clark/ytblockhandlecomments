@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Blocked comments now click the available comment dislike button before being hidden.
+- Added a three-mode auto-dislike setting for blocked comments: off, newly hidden only, or always while hidden.
 
 ### Changed
 

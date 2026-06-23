@@ -90,3 +90,27 @@ test('i18n dictionaries provide Korean and English labels', () => {
 	setLang('en');
 	assert.equal(api.t('close'), 'Close');
 });
+
+test('settings dialog updates auto-dislike mode', () => {
+	const { api, document } = loadUserscript();
+	const settings = new api.AppSettingsStorage();
+	const storage = new api.StorageV2(settings);
+	const pairStore = new api.PairMetaStorage(settings);
+	const apiConfig = new api.ApiConfigStorage();
+	const manager = new api.BlockListManager({
+		settings,
+		storage,
+		pairStore,
+		apiConfig,
+		pairService: new api.PairService(storage, pairStore, apiConfig, settings),
+		getLastPairRunResult: () => null,
+		refreshAfterStorageChange: () => {}
+	});
+
+	manager.openSettings();
+	const select = document.querySelector('select');
+	select.value = 'always';
+	select.dispatchEvent({ type: 'change' });
+
+	assert.equal(settings.getDislikeMode(), 'always');
+});

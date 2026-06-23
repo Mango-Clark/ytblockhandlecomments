@@ -37,7 +37,7 @@ quota 안내, 페이지 단위 regex 매칭 목록, 역할별 소스 파일, 압
 - 작성자 handle을 우클릭해 차단 또는 해제
 - 댓글 `⋯` 메뉴에 `Hide comments from this channel` 항목 추가
 - YouTube watch 페이지와 Shorts 페이지에서 댓글을 실시간으로 숨김
-- 새로 차단되어 숨기는 댓글은 가능한 경우 숨기기 전에 댓글 싫어요 버튼을 클릭
+- 댓글 자동 싫어요 모드 제공: 안함, 새로 숨길 때만, 숨긴 상태에서 항상
 - `blocked_v2`에 `handle`, `id`, `regex` 규칙 저장
 - regex 규칙 저장/매칭 전에 길이, flag, 대상 길이, 휴리스틱 safety 검사를 적용
 - 관리자 대화상자에 선택적 `UID Detection` 토글 추가
@@ -124,7 +124,8 @@ Pair 메타 저장소:
 {
   version: 1,
   handleCaseSensitive: boolean,
-  autoAddRegexHandles: boolean
+  autoAddRegexHandles: boolean,
+  dislikeMode: 'none' | 'new-hidden' | 'always'
 }
 ```
 

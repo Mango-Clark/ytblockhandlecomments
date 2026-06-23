@@ -128,7 +128,14 @@
 		applyHide(node) {
 			if (!node) return;
 			const shouldHide = this._matches(node);
-			if (shouldHide && !node.classList.contains('tm-hidden')) this._autoDislikeBeforeHide(node);
+			const dislikeMode = this.settings?.getDislikeMode?.() || 'new-hidden';
+			if (
+				shouldHide &&
+				dislikeMode !== 'none' &&
+				(dislikeMode === 'always' || !node.classList.contains('tm-hidden'))
+			) {
+				this._autoDislikeBeforeHide(node);
+			}
 			node.classList.toggle('tm-hidden', shouldHide);
 		}
 		_connectIO() {

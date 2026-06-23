@@ -61,8 +61,9 @@
   `GM_registerMenuCommand`, `GM_unregisterMenuCommand`
 - 실행 시점: `document-idle`
 
-댓글 매칭과 숨김은 계속 watch 페이지와 Shorts 댓글 범위로 제한됩니다. 댓글을 새로 숨길 때
-YouTube 댓글 싫어요 버튼이 있고 이미 눌린 상태가 아니면 숨기기 전에 먼저 클릭합니다.
+댓글 매칭과 숨김은 계속 watch 페이지와 Shorts 댓글 범위로 제한됩니다. 자동 싫어요는
+안함, 새로 숨길 때만, 차단 댓글이 숨겨진 상태에서 항상 중에서 선택할 수 있으며 이미
+눌린 싫어요 버튼은 다시 토글하지 않습니다.
 
 ## 3. 저장 구조
 
@@ -106,7 +107,8 @@ Pair 메타데이터:
 {
   version: 1,
   handleCaseSensitive: boolean,
-  autoAddRegexHandles: boolean
+  autoAddRegexHandles: boolean,
+  dislikeMode: 'none' | 'new-hidden' | 'always'
 }
 ```
 
@@ -243,6 +245,7 @@ Pair 결과:
 
 - handle 대소문자 구분
 - regex 매칭 handle 자동 추가
+- 자동 싫어요 mode
 - YouTube Data API v3 키/테스트 제어
 - UID detection, pair 요약, pair 액션
 - `window.__ytCommentBlockerPerf` 기반 debug counter
