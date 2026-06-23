@@ -12,3 +12,4 @@
 ## Small
 
 - [x] i18n file 언어마다 분리하기.
+- [x] i18n file sub 폴더 만들기
