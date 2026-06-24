@@ -1,4 +1,4 @@
-# 📚 YouTube Comment Blocker 위키 — v0.8.0
+# 📚 YouTube Comment Blocker 위키 — v0.9.0
 
 [English](WIKI.md) | [한국어](WIKI.ko.md)
 
@@ -55,7 +55,7 @@
 
 ## 2. 메타데이터와 런타임
 
-- `@version`: `0.8.0`
+- `@version`: `0.9.0`
 - `@match`: `https://www.youtube.com/*`
 - `@grant`: `GM_getValue`, `GM_setValue`, `GM_addValueChangeListener`,
   `GM_registerMenuCommand`, `GM_unregisterMenuCommand`
@@ -336,7 +336,7 @@ API 키 테스트가 반복해서 `quota`를 보고하면 관리자는 연속 qu
 
 ## 11. 이후 작업
 
-`v0.8.0` 이후에는 큰 관리자/보안/i18n/regex-selection 성능/Shorts 댓글 숨김/긴 세션
+`v0.9.0` 이후에는 큰 관리자/보안/i18n/regex-selection 성능/Shorts 댓글 숨김/긴 세션
 메모리 정리/pair update 최소화/버전 표시/설정 dialog/regex 자동 추가/관리자 polish
 TODO가 기본적으로 마무리된 상태로 봅니다. 이후 작업은 베이스라인 미구현이 아니라
 점진적 개선 중심으로 다룹니다.

@@ -96,7 +96,7 @@
 	const SHORTS_ROOT_SELECTOR = 'ytd-reel-video-renderer, ytd-shorts, ytd-app, ytd-page-manager';
 	const PAIR_STALE_MS = 7 * 24 * 60 * 60 * 1000;
 	const PAIR_NOTICE_COOLDOWN_MS = PAIR_STALE_MS;
-	const FALLBACK_SCRIPT_VERSION = '0.8.0';
+	const FALLBACK_SCRIPT_VERSION = '0.9.0';
 	const getScriptVersion = () => {
 		try {
 			if (typeof GM_info === 'object' && GM_info?.script?.version) return GM_info.script.version;

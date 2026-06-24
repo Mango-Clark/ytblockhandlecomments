@@ -11,6 +11,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- None
+
+### Changed
+
+- None
+
+### Deprecated
+
+- None
+
+### Removed
+
+- None
+
+### Fixed
+
+- None
+
+### Security
+
+- None
+
+## [0.9.0] - 2026-06-24
+
+### Added
+
 - Added a blocked-comment display mode setting with full hide, placeholder, and click-to-reveal options.
 - Added a confirmation-gated reset button for app display and matching settings.
 
