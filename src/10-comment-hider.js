@@ -59,9 +59,9 @@
 		}
 		_collectCommentNodes(root) {
 			if (!root) return [];
-			if (root.matches?.(COMMENT_SELECTOR)) return [root];
+			if (root.matches?.(HIDEABLE_COMMENT_SELECTOR)) return [root];
 			if (!root.querySelectorAll) return [];
-			return Array.from(root.querySelectorAll(COMMENT_SELECTOR));
+			return Array.from(root.querySelectorAll(HIDEABLE_COMMENT_SELECTOR));
 		}
 		_mergeRoots(a, b) {
 			if (!a) return b;
@@ -186,7 +186,8 @@
 		refreshNodes(nodes, { invalidate = true } = {}) {
 			const unique = new Set();
 			for (const node of nodes || []) {
-				if (node?.isConnected) unique.add(node);
+				if (!node?.isConnected) continue;
+				for (const commentNode of this._collectCommentNodes(node)) unique.add(commentNode);
 			}
 			if (!unique.size) return;
 			const startedAt = performance.now();

@@ -18,6 +18,17 @@ function createBlockedComment(document, handle = '@alpha') {
 	return { comment, dislike };
 }
 
+function createCommentThread(document) {
+	const thread = document.createElement('ytd-comment-thread-renderer');
+	const top = createBlockedComment(document, '@blocked');
+	const reply = createBlockedComment(document, '@reply');
+
+	thread.append(top.comment, reply.comment);
+	document.body.appendChild(thread);
+	thread.isConnected = true;
+	return { thread, top, reply };
+}
+
 test('default dislike mode hides without auto dislike', () => {
 	const { api, document } = loadUserscript();
 	const settings = new api.AppSettingsStorage();
@@ -120,4 +131,22 @@ test('already disliked comments are hidden without toggling dislike off', () => 
 
 	assert.equal(clicks, 0);
 	assert.equal(comment.classList.contains('tm-hidden'), true);
+});
+
+test('thread refresh hides only matching comment node', () => {
+	const { api, document } = loadUserscript();
+	const settings = new api.AppSettingsStorage();
+	const storage = new api.StorageV2(settings);
+	const pairStore = new api.PairMetaStorage(settings);
+	const hider = new api.CommentHider(storage, pairStore, settings);
+	const { thread, top, reply } = createCommentThread(document);
+
+	storage.addHandle('@blocked');
+	hider.rebuildLookup();
+
+	hider.refreshNodes([thread]);
+
+	assert.equal(thread.classList.contains('tm-hidden'), false);
+	assert.equal(top.comment.classList.contains('tm-hidden'), true);
+	assert.equal(reply.comment.classList.contains('tm-hidden'), false);
 });

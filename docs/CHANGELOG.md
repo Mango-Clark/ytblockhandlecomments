@@ -27,7 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- None
+- Fixed blocked top-level comment threads hiding or auto-disliking child replies.
 
 ### Security
 

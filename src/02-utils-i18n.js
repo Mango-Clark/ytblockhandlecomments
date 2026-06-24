@@ -90,6 +90,7 @@
 		}
 	};
 	const COMMENT_SELECTOR = 'ytd-comment-thread-renderer, ytd-comment-renderer, ytd-comment-view-model';
+	const HIDEABLE_COMMENT_SELECTOR = 'ytd-comment-renderer, ytd-comment-view-model';
 	const COMMENTS_HOST_SELECTOR = 'ytd-comments#comments, ytd-comments';
 	const WATCH_ROOT_SELECTOR = 'ytd-watch-flexy, ytd-watch-grid, ytd-page-manager';
 	const SHORTS_ROOT_SELECTOR = 'ytd-reel-video-renderer, ytd-shorts, ytd-app, ytd-page-manager';
