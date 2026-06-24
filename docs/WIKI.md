@@ -61,9 +61,11 @@ Out of scope:
   `GM_registerMenuCommand`, `GM_unregisterMenuCommand`
 - Runtime starts at `document-idle`
 
-Comment matching and hiding remain intentionally scoped to watch-page and Shorts comments. Auto
-dislike defaults to off and is configurable as off, only when a comment is newly hidden, or always while a blocked
-comment is hidden; already pressed dislike buttons are not toggled.
+Comment matching remains intentionally scoped to watch-page and Shorts comments. Matching comments
+can be hidden completely, replaced with a gray placeholder, or replaced with a click-to-reveal
+placeholder. Auto dislike defaults to off and is configurable as off, only when a comment is newly
+hidden, or always while a blocked comment is hidden; already pressed dislike buttons are not
+toggled.
 
 ## 3. Storage Model
 
@@ -108,7 +110,8 @@ App settings:
   version: 1,
   handleCaseSensitive: boolean,
   autoAddRegexHandles: boolean,
-  dislikeMode: 'none' | 'new-hidden' | 'always'
+  dislikeMode: 'none' | 'new-hidden' | 'always',
+  commentBlockMode: 'hide' | 'placeholder' | 'placeholder-reveal'
 }
 ```
 
@@ -134,6 +137,7 @@ Notes:
 
 - Legacy `blockedHandles` and `blockedHandles_v1` still migrate automatically
 - Default `app_settings_v1.dislikeMode` is `none`
+- Default `app_settings_v1.commentBlockMode` is `hide`
 - Pair metadata and API config are excluded from import/export
 
 ## 4. Matching Model
@@ -247,6 +251,7 @@ Settings dialog:
 - Handle case sensitivity
 - Regex matched-handle auto-add
 - Auto-dislike mode
+- Blocked-comment display mode
 - YouTube Data API v3 key/test controls
 - UID detection, pair summary, and pair actions
 - Debug counters from `window.__ytCommentBlockerPerf`

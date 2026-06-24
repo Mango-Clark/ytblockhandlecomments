@@ -125,18 +125,69 @@
 			if (this._isDislikeActive(button)) return;
 			button.click?.();
 		}
+		_findBlockPlaceholder(node) {
+			return Array.from(node.children || []).find(child => child.classList?.contains('tm-block-placeholder')) || null;
+		}
+		_getBlockPlaceholder(node, mode) {
+			let placeholder = this._findBlockPlaceholder(node);
+			if (!placeholder) {
+				placeholder = document.createElement(mode === 'placeholder-reveal' ? 'button' : 'div');
+				placeholder.className = 'tm-block-placeholder';
+				if (mode === 'placeholder-reveal') placeholder.type = 'button';
+				node.appendChild(placeholder);
+			}
+			if (mode === 'placeholder-reveal' && placeholder.tagName?.toLowerCase() !== 'button') {
+				placeholder.remove();
+				placeholder = document.createElement('button');
+				placeholder.type = 'button';
+				placeholder.className = 'tm-block-placeholder';
+				node.appendChild(placeholder);
+			} else if (mode !== 'placeholder-reveal' && placeholder.tagName?.toLowerCase() === 'button') {
+				placeholder.remove();
+				placeholder = document.createElement('div');
+				placeholder.className = 'tm-block-placeholder';
+				node.appendChild(placeholder);
+			}
+			placeholder.textContent = mode === 'placeholder-reveal' ? t('blockedCommentReveal') : t('blockedCommentPlaceholder');
+			if (mode === 'placeholder-reveal' && !placeholder.__tmRevealBound) {
+				placeholder.__tmRevealBound = true;
+				placeholder.addEventListener('click', () => {
+					node.classList.toggle('tm-block-revealed');
+				});
+			}
+			return placeholder;
+		}
+		_applyBlockMode(node, shouldHide) {
+			if (!shouldHide) {
+				node.classList.remove('tm-hidden', 'tm-block-placeholder-mode', 'tm-block-revealed');
+				this._findBlockPlaceholder(node)?.remove();
+				return;
+			}
+			const blockMode = this.settings?.getCommentBlockMode?.() || 'hide';
+			if (blockMode === 'hide') {
+				node.classList.add('tm-hidden');
+				node.classList.remove('tm-block-placeholder-mode', 'tm-block-revealed');
+				this._findBlockPlaceholder(node)?.remove();
+				return;
+			}
+			node.classList.remove('tm-hidden');
+			node.classList.add('tm-block-placeholder-mode');
+			if (blockMode !== 'placeholder-reveal') node.classList.remove('tm-block-revealed');
+			this._getBlockPlaceholder(node, blockMode);
+		}
 		applyHide(node) {
 			if (!node) return;
 			const shouldHide = this._matches(node);
 			const dislikeMode = this.settings?.getDislikeMode?.() || 'none';
+			const alreadyBlocked = node.classList.contains('tm-hidden') || node.classList.contains('tm-block-placeholder-mode');
 			if (
 				shouldHide &&
 				dislikeMode !== 'none' &&
-				(dislikeMode === 'always' || !node.classList.contains('tm-hidden'))
+				(dislikeMode === 'always' || !alreadyBlocked)
 			) {
 				this._autoDislikeBeforeHide(node);
 			}
-			node.classList.toggle('tm-hidden', shouldHide);
+			this._applyBlockMode(node, shouldHide);
 		}
 		_connectIO() {
 			if (this._io) return this._io;

@@ -14,7 +14,8 @@
 				version: 1,
 				handleCaseSensitive: !!src.handleCaseSensitive,
 				autoAddRegexHandles: !!src.autoAddRegexHandles,
-				dislikeMode: ['none', 'new-hidden', 'always'].includes(src.dislikeMode) ? src.dislikeMode : 'none'
+				dislikeMode: ['none', 'new-hidden', 'always'].includes(src.dislikeMode) ? src.dislikeMode : 'none',
+				commentBlockMode: ['hide', 'placeholder', 'placeholder-reveal'].includes(src.commentBlockMode) ? src.commentBlockMode : 'hide'
 			};
 		}
 		_init() {
@@ -32,7 +33,8 @@
 			if (
 				this._state.handleCaseSensitive === normalized.handleCaseSensitive &&
 				this._state.autoAddRegexHandles === normalized.autoAddRegexHandles &&
-				this._state.dislikeMode === normalized.dislikeMode
+				this._state.dislikeMode === normalized.dislikeMode &&
+				this._state.commentBlockMode === normalized.commentBlockMode
 			) {
 				this._state = normalized;
 				return this.getState();
@@ -58,6 +60,12 @@
 		}
 		setDislikeMode(mode) {
 			return this._saveState({ ...this._state, dislikeMode: mode });
+		}
+		getCommentBlockMode() {
+			return this._state.commentBlockMode || 'hide';
+		}
+		setCommentBlockMode(mode) {
+			return this._saveState({ ...this._state, commentBlockMode: mode });
 		}
 	}
 

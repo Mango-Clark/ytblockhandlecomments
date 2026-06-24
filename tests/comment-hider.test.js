@@ -150,3 +150,42 @@ test('thread refresh hides only matching comment node', () => {
 	assert.equal(top.comment.classList.contains('tm-hidden'), true);
 	assert.equal(reply.comment.classList.contains('tm-hidden'), false);
 });
+
+test('placeholder mode replaces blocked comment without hiding node', () => {
+	const { api, document } = loadUserscript();
+	const settings = new api.AppSettingsStorage();
+	const storage = new api.StorageV2(settings);
+	const pairStore = new api.PairMetaStorage(settings);
+	const hider = new api.CommentHider(storage, pairStore, settings);
+	const { comment } = createBlockedComment(document);
+
+	settings.setCommentBlockMode('placeholder');
+	storage.addHandle('@alpha');
+	hider.rebuildLookup();
+
+	hider.applyHide(comment);
+
+	assert.equal(comment.classList.contains('tm-hidden'), false);
+	assert.equal(comment.classList.contains('tm-block-placeholder-mode'), true);
+	assert.equal(comment.querySelector('.tm-block-placeholder').textContent, '차단되었습니다');
+});
+
+test('placeholder reveal mode toggles revealed state', () => {
+	const { api, document } = loadUserscript();
+	const settings = new api.AppSettingsStorage();
+	const storage = new api.StorageV2(settings);
+	const pairStore = new api.PairMetaStorage(settings);
+	const hider = new api.CommentHider(storage, pairStore, settings);
+	const { comment } = createBlockedComment(document);
+
+	settings.setCommentBlockMode('placeholder-reveal');
+	storage.addHandle('@alpha');
+	hider.rebuildLookup();
+
+	hider.applyHide(comment);
+	const placeholder = comment.querySelector('.tm-block-placeholder');
+	placeholder.click();
+
+	assert.equal(placeholder.tagName.toLowerCase(), 'button');
+	assert.equal(comment.classList.contains('tm-block-revealed'), true);
+});

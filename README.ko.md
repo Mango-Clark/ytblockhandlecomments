@@ -37,6 +37,7 @@ quota 안내, 페이지 단위 regex 매칭 목록, 역할별 소스 파일, 압
 - 작성자 handle을 우클릭해 차단 또는 해제
 - 댓글 `⋯` 메뉴에 `Hide comments from this channel` 항목 추가
 - YouTube watch 페이지와 Shorts 페이지에서 댓글을 실시간으로 숨김
+- 차단 댓글 표시 방식 제공: 완전 차단, 회색 대체 문구, 클릭해서 보기
 - 댓글 자동 싫어요 모드 제공. 기본값은 안함이며, 새로 숨길 때만 또는 숨긴 상태에서 항상으로 변경 가능
 - `blocked_v2`에 `handle`, `id`, `regex` 규칙 저장
 - regex 규칙 저장/매칭 전에 길이, flag, 대상 길이, 휴리스틱 safety 검사를 적용
@@ -125,7 +126,8 @@ Pair 메타 저장소:
   version: 1,
   handleCaseSensitive: boolean,
   autoAddRegexHandles: boolean,
-  dislikeMode: 'none' | 'new-hidden' | 'always'
+  dislikeMode: 'none' | 'new-hidden' | 'always',
+  commentBlockMode: 'hide' | 'placeholder' | 'placeholder-reveal'
 }
 ```
 
@@ -136,6 +138,7 @@ Pair 메타 저장소:
 - 앱 설정 저장 키: `app_settings_v1`
 - API 설정 저장 키: `youtube_data_api_v3_config`
 - 기본 `dislikeMode`는 `none`입니다
+- 기본 `commentBlockMode`는 `hide`입니다
 - 레거시 규칙 키 `blockedHandles`, `blockedHandles_v1`는 계속 자동 마이그레이션됩니다
 - `v0.8.0`에서도 pair 메타데이터를 import/export에 포함하지 않습니다
 - API 키는 Tampermonkey 로컬 저장소에만 저장되며 스크립트 코드에 포함되지 않습니다

@@ -266,7 +266,17 @@
 			});
 			dislikeLabel.append(dislikeText, dislikeSelect);
 			const dislikeHelp = document.createElement('p');
-			settingsSection.append(settingsTitle, caseLabel, caseHelp, caseLegacy, autoLabel, autoHelp, dislikeLabel, dislikeHelp);
+			const blockModeLabel = document.createElement('label');
+			const blockModeText = document.createElement('span');
+			const blockModeSelect = document.createElement('select');
+			['hide', 'placeholder', 'placeholder-reveal'].forEach(value => {
+				const option = document.createElement('option');
+				option.value = value;
+				blockModeSelect.appendChild(option);
+			});
+			blockModeLabel.append(blockModeText, blockModeSelect);
+			const blockModeHelp = document.createElement('p');
+			settingsSection.append(settingsTitle, caseLabel, caseHelp, caseLegacy, autoLabel, autoHelp, dislikeLabel, dislikeHelp, blockModeLabel, blockModeHelp);
 
 			const apiSection = document.createElement('section');
 			apiSection.className = 'tm-section';
@@ -372,6 +382,7 @@
 				caseToggle.checked = this.app.settings.isHandleCaseSensitive();
 				autoToggle.checked = this.app.settings.isAutoAddRegexHandlesEnabled();
 				dislikeSelect.value = this.app.settings.getDislikeMode();
+				blockModeSelect.value = this.app.settings.getCommentBlockMode();
 				uidToggle.checked = this.app.pairStore.isUidDetectionEnabled();
 				renderApiStatus();
 				renderPairSummary();
@@ -389,6 +400,11 @@
 				dislikeSelect.options[1].textContent = t('dislikeModeNewHidden');
 				dislikeSelect.options[2].textContent = t('dislikeModeAlways');
 				dislikeHelp.textContent = t('dislikeModeHelp');
+				blockModeText.textContent = t('commentBlockModeLabel') + ': ';
+				blockModeSelect.options[0].textContent = t('commentBlockModeHide');
+				blockModeSelect.options[1].textContent = t('commentBlockModePlaceholder');
+				blockModeSelect.options[2].textContent = t('commentBlockModeReveal');
+				blockModeHelp.textContent = t('commentBlockModeHelp');
 				apiTitle.textContent = t('apiKeyTitle');
 				apiLabel.textContent = t('apiKeyLabel');
 				apiInput.placeholder = t('apiKeyPlaceholder');
@@ -415,6 +431,11 @@
 			});
 			dislikeSelect.addEventListener('change', () => {
 				this.app.settings.setDislikeMode(dislikeSelect.value);
+				this.app.refreshAfterStorageChange();
+				renderAll();
+			});
+			blockModeSelect.addEventListener('change', () => {
+				this.app.settings.setCommentBlockMode(blockModeSelect.value);
 				this.app.refreshAfterStorageChange();
 				renderAll();
 			});

@@ -61,9 +61,10 @@
   `GM_registerMenuCommand`, `GM_unregisterMenuCommand`
 - 실행 시점: `document-idle`
 
-댓글 매칭과 숨김은 계속 watch 페이지와 Shorts 댓글 범위로 제한됩니다. 자동 싫어요는
-기본값이 안함이며, 새로 숨길 때만 또는 차단 댓글이 숨겨진 상태에서 항상으로 바꿀 수 있고 이미
-눌린 싫어요 버튼은 다시 토글하지 않습니다.
+댓글 매칭은 계속 watch 페이지와 Shorts 댓글 범위로 제한됩니다. 매칭된 댓글은 완전히
+숨기거나, 회색 대체 문구로 바꾸거나, 클릭해서 볼 수 있는 대체 문구로 바꿀 수
+있습니다. 자동 싫어요는 기본값이 안함이며, 새로 숨길 때만 또는 차단 댓글이 숨겨진
+상태에서 항상으로 바꿀 수 있고 이미 눌린 싫어요 버튼은 다시 토글하지 않습니다.
 
 ## 3. 저장 구조
 
@@ -108,7 +109,8 @@ Pair 메타데이터:
   version: 1,
   handleCaseSensitive: boolean,
   autoAddRegexHandles: boolean,
-  dislikeMode: 'none' | 'new-hidden' | 'always'
+  dislikeMode: 'none' | 'new-hidden' | 'always',
+  commentBlockMode: 'hide' | 'placeholder' | 'placeholder-reveal'
 }
 ```
 
@@ -134,6 +136,7 @@ API 설정:
 
 - 레거시 `blockedHandles`, `blockedHandles_v1`는 계속 자동 마이그레이션됩니다
 - 기본 `app_settings_v1.dislikeMode`는 `none`입니다
+- 기본 `app_settings_v1.commentBlockMode`는 `hide`입니다
 - pair 메타데이터와 API 설정은 import/export에 포함되지 않습니다
 
 ## 4. 매칭 모델
@@ -247,6 +250,7 @@ Pair 결과:
 - handle 대소문자 구분
 - regex 매칭 handle 자동 추가
 - 자동 싫어요 mode
+- 차단 댓글 표시 mode
 - YouTube Data API v3 키/테스트 제어
 - UID detection, pair 요약, pair 액션
 - `window.__ytCommentBlockerPerf` 기반 debug counter
