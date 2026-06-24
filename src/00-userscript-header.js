@@ -17,5 +17,5 @@
 // ==/UserScript==
 (() => {
 	'use strict';
-	const TEST_HOOK = typeof globalThis === 'object' ? globalThis.__YT_BLOCK_TEST_HOOK__ || null : null;
+	const TEST_HOOK = typeof window === 'object' ? window.__YT_BLOCK_TEST_HOOK__ || null : null;
 

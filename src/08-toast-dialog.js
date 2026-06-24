@@ -7,7 +7,9 @@
 			el.setAttribute('aria-live', 'polite');
 			el.textContent = msg;
 			document.body.appendChild(el);
-			requestAnimationFrame(() => el.style.opacity = '1');
+			requestAnimationFrame(() => {
+				el.style.opacity = '1';
+			});
 			setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 200); }, ms);
 		}
 	}

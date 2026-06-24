@@ -544,6 +544,7 @@
 			let busy = false;
 			let apiTestBusy = false;
 			let searchQuery = '';
+			const isBusy = () => busy;
 
 			const versionSection = document.createElement('section');
 			versionSection.className = 'tm-section';
@@ -1061,7 +1062,7 @@
 							const selectMatchesBtn = Object.assign(document.createElement('button'), {
 								textContent: t('regexSelectMatches')
 							});
-							selectMatchesBtn.disabled = !(regexState.matchCount || 0) || busy;
+							selectMatchesBtn.disabled = !(regexState.matchCount || 0) || isBusy();
 							selectMatchesBtn.addEventListener('click', () => {
 								const matchState = getRegexMatchState(item, computeViewState(), 'full');
 								let changed = false;
