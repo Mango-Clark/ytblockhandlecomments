@@ -67,5 +67,8 @@
 		setCommentBlockMode(mode) {
 			return this._saveState({ ...this._state, commentBlockMode: mode });
 		}
+		resetSettings() {
+			return this._saveState({});
+		}
 	}
 

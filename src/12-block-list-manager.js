@@ -276,7 +276,11 @@
 			});
 			blockModeLabel.append(blockModeText, blockModeSelect);
 			const blockModeHelp = document.createElement('p');
-			settingsSection.append(settingsTitle, caseLabel, caseHelp, caseLegacy, autoLabel, autoHelp, dislikeLabel, dislikeHelp, blockModeLabel, blockModeHelp);
+			const resetSettingsActions = document.createElement('div');
+			resetSettingsActions.className = 'tm-inline-actions';
+			const resetSettingsBtn = Object.assign(document.createElement('button'), { className: 'secondary' });
+			resetSettingsActions.append(resetSettingsBtn);
+			settingsSection.append(settingsTitle, caseLabel, caseHelp, caseLegacy, autoLabel, autoHelp, dislikeLabel, dislikeHelp, blockModeLabel, blockModeHelp, resetSettingsActions);
 
 			const apiSection = document.createElement('section');
 			apiSection.className = 'tm-section';
@@ -405,6 +409,7 @@
 				blockModeSelect.options[1].textContent = t('commentBlockModePlaceholder');
 				blockModeSelect.options[2].textContent = t('commentBlockModeReveal');
 				blockModeHelp.textContent = t('commentBlockModeHelp');
+				resetSettingsBtn.textContent = t('resetSettings');
 				apiTitle.textContent = t('apiKeyTitle');
 				apiLabel.textContent = t('apiKeyLabel');
 				apiInput.placeholder = t('apiKeyPlaceholder');
@@ -438,6 +443,32 @@
 				this.app.settings.setCommentBlockMode(blockModeSelect.value);
 				this.app.refreshAfterStorageChange();
 				renderAll();
+			});
+			resetSettingsBtn.addEventListener('click', () => {
+				Dialog.show({
+					title: t('resetSettings'),
+					body: (() => {
+						const p = document.createElement('p');
+						p.textContent = t('confirmResetSettings');
+						return p;
+					})(),
+					buttons: [
+						{ label: t('close'), value: false },
+						{ label: t('resetSettings'), value: true, primary: true }
+					],
+					onRefresh: (ctx) => {
+						ctx.setTitle(t('resetSettings'));
+						ctx.content.firstChild.textContent = t('confirmResetSettings');
+						ctx.buttons[0].textContent = t('close');
+						ctx.buttons[1].textContent = t('resetSettings');
+					}
+				}).then(ok => {
+					if (!ok) return;
+					this.app.settings.resetSettings();
+					this.app.refreshAfterStorageChange();
+					renderAll();
+					Toast.show(t('settingsReset'));
+				});
 			});
 			uidToggle.addEventListener('change', () => {
 				this.app.pairStore.setUidDetectionEnabled(uidToggle.checked);

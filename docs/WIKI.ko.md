@@ -251,6 +251,7 @@ Pair 결과:
 - regex 매칭 handle 자동 추가
 - 자동 싫어요 mode
 - 차단 댓글 표시 mode
+- 확인 dialog 이후 앱 표시/매칭 설정을 초기화하는 버튼
 - YouTube Data API v3 키/테스트 제어
 - UID detection, pair 요약, pair 액션
 - `window.__ytCommentBlockerPerf` 기반 debug counter

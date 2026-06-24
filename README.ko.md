@@ -48,6 +48,7 @@ quota 안내, 페이지 단위 regex 매칭 목록, 역할별 소스 파일, 압
 - handle별 상태 배지 제공: `handle-only`, `paired`, `stale`, `mismatch`, `unverified`
 - 관리자 대화상자에 로컬 `Handle Case Sensitive` 설정 추가
 - API, UID, regex 자동 추가, debug counter를 다루는 별도 설정 창 추가
+- 확인 팝업 이후 앱 표시/매칭 설정 초기화 지원
 - regex로 처음 숨긴 handle을 자동으로 저장해 이후에는 handle 매칭으로 확인 가능
 - 차단 목록에 row 체크박스, 필터 기준 전체 선택, 선택 개수 표시 추가
 - 차단 목록에 `all|handle|id|regex` 타입 필터와 handle 태그 필터 추가

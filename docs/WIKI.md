@@ -252,6 +252,7 @@ Settings dialog:
 - Regex matched-handle auto-add
 - Auto-dislike mode
 - Blocked-comment display mode
+- Reset button for app display and matching settings, gated by a confirmation dialog
 - YouTube Data API v3 key/test controls
 - UID detection, pair summary, and pair actions
 - Debug counters from `window.__ytCommentBlockerPerf`

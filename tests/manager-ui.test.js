@@ -139,3 +139,39 @@ test('settings dialog updates comment block mode', () => {
 
 	assert.equal(settings.getCommentBlockMode(), 'placeholder-reveal');
 });
+
+test('settings dialog confirms and resets app settings', async () => {
+	const { api, document } = loadUserscript();
+	const settings = new api.AppSettingsStorage();
+	const storage = new api.StorageV2(settings);
+	const pairStore = new api.PairMetaStorage(settings);
+	const apiConfig = new api.ApiConfigStorage();
+	const manager = new api.BlockListManager({
+		settings,
+		storage,
+		pairStore,
+		apiConfig,
+		pairService: new api.PairService(storage, pairStore, apiConfig, settings),
+		getLastPairRunResult: () => null,
+		refreshAfterStorageChange: () => {}
+	});
+
+	settings.setHandleCaseSensitive(true);
+	settings.setAutoAddRegexHandlesEnabled(true);
+	settings.setDislikeMode('always');
+	settings.setCommentBlockMode('placeholder-reveal');
+
+	manager.openSettings();
+	const buttons = document.querySelectorAll('button');
+	const resetButton = buttons.find(button => button.textContent === '설정 초기화');
+	resetButton.click();
+	const dialogs = document.querySelectorAll('.tm-dialog');
+	const confirmButtons = dialogs[dialogs.length - 1].querySelectorAll('button');
+	confirmButtons[1].click();
+	await Promise.resolve();
+
+	assert.equal(settings.isHandleCaseSensitive(), false);
+	assert.equal(settings.isAutoAddRegexHandlesEnabled(), false);
+	assert.equal(settings.getDislikeMode(), 'none');
+	assert.equal(settings.getCommentBlockMode(), 'hide');
+});
