@@ -243,6 +243,9 @@
 			const settingsSection = document.createElement('section');
 			settingsSection.className = 'tm-section';
 			const settingsTitle = document.createElement('h3');
+			const matchingGroup = document.createElement('div');
+			matchingGroup.className = 'tm-setting-group';
+			const matchingTitle = document.createElement('h4');
 			const caseLabel = document.createElement('label');
 			const caseToggle = document.createElement('input');
 			caseToggle.type = 'checkbox';
@@ -256,6 +259,11 @@
 			const autoText = document.createElement('span');
 			autoLabel.append(autoToggle, autoText);
 			const autoHelp = document.createElement('p');
+			matchingGroup.append(matchingTitle, caseLabel, caseHelp, caseLegacy, autoLabel, autoHelp);
+
+			const commentGroup = document.createElement('div');
+			commentGroup.className = 'tm-setting-group';
+			const commentTitle = document.createElement('h4');
 			const dislikeLabel = document.createElement('label');
 			const dislikeSelect = document.createElement('select');
 			const dislikeText = document.createElement('span');
@@ -276,11 +284,17 @@
 			});
 			blockModeLabel.append(blockModeText, blockModeSelect);
 			const blockModeHelp = document.createElement('p');
+			commentGroup.append(commentTitle, dislikeLabel, dislikeHelp, blockModeLabel, blockModeHelp);
+
+			const maintenanceGroup = document.createElement('div');
+			maintenanceGroup.className = 'tm-setting-group';
+			const maintenanceTitle = document.createElement('h4');
 			const resetSettingsActions = document.createElement('div');
 			resetSettingsActions.className = 'tm-inline-actions';
 			const resetSettingsBtn = Object.assign(document.createElement('button'), { className: 'secondary' });
 			resetSettingsActions.append(resetSettingsBtn);
-			settingsSection.append(settingsTitle, caseLabel, caseHelp, caseLegacy, autoLabel, autoHelp, dislikeLabel, dislikeHelp, blockModeLabel, blockModeHelp, resetSettingsActions);
+			maintenanceGroup.append(maintenanceTitle, resetSettingsActions);
+			settingsSection.append(settingsTitle, matchingGroup, commentGroup, maintenanceGroup);
 
 			const apiSection = document.createElement('section');
 			apiSection.className = 'tm-section';
@@ -394,6 +408,9 @@
 			};
 			const applyLanguage = () => {
 				settingsTitle.textContent = t('settingsTitle');
+				matchingTitle.textContent = t('settingsMatchingTitle');
+				commentTitle.textContent = t('settingsCommentTitle');
+				maintenanceTitle.textContent = t('settingsMaintenanceTitle');
 				caseText.textContent = t('handleCaseLabel');
 				caseHelp.textContent = t('handleCaseHelp');
 				caseLegacy.textContent = t('handleCaseLegacy');

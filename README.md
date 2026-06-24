@@ -42,6 +42,7 @@ Source layout:
 - Stores a local-only YouTube Data API v3 key and validates it before pair maintenance
 - Supports case-sensitive handle matching
 - Supports a separate settings dialog with API, UID, regex auto-add, and debug counters
+- Groups settings controls by matching, comment display, and maintenance
 - Supports resetting app display and matching settings after a confirmation prompt
 - Can auto-save handles first hidden by regex so later checks use handle matching
 - Supports block-list search, type filters, tag filters, row selection, and bulk actions

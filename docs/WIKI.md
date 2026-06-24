@@ -248,6 +248,7 @@ Removal behavior:
 
 Settings dialog:
 
+- Groups controls into matching, comment display, and maintenance sections
 - Handle case sensitivity
 - Regex matched-handle auto-add
 - Auto-dislike mode

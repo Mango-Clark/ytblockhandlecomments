@@ -247,6 +247,7 @@ Pair 결과:
 
 설정 dialog:
 
+- 컨트롤을 매칭, 댓글 표시, 유지보수 섹션으로 구분
 - handle 대소문자 구분
 - regex 매칭 handle 자동 추가
 - 자동 싫어요 mode

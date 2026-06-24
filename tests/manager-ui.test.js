@@ -115,6 +115,28 @@ test('settings dialog updates auto-dislike mode', () => {
 	assert.equal(settings.getDislikeMode(), 'always');
 });
 
+test('settings dialog groups related controls', () => {
+	const { api, document } = loadUserscript();
+	const settings = new api.AppSettingsStorage();
+	const storage = new api.StorageV2(settings);
+	const pairStore = new api.PairMetaStorage(settings);
+	const apiConfig = new api.ApiConfigStorage();
+	const manager = new api.BlockListManager({
+		settings,
+		storage,
+		pairStore,
+		apiConfig,
+		pairService: new api.PairService(storage, pairStore, apiConfig, settings),
+		getLastPairRunResult: () => null,
+		refreshAfterStorageChange: () => {}
+	});
+
+	manager.openSettings();
+	const titles = document.querySelectorAll('.tm-setting-group h4').map(node => node.textContent);
+
+	assert.deepEqual(titles, ['매칭', '댓글 표시', '유지보수']);
+});
+
 test('settings dialog updates comment block mode', () => {
 	const { api, document } = loadUserscript();
 	const settings = new api.AppSettingsStorage();
