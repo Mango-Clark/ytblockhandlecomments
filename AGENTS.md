@@ -20,6 +20,8 @@ Keep docs, versioning, Git workflow aligned. Change files only when code or repo
 - Keep root `ytblockhandlecomments.js` in sync with `npm run check:build`.
 - Tampermonkey loads only root `ytblockhandlecomments.js`, not `src/`.
 - Commit changed `src/` files together with rebuilt `ytblockhandlecomments.js`.
+- Run ESLint via the project-local binary, e.g. `.\node_modules\.bin\eslint.cmd .` on Windows.
+- Do not git-track local-only ESLint setup files or install outputs unless the user explicitly asks.
 - Keep `git status` clean before PR or commit.
 - Request maintainer review for code or changelog changes.
 - Commit after each small patch or root-cause fix.
@@ -86,6 +88,7 @@ Patch rule:
 ## Commit
 
 - Always commit after a patch.
+- Before the final commit, run the project-local ESLint when available and report the result.
 - Use Conventional Commits: `<type>(<scope>): <imperative summary>`.
 - Allowed types: `feat`, `fix`, `refactor`, `perf`, `docs`, `test`, `chore`, `build`, `ci`, `style`, `revert`.
 - Scope is optional but should be consistent for repeated areas, e.g. `manager`, `docs`, `build`.
