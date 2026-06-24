@@ -8,10 +8,7 @@ const version = process.argv.find(arg => /^\d+\.\d+\.\d+$/.test(arg));
 const check = process.argv.includes('--check');
 const today = new Date().toISOString().slice(0, 10);
 
-if (!version) {
-	console.error('Usage: npm run bump:version -- <MAJOR.MINOR.PATCH> [--check]');
-	process.exit(1);
-}
+const CHANGELOG_SECTIONS = ['Added', 'Changed', 'Deprecated', 'Removed', 'Fixed', 'Security'];
 
 const replaceRequired = (text, pattern, replacement, label) => {
 	if (!pattern.test(text)) throw new Error(`Missing version target: ${label}`);
@@ -23,13 +20,34 @@ const replaceAllRequired = (text, replacements, file) => replacements.reduce(
 	text
 );
 
-const releaseChangelog = (text, file) => {
+const buildFreshUnreleased = (file) => {
+	const emptyEntry = file.endsWith('.ko.md') ? '없음' : 'None';
+	const sections = CHANGELOG_SECTIONS
+		.map(section => `### ${section}\n\n- ${emptyEntry}`)
+		.join('\n\n');
+	return `## [Unreleased]\n\n${sections}`;
+};
+
+const isEmptyChangelogLine = (line) => /^\s*-\s+(?:None|없음)\s*$/.test(line);
+
+const cleanReleaseBody = (body) => CHANGELOG_SECTIONS.reduce((current, section) => {
+	const pattern = new RegExp(`(### ${section}\\n\\n)([\\s\\S]*?)(?=\\n\\n### |$)`, 'g');
+	return current.replace(pattern, (match, heading, sectionBody) => {
+		const lines = sectionBody.split('\n');
+		const hasRealEntry = lines.some(line => /^\s*-\s+/.test(line) && !isEmptyChangelogLine(line));
+		if (!hasRealEntry) return match;
+		return heading + lines.filter(line => !isEmptyChangelogLine(line)).join('\n').trimEnd();
+	});
+}, body);
+
+const releaseChangelog = (text, file, releaseVersion = version, releaseDate = today) => {
+	const version = releaseVersion;
 	if (text.includes(`## [${version}] - `)) return text;
 	const match = /^## \[Unreleased\]\n([\s\S]*?)(?=\n## \[)/m.exec(text);
 	if (!match) throw new Error(`Missing Unreleased section: ${file}`);
-	const unreleasedBody = match[1].trimEnd();
-	const freshUnreleased = match[0].replace(unreleasedBody, unreleasedBody.replace(/- (?!None\b).+/g, '- None'));
-	const releaseSection = `## [${version}] - ${today}\n${unreleasedBody}\n\n`;
+	const unreleasedBody = cleanReleaseBody(match[1].trimEnd());
+	const freshUnreleased = buildFreshUnreleased(file);
+	const releaseSection = `## [${version}] - ${releaseDate}\n${unreleasedBody}\n\n`;
 	return text.slice(0, match.index) + freshUnreleased + '\n\n' + releaseSection + text.slice(match.index + match[0].length);
 };
 
@@ -93,29 +111,45 @@ const files = [
 	}
 ];
 
-let changed = false;
-
-for (const item of files) {
-	if (check && item.writeOnly) continue;
-	const fullPath = path.join(root, item.path);
-	const before = fs.readFileSync(fullPath, 'utf8').replace(/\r\n/g, '\n');
-	let after;
-	try {
-		after = item.replace(before);
-	} catch (error) {
-		console.error(error.message);
+const main = () => {
+	if (!version) {
+		console.error('Usage: npm run bump:version -- <MAJOR.MINOR.PATCH> [--check]');
 		process.exit(1);
 	}
-	if (after === before) continue;
-	changed = true;
-	if (!check) fs.writeFileSync(fullPath, after, 'utf8');
+
+	let changed = false;
+
+	for (const item of files) {
+		if (check && item.writeOnly) continue;
+		const fullPath = path.join(root, item.path);
+		const before = fs.readFileSync(fullPath, 'utf8').replace(/\r\n/g, '\n');
+		let after;
+		try {
+			after = item.replace(before);
+		} catch (error) {
+			console.error(error.message);
+			process.exit(1);
+		}
+		if (after === before) continue;
+		changed = true;
+		if (!check) fs.writeFileSync(fullPath, after, 'utf8');
+	}
+
+	if (check && changed) {
+		console.error(`Version docs are not bumped to ${version}. Run npm run bump:version -- ${version}`);
+		process.exit(1);
+	}
+
+	if (!check) {
+		console.log(`Updated version references to ${version}. Run npm run build next.`);
+	}
+};
+
+if (require.main === module) {
+	main();
 }
 
-if (check && changed) {
-	console.error(`Version docs are not bumped to ${version}. Run npm run bump:version -- ${version}`);
-	process.exit(1);
-}
-
-if (!check) {
-	console.log(`Updated version references to ${version}. Run npm run build next.`);
-}
+module.exports = {
+	buildFreshUnreleased,
+	releaseChangelog
+};
