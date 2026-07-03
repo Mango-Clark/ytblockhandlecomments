@@ -15,7 +15,7 @@
 
 ### Changed
 
-- 없음
+- 읽기 쉬운 `src/` source slice를 JavaScript 파일에서 TypeScript 파일로 변경했으며, 생성된 userscript 출력은 그대로 유지했습니다.
 
 ### Deprecated
 

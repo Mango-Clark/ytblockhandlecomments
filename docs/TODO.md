@@ -2,8 +2,8 @@
 
 ## Important
 
+- [x] For consistency, update src code to TypeScript.
+
 ## Normal
 
 ## Small
-
-- For consistancy, update src code to typescript.

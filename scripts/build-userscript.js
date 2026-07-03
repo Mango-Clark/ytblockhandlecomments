@@ -6,23 +6,23 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 const outputPath = path.join(root, 'ytblockhandlecomments.js');
 const sourceFiles = [
-	'00-userscript-header.js',
-	'01-global-styles.js',
-	'i18n/ko.js',
-	'i18n/en.js',
-	'02-utils-i18n.js',
-	'03-app-settings-storage.js',
-	'04-storage-v2.js',
-	'05-pair-meta-storage.js',
-	'06-api-config-storage.js',
-	'07-pair-service.js',
-	'08-toast-dialog.js',
-	'09-extractor.js',
-	'10-comment-hider.js',
-	'11-menu-enhancer.js',
-	'12-block-list-manager.js',
-	'13-app.js',
-	'14-bootstrap.js'
+	'00-userscript-header.ts',
+	'01-global-styles.ts',
+	'i18n/ko.ts',
+	'i18n/en.ts',
+	'02-utils-i18n.ts',
+	'03-app-settings-storage.ts',
+	'04-storage-v2.ts',
+	'05-pair-meta-storage.ts',
+	'06-api-config-storage.ts',
+	'07-pair-service.ts',
+	'08-toast-dialog.ts',
+	'09-extractor.ts',
+	'10-comment-hider.ts',
+	'11-menu-enhancer.ts',
+	'12-block-list-manager.ts',
+	'13-app.ts',
+	'14-bootstrap.ts'
 ];
 
 const normalizeNewlines = (value) => String(value || '').replace(/\r\n/g, '\n');
