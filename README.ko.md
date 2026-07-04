@@ -1,11 +1,11 @@
-# 📌 YouTube Comment Blocker — v1.0.0
+# 📌 YouTube Comment Blocker — v1.0.1
 
 [English](README.md) | [한국어](README.ko.md)
 
 상세 문서: [WIKI.md](docs/WIKI.md) | [WIKI.ko.md](docs/WIKI.ko.md)
 
 YouTube 댓글을 채널 식별자 기준으로 숨기는 Tampermonkey 사용자 스크립트입니다.
-기본 흐름은 여전히 handle 차단이며, `v1.0.0`은 `v0.6.x`의 안전성, 설정, pair 유지보수
+기본 흐름은 여전히 handle 차단이며, `v1.0.1`은 `v0.6.x`의 안전성, 설정, pair 유지보수
 수정을 유지하면서 별도 설정 창, regex 자동 추가, debug counter, pair 결과 도구,
 quota 안내, 페이지 단위 regex 매칭 목록, 역할별 소스 파일, 압축된 userscript 생성물을
 추가합니다.
@@ -47,9 +47,11 @@ quota 안내, 페이지 단위 regex 매칭 목록, 역할별 소스 파일, 압
 - `Create Pair`, `Update Pair` 액션 제공
 - handle별 상태 배지 제공: `handle-only`, `paired`, `stale`, `mismatch`, `unverified`
 - 관리자 대화상자에 로컬 `Handle Case Sensitive` 설정 추가
-- API, UID, regex 자동 추가, debug counter를 다루는 별도 설정 창 추가
-- 설정 창의 기능을 매칭, 댓글 표시, 유지보수 그룹으로 구분
+- API, UID, regex 자동 추가, 표시 크기, debug counter를 다루는 별도 설정 창 추가
+- 설정 창의 기능을 매칭, 댓글 표시, 표시 크기, 유지보수 그룹으로 구분
 - 확인 팝업 이후 앱 표시/매칭 설정 초기화 지원
+- 글자 크기와 UI 크기를 5단계로 조절 가능. 2단계는 기존 크기이며 기본값은 3단계
+- 설정 창과 차단 목록 사이를 오가는 버튼 추가
 - regex로 처음 숨긴 handle을 자동으로 저장해 이후에는 handle 매칭으로 확인 가능
 - 차단 목록에 row 체크박스, 필터 기준 전체 선택, 선택 개수 표시 추가
 - 차단 목록에 `all|handle|id|regex` 타입 필터와 handle 태그 필터 추가
@@ -58,6 +60,7 @@ quota 안내, 페이지 단위 regex 매칭 목록, 역할별 소스 파일, 압
 - regex 매칭 결과 캐시로 `matching handle 선택` 시 전체 목록 재생성을 피함
 - 펼친 regex 매칭 목록은 페이지 단위로 표시해 큰 목록을 한 번에 렌더링하지 않음
 - 최근 pair 실행 결과를 필터/정렬하고 실패 handle을 복사/내보내기 가능
+- API 키 테스트와 pair 생성/갱신이 네트워크 응답을 기다리는 동안 loading bar 표시
 - API 키 테스트에서 quota 실패가 반복되면 구조화된 안내 표시
 - stale 또는 mismatch pair가 있으면 watch 페이지에 검토 배너 표시
 - import/export는 차단 규칙만 다루고, pair 메타데이터는 로컬 전용으로 유지
@@ -129,7 +132,9 @@ Pair 메타 저장소:
   handleCaseSensitive: boolean,
   autoAddRegexHandles: boolean,
   dislikeMode: 'none' | 'new-hidden' | 'always',
-  commentBlockMode: 'hide' | 'placeholder' | 'placeholder-reveal'
+  commentBlockMode: 'hide' | 'placeholder' | 'placeholder-reveal',
+  fontSizeLevel: 1 | 2 | 3 | 4 | 5,
+  uiScaleLevel: 1 | 2 | 3 | 4 | 5
 }
 ```
 
@@ -141,8 +146,9 @@ Pair 메타 저장소:
 - API 설정 저장 키: `youtube_data_api_v3_config`
 - 기본 `dislikeMode`는 `none`입니다
 - 기본 `commentBlockMode`는 `hide`입니다
+- 기본 `fontSizeLevel`과 `uiScaleLevel`은 `3`이며, `2`는 이전 시각 크기와 같습니다
 - 레거시 규칙 키 `blockedHandles`, `blockedHandles_v1`는 계속 자동 마이그레이션됩니다
-- `v1.0.0`에서도 pair 메타데이터를 import/export에 포함하지 않습니다
+- `v1.0.1`에서도 pair 메타데이터를 import/export에 포함하지 않습니다
 - API 키는 Tampermonkey 로컬 저장소에만 저장되며 스크립트 코드에 포함되지 않습니다
 
 ---
@@ -197,7 +203,7 @@ Pair 메타 저장소:
 ## 사용자 스크립트 메타데이터
 
 - `@name`: `YouTube Comment Blocker`
-- `@version`: `1.0.0`
+- `@version`: `1.0.1`
 - `@match`: `https://www.youtube.com/*`
 - `@grant`: `GM_getValue`, `GM_setValue`, `GM_addValueChangeListener`,
   `GM_registerMenuCommand`, `GM_unregisterMenuCommand`

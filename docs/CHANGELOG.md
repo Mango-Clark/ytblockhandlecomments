@@ -33,6 +33,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - None
 
+## [1.0.1] - 2026-07-04
+
+### Added
+
+- Added loading bars while API key tests and pair create/update actions wait on API responses.
+- Added navigation buttons between the settings dialog and block list.
+- Added five-level text size and UI scale settings.
+
+### Changed
+
+- None
+
+### Deprecated
+
+- None
+
+### Removed
+
+- None
+
+### Fixed
+
+- Fixed the block-list dialog so its existing settings, API, and pair sections are appended to the dialog body.
+
+### Security
+
+- None
+
 ## [1.0.0] - 2026-07-04
 
 ### Added
@@ -63,7 +91,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 
 - None
-
 
 ## [0.9.0] - 2026-06-24
 

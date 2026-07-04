@@ -132,7 +132,7 @@ test('settings dialog groups related controls', () => {
 	manager.openSettings();
 	const titles = document.querySelectorAll('.tm-setting-group h4').map((node: any) => node.textContent);
 
-	assert.deepEqual(titles, ['매칭', '댓글 표시', '유지보수']);
+	assert.deepEqual(titles, ['매칭', '댓글 표시', '표시 크기', '유지보수']);
 });
 
 test('settings dialog updates comment block mode', () => {
@@ -160,6 +160,50 @@ test('settings dialog updates comment block mode', () => {
 	assert.equal(settings.getCommentBlockMode(), 'placeholder-reveal');
 });
 
+test('settings dialog updates display size levels', () => {
+	const { api, document } = loadUserscript();
+	const settings = new api.AppSettingsStorage();
+	const storage = new api.StorageV2(settings);
+	const pairStore = new api.PairMetaStorage(settings);
+	const apiConfig = new api.ApiConfigStorage();
+	const manager = new api.BlockListManager({
+		settings,
+		storage,
+		pairStore,
+		apiConfig,
+		pairService: new api.PairService(storage, pairStore, apiConfig, settings),
+		getLastPairRunResult: () => null,
+		refreshAfterStorageChange: () => {}
+	});
+
+	manager.openSettings();
+	const selects = document.querySelectorAll('select');
+	selects[2].value = '5';
+	selects[2].dispatchEvent({ type: 'change' });
+	selects[3].value = '1';
+	selects[3].dispatchEvent({ type: 'change' });
+
+	assert.equal(settings.getFontSizeLevel(), 5);
+	assert.equal(settings.getUiScaleLevel(), 1);
+	assert.equal(document.documentElement.style.getPropertyValue('--tm-font-scale'), '1.24');
+	assert.equal(document.documentElement.style.getPropertyValue('--tm-ui-scale'), '0.92');
+});
+
+test('display size levels normalize invalid stored values', () => {
+	const { api } = loadUserscript({
+		gmStore: {
+			app_settings_v1: {
+				fontSizeLevel: 9,
+				uiScaleLevel: 'large'
+			}
+		}
+	});
+	const settings = new api.AppSettingsStorage();
+
+	assert.equal(settings.getFontSizeLevel(), 3);
+	assert.equal(settings.getUiScaleLevel(), 3);
+});
+
 test('settings dialog confirms and resets app settings', async () => {
 	const { api, document } = loadUserscript();
 	const settings = new api.AppSettingsStorage();
@@ -180,6 +224,8 @@ test('settings dialog confirms and resets app settings', async () => {
 	settings.setAutoAddRegexHandlesEnabled(true);
 	settings.setDislikeMode('always');
 	settings.setCommentBlockMode('placeholder-reveal');
+	settings.setFontSizeLevel(5);
+	settings.setUiScaleLevel(1);
 
 	manager.openSettings();
 	const buttons = document.querySelectorAll('button');
@@ -194,4 +240,72 @@ test('settings dialog confirms and resets app settings', async () => {
 	assert.equal(settings.isAutoAddRegexHandlesEnabled(), false);
 	assert.equal(settings.getDislikeMode(), 'none');
 	assert.equal(settings.getCommentBlockMode(), 'hide');
+	assert.equal(settings.getFontSizeLevel(), 3);
+	assert.equal(settings.getUiScaleLevel(), 3);
+});
+
+test('settings and block list dialogs can open each other', () => {
+	const { api, document } = loadUserscript();
+	const settings = new api.AppSettingsStorage();
+	const storage = new api.StorageV2(settings);
+	const pairStore = new api.PairMetaStorage(settings);
+	const apiConfig = new api.ApiConfigStorage();
+	const manager = new api.BlockListManager({
+		settings,
+		storage,
+		pairStore,
+		apiConfig,
+		pairService: new api.PairService(storage, pairStore, apiConfig, settings),
+		getLastPairRunResult: () => null,
+		refreshAfterStorageChange: () => {}
+	});
+
+	manager.openSettings();
+	const openListButton = document.querySelectorAll('button').find((button: any) => button.textContent === '차단 목록 열기');
+	openListButton.click();
+	assert.equal(document.querySelectorAll('.tm-dialog').length, 1);
+	assert.ok(document.querySelectorAll('.tm-dialog').some((dialog: any) => dialog.textContent.includes('차단된 채널')));
+
+	const openSettingsButton = document.querySelectorAll('button').find((button: any) => button.textContent === '설정 열기');
+	openSettingsButton.click();
+	assert.equal(document.querySelectorAll('.tm-dialog').length, 1);
+	assert.ok(document.querySelectorAll('.tm-dialog').some((dialog: any) => dialog.textContent.includes('표시 크기')));
+});
+
+test('api busy state shows a loading bar', () => {
+	const { api, document } = loadUserscript({
+		gmStore: {
+			youtube_data_api_v3_config: {
+				version: 1,
+				apiKey: 'abc123'
+			}
+		}
+	});
+	const settings = new api.AppSettingsStorage();
+	const storage = new api.StorageV2(settings);
+	const pairStore = new api.PairMetaStorage(settings);
+	const apiConfig = new api.ApiConfigStorage();
+	let resolveTest: any = null;
+	const manager = new api.BlockListManager({
+		settings,
+		storage,
+		pairStore,
+		apiConfig,
+		pairService: new api.PairService(storage, pairStore, apiConfig, settings),
+		getLastPairRunResult: () => null,
+		refreshAfterStorageChange: () => {},
+		testApiKey: () => new Promise(resolve => {
+			resolveTest = resolve;
+		})
+	});
+
+	manager.openSettings();
+	const testButton = document.querySelectorAll('button').find((button: any) => button.textContent === 'API 키 테스트');
+	testButton.click();
+	const progress = document.querySelector('.tm-progress');
+
+	assert.equal(progress.hidden, false);
+	assert.equal(testButton.disabled, true);
+	assert.equal(testButton.textContent, 'API 키를 테스트하는 중입니다...');
+	resolveTest({ category: 'ok', message: 'ok', httpStatus: 200 });
 });

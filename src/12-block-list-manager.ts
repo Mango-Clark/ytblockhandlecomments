@@ -313,15 +313,38 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			const blockModeHelp = document.createElement('p');
 			commentGroup.append(commentTitle, dislikeLabel, dislikeHelp, blockModeLabel, blockModeHelp);
 
+			const displayGroup = document.createElement('div');
+			displayGroup.className = 'tm-setting-group';
+			const displayTitle = document.createElement('h4');
+			const fontSizeLabel = document.createElement('label');
+			const fontSizeText = document.createElement('span');
+			const fontSizeSelect = document.createElement('select');
+			const uiScaleLabel = document.createElement('label');
+			const uiScaleText = document.createElement('span');
+			const uiScaleSelect = document.createElement('select');
+			[1, 2, 3, 4, 5].forEach(value => {
+				const fontOption = document.createElement('option');
+				fontOption.value = String(value);
+				const scaleOption = document.createElement('option');
+				scaleOption.value = String(value);
+				fontSizeSelect.appendChild(fontOption);
+				uiScaleSelect.appendChild(scaleOption);
+			});
+			fontSizeLabel.append(fontSizeText, fontSizeSelect);
+			uiScaleLabel.append(uiScaleText, uiScaleSelect);
+			const displayHelp = document.createElement('p');
+			displayGroup.append(displayTitle, fontSizeLabel, uiScaleLabel, displayHelp);
+
 			const maintenanceGroup = document.createElement('div');
 			maintenanceGroup.className = 'tm-setting-group';
 			const maintenanceTitle = document.createElement('h4');
 			const resetSettingsActions = document.createElement('div');
 			resetSettingsActions.className = 'tm-inline-actions';
+			const openListBtn = Object.assign(document.createElement('button'), { className: 'secondary' });
 			const resetSettingsBtn = Object.assign(document.createElement('button'), { className: 'secondary' });
-			resetSettingsActions.append(resetSettingsBtn);
+			resetSettingsActions.append(openListBtn, resetSettingsBtn);
 			maintenanceGroup.append(maintenanceTitle, resetSettingsActions);
-			settingsSection.append(settingsTitle, matchingGroup, commentGroup, maintenanceGroup);
+			settingsSection.append(settingsTitle, matchingGroup, commentGroup, displayGroup, maintenanceGroup);
 
 			const apiSection = document.createElement('section');
 			apiSection.className = 'tm-section';
@@ -336,13 +359,16 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			apiStatus.className = 'tm-muted';
 			const apiTestStatus = document.createElement('div');
 			apiTestStatus.className = 'tm-inline-note';
+			const apiProgress = document.createElement('div');
+			apiProgress.className = 'tm-progress';
+			apiProgress.hidden = true;
 			const apiActions = document.createElement('div');
 			apiActions.className = 'tm-inline-actions';
 			const saveApiBtn = Object.assign(document.createElement('button'), { className: 'primary' });
 			const testApiBtn = Object.assign(document.createElement('button'), { className: 'secondary' });
 			const clearApiBtn = Object.assign(document.createElement('button'), { className: 'secondary' });
 			apiActions.append(saveApiBtn, testApiBtn, clearApiBtn);
-			apiSection.append(apiTitle, apiLabel, apiInput, apiHelp, apiStatus, apiTestStatus, apiActions);
+			apiSection.append(apiTitle, apiLabel, apiInput, apiHelp, apiStatus, apiTestStatus, apiProgress, apiActions);
 
 			const pairSection = document.createElement('section');
 			pairSection.className = 'tm-section';
@@ -362,8 +388,11 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			lastCheck.className = 'tm-muted';
 			const summaryGrid = document.createElement('div');
 			summaryGrid.className = 'tm-summary-grid';
+			const pairProgress = document.createElement('div');
+			pairProgress.className = 'tm-progress';
+			pairProgress.hidden = true;
 			const pairResultPanel = document.createElement('div');
-			pairSection.append(pairTitle, toggleLabel, toggleHelp, pairActions, lastCheck, summaryGrid, pairResultPanel);
+			pairSection.append(pairTitle, toggleLabel, toggleHelp, pairActions, lastCheck, summaryGrid, pairProgress, pairResultPanel);
 
 			const debugSection = document.createElement('section');
 			debugSection.className = 'tm-section';
@@ -428,7 +457,11 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				autoToggle.checked = this.app.settings.isAutoAddRegexHandlesEnabled();
 				dislikeSelect.value = this.app.settings.getDislikeMode();
 				blockModeSelect.value = this.app.settings.getCommentBlockMode();
+				fontSizeSelect.value = String(this.app.settings.getFontSizeLevel());
+				uiScaleSelect.value = String(this.app.settings.getUiScaleLevel());
 				uidToggle.checked = this.app.pairStore.isUidDetectionEnabled();
+				apiProgress.hidden = !apiTestBusy;
+				pairProgress.hidden = !pairBusy;
 				renderApiStatus();
 				renderPairSummary();
 				renderDebug();
@@ -437,6 +470,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				settingsTitle.textContent = t('settingsTitle');
 				matchingTitle.textContent = t('settingsMatchingTitle');
 				commentTitle.textContent = t('settingsCommentTitle');
+				displayTitle.textContent = t('settingsDisplayTitle');
 				maintenanceTitle.textContent = t('settingsMaintenanceTitle');
 				caseText.textContent = t('handleCaseLabel');
 				caseHelp.textContent = t('handleCaseHelp');
@@ -453,6 +487,16 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				blockModeSelect.options[1].textContent = t('commentBlockModePlaceholder');
 				blockModeSelect.options[2].textContent = t('commentBlockModeReveal');
 				blockModeHelp.textContent = t('commentBlockModeHelp');
+				fontSizeText.textContent = t('fontSizeLevelLabel') + ': ';
+				uiScaleText.textContent = t('uiScaleLevelLabel') + ': ';
+				Array.from(fontSizeSelect.options).forEach((option, index) => {
+					option.textContent = t('levelLabel', index + 1);
+				});
+				Array.from(uiScaleSelect.options).forEach((option, index) => {
+					option.textContent = t('levelLabel', index + 1);
+				});
+				displayHelp.textContent = t('displayLevelHelp');
+				openListBtn.textContent = t('openBlockList');
 				resetSettingsBtn.textContent = t('resetSettings');
 				apiTitle.textContent = t('apiKeyTitle');
 				apiLabel.textContent = t('apiKeyLabel');
@@ -487,6 +531,20 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				this.app.settings.setCommentBlockMode(blockModeSelect.value);
 				this.app.refreshAfterStorageChange();
 				renderAll();
+			});
+			fontSizeSelect.addEventListener('change', () => {
+				this.app.settings.setFontSizeLevel(fontSizeSelect.value);
+				this.app.refreshAfterStorageChange();
+				renderAll();
+			});
+			uiScaleSelect.addEventListener('change', () => {
+				this.app.settings.setUiScaleLevel(uiScaleSelect.value);
+				this.app.refreshAfterStorageChange();
+				renderAll();
+			});
+			openListBtn.addEventListener('click', () => {
+				Dialog.closeAll('navigate');
+				this.openList();
 			});
 			resetSettingsBtn.addEventListener('click', () => {
 				Dialog.show({
@@ -597,8 +655,12 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			caseHelp.textContent = t('handleCaseHelp');
 			const caseLegacy = document.createElement('p');
 			caseLegacy.textContent = t('handleCaseLegacy');
+			const settingsActions = document.createElement('div');
+			settingsActions.className = 'tm-inline-actions';
+			const openSettingsBtn = Object.assign(document.createElement('button'), { className: 'secondary' });
+			settingsActions.append(openSettingsBtn);
 			settingsBox.append(caseLabel, caseHelp, caseLegacy);
-			settingsRow.append(settingsBox);
+			settingsRow.append(settingsBox, settingsActions);
 			settingsSection.append(settingsTitle, settingsRow);
 
 			const apiSection = document.createElement('section');
@@ -619,8 +681,12 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			apiStatus.className = 'tm-muted';
 			const apiTestStatus = document.createElement('div');
 			apiTestStatus.className = 'tm-inline-note';
+			const apiProgress = document.createElement('div');
+			apiProgress.className = 'tm-progress';
+			apiProgress.hidden = true;
 			apiBox.append(apiLabel, apiInput, apiHelp, apiStatus);
 			apiBox.appendChild(apiTestStatus);
+			apiBox.appendChild(apiProgress);
 			const apiActions = document.createElement('div');
 			apiActions.className = 'tm-inline-actions';
 			const saveApiBtn = Object.assign(document.createElement('button'), {
@@ -666,8 +732,11 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			lastCheck.className = 'tm-muted';
 			const summaryGrid = document.createElement('div');
 			summaryGrid.className = 'tm-summary-grid';
+			const pairProgress = document.createElement('div');
+			pairProgress.className = 'tm-progress';
+			pairProgress.hidden = true;
 			const pairResultPanel = document.createElement('div');
-			pairSection.append(pairTitle, toggleRow, summaryTitle, lastCheck, summaryGrid, pairResultPanel);
+			pairSection.append(pairTitle, toggleRow, summaryTitle, lastCheck, summaryGrid, pairProgress, pairResultPanel);
 
 			const form = document.createElement('div');
 			form.className = 'tm-regex-bar';
@@ -818,7 +887,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			toolbar.append(topToolbarRow, middleToolbarRow, bottomToolbarRow);
 			const list = Object.assign(document.createElement('ul'), { className: 'tm-block-list' });
 			listSection.append(listTitle, toolbar, list);
-			wrap.append(versionSection, form, listSection);
+			wrap.append(versionSection, settingsSection, apiSection, pairSection, form, listSection);
 
 			const regexMatchCache = new Map<string, RegexMatchCacheEntry>();
 			const rowRefs = new Map<string, { checkbox: HTMLInputElement }>();
@@ -1007,6 +1076,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 					? t('apiKeyStatusSaved', this.app.apiConfig.getMaskedApiKey())
 					: t('apiKeyStatusMissing');
 				this._renderApiTestStatus(apiTestStatus, this.app.apiConfig.getLastTestResult(), apiTestBusy);
+				apiProgress.hidden = !apiTestBusy;
 			};
 			const syncActionState = (viewState = computeViewState()) => {
 				const hasKey = this.app.apiConfig.hasApiKey();
@@ -1015,6 +1085,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				updateBtn.disabled = busy || !hasKey;
 				createBtn.textContent = busy ? t('pairWorking') : t('pairCreate');
 				updateBtn.textContent = busy ? t('pairWorking') : t('pairUpdate');
+				pairProgress.hidden = !busy;
 				testApiBtn.disabled = apiTestBusy || !hasKey;
 				testApiBtn.textContent = apiTestBusy ? t('apiKeyTestRunning') : t('apiKeyTest');
 				masterToggle.disabled = busy || !viewState.visibleKeys.length;
@@ -1232,6 +1303,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				caseText.textContent = t('handleCaseLabel');
 				caseHelp.textContent = t('handleCaseHelp');
 				caseLegacy.textContent = t('handleCaseLegacy');
+				openSettingsBtn.textContent = t('openSettings');
 				apiTitle.textContent = t('apiKeyTitle');
 				apiLabel.textContent = t('apiKeyLabel');
 				apiInput.placeholder = t('apiKeyPlaceholder');
@@ -1268,7 +1340,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				searchNote.textContent = searchQuery ? t('searchLabel') : '';
 				renderAll();
 			};
-			const setBusy = (nextBusy: any) => {
+			const setBusy = (nextBusy: boolean) => {
 				busy = !!nextBusy;
 				renderSummary();
 			};
@@ -1277,6 +1349,10 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				this.app.settings.setHandleCaseSensitive(caseToggle.checked);
 				this.app.refreshAfterStorageChange();
 				renderAll();
+			});
+			openSettingsBtn.addEventListener('click', () => {
+				Dialog.closeAll('navigate');
+				this.openSettings();
 			});
 			toggle.addEventListener('change', () => {
 				this.app.pairStore.setUidDetectionEnabled(toggle.checked);

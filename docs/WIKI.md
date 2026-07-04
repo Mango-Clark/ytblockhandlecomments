@@ -1,4 +1,4 @@
-# 📚 YouTube Comment Blocker Wiki — v1.0.0
+# 📚 YouTube Comment Blocker Wiki — v1.0.1
 
 [English](WIKI.md) | [한국어](WIKI.ko.md)
 
@@ -55,7 +55,7 @@ Out of scope:
 
 ## 2. Metadata And Runtime
 
-- `@version`: `1.0.0`
+- `@version`: `1.0.1`
 - `@match`: `https://www.youtube.com/*`
 - `@grant`: `GM_getValue`, `GM_setValue`, `GM_addValueChangeListener`,
   `GM_registerMenuCommand`, `GM_unregisterMenuCommand`
@@ -111,7 +111,9 @@ App settings:
   handleCaseSensitive: boolean,
   autoAddRegexHandles: boolean,
   dislikeMode: 'none' | 'new-hidden' | 'always',
-  commentBlockMode: 'hide' | 'placeholder' | 'placeholder-reveal'
+  commentBlockMode: 'hide' | 'placeholder' | 'placeholder-reveal',
+  fontSizeLevel: 1 | 2 | 3 | 4 | 5,
+  uiScaleLevel: 1 | 2 | 3 | 4 | 5
 }
 ```
 
@@ -138,6 +140,8 @@ Notes:
 - Legacy `blockedHandles` and `blockedHandles_v1` still migrate automatically
 - Default `app_settings_v1.dislikeMode` is `none`
 - Default `app_settings_v1.commentBlockMode` is `hide`
+- Default `app_settings_v1.fontSizeLevel` and `app_settings_v1.uiScaleLevel` are `3`; level `2`
+  matches the previous visual size
 - Pair metadata and API config are excluded from import/export
 
 ## 4. Matching Model
@@ -210,6 +214,7 @@ API minimization:
 Sections:
 
 - Script info section with the current userscript version
+- Matching, API key, UID pair, and navigation controls
 - Regex add section
 - Rule list section
 
@@ -248,14 +253,17 @@ Removal behavior:
 
 Settings dialog:
 
-- Groups controls into matching, comment display, and maintenance sections
+- Groups controls into matching, comment display, display size, and maintenance sections
 - Handle case sensitivity
 - Regex matched-handle auto-add
 - Auto-dislike mode
 - Blocked-comment display mode
+- Five-level text and UI scale controls; level 2 matches the previous size and level 3 is the default
+- Button to open the block list from settings, with a matching button back to settings in the block list
 - Reset button for app display and matching settings, gated by a confirmation dialog
 - YouTube Data API v3 key/test controls
 - UID detection, pair summary, and pair actions
+- Loading bars while API key tests and pair actions are waiting for API responses
 - Debug counters from `window.__ytCommentBlockerPerf`
 
 Security:
@@ -335,7 +343,7 @@ shows guidance with an estimated 24-hour reset window from the latest quota fail
 
 ## 11. Remaining Work
 
-After `v1.0.0`, the large manager, security, i18n, regex-selection performance, Shorts
+After `v1.0.1`, the large manager, security, i18n, regex-selection performance, Shorts
 comment-hiding, long-session memory cleanup, pair-update minimization, visible-version, settings
 dialog, regex auto-add, and manager polish TODO items are considered implemented. Future work
 should focus on incremental improvements rather than baseline feature completion.

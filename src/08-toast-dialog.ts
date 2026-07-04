@@ -72,6 +72,7 @@ import {
 						else content.appendChild(makePlainTextNode(nextBody));
 					}
 				};
+				let instance: any = null;
 				const close = (val: any) => {
 					try { if (onBeforeClose) val = onBeforeClose(val, dialog); } catch { }
 					if (val && typeof val === 'object' && val.ok === false) return;
@@ -116,11 +117,19 @@ import {
 				document.addEventListener('keydown', onKey);
 				backdrop.addEventListener('click', e => { if (e.target === backdrop) close(false); });
 
-				const instance = { refresh: () => onRefresh?.(refreshContext) };
+				instance = {
+					close,
+					refresh: () => onRefresh?.(refreshContext)
+				};
 				Dialog._instances.add(instance);
 				if (onRefresh) onRefresh(refreshContext);
 				dialog.querySelector('button')?.focus();
 			});
+		}
+		static closeAll(value: any = false) {
+			for (const instance of Array.from(Dialog._instances)) {
+				try { instance.close?.(value); } catch { }
+			}
 		}
 		static refreshAll() {
 			for (const instance of Array.from(Dialog._instances)) {

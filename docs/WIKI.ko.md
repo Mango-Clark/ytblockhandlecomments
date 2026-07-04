@@ -1,4 +1,4 @@
-# 📚 YouTube Comment Blocker 위키 — v1.0.0
+# 📚 YouTube Comment Blocker 위키 — v1.0.1
 
 [English](WIKI.md) | [한국어](WIKI.ko.md)
 
@@ -55,7 +55,7 @@
 
 ## 2. 메타데이터와 런타임
 
-- `@version`: `1.0.0`
+- `@version`: `1.0.1`
 - `@match`: `https://www.youtube.com/*`
 - `@grant`: `GM_getValue`, `GM_setValue`, `GM_addValueChangeListener`,
   `GM_registerMenuCommand`, `GM_unregisterMenuCommand`
@@ -110,7 +110,9 @@ Pair 메타데이터:
   handleCaseSensitive: boolean,
   autoAddRegexHandles: boolean,
   dislikeMode: 'none' | 'new-hidden' | 'always',
-  commentBlockMode: 'hide' | 'placeholder' | 'placeholder-reveal'
+  commentBlockMode: 'hide' | 'placeholder' | 'placeholder-reveal',
+  fontSizeLevel: 1 | 2 | 3 | 4 | 5,
+  uiScaleLevel: 1 | 2 | 3 | 4 | 5
 }
 ```
 
@@ -137,6 +139,8 @@ API 설정:
 - 레거시 `blockedHandles`, `blockedHandles_v1`는 계속 자동 마이그레이션됩니다
 - 기본 `app_settings_v1.dislikeMode`는 `none`입니다
 - 기본 `app_settings_v1.commentBlockMode`는 `hide`입니다
+- 기본 `app_settings_v1.fontSizeLevel`과 `app_settings_v1.uiScaleLevel`은 `3`이며, `2`는
+  이전 시각 크기와 같습니다
 - pair 메타데이터와 API 설정은 import/export에 포함되지 않습니다
 
 ## 4. 매칭 모델
@@ -209,6 +213,7 @@ API 호출 최소화:
 섹션:
 
 - 현재 userscript 버전을 보여주는 script info 섹션
+- 매칭, API 키, UID pair, 이동 버튼 제어
 - regex 추가 섹션
 - 규칙 목록 섹션
 
@@ -247,14 +252,17 @@ Pair 결과:
 
 설정 dialog:
 
-- 컨트롤을 매칭, 댓글 표시, 유지보수 섹션으로 구분
+- 컨트롤을 매칭, 댓글 표시, 표시 크기, 유지보수 섹션으로 구분
 - handle 대소문자 구분
 - regex 매칭 handle 자동 추가
 - 자동 싫어요 mode
 - 차단 댓글 표시 mode
+- 글자 크기와 UI 크기를 5단계로 조절. 2단계는 기존 크기이고 3단계가 기본값
+- 설정에서 차단 목록을 열고, 차단 목록에서 다시 설정을 여는 버튼
 - 확인 dialog 이후 앱 표시/매칭 설정을 초기화하는 버튼
 - YouTube Data API v3 키/테스트 제어
 - UID detection, pair 요약, pair 액션
+- API 키 테스트와 pair 작업이 API 응답을 기다리는 동안 loading bar 표시
 - `window.__ytCommentBlockerPerf` 기반 debug counter
 
 보안:
@@ -336,7 +344,7 @@ API 키 테스트가 반복해서 `quota`를 보고하면 관리자는 연속 qu
 
 ## 11. 이후 작업
 
-`v1.0.0` 이후에는 큰 관리자/보안/i18n/regex-selection 성능/Shorts 댓글 숨김/긴 세션
+`v1.0.1` 이후에는 큰 관리자/보안/i18n/regex-selection 성능/Shorts 댓글 숨김/긴 세션
 메모리 정리/pair update 최소화/버전 표시/설정 dialog/regex 자동 추가/관리자 polish
 TODO가 기본적으로 마무리된 상태로 봅니다. 이후 작업은 베이스라인 미구현이 아니라
 점진적 개선 중심으로 다룹니다.

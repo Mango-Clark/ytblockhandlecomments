@@ -4,9 +4,10 @@
 	 * ---------------------------------------------------------- */
 	export const style = document.createElement('style');
 	style.textContent = `
-    .tm-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#323232;color:#fff;padding:8px 16px;border-radius:6px;opacity:0;transition:opacity .2s ease;z-index:10000;font-size:15px;pointer-events:none}
+    :root{--tm-font-scale:1.08;--tm-ui-scale:1.08}
+    .tm-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#323232;color:#fff;padding:calc(8px * var(--tm-ui-scale)) calc(16px * var(--tm-ui-scale));border-radius:6px;opacity:0;transition:opacity .2s ease;z-index:10000;font-size:calc(15px * var(--tm-font-scale));pointer-events:none}
     .tm-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:10000}
-    .tm-dialog{background:#fff;color:#000;padding:24px 28px;border-radius:12px;width:min(980px,94vw);max-width:980px;box-shadow:0 10px 30px rgba(0,0,0,.25);max-height:84vh;display:flex;flex-direction:column;font-size:14px}
+    .tm-dialog{background:#fff;color:#000;padding:calc(24px * var(--tm-ui-scale)) calc(28px * var(--tm-ui-scale));border-radius:12px;width:min(calc(980px * var(--tm-ui-scale)),94vw);max-width:calc(980px * var(--tm-ui-scale));box-shadow:0 10px 30px rgba(0,0,0,.25);max-height:84vh;display:flex;flex-direction:column;font-size:calc(14px * var(--tm-font-scale))}
     .tm-dialog header{margin:0 0 14px 0;font-size:18px;font-weight:700}
     .tm-dialog .tm-content{flex:1 1 auto;overflow:auto;min-height:0}
     .tm-dialog footer{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;flex-wrap:wrap}
@@ -57,6 +58,10 @@
     .tm-list-empty{padding:18px 0;text-align:center;color:#5f6368}
     .tm-item-check{margin-top:2px}
     .tm-inline-note{font-size:12px;color:#5f6368}
+    .tm-progress{height:4px;border-radius:999px;background:#e8f0fe;overflow:hidden;margin-top:8px}
+    .tm-progress::before{content:"";display:block;width:45%;height:100%;border-radius:999px;background:#065fd4;animation:tm-progress-slide 1s ease-in-out infinite}
+    .tm-progress[hidden]{display:none}
+    @keyframes tm-progress-slide{0%{transform:translateX(-100%)}100%{transform:translateX(230%)}}
     .tm-result-panel{margin-top:10px;border-top:1px solid #ececec;padding-top:10px}
     .tm-result-panel details{border:1px solid #e5e5e5;border-radius:10px;padding:8px 10px;background:#fafafa}
     .tm-result-panel summary{cursor:pointer;font-weight:600}

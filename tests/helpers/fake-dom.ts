@@ -149,7 +149,15 @@ class FakeElement extends FakeNode {
 		this.tagName = String(tagName || 'div').toUpperCase();
 		this.attributes = new Map();
 		this.dataset = {};
-		this.style = {};
+		this.style = {
+			_props: new Map(),
+			setProperty(name: string, value: string) {
+				this._props.set(name, String(value));
+			},
+			getPropertyValue(name: string) {
+				return this._props.get(name) || '';
+			}
+		};
 		this.className = '';
 		this.value = '';
 		this.checked = false;

@@ -1,10 +1,10 @@
-# 📌 YouTube Comment Blocker — v1.0.0
+# 📌 YouTube Comment Blocker — v1.0.1
 
 [English](README.md) | [한국어](README.ko.md)
 
 Full reference: [WIKI.md](docs/WIKI.md) | [WIKI.ko.md](docs/WIKI.ko.md)
 
-A Tampermonkey userscript for hiding YouTube comments by channel identity. `v1.0.0` keeps the
+A Tampermonkey userscript for hiding YouTube comments by channel identity. `v1.0.1` keeps the
 `v0.6.x` safety, settings, and pair-maintenance fixes, then adds a separate settings dialog,
 regex auto-add, debug counters, pair result tools, quota guidance, paged regex match lists,
 role-based source files, and compact generated userscript output.
@@ -41,9 +41,11 @@ Source layout:
 - Supports optional UID detection with handle↔UID metadata in `pair_meta_v1`
 - Stores a local-only YouTube Data API v3 key and validates it before pair maintenance
 - Supports case-sensitive handle matching
-- Supports a separate settings dialog with API, UID, regex auto-add, and debug counters
-- Groups settings controls by matching, comment display, and maintenance
+- Supports a separate settings dialog with API, UID, regex auto-add, display sizing, and debug counters
+- Groups settings controls by matching, comment display, display size, and maintenance
 - Supports resetting app display and matching settings after a confirmation prompt
+- Supports five-level text and UI scale settings; level 2 matches the previous size and level 3 is the default
+- Adds in-dialog navigation buttons between settings and the block list
 - Can auto-save handles first hidden by regex so later checks use handle matching
 - Supports block-list search, type filters, tag filters, row selection, and bulk actions
 - Shows the current userscript version in the manager dialog
@@ -52,6 +54,7 @@ Source layout:
 - Pages expanded regex match lists in the manager so very large match sets do not render at once
 - Shows handle-level pair results after create/update runs
 - Supports filtering/sorting pair results and copying/exporting failed handles
+- Shows loading bars while API key tests or pair create/update actions are waiting on the network
 - Shows structured quota guidance after repeated API-key quota failures
 - Refreshes manager UI, dialogs, banner text, and menu labels after language changes
 
@@ -118,7 +121,9 @@ App settings:
   handleCaseSensitive: boolean,
   autoAddRegexHandles: boolean,
   dislikeMode: 'none' | 'new-hidden' | 'always',
-  commentBlockMode: 'hide' | 'placeholder' | 'placeholder-reveal'
+  commentBlockMode: 'hide' | 'placeholder' | 'placeholder-reveal',
+  fontSizeLevel: 1 | 2 | 3 | 4 | 5,
+  uiScaleLevel: 1 | 2 | 3 | 4 | 5
 }
 ```
 
@@ -146,6 +151,7 @@ Notes:
 - API config key: `youtube_data_api_v3_config`
 - Default `dislikeMode` is `none`
 - Default `commentBlockMode` is `hide`
+- Default `fontSizeLevel` and `uiScaleLevel` are `3`; level `2` matches the previous visual size
 - Pair metadata and API config are excluded from import/export
 - Older handles may already be stored in lowercase, so exact handle matching is guaranteed only
   after re-saving or newly adding those handles
@@ -190,7 +196,7 @@ Notes:
 ## Userscript Metadata
 
 - `@name`: `YouTube Comment Blocker`
-- `@version`: `1.0.0`
+- `@version`: `1.0.1`
 - `@match`: `https://www.youtube.com/*`
 - `@grant`: `GM_getValue`, `GM_setValue`, `GM_addValueChangeListener`,
   `GM_registerMenuCommand`, `GM_unregisterMenuCommand`
