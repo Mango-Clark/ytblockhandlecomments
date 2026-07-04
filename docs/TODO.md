@@ -5,8 +5,8 @@
 - [x] For consistency, update src code to TypeScript.
 - [x] For consistency, update test code to TypeScript too.
 - [x] For consistency, update scripts code to TypeScript too.
-- [ ] After scripts/tests type definitions are completed, squash 7da1cb65e17886f70f90d60345c7abf964bb2172..HEAD.
-- [ ] After switching the build to esbuild, squash the related commits.
+- [x] After scripts/tests type definitions are completed, squash 7da1cb65e17886f70f90d60345c7abf964bb2172..HEAD.
+- [x] After switching the build to esbuild, squash the related commits.
 - Add [Agents.md] about keeping **Race Condition**
   - Race Condition: 동시 실행 순서 꼬임 → 값/상태 비정상.
 - Add [Agents.md] about considering **Partial Write**
