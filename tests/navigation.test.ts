@@ -2,7 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { loadUserscript } = require('./helpers/load-userscript');
+const { loadUserscript } = require('./helpers/load-userscript.ts');
 
 test('page-key changes reset transient comment observation state', () => {
 	const { api } = loadUserscript();
@@ -15,7 +15,7 @@ test('page-key changes reset transient comment observation state', () => {
 		hider: { resetTransientState: () => { resetCalls += 1; } },
 		_getPageMode: () => 'watch',
 		_getPageKey: () => 'watch:new-video',
-		_findCommentsHost: () => null,
+		_findCommentsHost: (): null => null,
 		_getPageRoot: () => ({ id: 'watch-root' }),
 		_watchForCommentsHost: () => { watchCalls += 1; },
 		_disconnectCommentObserver: () => {},

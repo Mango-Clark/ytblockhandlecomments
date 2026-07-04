@@ -2,16 +2,18 @@
   "name": "ytblockhandlecomments",
   "private": true,
   "scripts": {
-    "bump:version": "node scripts/bump-version.js",
-    "build": "node scripts/build-userscript.js",
-    "check:build": "node scripts/build-userscript.js --check",
-    "test": "node --test"
+    "bump:version": "node scripts/bump-version.ts",
+    "build": "node scripts/build-userscript.ts",
+    "check:build": "node scripts/build-userscript.ts --check",
+    "test": "node --test",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p scripts/tsconfig.json && tsc --noEmit -p tests/tsconfig.json"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "eslint": "^10.5.0",
     "globals": "^17.7.0",
     "jiti": "^2.7.0",
+    "typescript": "^6.0.3",
     "typescript-eslint": "^8.62.0"
   }
 }

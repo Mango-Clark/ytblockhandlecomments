@@ -1,22 +1,102 @@
+
 	/* ----------------------------------------------------------
 	 * 1. Utilities and i18n
 	 * ---------------------------------------------------------- */
-	const sanitizeHandle = (h) => {
+	type LooseObject = { [key: string]: any };
+	type BlockItemType = 'handle' | 'id' | 'regex';
+	type BlockItem = { type: BlockItemType; value: string; flags?: string };
+	type PairStatus = 'verified' | 'stale' | 'mismatch' | 'unverified';
+	type PairRecord = {
+		handle: string;
+		uid: string;
+		verifiedAt: number | null;
+		status: PairStatus;
+		source: string;
+		lastResolvedUid: string | null;
+		lastError: string | null;
+	};
+	type PairOutcome = 'created' | 'updated' | 'mismatch' | 'failed' | 'skipped';
+	type PairRunItem = {
+		handle: string;
+		outcome: PairOutcome;
+		uid?: string;
+		resolvedUid?: string;
+		message?: string;
+	};
+	type PairRunStats = {
+		created: number;
+		refreshed: number;
+		mismatches: number;
+		failed: number;
+		addedIds: number;
+		skipped: number;
+		items: PairRunItem[];
+	};
+	type PairSummary = {
+		handles: number;
+		paired: number;
+		handleOnly: number;
+		stale: number;
+		mismatch: number;
+		unverified: number;
+		pairNeeded: number;
+	};
+	type ApiTestCategory = 'ok' | 'invalid' | 'quota' | 'forbidden' | 'network' | 'unknown';
+	type ApiTestResult = {
+		checkedAt: number;
+		ok: boolean;
+		category: ApiTestCategory;
+		httpStatus: number | null;
+		message: string;
+	};
+	type RegexSpec = { pattern: string; flags: string };
+	type DialogButton = { label: string; value: any; primary?: boolean };
+	type DialogRefreshContext = {
+		dialog: HTMLElement;
+		header: HTMLElement;
+		content: HTMLElement;
+		footer: HTMLElement;
+		buttons: HTMLButtonElement[];
+		setTitle: (nextTitle: string) => void;
+		setBody: (nextBody: Node | string) => void;
+	};
+	type I18nMessage = string | ((...args: any[]) => string);
+	type I18nBundle = { [key: string]: I18nMessage };
+	type ManagerSearchRecord = {
+		index: number;
+		item: BlockItem;
+		label: string;
+		labelNorm: string;
+	};
+	type ManagerSearchIndex = {
+		records: ManagerSearchRecord[];
+		firstCharBuckets: Map<string, number[]>;
+		bigramIndex: Map<string, number[]>;
+	};
+	type AppLike = LooseObject;
+	type StorageLike = LooseObject;
+	type PairStoreLike = LooseObject;
+	type ApiConfigLike = LooseObject;
+	type SettingsLike = LooseObject;
+	type CommentBlockMode = 'hide' | 'placeholder' | 'placeholder-reveal';
+
+	const isNonNull = <T>(value: T | null | undefined): value is T => value != null;
+	const sanitizeHandle = (h: any): string | null => {
 		if (!h) return null;
 		h = String(h).trim();
 		if (!h.startsWith('@')) return null;
 		return h;
 	};
-	const norm = (h) => {
+	const norm = (h: any): string | null => {
 		const handle = sanitizeHandle(h);
 		return handle ? handle.toLowerCase() : null;
 	};
-	const getHandleCompareKey = (h, caseSensitive = false) => {
+	const getHandleCompareKey = (h: any, caseSensitive = false): string | null => {
 		const handle = sanitizeHandle(h);
 		if (!handle) return null;
 		return caseSensitive ? handle : handle.toLowerCase();
 	};
-	const getItemKey = (item) => {
+	const getItemKey = (item: BlockItem | null | undefined): string | null => {
 		if (!item || !item.type) return null;
 		if (item.type === 'handle') {
 			const handle = sanitizeHandle(item.value);
@@ -28,17 +108,17 @@
 		}
 		return item.type === 'regex' ? `r:${String(item.value)}/${item.flags || ''}` : null;
 	};
-	const decodeMaybe = (value) => {
+	const decodeMaybe = (value: string): string => {
 		try { return decodeURIComponent(value); } catch { return value; }
 	};
-	const findHandleItem = (items, handle, caseSensitive = false) => {
+	const findHandleItem = (items: BlockItem[], handle: any, caseSensitive = false): BlockItem | null => {
 		const key = getHandleCompareKey(handle, caseSensitive);
 		if (!key) return null;
 		return (items || []).find(item =>
 			item?.type === 'handle' && getHandleCompareKey(item.value, caseSensitive) === key
 		) || null;
 	};
-	const isChannelId = (value) => /^UC[0-9A-Za-z_-]{10,}$/.test(String(value || '').trim());
+	const isChannelId = (value: any): boolean => /^UC[0-9A-Za-z_-]{10,}$/.test(String(value || '').trim());
 	const SAFE_REGEX_MAX_PATTERN = 256;
 	const SAFE_REGEX_MAX_TARGET = 128;
 	const SAFE_REGEX_MAX_RUNTIME_MS = 5;
@@ -51,7 +131,7 @@
 		/(?:\.\*){2,}/,
 		/(?:\[[^\]]+\][+*]){2,}/
 	];
-	const validateRegexSpec = (pattern, flags = '') => {
+	const validateRegexSpec = (pattern: any, flags = ''): RegexSpec | null => {
 		const value = String(pattern || '');
 		const flagText = String(flags || '');
 		if (!value || value.length > SAFE_REGEX_MAX_PATTERN) return null;
@@ -64,7 +144,7 @@
 			return null;
 		}
 	};
-	const parseRegexLiteral = (text) => {
+	const parseRegexLiteral = (text: any): RegexSpec | null => {
 		const s = String(text || '').trim();
 		if (!s.startsWith('/')) return null;
 		let escaped = false;
@@ -76,8 +156,8 @@
 		}
 		return null;
 	};
-	const exportRegexLiteral = (item) => `/${String(item.value || '').replace(/\//g, '\\/')}/${item.flags || ''}`;
-	const safeRegexTest = (rx, value) => {
+	const exportRegexLiteral = (item: BlockItem): string => `/${String(item.value || '').replace(/\//g, '\\/')}/${item.flags || ''}`;
+	const safeRegexTest = (rx: RegExp | null | undefined, value: any): boolean => {
 		if (!rx || !value) return false;
 		const target = String(value).slice(0, SAFE_REGEX_MAX_TARGET);
 		const startedAt = performance.now();
@@ -104,19 +184,19 @@
 		return FALLBACK_SCRIPT_VERSION;
 	};
 
-	const I18N = {
+	const I18N: { ko: I18nBundle; en: I18nBundle } = {
 		ko: I18N_KO,
 		en: I18N_EN
 	};
 	const getLang = () => {
 		try { return (GM_getValue('lang') || navigator.language || 'ko').startsWith('ko') ? 'ko' : 'en'; } catch { return 'ko'; }
 	};
-	const t = (key, ...args) => {
+	const t = (key: string, ...args: any[]): string => {
 		const lang = getLang();
 		const val = I18N[lang][key];
 		return typeof val === 'function' ? val(...args) : val;
 	};
-	const formatDateTime = (ts) => {
+	const formatDateTime = (ts: any): string | null => {
 		if (!Number.isFinite(ts) || ts <= 0) return null;
 		try {
 			return new Date(ts).toLocaleString(getLang() === 'ko' ? 'ko-KR' : 'en-US');
@@ -124,12 +204,12 @@
 			return new Date(ts).toISOString();
 		}
 	};
-	const makePlainTextNode = (value) => {
+	const makePlainTextNode = (value: any): HTMLElement => {
 		const div = document.createElement('div');
 		div.textContent = String(value ?? '');
 		return div;
 	};
-	const binaryHas = (arr, value) => {
+	const binaryHas = (arr: string[] | number[], value: any): boolean => {
 		let lo = 0, hi = arr.length - 1;
 		while (lo <= hi) {
 			const mid = (lo + hi) >> 1;
@@ -139,7 +219,7 @@
 		}
 		return false;
 	};
-	const intersectSortedPostings = (lists) => {
+	const intersectSortedPostings = (lists: number[][]): number[] => {
 		if (!lists.length) return [];
 		const sortedLists = lists.filter(Boolean).sort((a, b) => a.length - b.length);
 		if (!sortedLists.length) return [];
@@ -151,12 +231,12 @@
 		}
 		return result;
 	};
-	const getSearchBigrams = (query) => {
+	const getSearchBigrams = (query: any): string[] => {
 		const normalized = String(query || '').trim().toLowerCase();
 		if (!normalized) return [];
 		if (normalized.length < 2) return [normalized];
-		const grams = [];
-		const seen = new Set();
+		const grams: string[] = [];
+		const seen = new Set<string>();
 		for (let i = 0; i < normalized.length - 1; i++) {
 			const gram = normalized.slice(i, i + 2);
 			if (seen.has(gram)) continue;
@@ -165,7 +245,7 @@
 		}
 		return grams;
 	};
-	const buildManagerSearchIndex = (items) => {
+	const buildManagerSearchIndex = (items: BlockItem[]): ManagerSearchIndex => {
 		const records = (items || []).map((item, index) => {
 			const label = item?.type === 'regex' ? `/${item.value}/${item.flags || ''}` : String(item?.value || '');
 			return {
@@ -175,25 +255,27 @@
 				labelNorm: label.toLowerCase()
 			};
 		});
-		const firstCharBuckets = new Map();
-		const bigramIndex = new Map();
+		const firstCharBuckets = new Map<string, number[]>();
+		const bigramIndex = new Map<string, number[]>();
 		for (const record of records) {
-			for (const ch of new Set(record.labelNorm.split(''))) {
+			for (const ch of new Set<string>(record.labelNorm.split(''))) {
 				if (!ch.trim()) continue;
 				if (!firstCharBuckets.has(ch)) firstCharBuckets.set(ch, []);
-				firstCharBuckets.get(ch).push(record.index);
+				const bucket = firstCharBuckets.get(ch);
+				if (bucket) bucket.push(record.index);
 			}
 			for (const gram of getSearchBigrams(record.labelNorm)) {
 				if (!bigramIndex.has(gram)) bigramIndex.set(gram, []);
-				bigramIndex.get(gram).push(record.index);
+				const bucket = bigramIndex.get(gram);
+				if (bucket) bucket.push(record.index);
 			}
 		}
 		return { records, firstCharBuckets, bigramIndex };
 	};
-	const searchManagerIndex = (index, query) => {
+	const searchManagerIndex = (index: ManagerSearchIndex, query: any): BlockItem[] => {
 		const normalized = String(query || '').trim().toLowerCase();
 		if (!normalized) return index.records.map(record => record.item);
-		let candidateIndexes = [];
+		let candidateIndexes: number[] = [];
 		if (normalized.length === 1) {
 			candidateIndexes = (index.firstCharBuckets.get(normalized) || []).slice();
 		} else {
@@ -207,7 +289,7 @@
 			.filter(record => record.labelNorm.includes(normalized))
 			.map(record => record.item);
 	};
-	const getApiTestCategoryLabel = (category) => {
+	const getApiTestCategoryLabel = (category: ApiTestCategory | string): string => {
 		switch (category) {
 			case 'ok': return t('apiKeyTestOk');
 			case 'invalid': return t('apiKeyTestInvalid');

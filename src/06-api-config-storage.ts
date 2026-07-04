@@ -1,17 +1,19 @@
+
 	/* ----------------------------------------------------------
 	 * 5. API config storage
 	 * ---------------------------------------------------------- */
 	class ApiConfigStorage {
+		[key: string]: any;
 		constructor() {
 			this.KEY = 'youtube_data_api_v3_config';
 			this._state = this._init();
 		}
-		_getGM(key, def) { try { return GM_getValue(key, def); } catch { return def; } }
-		_setGM(key, val) { try { GM_setValue(key, val); } catch { } }
-		_defaultState() {
+		_getGM(key: string, def: any) { try { return GM_getValue(key, def); } catch { return def; } }
+		_setGM(key: string, val: any) { try { GM_setValue(key, val); } catch { } }
+		_defaultState(): LooseObject {
 			return { version: 2, apiKey: '', lastTestResult: null, quotaFailureCount: 0, lastQuotaFailureAt: null };
 		}
-		_normalizeTestResult(raw) {
+		_normalizeTestResult(raw: any): ApiTestResult | null {
 			if (!raw || typeof raw !== 'object') return null;
 			const category = ['ok', 'invalid', 'quota', 'forbidden', 'network', 'unknown'].includes(raw.category)
 				? raw.category
@@ -26,7 +28,7 @@
 					: (category === 'ok' ? 'OK' : 'Unknown')
 			};
 		}
-		_normalizeApiKey(value) {
+		_normalizeApiKey(value: any): string {
 			let text = String(value || '').trim();
 			try {
 				const url = new URL(text);
@@ -34,7 +36,7 @@
 			} catch { }
 			return text.replace(/\s+/g, '');
 		}
-		_normalizeState(raw) {
+		_normalizeState(raw: any) {
 			const src = raw && typeof raw === 'object' ? raw : {};
 			return {
 				version: 2,
@@ -52,11 +54,11 @@
 		getState() {
 			return { ...this._state };
 		}
-		setAllLocal(state) {
+		setAllLocal(state: any) {
 			this._state = this._normalizeState(state);
 			return this.getState();
 		}
-		_saveState(nextState) {
+		_saveState(nextState: any) {
 			const normalized = this._normalizeState(nextState);
 			const sameResult = JSON.stringify(this._state.lastTestResult) === JSON.stringify(normalized.lastTestResult);
 			if (
@@ -89,7 +91,7 @@
 				resetAt: this._state.lastQuotaFailureAt + 24 * 60 * 60 * 1000
 			};
 		}
-		setApiKey(apiKey) {
+		setApiKey(apiKey: any) {
 			const nextKey = this._normalizeApiKey(apiKey);
 			return this._saveState({
 				...this._state,
@@ -102,7 +104,7 @@
 		clearApiKey() {
 			return this._saveState({ ...this._state, apiKey: '', lastTestResult: null, quotaFailureCount: 0, lastQuotaFailureAt: null });
 		}
-		setLastTestResult(result) {
+		setLastTestResult(result: any) {
 			const normalized = this._normalizeTestResult(result);
 			const quotaFailureCount = normalized?.category === 'quota'
 				? this._state.quotaFailureCount + 1

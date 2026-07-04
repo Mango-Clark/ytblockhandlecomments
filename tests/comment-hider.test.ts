@@ -2,9 +2,9 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { loadUserscript } = require('./helpers/load-userscript');
+const { loadUserscript } = require('./helpers/load-userscript.ts');
 
-function createBlockedComment(document, handle = '@alpha') {
+function createBlockedComment(document: any, handle = '@alpha') {
 	const comment = document.createElement('ytd-comment-renderer');
 	const author = document.createElement('div');
 	author.id = 'author-text';
@@ -18,7 +18,7 @@ function createBlockedComment(document, handle = '@alpha') {
 	return { comment, dislike };
 }
 
-function createCommentThread(document) {
+function createCommentThread(document: any) {
 	const thread = document.createElement('ytd-comment-thread-renderer');
 	const top = createBlockedComment(document, '@blocked');
 	const reply = createBlockedComment(document, '@reply');

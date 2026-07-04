@@ -1,7 +1,9 @@
+
 	/* ----------------------------------------------------------
 	 * 8. App Orchestrator (events, observers, cross-tab sync)
 	 * ---------------------------------------------------------- */
 	class App {
+		[key: string]: any;
 		constructor() {
 			this.settings = new AppSettingsStorage();
 			this.storage = new StorageV2(this.settings);
@@ -26,41 +28,41 @@
 			this._schedulePageSync();
 		}
 
-		findHandleRule(handle) {
+		findHandleRule(handle: any) {
 			return findHandleItem(this.storage.all(), handle, this.settings.isHandleCaseSensitive());
 		}
 
-		hasHandleRule(handle) {
+		hasHandleRule(handle: any) {
 			return !!this.findHandleRule(handle);
 		}
 
-		addHandleRule(handle) {
+		addHandleRule(handle: any) {
 			const ok = this.storage.addHandle(handle);
 			if (ok) this.refreshAfterStorageChange();
 			return ok;
 		}
 
-		removeHandleRule(handle) {
+		removeHandleRule(handle: any) {
 			const item = this.findHandleRule(handle);
 			if (!item) return false;
 			this.removeEntry(item);
 			return true;
 		}
 
-		removeEntry(item) {
+		removeEntry(item: BlockItem) {
 			if (item.type === 'handle') this.pairService.removeHandleArtifacts(item.value);
 			this.storage.remove(item);
 			this.refreshAfterStorageChange();
 		}
 
-		removeEntries(items) {
+		removeEntries(items: BlockItem[]) {
 			const selectedItems = (items || []).filter(Boolean);
 			if (!selectedItems.length) return;
 			const removeKeys = new Set(selectedItems.map(getItemKey).filter(Boolean));
 			const handles = selectedItems.filter(item => item.type === 'handle').map(item => item.value);
 			const artifactIds = this.pairService.collectHandleArtifactIds(handles);
 			this.pairService.removeHandlePairs(handles);
-			this.storage.setAll(this.storage.all().filter(item => {
+			this.storage.setAll(this.storage.all().filter((item: BlockItem) => {
 				if (removeKeys.has(getItemKey(item))) return false;
 				return item.type !== 'id' || !artifactIds.has(item.value);
 			}));
@@ -92,7 +94,7 @@
 			return this._lastPairRunResult;
 		}
 
-		showPairResultDialog(stats) {
+		showPairResultDialog(stats: PairRunStats) {
 			this.manager._showPairResultDialog(stats);
 		}
 
@@ -103,7 +105,7 @@
 			return result;
 		}
 
-		async runPairUpdate(mode = 'update', handles = null) {
+		async runPairUpdate(mode = 'update', handles: string[] | null = null) {
 			const stats = mode === 'create'
 				? (handles ? await this.pairService.createPairsForHandles(handles) : await this.pairService.createMissingPairs())
 				: (handles ? await this.pairService.updatePairsForHandles(handles) : await this.pairService.updatePairs({ includeMissing: true }));
@@ -138,9 +140,10 @@
 						return d;
 					})(),
 					buttons: [{ label: t('close'), value: false }, { label: isBlocked ? t('unblock') : t('block'), value: true, primary: true }],
-					onRefresh: (ctx) => {
+					onRefresh: (ctx: DialogRefreshContext) => {
 						ctx.setTitle(isBlocked ? t('unblock') : t('block'));
-						ctx.content.querySelector('p').textContent = isBlocked ? t('confirmUnblock') : t('confirmBlock');
+						const paragraph = ctx.content.querySelector('p');
+						if (paragraph) paragraph.textContent = isBlocked ? t('confirmUnblock') : t('confirmBlock');
 						ctx.buttons[0].textContent = t('close');
 						ctx.buttons[1].textContent = isBlocked ? t('unblock') : t('block');
 					}
@@ -183,7 +186,7 @@
 			return 'unsupported';
 		}
 
-		_getPageKey(mode) {
+		_getPageKey(mode: string) {
 			if (mode === 'watch') {
 				const videoId = new URLSearchParams(location.search || '').get('v') || '';
 				return `watch:${videoId}`;
@@ -195,20 +198,20 @@
 			return `unsupported:${location.pathname || ''}`;
 		}
 
-		_getPageRoot(mode) {
+		_getPageRoot(mode: string): Element | null {
 			if (mode === 'watch') return document.querySelector(WATCH_ROOT_SELECTOR) || document.body;
 			if (mode === 'shorts') return document.querySelector(SHORTS_ROOT_SELECTOR) || document.body;
 			return null;
 		}
 
-		_findCommentsHost(mode) {
+		_findCommentsHost(mode: string): Element | null {
 			if (mode === 'watch') return document.querySelector(COMMENTS_HOST_SELECTOR);
 			if (mode === 'shorts') return this._findShortsCommentsHost();
 			return null;
 		}
 
-		_getAncestorChain(node) {
-			const chain = [];
+		_getAncestorChain(node: Element | null | undefined): Element[] {
+			const chain: Element[] = [];
 			let current = node;
 			while (current?.nodeType === 1) {
 				chain.push(current);
@@ -217,7 +220,7 @@
 			return chain;
 		}
 
-		_findLowestSharedAncestor(nodes) {
+		_findLowestSharedAncestor(nodes: Element[]) {
 			const items = (nodes || []).filter(node => node?.nodeType === 1);
 			if (!items.length) return null;
 			const firstChain = this._getAncestorChain(items[0]);
@@ -227,13 +230,13 @@
 			return null;
 		}
 
-		_isBroadCommentsHost(node) {
+		_isBroadCommentsHost(node: Element | null | undefined) {
 			if (!node || node.nodeType !== 1) return true;
 			const tag = (node.tagName || '').toLowerCase();
 			return node === document.body || node === document.documentElement || tag === 'ytd-app';
 		}
 
-		_refineSharedCommentsHost(ancestor, commentRoots) {
+		_refineSharedCommentsHost(ancestor: Element | null, commentRoots: Element[]) {
 			let current = ancestor;
 			const roots = (commentRoots || []).filter(node => node?.nodeType === 1);
 			if (!current || !roots.length) return null;
@@ -248,7 +251,7 @@
 					nextCandidates.add(cursor);
 					if (nextCandidates.size > 1) return null;
 				}
-				current = nextCandidates.values().next().value || null;
+				current = (nextCandidates.values().next().value as Element | undefined) || null;
 			}
 			return current && !this._isBroadCommentsHost(current) ? current : null;
 		}
@@ -283,11 +286,11 @@
 			this.hider.resetObservation();
 		}
 
-		_watchForCommentsHost(mode, root) {
+		_watchForCommentsHost(mode: string, root: Element | null) {
 			if (this._hostObserver || mode === 'unsupported') return;
 			if (!root) return;
 			let hostLookupPending = false;
-			let observer = null;
+			let observer: MutationObserver | null = null;
 			observer = new MutationObserver(() => {
 				if (hostLookupPending) return;
 				hostLookupPending = true;
@@ -307,17 +310,17 @@
 			observer.observe(root, { childList: true, subtree: true });
 		}
 
-		_collectRefreshRoots(node, roots) {
+		_collectRefreshRoots(node: any, roots: Set<Element>) {
 			if (node?.nodeType !== 1) return;
 			if (node.matches?.(COMMENT_SELECTOR)) roots.add(node);
 			const currentRoot = Extractor.getCommentRoot(node);
 			if (currentRoot) roots.add(currentRoot);
-			node.querySelectorAll?.(COMMENT_SELECTOR).forEach(commentNode => roots.add(commentNode));
+			node.querySelectorAll?.(COMMENT_SELECTOR).forEach((commentNode: Element) => roots.add(commentNode));
 		}
 
-		_handleCommentMutations(muts) {
-			const roots = new Set();
-			const removedRoots = new Set();
+		_handleCommentMutations(muts: MutationRecord[]) {
+			const roots = new Set<Element>();
+			const removedRoots = new Set<Element>();
 			for (const m of muts) {
 				if (m.addedNodes?.length) {
 					const targetRoot = Extractor.getCommentRoot(m.target);
@@ -332,7 +335,7 @@
 			this.hider.refreshNodes(roots, { invalidate: true });
 		}
 
-		_attachCommentsHost(host) {
+		_attachCommentsHost(host: Element | null) {
 			this._disconnectHostObserver();
 			if (!host) return;
 			if (this._commentsHost !== host || !this._commentObserver) {
@@ -460,9 +463,9 @@
 						title: t('clear') || 'Reset',
 						body: (() => { const p = document.createElement('p'); p.textContent = t('confirmClear') || 'Reset all blocked entries?'; return p; })(),
 						buttons: [{ label: t('close') || 'Close', value: false }, { label: t('clear') || 'Reset', value: true, primary: true }],
-						onRefresh: (ctx) => {
+						onRefresh: (ctx: DialogRefreshContext) => {
 							ctx.setTitle(t('clear') || 'Reset');
-							ctx.content.firstChild.textContent = t('confirmClear') || 'Reset all blocked entries?';
+							if (ctx.content.firstChild) ctx.content.firstChild.textContent = t('confirmClear') || 'Reset all blocked entries?';
 							ctx.buttons[0].textContent = t('close') || 'Close';
 							ctx.buttons[1].textContent = t('clear') || 'Reset';
 						}

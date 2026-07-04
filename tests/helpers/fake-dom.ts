@@ -1,27 +1,40 @@
+
 'use strict';
 
+type FakeEvent = {
+	[key: string]: any;
+	type: string;
+	target?: any;
+	currentTarget?: any;
+	defaultPrevented?: boolean;
+	preventDefault?: () => void;
+};
+type FakeEventHandler = (this: FakeNode, event: FakeEvent) => void;
+type FakeOwnerDocument = FakeDocument | null;
+
 class FakeNode {
-	constructor(ownerDocument = null) {
+	[key: string]: any;
+	constructor(ownerDocument: FakeOwnerDocument = null) {
 		this.ownerDocument = ownerDocument;
 		this.parentNode = null;
 		this.childNodes = [];
 		this._listeners = new Map();
 	}
 
-	appendChild(node) {
+	appendChild(node: FakeNode | string) {
 		if (!node) return node;
-		if (typeof node === 'string') node = this.ownerDocument.createTextNode(node);
-		if (node.parentNode) node.parentNode.removeChild(node);
-		node.parentNode = this;
-		this.childNodes.push(node);
-		return node;
+		const child = typeof node === 'string' ? this.ownerDocument.createTextNode(node) : node;
+		if (child.parentNode) child.parentNode.removeChild(child);
+		child.parentNode = this;
+		this.childNodes.push(child);
+		return child;
 	}
 
-	append(...nodes) {
+	append(...nodes: Array<FakeNode | string>) {
 		for (const node of nodes) this.appendChild(node);
 	}
 
-	removeChild(node) {
+	removeChild(node: FakeNode) {
 		const index = this.childNodes.indexOf(node);
 		if (index >= 0) {
 			this.childNodes.splice(index, 1);
@@ -30,7 +43,7 @@ class FakeNode {
 		return node;
 	}
 
-	replaceChildren(...nodes) {
+	replaceChildren(...nodes: Array<FakeNode | string>) {
 		for (const child of this.childNodes.slice()) this.removeChild(child);
 		for (const node of nodes) this.appendChild(node);
 	}
@@ -39,7 +52,7 @@ class FakeNode {
 		if (this.parentNode) this.parentNode.removeChild(this);
 	}
 
-	contains(node) {
+	contains(node: FakeNode | null) {
 		let current = node;
 		while (current) {
 			if (current === this) return true;
@@ -56,16 +69,16 @@ class FakeNode {
 		return this.childNodes[this.childNodes.length - 1] || null;
 	}
 
-	addEventListener(type, handler) {
+	addEventListener(type: string, handler: FakeEventHandler) {
 		if (!this._listeners.has(type)) this._listeners.set(type, new Set());
 		this._listeners.get(type).add(handler);
 	}
 
-	removeEventListener(type, handler) {
+	removeEventListener(type: string, handler: FakeEventHandler) {
 		this._listeners.get(type)?.delete(handler);
 	}
 
-	dispatchEvent(event) {
+	dispatchEvent(event: FakeEvent | string) {
 		const evt = event && typeof event === 'object' ? event : { type: String(event || '') };
 		evt.target ||= this;
 		evt.currentTarget = this;
@@ -76,7 +89,8 @@ class FakeNode {
 }
 
 class FakeTextNode extends FakeNode {
-	constructor(text, ownerDocument) {
+	[key: string]: any;
+	constructor(text: string, ownerDocument: FakeOwnerDocument) {
 		super(ownerDocument);
 		this.nodeType = 3;
 		this._text = String(text || '');
@@ -92,7 +106,8 @@ class FakeTextNode extends FakeNode {
 }
 
 class FakeClassList {
-	constructor(element) {
+	[key: string]: any;
+	constructor(element: FakeElement) {
 		this.element = element;
 	}
 
@@ -100,26 +115,26 @@ class FakeClassList {
 		return String(this.element.className || '').split(/\s+/).filter(Boolean);
 	}
 
-	_sync(values) {
+	_sync(values: string[]) {
 		this.element.className = values.join(' ');
 	}
 
-	add(...tokens) {
+	add(...tokens: string[]) {
 		const next = new Set(this._values());
 		for (const token of tokens) next.add(token);
 		this._sync(Array.from(next));
 	}
 
-	remove(...tokens) {
+	remove(...tokens: string[]) {
 		const remove = new Set(tokens);
 		this._sync(this._values().filter(token => !remove.has(token)));
 	}
 
-	contains(token) {
+	contains(token: string) {
 		return this._values().includes(token);
 	}
 
-	toggle(token, force) {
+	toggle(token: string, force?: boolean) {
 		const has = this.contains(token);
 		const next = force === undefined ? !has : !!force;
 		if (next) this.add(token);
@@ -129,7 +144,8 @@ class FakeClassList {
 }
 
 class FakeElement extends FakeNode {
-	constructor(tagName, ownerDocument) {
+	[key: string]: any;
+	constructor(tagName: string, ownerDocument: FakeOwnerDocument) {
 		super(ownerDocument);
 		this.nodeType = 1;
 		this.tagName = String(tagName || 'div').toUpperCase();
@@ -149,7 +165,7 @@ class FakeElement extends FakeNode {
 		this.classList = new FakeClassList(this);
 	}
 
-	setAttribute(name, value) {
+	setAttribute(name: string, value: any) {
 		const key = String(name);
 		const text = String(value);
 		this.attributes.set(key, text);
@@ -161,7 +177,7 @@ class FakeElement extends FakeNode {
 		}
 	}
 
-	getAttribute(name) {
+	getAttribute(name: string) {
 		if (name === 'class') return this.className || null;
 		if (name === 'id') return this.id || null;
 		if (String(name).startsWith('data-')) {
@@ -172,7 +188,7 @@ class FakeElement extends FakeNode {
 	}
 
 	get children() {
-		return this.childNodes.filter(node => node.nodeType === 1);
+		return this.childNodes.filter((node: FakeNode) => node.nodeType === 1);
 	}
 
 	get parentElement() {
@@ -184,7 +200,7 @@ class FakeElement extends FakeNode {
 	}
 
 	get textContent() {
-		if (this.childNodes.length) return this.childNodes.map(node => node.textContent || '').join('');
+		if (this.childNodes.length) return this.childNodes.map((node: FakeNode) => node.textContent || '').join('');
 		return this._text;
 	}
 
@@ -202,18 +218,18 @@ class FakeElement extends FakeNode {
 	}
 
 	focus() {
-		this.ownerDocument.activeElement = this;
+		if (this.ownerDocument) this.ownerDocument.activeElement = this;
 	}
 
 	click() {
 		this.dispatchEvent({ type: 'click', target: this });
 	}
 
-	matches(selector) {
+	matches(selector: string) {
 		return matchesSelector(this, selector);
 	}
 
-	closest(selector) {
+	closest(selector: string) {
 		let current = this;
 		while (current?.nodeType === 1) {
 			if (current.matches(selector)) return current;
@@ -222,16 +238,17 @@ class FakeElement extends FakeNode {
 		return null;
 	}
 
-	querySelector(selector) {
+	querySelector(selector: string) {
 		return querySelectorAllFrom(this, selector)[0] || null;
 	}
 
-	querySelectorAll(selector) {
+	querySelectorAll(selector: string) {
 		return querySelectorAllFrom(this, selector);
 	}
 }
 
 class FakeDocument extends FakeNode {
+	[key: string]: any;
 	constructor() {
 		super(null);
 		this.nodeType = 9;
@@ -244,24 +261,24 @@ class FakeDocument extends FakeNode {
 		this.documentElement.append(this.head, this.body);
 	}
 
-	createElement(tagName) {
+	createElement(tagName: string) {
 		return new FakeElement(tagName, this);
 	}
 
-	createTextNode(text) {
+	createTextNode(text: string) {
 		return new FakeTextNode(text, this);
 	}
 
-	querySelector(selector) {
+	querySelector(selector: string) {
 		return this.documentElement.querySelector(selector);
 	}
 
-	querySelectorAll(selector) {
+	querySelectorAll(selector: string) {
 		return this.documentElement.querySelectorAll(selector);
 	}
 }
 
-function normalizeSelector(selector) {
+function normalizeSelector(selector: string) {
 	return String(selector || '')
 		.split(',')
 		.map(part => part.trim())
@@ -269,7 +286,7 @@ function normalizeSelector(selector) {
 		.map(part => part.replace(/:not\([^)]+\)/g, '').trim());
 }
 
-function matchesSimple(element, selector) {
+function matchesSimple(element: FakeElement, selector: string) {
 	if (!selector) return false;
 	if (selector.includes(' ') || selector.includes('>')) return false;
 	let rest = selector;
@@ -308,7 +325,7 @@ function matchesSimple(element, selector) {
 	return !!tagMatch || selector.startsWith('#') || selector.startsWith('.') || selector.startsWith('[');
 }
 
-function matchesComplex(element, selector) {
+function matchesComplex(element: FakeElement, selector: string) {
 	const childParts = selector.split('>').map(part => part.trim()).filter(Boolean);
 	if (childParts.length > 1) {
 		let current = element;
@@ -331,13 +348,13 @@ function matchesComplex(element, selector) {
 	return matchesSimple(element, selector);
 }
 
-function matchesSelector(element, selector) {
+function matchesSelector(element: FakeElement, selector: string) {
 	return normalizeSelector(selector).some(part => matchesComplex(element, part));
 }
 
-function querySelectorAllFrom(root, selector) {
-	const results = [];
-	const visit = (node) => {
+function querySelectorAllFrom(root: FakeNode, selector: string) {
+	const results: FakeElement[] = [];
+	const visit = (node: FakeNode) => {
 		for (const child of node.childNodes || []) {
 			if (child.nodeType === 1) {
 				if (matchesSelector(child, selector)) results.push(child);

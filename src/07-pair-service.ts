@@ -1,8 +1,10 @@
+
 	/* ----------------------------------------------------------
 	 * 6. Pair resolution and policy
 	 * ---------------------------------------------------------- */
 	class PairService {
-		constructor(storage, pairStore, apiConfig, settings) {
+		[key: string]: any;
+		constructor(storage: StorageLike, pairStore: PairStoreLike, apiConfig: ApiConfigLike, settings: SettingsLike) {
 			this.storage = storage;
 			this.pairStore = pairStore;
 			this.apiConfig = apiConfig;
@@ -10,25 +12,25 @@
 			this._busy = false;
 		}
 		getBlockedHandles() {
-			return this.storage.all().filter(item => item.type === 'handle').map(item => item.value);
+			return this.storage.all().filter((item: BlockItem) => item.type === 'handle').map((item: BlockItem) => item.value);
 		}
-		getBlockedIdSet(items = this.storage.all()) {
-			return new Set((items || []).filter(item => item.type === 'id').map(item => item.value));
+		getBlockedIdSet(items: BlockItem[] = this.storage.all()): Set<string> {
+			return new Set((items || []).filter((item: BlockItem) => item.type === 'id').map((item: BlockItem) => item.value));
 		}
-		hasBlockedId(uid, blockedIds = null) {
-			return blockedIds ? blockedIds.has(uid) : this.storage.all().some(item => item.type === 'id' && item.value === uid);
+		hasBlockedId(uid: any, blockedIds: Set<string> | null = null): boolean {
+			return blockedIds ? blockedIds.has(uid) : this.storage.all().some((item: BlockItem) => item.type === 'id' && item.value === uid);
 		}
-		_uidUsedByOtherPair(uid, excludedHandles = []) {
+		_uidUsedByOtherPair(uid: any, excludedHandles: any[] = []): boolean {
 			if (!isChannelId(uid)) return false;
 			const caseSensitive = this.settings?.isHandleCaseSensitive?.() || false;
 			const excluded = new Set((excludedHandles || [])
 				.map(handle => getHandleCompareKey(handle, caseSensitive))
 				.filter(Boolean));
-			return this.pairStore.allPairs().some(pair =>
+			return this.pairStore.allPairs().some((pair: PairRecord) =>
 				pair.uid === uid && !excluded.has(getHandleCompareKey(pair.handle, caseSensitive))
 			);
 		}
-		getHandleStatus(handle, blockedIds = null) {
+		getHandleStatus(handle: any, blockedIds: Set<string> | null = null) {
 			const pair = this.pairStore.getPair(handle);
 			if (!pair) return { code: 'handle-only', pair: null };
 			if (pair.status === 'mismatch') return { code: 'mismatch', pair };
@@ -50,7 +52,7 @@
 				unverified: 0,
 				pairNeeded: 0
 			};
-			for (const handle of allItems.filter(item => item.type === 'handle').map(item => item.value)) {
+			for (const handle of allItems.filter((item: BlockItem) => item.type === 'handle').map((item: BlockItem) => item.value)) {
 				summary.handles += 1;
 				const status = this.getHandleStatus(handle, blockedIds).code;
 				if (status === 'paired') summary.paired += 1;
@@ -74,15 +76,15 @@
 		dismissNotification() {
 			this.pairStore.dismissNotification();
 		}
-		removeHandleArtifacts(handle) {
+		removeHandleArtifacts(handle: any) {
 			const pair = this.pairStore.getPair(handle);
 			if (pair?.uid && !this._uidUsedByOtherPair(pair.uid, [handle])) {
 				this.storage.remove({ type: 'id', value: pair.uid });
 			}
 			this.pairStore.removePair(handle);
 		}
-		collectHandleArtifactIds(handles) {
-			const ids = new Set();
+		collectHandleArtifactIds(handles: any[]): Set<string> {
+			const ids = new Set<string>();
 			const excludedHandles = handles || [];
 			for (const handle of handles || []) {
 				const pair = this.pairStore.getPair(handle);
@@ -90,35 +92,35 @@
 			}
 			return ids;
 		}
-		removeHandlePairs(handles) {
+		removeHandlePairs(handles: any[]) {
 			this.pairStore.removePairs(handles || []);
 		}
 		clearPairArtifacts() {
 			this.pairStore.clearPairs();
 		}
 		async createMissingPairs() {
-			const handles = this.getBlockedHandles().filter(handle => {
+			const handles = this.getBlockedHandles().filter((handle: string) => {
 				const code = this.getHandleStatus(handle).code;
 				return code === 'handle-only' || code === 'unverified';
 			});
 			return this._processHandles(handles);
 		}
-		async createPairsForHandles(handles) {
+		async createPairsForHandles(handles: any[]) {
 			const filtered = (handles || []).filter(handle => {
 				const code = this.getHandleStatus(handle).code;
 				return code === 'handle-only' || code === 'unverified';
 			});
 			return this._processHandles(filtered);
 		}
-		_shouldRefreshHandle(handle, { includeMissing = true } = {}) {
+		_shouldRefreshHandle(handle: any, { includeMissing = true } = {}) {
 			const status = this.getHandleStatus(handle).code;
 			if (status === 'paired') return false;
 			if (status === 'handle-only') return includeMissing;
 			return status === 'stale' || status === 'mismatch' || status === 'unverified';
 		}
-		async updatePairs({ includeMissing = true } = {}) {
-			const handles = [];
-			const skipped = [];
+		async updatePairs({ includeMissing = true } = {}): Promise<PairRunStats> {
+			const handles: string[] = [];
+			const skipped: PairRunItem[] = [];
 			for (const handle of this.getBlockedHandles()) {
 				const hasPair = !!this.pairStore.getPair(handle);
 				if (!includeMissing && !hasPair) continue;
@@ -145,10 +147,10 @@
 			stats.items.push(...skipped);
 			return stats;
 		}
-		async updatePairsForHandles(handles) {
+		async updatePairsForHandles(handles: any[]) {
 			return this._processHandles(handles || []);
 		}
-		async _processHandles(handles) {
+		async _processHandles(handles: any[]): Promise<PairRunStats> {
 			if (this._busy) return {
 				created: 0,
 				refreshed: 0,
@@ -163,7 +165,7 @@
 				}))
 			};
 			this._busy = true;
-			const stats = {
+			const stats: PairRunStats = {
 				created: 0,
 				refreshed: 0,
 				mismatches: 0,
@@ -172,8 +174,8 @@
 				skipped: 0,
 				items: []
 			};
-			const uniqueHandles = [];
-			const seen = new Set();
+			const uniqueHandles: string[] = [];
+			const seen = new Set<string>();
 			for (const handle of handles || []) {
 				const key = getHandleCompareKey(handle, this.settings?.isHandleCaseSensitive?.() || false);
 				const value = sanitizeHandle(handle);
@@ -322,7 +324,7 @@
 				};
 			}
 		}
-		async resolveHandle(handle) {
+		async resolveHandle(handle: string) {
 			const apiKey = this.apiConfig.getApiKey();
 			if (!apiKey) throw new Error(t('apiKeyRequired'));
 

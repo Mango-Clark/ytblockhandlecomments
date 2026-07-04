@@ -1,9 +1,11 @@
+
 	/* ----------------------------------------------------------
 	 * 8. Handle extractor (robust to DOM changes)
 	 * ---------------------------------------------------------- */
 	class Extractor {
+		[key: string]: any;
 		// Try multiple routes to get "@handle" from a comment root
-		static getHandle(root) {
+		static getHandle(root: Element | null | undefined): string | null {
 			if (!root) return null;
 
 			// 1) '#author-text > span' or '#author-handle'
@@ -21,7 +23,7 @@
 			return null;
 		}
 
-		static getChannelId(root) {
+		static getChannelId(root: Element | null | undefined): string | null {
 			if (!root) return null;
 			const a = root.querySelector('a[href*="/channel/UC"]');
 			const href = a?.getAttribute?.('href') || '';
@@ -30,7 +32,7 @@
 			return null;
 		}
 
-		static getCommentRoot(node) {
+		static getCommentRoot(node: any): Element | null {
 			return node?.closest?.('ytd-comment-thread-renderer, ytd-comment-renderer, ytd-comment-view-model') || null;
 		}
 	}

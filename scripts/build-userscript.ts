@@ -2,10 +2,11 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const ts = require('typescript');
 
 const root = path.resolve(__dirname, '..');
 const outputPath = path.join(root, 'ytblockhandlecomments.js');
-const sourceFiles = [
+const sourceFiles: string[] = [
 	'00-userscript-header.ts',
 	'01-global-styles.ts',
 	'i18n/ko.ts',
@@ -25,21 +26,38 @@ const sourceFiles = [
 	'14-bootstrap.ts'
 ];
 
-const normalizeNewlines = (value) => String(value || '').replace(/\r\n/g, '\n');
-const readSource = (file) => normalizeNewlines(fs.readFileSync(path.join(root, 'src', file), 'utf8')).trimEnd();
-const isWord = (ch) => /[A-Za-z0-9_$]/.test(ch || '');
-const needsSpace = (prev, next) => isWord(prev) && isWord(next);
-const canStartRegex = (prev) => !prev || /[({[=,:;!&|?]/.test(prev);
-const appendChar = (out, ch) => {
+type CompactState = 'normal' | 'single' | 'double' | 'regex' | 'regex-class' | 'template';
+
+const normalizeNewlines = (value: unknown): string => String(value || '').replace(/\r\n/g, '\n');
+const readRawSource = (file: string): string => normalizeNewlines(fs.readFileSync(path.join(root, 'src', file), 'utf8')).trimEnd();
+const stripLeadingStrictDirective = (source: string): string => source.replace(/^\s*(['"])use strict\1;\s*/, '');
+const transpileSource = (source: string, file: string): string => {
+	const result = ts.transpileModule(source, {
+		fileName: file,
+		compilerOptions: {
+			module: ts.ModuleKind.None,
+			noImplicitUseStrict: true,
+			removeComments: true,
+			target: ts.ScriptTarget.ES2022,
+			useDefineForClassFields: false
+		}
+	});
+	return normalizeNewlines(result.outputText).trimEnd();
+};
+const readBodySource = (file: string): string => stripLeadingStrictDirective(transpileSource(readRawSource(file), file));
+const isWord = (ch: string | undefined): boolean => /[A-Za-z0-9_$]/.test(ch || '');
+const needsSpace = (prev: string | undefined, next: string | undefined): boolean => isWord(prev) && isWord(next);
+const canStartRegex = (prev: string | undefined): boolean => !prev || /[({[=,:;!&|?]/.test(prev);
+const appendChar = (out: string[], ch: string): void => {
 	if (ch === '\n') {
 		if (out[out.length - 1] !== '\n') out.push(ch);
 		return;
 	}
 	out.push(ch);
 };
-const compactBody = (source) => {
-	const out = [];
-	let state = 'normal';
+const compactBody = (source: string): string => {
+	const out: string[] = [];
+	let state: CompactState = 'normal';
 	let pendingSpace = false;
 	for (let i = 0; i < source.length; i += 1) {
 		const ch = source[i];
@@ -135,9 +153,10 @@ const compactBody = (source) => {
 	}
 	return out.join('').trim();
 };
-const header = readSource(sourceFiles[0]);
-const body = compactBody(sourceFiles.slice(1).map(readSource).join('\n'));
-const generated = `${header}\n${body}\n`;
+const header = readRawSource(sourceFiles[0]);
+const wrapperPrefix = "(() => {\n\t'use strict';\n\tconst TEST_HOOK = typeof window === 'object' ? window.__YT_BLOCK_TEST_HOOK__ || null : null;\n";
+const body = compactBody(sourceFiles.slice(1).map(readBodySource).join('\n'));
+const generated = `${header}\n${wrapperPrefix}${body}\n})();\n`;
 
 if (process.argv.includes('--check')) {
 	const current = normalizeNewlines(fs.readFileSync(outputPath, 'utf8'));

@@ -1,8 +1,10 @@
+
 	/* ----------------------------------------------------------
 	 * 9. CommentHider (scoped refresh + cached metadata)
 	 * ---------------------------------------------------------- */
 	class CommentHider {
-		constructor(storage, pairStore, settings) {
+		[key: string]: any;
+		constructor(storage: StorageLike, pairStore: PairStoreLike, settings: SettingsLike) {
 			this.storage = storage;
 			this.pairStore = pairStore;
 			this.settings = settings;
@@ -46,7 +48,7 @@
 				}
 			}
 		}
-		_autoAddRegexHandle(handle, handleKey) {
+		_autoAddRegexHandle(handle: string | null, handleKey: string | null) {
 			if (!this.settings?.isAutoAddRegexHandlesEnabled?.() || !handle || !handleKey) return;
 			if (this._handleSet.has(handleKey)) return;
 			if (this.storage.addHandle(handle)) {
@@ -57,20 +59,20 @@
 		_getDefaultRoot() {
 			return document.querySelector(COMMENTS_HOST_SELECTOR);
 		}
-		_collectCommentNodes(root) {
+		_collectCommentNodes(root: Element | null | undefined): Element[] {
 			if (!root) return [];
 			if (root.matches?.(HIDEABLE_COMMENT_SELECTOR)) return [root];
 			if (!root.querySelectorAll) return [];
 			return Array.from(root.querySelectorAll(HIDEABLE_COMMENT_SELECTOR));
 		}
-		_mergeRoots(a, b) {
+		_mergeRoots(a: Element | null, b: Element | null): Element | null {
 			if (!a) return b;
 			if (!b || a === b) return a;
 			if (a.contains?.(b)) return a;
 			if (b.contains?.(a)) return b;
 			return this._getDefaultRoot() || b;
 		}
-		_getMeta(node) {
+		_getMeta(node: Element) {
 			const cached = this._metaCache.get(node);
 			if (cached) return cached;
 			const meta = {
@@ -80,11 +82,11 @@
 			this._metaCache.set(node, meta);
 			return meta;
 		}
-		invalidateNode(node) {
+		invalidateNode(node: Element | null | undefined) {
 			if (!node) return;
 			this._metaCache.delete(node);
 		}
-		_matches(node) {
+		_matches(node: Element): boolean {
 			const meta = this._getMeta(node);
 			if (meta.id && this._idSet.has(meta.id)) return true;
 			const h = meta.handle;
@@ -100,7 +102,7 @@
 			}
 			return false;
 		}
-		_getDislikeButton(node) {
+		_getDislikeButton(node: Element): any {
 			const selectors = [
 				'ytd-toggle-button-renderer#dislike-button button',
 				'#dislike-button button',
@@ -114,10 +116,10 @@
 			}
 			return null;
 		}
-		_isDislikeActive(button) {
+		_isDislikeActive(button: any): boolean {
 			return button?.getAttribute?.('aria-pressed') === 'true';
 		}
-		_autoDislikeBeforeHide(node) {
+		_autoDislikeBeforeHide(node: Element) {
 			if (!node || this._autoDisliked.has(node)) return;
 			const button = this._getDislikeButton(node);
 			if (!button || button.disabled) return;
@@ -125,10 +127,10 @@
 			if (this._isDislikeActive(button)) return;
 			button.click?.();
 		}
-		_findBlockPlaceholder(node) {
+		_findBlockPlaceholder(node: Element): any {
 			return Array.from(node.children || []).find(child => child.classList?.contains('tm-block-placeholder')) || null;
 		}
-		_getBlockPlaceholder(node, mode) {
+		_getBlockPlaceholder(node: Element, mode: CommentBlockMode): any {
 			let placeholder = this._findBlockPlaceholder(node);
 			if (!placeholder) {
 				placeholder = document.createElement(mode === 'placeholder-reveal' ? 'button' : 'div');
@@ -157,7 +159,7 @@
 			}
 			return placeholder;
 		}
-		_applyBlockMode(node, shouldHide) {
+		_applyBlockMode(node: Element, shouldHide: boolean) {
 			if (!shouldHide) {
 				node.classList.remove('tm-hidden', 'tm-block-placeholder-mode', 'tm-block-revealed');
 				this._findBlockPlaceholder(node)?.remove();
@@ -175,7 +177,7 @@
 			if (blockMode !== 'placeholder-reveal') node.classList.remove('tm-block-revealed');
 			this._getBlockPlaceholder(node, blockMode);
 		}
-		applyHide(node) {
+		applyHide(node: Element | null | undefined) {
 			if (!node) return;
 			const shouldHide = this._matches(node);
 			const dislikeMode = this.settings?.getDislikeMode?.() || 'none';
@@ -212,19 +214,19 @@
 			this._pending = false;
 			this._pendingRoot = null;
 		}
-		_observeNode(node) {
+		_observeNode(node: Element | null | undefined) {
 			if (!node || this._observed.has(node)) return;
 			this._observed.add(node);
 			this._connectIO().observe(node);
 		}
-		unobserveNodes(nodes) {
+		unobserveNodes(nodes: Iterable<Element>) {
 			if (!this._io) return;
 			for (const node of nodes || []) {
 				if (!this._observed.delete(node)) continue;
 				this._io.unobserve(node);
 			}
 		}
-		_recordRefresh(kind, count, startedAt) {
+		_recordRefresh(kind: 'fullRefreshes' | 'incrementalRefreshes', count: number, startedAt: number) {
 			this._metrics[kind] += 1;
 			this._metrics.scannedNodes += count;
 			const duration = Math.round((performance.now() - startedAt) * 100) / 100;
@@ -234,8 +236,8 @@
 		noteMutationBatch() {
 			this._metrics.mutationBatches += 1;
 		}
-		refreshNodes(nodes, { invalidate = true } = {}) {
-			const unique = new Set();
+		refreshNodes(nodes: Iterable<Element>, { invalidate = true } = {}) {
+			const unique = new Set<Element>();
 			for (const node of nodes || []) {
 				if (!node?.isConnected) continue;
 				for (const commentNode of this._collectCommentNodes(node)) unique.add(commentNode);
@@ -249,7 +251,7 @@
 			}
 			this._recordRefresh('incrementalRefreshes', unique.size, startedAt);
 		}
-		doRefresh(root) {
+		doRefresh(root: Element | null | undefined) {
 			const scope = root || this._getDefaultRoot();
 			if (!scope) return;
 			const nodes = this._collectCommentNodes(scope);
@@ -261,7 +263,7 @@
 			}
 			this._recordRefresh('fullRefreshes', nodes.length, startedAt);
 		}
-		refreshScheduled(root) {
+		refreshScheduled(root: Element | null | undefined) {
 			const scope = root || this._getDefaultRoot();
 			if (!scope) return;
 			this._pendingRoot = this._mergeRoots(this._pendingRoot, scope);

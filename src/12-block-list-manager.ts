@@ -1,11 +1,13 @@
+
 	/* ----------------------------------------------------------
 	 * 7. BlockListManager (UI + Import/Export)
 	 * ---------------------------------------------------------- */
 	class BlockListManager {
-		constructor(app) {
+		[key: string]: any;
+		constructor(app: AppLike) {
 			this.app = app;
 		}
-		_makeBadge(code) {
+		_makeBadge(code: string) {
 			const badge = document.createElement('span');
 			badge.className = `tm-badge ${code}`;
 			const key = code === 'uid'
@@ -24,19 +26,19 @@
 			badge.textContent = t(key);
 			return badge;
 		}
-		_createMetaLine(text) {
+		_createMetaLine(text: any) {
 			const div = document.createElement('div');
 			div.textContent = text;
 			return div;
 		}
-		_getPairOutcomeLabel(code) {
+		_getPairOutcomeLabel(code: PairOutcome | string) {
 			if (code === 'created') return t('pairOutcomeCreated');
 			if (code === 'updated') return t('pairOutcomeUpdated');
 			if (code === 'mismatch') return t('pairOutcomeMismatch');
 			if (code === 'failed') return t('pairOutcomeFailed');
 			return t('pairOutcomeSkipped');
 		}
-		_getRegexMatches(regexItem, items) {
+		_getRegexMatches(regexItem: BlockItem | null | undefined, items: BlockItem[]) {
 			if (!regexItem || regexItem.type !== 'regex') return [];
 			const handles = (items || []).filter(item => item.type === 'handle');
 			const spec = validateRegexSpec(regexItem.value, regexItem.flags || '');
@@ -44,7 +46,7 @@
 			const rx = new RegExp(spec.pattern, spec.flags);
 			return handles.filter(item => safeRegexTest(rx, item.value));
 		}
-		_getPairResultItems(stats, options = {}) {
+		_getPairResultItems(stats: PairRunStats | null | undefined, options: any = {}) {
 			const items = Array.isArray(stats?.items) ? stats.items.slice() : [];
 			const filter = options.filter || 'all';
 			const sort = options.sort || 'original';
@@ -62,12 +64,12 @@
 			}
 			return filtered;
 		}
-		_getFailedPairHandles(stats) {
+		_getFailedPairHandles(stats: PairRunStats | null | undefined) {
 			return (stats?.items || [])
 				.filter(item => item?.outcome === 'failed' && item.handle)
 				.map(item => item.handle);
 		}
-		_copyText(text) {
+		_copyText(text: any) {
 			const value = String(text || '');
 			try {
 				if (navigator.clipboard?.writeText) return navigator.clipboard.writeText(value);
@@ -86,7 +88,7 @@
 			ta.remove();
 			return Promise.resolve();
 		}
-		_showFailedPairExport(handles) {
+		_showFailedPairExport(handles: string[]) {
 			const body = document.createElement('div');
 			const p = document.createElement('p');
 			p.textContent = handles.length ? t('exportHint') : t('pairResultFailedEmpty');
@@ -98,14 +100,14 @@
 				title: t('pairResultFailedTitle'),
 				body,
 				buttons: [{ label: t('close'), value: false, primary: true }],
-				onRefresh: (ctx) => {
+				onRefresh: (ctx: DialogRefreshContext) => {
 					ctx.setTitle(t('pairResultFailedTitle'));
 					p.textContent = handles.length ? t('exportHint') : t('pairResultFailedEmpty');
 					ctx.buttons[0].textContent = t('close');
 				}
 			});
 		}
-		_renderPairResultList(container, stats) {
+		_renderPairResultList(container: HTMLElement, stats: PairRunStats | null | undefined) {
 			const previousOpen = container.querySelector('details')?.open;
 			const state = container.__pairResultState || { filter: 'all', sort: 'original' };
 			container.__pairResultState = state;
@@ -193,7 +195,7 @@
 			details.append(summary, controls, list);
 			container.appendChild(details);
 		}
-		_renderApiTestStatus(container, result, isRunning) {
+		_renderApiTestStatus(container: HTMLElement, result: ApiTestResult | null, isRunning: boolean) {
 			container.replaceChildren();
 			container.className = 'tm-inline-note';
 			if (isRunning) {
@@ -224,14 +226,14 @@
 				container.appendChild(quota);
 			}
 		}
-		_showPairResultDialog(stats) {
+		_showPairResultDialog(stats: PairRunStats) {
 			const body = document.createElement('div');
 			this._renderPairResultList(body, stats);
 			Dialog.show({
 				title: t('pairResultDialogTitle'),
 				body,
 				buttons: [{ label: t('close'), value: false, primary: true }],
-				onRefresh: (ctx) => {
+				onRefresh: (ctx: DialogRefreshContext) => {
 					ctx.setTitle(t('pairResultDialogTitle'));
 					ctx.buttons[0].textContent = t('close');
 					this._renderPairResultList(body, stats);
@@ -473,9 +475,9 @@
 						{ label: t('close'), value: false },
 						{ label: t('resetSettings'), value: true, primary: true }
 					],
-					onRefresh: (ctx) => {
+					onRefresh: (ctx: DialogRefreshContext) => {
 						ctx.setTitle(t('resetSettings'));
-						ctx.content.firstChild.textContent = t('confirmResetSettings');
+						if (ctx.content.firstChild) ctx.content.firstChild.textContent = t('confirmResetSettings');
 						ctx.buttons[0].textContent = t('close');
 						ctx.buttons[1].textContent = t('resetSettings');
 					}
@@ -512,7 +514,7 @@
 				renderAll();
 				Toast.show(t('apiKeyCleared'));
 			});
-			const runPair = async (mode) => {
+			const runPair = async (mode: string) => {
 				pairBusy = true;
 				applyLanguage();
 				const stats = await this.app.runPairUpdate(mode);
@@ -527,7 +529,7 @@
 				title: t('settingsTitle'),
 				body,
 				buttons: [{ label: t('close'), value: false, primary: true }],
-				onRefresh: (ctx) => {
+				onRefresh: (ctx: DialogRefreshContext) => {
 					ctx.setTitle(t('settingsTitle'));
 					ctx.buttons[0].textContent = t('close');
 					applyLanguage();
@@ -721,7 +723,32 @@
 			tagLabel.className = 'tm-counter';
 			const tagGroup = document.createElement('div');
 			tagGroup.className = 'tm-tag-group';
-			const tagInputs = [];
+			type TagInputRef = { code: string; input: HTMLInputElement; text: HTMLSpanElement };
+			type BlockListBaseViewState = {
+				signature: string;
+				itemsRevision: string;
+				allItems: BlockItem[];
+				keyedItems: Map<string, BlockItem>;
+				handleItems: BlockItem[];
+				blockedIds: Set<string>;
+				visibleItems: BlockItem[];
+				visibleKeys: string[];
+				visibleKeySet: Set<string>;
+			};
+			type BlockListViewState = BlockListBaseViewState & {
+				baseSignature: string;
+				selectionVersion: number;
+				selectedItems: BlockItem[];
+				selectedHandleCount: number;
+				selectedVisibleCount: number;
+			};
+			type RegexMatchCacheEntry = {
+				revision: string;
+				caseSensitive: boolean;
+				matchCount: number | null;
+				matches: BlockItem[] | null;
+			};
+			const tagInputs: TagInputRef[] = [];
 			['handle-only', 'paired', 'stale', 'mismatch', 'unverified'].forEach(code => {
 				const label = document.createElement('label');
 				const input = document.createElement('input');
@@ -768,20 +795,20 @@
 			listSection.append(listTitle, toolbar, list);
 			wrap.append(versionSection, form, listSection);
 
-			const regexMatchCache = new Map();
-			const rowRefs = new Map();
-			let baseViewStateCache = null;
-			let viewStateCache = null;
+			const regexMatchCache = new Map<string, RegexMatchCacheEntry>();
+			const rowRefs = new Map<string, { checkbox: HTMLInputElement }>();
+			let baseViewStateCache: BlockListBaseViewState | null = null;
+			let viewStateCache: BlockListViewState | null = null;
 			let selectionVersion = 0;
 			const getCurrentItems = () => this.app.storage.all();
-			const getStatusCode = (item, blockedIds = null) => item.type === 'handle'
+			const getStatusCode = (item: BlockItem, blockedIds: Set<string> | null = null) => item.type === 'handle'
 				? this.app.pairService.getHandleStatus(item.value, blockedIds).code
 				: null;
 			const markSelectionChanged = () => {
 				selectionVersion += 1;
 				viewStateCache = null;
 			};
-			const setSelectionValue = (key, selected) => {
+			const setSelectionValue = (key: string | null, selected: boolean) => {
 				if (!key) return false;
 				if (selected) {
 					if (selection.has(key)) return false;
@@ -800,10 +827,10 @@
 				rowRefs.clear();
 				if (clearRegex) regexMatchCache.clear();
 			};
-			const getItemsRevision = (items) => (items || [])
+			const getItemsRevision = (items: BlockItem[]) => (items || [])
 				.map(item => `${item.type}:${item.value}:${item.flags || ''}`)
 				.join('\u001f');
-			const getPairRevision = (items, blockedIds = null) => (items || [])
+			const getPairRevision = (items: BlockItem[], blockedIds: Set<string> | null = null) => (items || [])
 				.filter(item => item.type === 'handle')
 				.map(item => {
 					const status = this.app.pairService.getHandleStatus(item.value, blockedIds);
@@ -819,8 +846,10 @@
 					].join(':');
 				})
 				.join('\u001e');
-			const pruneSelection = (keyedItems) => {
-				const valid = keyedItems || new Map(getCurrentItems().map(item => [getItemKey(item), item]));
+			const pruneSelection = (keyedItems?: Map<string, BlockItem>) => {
+				const valid = keyedItems || new Map(getCurrentItems()
+					.map((item: BlockItem): [string | null, BlockItem] => [getItemKey(item), item])
+					.filter((entry: [string | null, BlockItem]): entry is [string, BlockItem] => !!entry[0]));
 				let changed = false;
 				for (const key of Array.from(selection)) {
 					if (!valid.has(key)) {
@@ -830,21 +859,23 @@
 				}
 				if (changed) markSelectionChanged();
 			};
-			const buildBaseViewState = () => {
+			const buildBaseViewState = (): BlockListBaseViewState => {
 				const allItems = getCurrentItems();
 				const blockedIds = this.app.pairService.getBlockedIdSet(allItems);
-				const keyedItems = new Map(allItems.map(item => [getItemKey(item), item]));
-				const handleItems = allItems.filter(item => item.type === 'handle');
+				const keyedItems: Map<string, BlockItem> = new Map(allItems
+					.map((item: BlockItem): [string | null, BlockItem] => [getItemKey(item), item])
+					.filter((entry: [string | null, BlockItem]): entry is [string, BlockItem] => !!entry[0]));
+				const handleItems = allItems.filter((item: BlockItem) => item.type === 'handle');
 				const searchIndex = buildManagerSearchIndex(allItems);
 				const searched = searchManagerIndex(searchIndex, searchQuery);
 				const typeValue = typeSelect.value || 'all';
-				const visibleItems = searched.filter(item => {
+				const visibleItems = searched.filter((item: BlockItem) => {
 					if (typeValue !== 'all' && item.type !== typeValue) return false;
 					if (!tagFilters.size) return true;
 					if (item.type !== 'handle') return false;
 					return tagFilters.has(getStatusCode(item, blockedIds));
 				});
-				const visibleKeys = visibleItems.map(getItemKey).filter(Boolean);
+				const visibleKeys = visibleItems.map(getItemKey).filter(isNonNull);
 				return {
 					signature: [
 						getItemsRevision(allItems),
@@ -864,25 +895,26 @@
 					visibleKeySet: new Set(visibleKeys)
 				};
 			};
-			const computeViewState = (force = false) => {
+			const computeViewState = (force = false): BlockListViewState => {
 				if (force || !baseViewStateCache) baseViewStateCache = buildBaseViewState();
-				pruneSelection(baseViewStateCache.keyedItems);
+				const baseViewState = baseViewStateCache;
+				pruneSelection(baseViewState.keyedItems);
 				if (
 					!force &&
 					viewStateCache &&
-					viewStateCache.baseSignature === baseViewStateCache.signature &&
+					viewStateCache.baseSignature === baseViewState.signature &&
 					viewStateCache.selectionVersion === selectionVersion
 				) {
 					return viewStateCache;
 				}
 				const selectedItems = Array.from(selection)
-					.map(key => baseViewStateCache.keyedItems.get(key))
-					.filter(Boolean);
+					.map(key => baseViewState.keyedItems.get(key))
+					.filter(isNonNull);
 				const selectedHandleCount = selectedItems.filter(item => item.type === 'handle').length;
-				const selectedVisibleCount = baseViewStateCache.visibleKeys.filter(key => selection.has(key)).length;
+				const selectedVisibleCount = baseViewState.visibleKeys.filter(key => selection.has(key)).length;
 				viewStateCache = {
-					...baseViewStateCache,
-					baseSignature: baseViewStateCache.signature,
+					...baseViewState,
+					baseSignature: baseViewState.signature,
 					selectionVersion,
 					selectedItems,
 					selectedHandleCount,
@@ -890,8 +922,15 @@
 				};
 				return viewStateCache;
 			};
-			const getRegexMatchState = (regexItem, viewState, mode = 'count') => {
-				if (!regexItem || regexItem.type !== 'regex') return { matchCount: 0, matches: mode === 'full' ? [] : null };
+			const getRegexMatchState = (regexItem: BlockItem, viewState: BlockListViewState, mode = 'count'): RegexMatchCacheEntry => {
+				if (!regexItem || regexItem.type !== 'regex') {
+					return {
+						revision: viewState?.itemsRevision || '',
+						caseSensitive: this.app.settings.isHandleCaseSensitive(),
+						matchCount: 0,
+						matches: mode === 'full' ? [] : null
+					};
+				}
 				const cacheKey = [
 					getItemKey(regexItem),
 					viewState?.itemsRevision || '',
@@ -917,7 +956,7 @@
 				}
 				const rx = new RegExp(spec.pattern, spec.flags);
 				if (mode === 'full') {
-					const matches = [];
+					const matches: BlockItem[] = [];
 					for (const item of viewState.handleItems) {
 						if (safeRegexTest(rx, item.value)) matches.push(item);
 					}
@@ -1008,6 +1047,7 @@
 				}
 				for (const item of viewState.visibleItems) {
 					const itemKey = getItemKey(item);
+					if (!itemKey) continue;
 					const li = document.createElement('li');
 					const checkbox = document.createElement('input');
 					checkbox.type = 'checkbox';
@@ -1203,7 +1243,7 @@
 				searchNote.textContent = searchQuery ? t('searchLabel') : '';
 				renderAll();
 			};
-			const setBusy = (nextBusy) => {
+			const setBusy = (nextBusy: any) => {
 				busy = !!nextBusy;
 				renderSummary();
 			};
@@ -1336,7 +1376,7 @@
 					{ label: t('export'), value: 'export' },
 					{ label: t('close'), value: false, primary: true }
 				],
-				onRefresh: (ctx) => {
+				onRefresh: (ctx: DialogRefreshContext) => {
 					ctx.setTitle(t('manageTitle', this.app.storage.all().length));
 					ctx.buttons[0].textContent = t('import');
 					ctx.buttons[1].textContent = t('export');
@@ -1358,7 +1398,7 @@
 			const ta1 = document.createElement('textarea'); ta1.readOnly = true; ta1.value = json;
 			const h4b = document.createElement('h4'); h4b.textContent = t('text');
 			const ta2 = document.createElement('textarea'); ta2.readOnly = true;
-			ta2.value = this.app.storage.all().map(it => it.type === 'regex' ? exportRegexLiteral(it) : it.value).join('\n');
+			ta2.value = this.app.storage.all().map((it: BlockItem) => it.type === 'regex' ? exportRegexLiteral(it) : it.value).join('\n');
 			body.append(p, h4a, ta1, h4b, ta2);
 			Dialog.show({
 				title: t('export'),
@@ -1388,7 +1428,7 @@
 					ctx.buttons[0].textContent = t('close');
 					ctx.buttons[1].textContent = t('importBtn');
 				},
-				onBeforeClose: (val) => {
+				onBeforeClose: (val: any) => {
 					if (val !== 'import') return null;
 					const rawText = ta.value || '';
 					if (rawText.length > 1024 * 1024) {
@@ -1402,7 +1442,7 @@
 					try {
 						const obj = JSON.parse(txt);
 						if (obj && Array.isArray(obj.items)) items = obj.items;
-						else if (obj && Array.isArray(obj.handles)) items = obj.handles.map(h => ({ type: 'handle', value: h }));
+						else if (obj && Array.isArray(obj.handles)) items = obj.handles.map((h: any) => ({ type: 'handle', value: h }));
 					} catch {
 						const parts = txt.split(/\n+/).flatMap(line => {
 							const trimmed = line.trim();

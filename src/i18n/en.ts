@@ -1,7 +1,8 @@
 	/* ----------------------------------------------------------
 	 * 1b. English i18n strings
 	 * ---------------------------------------------------------- */
-	const I18N_EN = {
+
+	const I18N_EN: I18nBundle = {
 			block: 'Block',
 			unblock: 'Unblock',
 			confirmBlock: '🛑 Block this channel?',

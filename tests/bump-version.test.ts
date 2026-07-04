@@ -2,9 +2,9 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { releaseChangelog } = require('../scripts/bump-version');
+const { releaseChangelog } = require('../scripts/bump-version.ts');
 
-const makeChangelog = (emptyEntry) => `# Changelog
+const makeChangelog = (emptyEntry: string) => `# Changelog
 
 ## [Unreleased]
 

@@ -1,14 +1,16 @@
+
 	/* ----------------------------------------------------------
 	 * 2. App settings storage
 	 * ---------------------------------------------------------- */
 	class AppSettingsStorage {
+		[key: string]: any;
 		constructor() {
 			this.KEY = 'app_settings_v1';
 			this._state = this._init();
 		}
-		_getGM(key, def) { try { return GM_getValue(key, def); } catch { return def; } }
-		_setGM(key, val) { try { GM_setValue(key, val); } catch { } }
-		_normalizeState(raw) {
+		_getGM(key: string, def: any) { try { return GM_getValue(key, def); } catch { return def; } }
+		_setGM(key: string, val: any) { try { GM_setValue(key, val); } catch { } }
+		_normalizeState(raw: any) {
 			const src = raw && typeof raw === 'object' ? raw : {};
 			return {
 				version: 1,
@@ -24,11 +26,11 @@
 		getState() {
 			return { ...this._state };
 		}
-		setAllLocal(state) {
+		setAllLocal(state: any) {
 			this._state = this._normalizeState(state);
 			return this.getState();
 		}
-		_saveState(nextState) {
+		_saveState(nextState: any) {
 			const normalized = this._normalizeState(nextState);
 			if (
 				this._state.handleCaseSensitive === normalized.handleCaseSensitive &&
@@ -46,25 +48,25 @@
 		isHandleCaseSensitive() {
 			return !!this._state.handleCaseSensitive;
 		}
-		setHandleCaseSensitive(enabled) {
+		setHandleCaseSensitive(enabled: any) {
 			return this._saveState({ ...this._state, handleCaseSensitive: !!enabled });
 		}
 		isAutoAddRegexHandlesEnabled() {
 			return !!this._state.autoAddRegexHandles;
 		}
-		setAutoAddRegexHandlesEnabled(enabled) {
+		setAutoAddRegexHandlesEnabled(enabled: any) {
 			return this._saveState({ ...this._state, autoAddRegexHandles: !!enabled });
 		}
 		getDislikeMode() {
 			return this._state.dislikeMode || 'none';
 		}
-		setDislikeMode(mode) {
+		setDislikeMode(mode: any) {
 			return this._saveState({ ...this._state, dislikeMode: mode });
 		}
 		getCommentBlockMode() {
 			return this._state.commentBlockMode || 'hide';
 		}
-		setCommentBlockMode(mode) {
+		setCommentBlockMode(mode: any) {
 			return this._saveState({ ...this._state, commentBlockMode: mode });
 		}
 		resetSettings() {

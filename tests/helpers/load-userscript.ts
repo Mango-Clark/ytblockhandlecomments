@@ -1,18 +1,30 @@
+
 'use strict';
 
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
-const { createDom } = require('./fake-dom');
+const { createDom } = require('./fake-dom.ts');
+
+type LoadOptions = {
+	gmStore?: Record<string, unknown>;
+	url?: string;
+	language?: string;
+};
+type TestContext = {
+	[key: string]: any;
+};
+type AnimationFrameCallback = (time: number) => void;
 
 class FakeMutationObserver {
-	constructor(callback) {
+	[key: string]: any;
+	constructor(callback: (records: any[]) => void) {
 		this.callback = callback;
 		this.observeCalls = [];
 		this.disconnected = false;
 	}
 
-	observe(target, options) {
+	observe(target: any, options: any) {
 		this.observeCalls.push({ target, options });
 	}
 
@@ -22,13 +34,14 @@ class FakeMutationObserver {
 }
 
 class FakeIntersectionObserver {
-	constructor(callback) {
+	[key: string]: any;
+	constructor(callback: (entries: any[]) => void) {
 		this.callback = callback;
 		this.observeCalls = [];
 		this.disconnected = false;
 	}
 
-	observe(target) {
+	observe(target: any) {
 		this.observeCalls.push(target);
 	}
 
@@ -39,14 +52,14 @@ class FakeIntersectionObserver {
 	}
 }
 
-function loadUserscript(options = {}) {
+function loadUserscript(options: LoadOptions = {}) {
 	const { document, Node, Element } = createDom();
 	const gmStore = new Map(Object.entries(options.gmStore || {}));
 	const hook = { skipBootstrap: true };
 	const location = new URL(options.url || 'https://www.youtube.com/watch?v=video-a');
 	let perfNow = 0;
 
-	const context = {
+	const context: TestContext = {
 		console,
 		Node,
 		Element,
@@ -63,7 +76,7 @@ function loadUserscript(options = {}) {
 				return perfNow;
 			}
 		},
-		requestAnimationFrame: (callback) => {
+		requestAnimationFrame: (callback: AnimationFrameCallback) => {
 			callback(0);
 			return 1;
 		},
@@ -74,8 +87,8 @@ function loadUserscript(options = {}) {
 			throw new Error('fetch not stubbed in test');
 		},
 		GM_info: { script: { version: '0.5.1-test' } },
-		GM_getValue: (key, fallback) => (gmStore.has(key) ? gmStore.get(key) : fallback),
-		GM_setValue: (key, value) => {
+		GM_getValue: (key: string, fallback: unknown) => (gmStore.has(key) ? gmStore.get(key) : fallback),
+		GM_setValue: (key: string, value: unknown) => {
 			gmStore.set(key, value);
 		},
 		GM_addValueChangeListener: () => 0,
@@ -96,8 +109,8 @@ function loadUserscript(options = {}) {
 		context,
 		document,
 		gmStore,
-		setLang: (lang) => context.GM_setValue('lang', lang),
-		setLocation: (href) => {
+		setLang: (lang: string) => context.GM_setValue('lang', lang),
+		setLocation: (href: string) => {
 			const next = new URL(href);
 			context.location = next;
 			context.window.location = next;

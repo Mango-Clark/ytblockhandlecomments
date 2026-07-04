@@ -2,7 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { loadUserscript } = require('./helpers/load-userscript');
+const { loadUserscript } = require('./helpers/load-userscript.ts');
 
 test('regex safety validation rejects catastrophic alternation pattern', () => {
 	const { api } = loadUserscript();

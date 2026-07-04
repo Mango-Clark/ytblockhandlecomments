@@ -1,8 +1,10 @@
+
 	/* ----------------------------------------------------------
 	 * 6. MenuEnhancer (⋯ menu item injection)
 	 * ---------------------------------------------------------- */
 	class MenuEnhancer {
-		constructor(app) {
+		[key: string]: any;
+		constructor(app: AppLike) {
 			this.app = app;
 			this.storage = app.storage;
 			this.lastHandle = null;
@@ -10,7 +12,8 @@
 			this._popupTimer = null;
 
 			document.body.addEventListener('click', e => {
-				const btn = e.target.closest?.('ytd-menu-renderer yt-icon-button#button, ytd-menu-renderer #button');
+				const target = e.target as EventTarget | null;
+				const btn = target?.closest?.('ytd-menu-renderer yt-icon-button#button, ytd-menu-renderer #button');
 				if (!btn) return;
 				const comment = Extractor.getCommentRoot(btn);
 				this.lastHandle = Extractor.getHandle(comment);
@@ -45,7 +48,7 @@
 			this._popupTimer = setTimeout(() => this._disconnectPopupObserver(), 2000);
 		}
 
-		_addItem(menu, handle) {
+		_addItem(menu: Element, handle: string) {
 			const isBlocked = this.app.hasHandleRule(handle);
 			const item = Object.assign(document.createElement('tp-yt-paper-item'), {
 				className: 'style-scope ytd-menu-service-item-renderer tm-hide-channel',
@@ -65,9 +68,10 @@
 						return div;
 					})(),
 					buttons: [{ label: t('close'), value: false }, { label: isBlocked ? t('unblock') : t('block'), value: true, primary: true }],
-					onRefresh: (ctx) => {
+					onRefresh: (ctx: DialogRefreshContext) => {
 						ctx.setTitle(isBlocked ? t('unblock') : t('block'));
-						ctx.content.querySelector('p').textContent = isBlocked ? t('confirmUnblock') : t('confirmBlock');
+						const paragraph = ctx.content.querySelector('p');
+						if (paragraph) paragraph.textContent = isBlocked ? t('confirmUnblock') : t('confirmBlock');
 						ctx.buttons[0].textContent = t('close');
 						ctx.buttons[1].textContent = isBlocked ? t('unblock') : t('block');
 					}

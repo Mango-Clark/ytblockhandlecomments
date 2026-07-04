@@ -15,7 +15,3 @@
 // @grant        GM_unregisterMenuCommand
 // @run-at       document-idle
 // ==/UserScript==
-(() => {
-	'use strict';
-	const TEST_HOOK = typeof window === 'object' ? window.__YT_BLOCK_TEST_HOOK__ || null : null;
-

@@ -2,7 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { createDom } = require('./helpers/fake-dom');
+const { createDom } = require('./helpers/fake-dom.ts');
 
 test('fake DOM matches compound selectors and closest ancestors', () => {
 	const { document } = createDom();

@@ -2,7 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { loadUserscript } = require('./helpers/load-userscript');
+const { loadUserscript } = require('./helpers/load-userscript.ts');
 
 test('manager search index filters handles and regex labels', () => {
 	const { api } = loadUserscript();
@@ -55,31 +55,31 @@ test('pair result helpers filter, sort, and extract failed handles', () => {
 
 	const failedByHandle = manager._getPairResultItems(stats, { filter: 'failed', sort: 'handle' });
 
-	assert.deepEqual(failedByHandle.map(item => item.handle), ['@alpha', '@gamma']);
+	assert.deepEqual(failedByHandle.map((item: any) => item.handle), ['@alpha', '@gamma']);
 	assert.deepEqual(manager._getFailedPairHandles(stats), ['@alpha', '@gamma']);
 });
 
 test('dialog refresh reruns translated labels after language change', async () => {
 	const { api, setLang } = loadUserscript();
-	let refreshContext = null;
+	let refreshContext: any = null;
 	const body = api.Dialog.show({
 		title: '',
 		body: '',
 		buttons: [{ label: '', value: false, primary: true }],
-		onRefresh: (ctx) => {
+		onRefresh: (ctx: any) => {
 			refreshContext = ctx;
 			ctx.setTitle(api.t('close'));
 			ctx.buttons[0].textContent = api.t('close');
 		}
 	});
 
-	assert.equal(refreshContext.header.textContent, '닫기');
+	assert.equal(refreshContext?.header.textContent, '닫기');
 	setLang('en');
 	api.Dialog.refreshAll();
-	assert.equal(refreshContext.header.textContent, 'Close');
-	assert.equal(refreshContext.buttons[0].textContent, 'Close');
+	assert.equal(refreshContext?.header.textContent, 'Close');
+	assert.equal(refreshContext?.buttons[0].textContent, 'Close');
 
-	refreshContext.buttons[0].click();
+	refreshContext?.buttons[0].click();
 	await body;
 });
 
@@ -132,7 +132,7 @@ test('settings dialog groups related controls', () => {
 	});
 
 	manager.openSettings();
-	const titles = document.querySelectorAll('.tm-setting-group h4').map(node => node.textContent);
+	const titles = document.querySelectorAll('.tm-setting-group h4').map((node: any) => node.textContent);
 
 	assert.deepEqual(titles, ['매칭', '댓글 표시', '유지보수']);
 });
@@ -185,7 +185,7 @@ test('settings dialog confirms and resets app settings', async () => {
 
 	manager.openSettings();
 	const buttons = document.querySelectorAll('button');
-	const resetButton = buttons.find(button => button.textContent === '설정 초기화');
+	const resetButton = buttons.find((button: any) => button.textContent === '설정 초기화');
 	resetButton.click();
 	const dialogs = document.querySelectorAll('.tm-dialog');
 	const confirmButtons = dialogs[dialogs.length - 1].querySelectorAll('button');

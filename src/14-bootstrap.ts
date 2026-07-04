@@ -1,3 +1,4 @@
+
 	/* ----------------------------------------------------------
 	 * 9. Bootstrap
 	 * ---------------------------------------------------------- */
@@ -26,4 +27,3 @@
 		// Defer a tick to allow YT initial paint, then start
 		requestAnimationFrame(() => new App());
 	}
-})();

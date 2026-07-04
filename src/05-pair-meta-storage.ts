@@ -1,15 +1,17 @@
+
 	/* ----------------------------------------------------------
 	 * 4. Pair metadata storage
 	 * ---------------------------------------------------------- */
 	class PairMetaStorage {
-		constructor(settings) {
+		[key: string]: any;
+		constructor(settings: SettingsLike) {
 			this.settings = settings;
 			this.KEY = 'pair_meta_v1';
 			this._state = this._init();
 		}
-		_getGM(key, def) { try { return GM_getValue(key, def); } catch { return def; } }
-		_setGM(key, val) { try { GM_setValue(key, val); } catch { } }
-		_defaultState() {
+		_getGM(key: string, def: any) { try { return GM_getValue(key, def); } catch { return def; } }
+		_setGM(key: string, val: any) { try { GM_setValue(key, val); } catch { } }
+		_defaultState(): LooseObject {
 			return {
 				version: 1,
 				enableUidDetection: false,
@@ -18,14 +20,15 @@
 				pairs: []
 			};
 		}
-		_normalizeStatus(pair, now = Date.now()) {
+		_normalizeStatus(pair: Partial<PairRecord>, now = Date.now()): PairStatus {
 			if (pair.status === 'mismatch') return 'mismatch';
 			if (pair.status === 'unverified') return 'unverified';
 			if (!pair.uid) return 'unverified';
-			if (!Number.isFinite(pair.verifiedAt) || pair.verifiedAt <= 0) return 'unverified';
-			return now - pair.verifiedAt >= PAIR_STALE_MS ? 'stale' : 'verified';
+			const verifiedAt = pair.verifiedAt;
+			if (!Number.isFinite(verifiedAt) || !verifiedAt || verifiedAt <= 0) return 'unverified';
+			return now - verifiedAt >= PAIR_STALE_MS ? 'stale' : 'verified';
 		}
-		_normalizePair(raw, now = Date.now()) {
+		_normalizePair(raw: any, now = Date.now()): PairRecord | null {
 			const handle = sanitizeHandle(raw?.handle);
 			if (!handle) return null;
 			const uid = isChannelId(raw?.uid) ? String(raw.uid).trim() : '';
@@ -33,7 +36,7 @@
 			const source = typeof raw?.source === 'string' && raw.source.trim() ? raw.source.trim() : 'unknown';
 			const lastResolvedUid = isChannelId(raw?.lastResolvedUid) ? String(raw.lastResolvedUid).trim() : null;
 			const lastError = typeof raw?.lastError === 'string' && raw.lastError.trim() ? raw.lastError.trim() : null;
-			const normalized = {
+			const normalized: PairRecord = {
 				handle,
 				uid,
 				verifiedAt,
@@ -45,7 +48,7 @@
 			normalized.status = this._normalizeStatus(normalized, now);
 			return normalized;
 		}
-		_normalizeState(raw) {
+		_normalizeState(raw: any) {
 			const src = raw && typeof raw === 'object' ? raw : {};
 			const caseSensitive = this.settings?.isHandleCaseSensitive?.() || false;
 			const next = {
@@ -55,7 +58,7 @@
 				pairNotificationDismissedAt: Number.isFinite(src.pairNotificationDismissedAt)
 					? src.pairNotificationDismissedAt
 					: null,
-				pairs: []
+				pairs: [] as PairRecord[]
 			};
 			const dedup = new Map();
 			for (const pair of Array.isArray(src.pairs) ? src.pairs : []) {
@@ -68,7 +71,7 @@
 		_init() {
 			return this._normalizeState(this._getGM(this.KEY, null));
 		}
-		_statesEqual(a, b) {
+		_statesEqual(a: any, b: any) {
 			if (a === b) return true;
 			if (!a || !b) return false;
 			if (a.enableUidDetection !== b.enableUidDetection) return false;
@@ -91,7 +94,7 @@
 			}
 			return true;
 		}
-		_saveState(nextState) {
+		_saveState(nextState: any) {
 			const normalized = this._normalizeState(nextState);
 			if (this._statesEqual(this._state, normalized)) {
 				this._state = normalized;
@@ -102,9 +105,9 @@
 			return this.getState();
 		}
 		getState() {
-			return { ...this._state, pairs: this._state.pairs.map(pair => ({ ...pair })) };
+			return { ...this._state, pairs: this._state.pairs.map((pair: PairRecord) => ({ ...pair })) };
 		}
-		setAllLocal(state) {
+		setAllLocal(state: any) {
 			this._state = this._normalizeState(state);
 			return this.getState();
 		}
@@ -114,13 +117,13 @@
 		isUidDetectionEnabled() {
 			return !!this._state.enableUidDetection;
 		}
-		setUidDetectionEnabled(enabled) {
+		setUidDetectionEnabled(enabled: any) {
 			return this._saveState({ ...this._state, enableUidDetection: !!enabled });
 		}
 		getLastPairCheckAt() {
 			return this._state.lastPairCheckAt;
 		}
-		setLastPairCheckAt(ts) {
+		setLastPairCheckAt(ts: any) {
 			return this._saveState({ ...this._state, lastPairCheckAt: Number.isFinite(ts) ? ts : null });
 		}
 		getNotificationDismissedAt() {
@@ -133,43 +136,43 @@
 			});
 		}
 		allPairs() {
-			return this._state.pairs.map(pair => ({ ...pair }));
+			return this._state.pairs.map((pair: PairRecord) => ({ ...pair }));
 		}
-		getPair(handle) {
+		getPair(handle: any): PairRecord | null {
 			const normalized = getHandleCompareKey(handle, this.settings?.isHandleCaseSensitive?.() || false);
 			if (!normalized) return null;
-			return this._state.pairs.find(pair =>
+			return this._state.pairs.find((pair: PairRecord) =>
 				getHandleCompareKey(pair.handle, this.settings?.isHandleCaseSensitive?.() || false) === normalized
 			) || null;
 		}
-		upsertPair(pair) {
+		upsertPair(pair: any) {
 			const normalized = this._normalizePair(pair);
 			if (!normalized) return this.getState();
 			const compareKey = getHandleCompareKey(normalized.handle, this.settings?.isHandleCaseSensitive?.() || false);
-			const nextPairs = this._state.pairs.filter(item =>
+			const nextPairs = this._state.pairs.filter((item: PairRecord) =>
 				getHandleCompareKey(item.handle, this.settings?.isHandleCaseSensitive?.() || false) !== compareKey
 			);
 			nextPairs.push(normalized);
 			return this._saveState({ ...this._state, pairs: nextPairs });
 		}
-		removePair(handle) {
+		removePair(handle: any) {
 			const normalized = getHandleCompareKey(handle, this.settings?.isHandleCaseSensitive?.() || false);
 			if (!normalized) return this.getState();
 			return this._saveState({
 				...this._state,
-				pairs: this._state.pairs.filter(pair =>
+				pairs: this._state.pairs.filter((pair: PairRecord) =>
 					getHandleCompareKey(pair.handle, this.settings?.isHandleCaseSensitive?.() || false) !== normalized
 				)
 			});
 		}
-		removePairs(handles) {
+		removePairs(handles: any[]) {
 			const keys = new Set((handles || [])
 				.map(handle => getHandleCompareKey(handle, this.settings?.isHandleCaseSensitive?.() || false))
 				.filter(Boolean));
 			if (!keys.size) return this.getState();
 			return this._saveState({
 				...this._state,
-				pairs: this._state.pairs.filter(pair =>
+				pairs: this._state.pairs.filter((pair: PairRecord) =>
 					!keys.has(getHandleCompareKey(pair.handle, this.settings?.isHandleCaseSensitive?.() || false))
 				)
 			});

@@ -2,7 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { loadUserscript } = require('./helpers/load-userscript');
+const { loadUserscript } = require('./helpers/load-userscript.ts');
 
 function createService() {
 	const { api } = loadUserscript();
@@ -53,8 +53,8 @@ test('selected-handle pair update still forces refresh', async () => {
 		status: 'verified',
 		source: 'youtube-data-api-v3'
 	});
-	const seen = [];
-	service.resolveHandle = async (handle) => {
+	const seen: string[] = [];
+	service.resolveHandle = async (handle: string) => {
 		seen.push(handle);
 		return { uid: 'UC1234567890', source: 'youtube-data-api-v3' };
 	};

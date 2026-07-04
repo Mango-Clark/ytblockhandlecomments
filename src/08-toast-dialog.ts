@@ -1,8 +1,10 @@
+
 	/* ----------------------------------------------------------
 	 * 7. Toast & Dialog (safe UI)
 	 * ---------------------------------------------------------- */
 	class Toast {
-		static show(msg, ms = 2000) {
+		[key: string]: any;
+		static show(msg: string, ms = 2000) {
 			const el = Object.assign(document.createElement('div'), { className: 'tm-toast' });
 			el.setAttribute('aria-live', 'polite');
 			el.textContent = msg;
@@ -15,10 +17,23 @@
 	}
 
 	class Dialog {
-		static _instances = new Set();
+		[key: string]: any;
+		static _instances = new Set<any>();
 		// Promise resolves with `value` passed to close()
-		static show({ title = '', body = null, buttons = [], onBeforeClose = null, onRefresh = null }) {
-			return new Promise(resolve => {
+		static show({
+			title = '',
+			body = null,
+			buttons = [],
+			onBeforeClose = null,
+			onRefresh = null
+		}: {
+			title?: string;
+			body?: Node | string | null;
+			buttons?: DialogButton[];
+			onBeforeClose?: ((value: any, dialog: HTMLElement) => any) | null;
+			onRefresh?: ((ctx: DialogRefreshContext) => void) | null;
+		}) {
+			return new Promise<any>(resolve => {
 				const backdrop = Object.assign(document.createElement('div'), { className: 'tm-backdrop' });
 				const dialog = Object.assign(document.createElement('div'), { className: 'tm-dialog' });
 				dialog.setAttribute('role', 'dialog');
@@ -35,24 +50,24 @@
 				}
 
 				const footer = document.createElement('footer');
-				const renderedButtons = [];
+				const renderedButtons: HTMLButtonElement[] = [];
 				const refreshContext = {
 					dialog,
 					header,
 					content,
 					footer,
 					buttons: renderedButtons,
-					setTitle: (nextTitle) => {
+					setTitle: (nextTitle: string) => {
 						header.textContent = nextTitle;
 						dialog.setAttribute('aria-label', nextTitle);
 					},
-					setBody: (nextBody) => {
+					setBody: (nextBody: Node | string) => {
 						content.replaceChildren();
 						if (nextBody instanceof Node) content.appendChild(nextBody);
 						else content.appendChild(makePlainTextNode(nextBody));
 					}
 				};
-				const close = (val) => {
+				const close = (val: any) => {
 					try { if (onBeforeClose) val = onBeforeClose(val, dialog); } catch { }
 					if (val && typeof val === 'object' && val.ok === false) return;
 					backdrop.remove(); document.removeEventListener('keydown', onKey);
@@ -75,12 +90,12 @@
 				document.body.appendChild(backdrop);
 
 				// Focus trap
-				const onKey = (e) => {
+				const onKey = (e: KeyboardEvent) => {
 					if (e.key === 'Escape') { e.preventDefault(); close(false); }
 					else if (e.key === 'Enter') {
-						const target = e.target;
+						const target = e.target as (EventTarget & { tagName?: string; isContentEditable?: boolean }) | null;
 						if (target && (
-							['TEXTAREA', 'INPUT', 'SELECT'].includes(target.tagName) ||
+							['TEXTAREA', 'INPUT', 'SELECT'].includes(target.tagName || '') ||
 							target.isContentEditable
 						)) return;
 						const primary = buttons.find(b => b.primary)?.value ?? true;

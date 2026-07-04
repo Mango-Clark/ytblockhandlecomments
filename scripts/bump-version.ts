@@ -8,19 +8,26 @@ const version = process.argv.find(arg => /^\d+\.\d+\.\d+$/.test(arg));
 const check = process.argv.includes('--check');
 const today = new Date().toISOString().slice(0, 10);
 
+type Replacement = [RegExp, string, string];
+type VersionFile = {
+	path: string;
+	writeOnly?: boolean;
+	replace: (text: string) => string;
+};
+
 const CHANGELOG_SECTIONS = ['Added', 'Changed', 'Deprecated', 'Removed', 'Fixed', 'Security'];
 
-const replaceRequired = (text, pattern, replacement, label) => {
+const replaceRequired = (text: string, pattern: RegExp, replacement: string, label: string): string => {
 	if (!pattern.test(text)) throw new Error(`Missing version target: ${label}`);
 	return text.replace(pattern, replacement);
 };
 
-const replaceAllRequired = (text, replacements, file) => replacements.reduce(
+const replaceAllRequired = (text: string, replacements: Replacement[], file: string): string => replacements.reduce(
 	(current, [pattern, replacement, label]) => replaceRequired(current, pattern, replacement, `${file} ${label}`),
 	text
 );
 
-const buildFreshUnreleased = (file) => {
+const buildFreshUnreleased = (file: string): string => {
 	const emptyEntry = file.endsWith('.ko.md') ? '없음' : 'None';
 	const sections = CHANGELOG_SECTIONS
 		.map(section => `### ${section}\n\n- ${emptyEntry}`)
@@ -28,11 +35,11 @@ const buildFreshUnreleased = (file) => {
 	return `## [Unreleased]\n\n${sections}`;
 };
 
-const isEmptyChangelogLine = (line) => /^\s*-\s+(?:None|없음)\s*$/.test(line);
+const isEmptyChangelogLine = (line: string): boolean => /^\s*-\s+(?:None|없음)\s*$/.test(line);
 
-const cleanReleaseBody = (body) => CHANGELOG_SECTIONS.reduce((current, section) => {
+const cleanReleaseBody = (body: string): string => CHANGELOG_SECTIONS.reduce((current, section) => {
 	const pattern = new RegExp(`(### ${section}\\n\\n)([\\s\\S]*?)(?=\\n\\n### |$)`, 'g');
-	return current.replace(pattern, (match, heading, sectionBody) => {
+	return current.replace(pattern, (match: string, heading: string, sectionBody: string) => {
 		const lines = sectionBody.split('\n');
 		const hasRealEntry = lines.some(line => /^\s*-\s+/.test(line) && !isEmptyChangelogLine(line));
 		if (!hasRealEntry) return match;
@@ -40,7 +47,7 @@ const cleanReleaseBody = (body) => CHANGELOG_SECTIONS.reduce((current, section) 
 	});
 }, body);
 
-const releaseChangelog = (text, file, releaseVersion = version, releaseDate = today) => {
+const releaseChangelog = (text: string, file: string, releaseVersion = version || '', releaseDate = today): string => {
 	const version = releaseVersion;
 	if (text.includes(`## [${version}] - `)) return text;
 	const match = /^## \[Unreleased\]\n([\s\S]*?)(?=\n## \[)/m.exec(text);
@@ -51,13 +58,13 @@ const releaseChangelog = (text, file, releaseVersion = version, releaseDate = to
 	return text.slice(0, match.index) + freshUnreleased + '\n\n' + releaseSection + text.slice(match.index + match[0].length);
 };
 
-const files = [
+const files: VersionFile[] = [
 	{
-		path: 'src/00-userscript-header.js',
+		path: 'src/00-userscript-header.ts',
 		replace: (text) => replaceRequired(text, /(\/\/ @version\s+)\d+\.\d+\.\d+/, `$1${version}`, '@version')
 	},
 	{
-		path: 'src/02-utils-i18n.js',
+		path: 'src/02-utils-i18n.ts',
 		replace: (text) => replaceRequired(text, /(FALLBACK_SCRIPT_VERSION = ')\d+\.\d+\.\d+(')/, `$1${version}$2`, 'FALLBACK_SCRIPT_VERSION')
 	},
 	{
@@ -104,7 +111,7 @@ const files = [
 	{
 		path: 'docs/TODO.md',
 		writeOnly: true,
-		replace: (text) => text
+		replace: (text: string) => text
 			.split(/\r?\n/)
 			.filter(line => !/^\s*-\s*\[x\]\s+/i.test(line))
 			.join('\n')
@@ -123,11 +130,11 @@ const main = () => {
 		if (check && item.writeOnly) continue;
 		const fullPath = path.join(root, item.path);
 		const before = fs.readFileSync(fullPath, 'utf8').replace(/\r\n/g, '\n');
-		let after;
+		let after: string;
 		try {
 			after = item.replace(before);
 		} catch (error) {
-			console.error(error.message);
+			console.error(error instanceof Error ? error.message : String(error));
 			process.exit(1);
 		}
 		if (after === before) continue;
