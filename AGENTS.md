@@ -59,6 +59,12 @@ Keep docs, versioning, Git workflow aligned. Change files only when code or repo
 - Mark `- [x]` when done.
 - Remove old done items after version bump.
 
+## Reliability
+
+- Check race conditions before behavior changes: concurrent runs, shared state, cross-tab storage order, and async callback ordering.
+- Avoid partial writes: keep source/generated/docs/version updates paired, and verify files that must stay in sync.
+- Prefer idempotent changes: repeated scripts, migrations, storage updates, and user actions should produce the same final state where practical.
+
 ## Audit And Autofix
 
 - Zero changes valid.

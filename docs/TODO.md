@@ -2,11 +2,11 @@
 
 ## Important
 
-- Add [Agents.md] about keeping **Race Condition**
+- [x] Add [Agents.md] about keeping **Race Condition**
   - Race Condition: 동시 실행 순서 꼬임 → 값/상태 비정상.
-- Add [Agents.md] about considering **Partial Write**
+- [x] Add [Agents.md] about considering **Partial Write**
   - Partial Write: 작업 일부만 저장됨 → 데이터 불일치.
-- Add [Agents.md] about considering **Idempotency**
+- [x] Add [Agents.md] about considering **Idempotency**
   - Idempotency: 같은 요청 N번 실행해도 결과 1번과 같아야 함.
 
 ## Normal
