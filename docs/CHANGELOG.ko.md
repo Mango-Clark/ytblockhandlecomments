@@ -18,6 +18,7 @@
 - 읽기 쉬운 `src/` source slice를 JavaScript 파일에서 TypeScript 파일로 변경했으며, 생성된 userscript 출력은 그대로 유지했습니다.
 - Node test runner workflow는 그대로 유지하면서 test file을 JavaScript에서 TypeScript로 변경했습니다.
 - 기존 npm command를 유지하면서 build/version script를 JavaScript에서 TypeScript로 변경했습니다.
+- userscript build가 명시적 TypeScript module을 esbuild로 bundle하고 생성된 출력은 ESLint 대상에서 제외하도록 변경했습니다.
 - split userscript file을 하나의 strict module처럼 처리하지 않도록 source, script, test file의 TypeScript project 경계를 추가했습니다.
 - source, script, test의 TypeScript check를 실행하는 project `typecheck` script를 추가했습니다.
 
