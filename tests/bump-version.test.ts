@@ -1,8 +1,6 @@
-'use strict';
-
-const test = require('node:test');
-const assert = require('node:assert/strict');
-const { releaseChangelog } = require('../scripts/bump-version.ts');
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { releaseChangelog } from '../scripts/bump-version.ts';
 
 const makeChangelog = (emptyEntry: string) => `# Changelog
 

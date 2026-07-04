@@ -1,8 +1,13 @@
+import {
+	makePlainTextNode,
+	type DialogButton,
+	type DialogRefreshContext
+} from './02-utils-i18n.ts';
 
 	/* ----------------------------------------------------------
 	 * 7. Toast & Dialog (safe UI)
 	 * ---------------------------------------------------------- */
-	class Toast {
+	export class Toast {
 		[key: string]: any;
 		static show(msg: string, ms = 2000) {
 			const el = Object.assign(document.createElement('div'), { className: 'tm-toast' });
@@ -16,7 +21,7 @@
 		}
 	}
 
-	class Dialog {
+	export class Dialog {
 		[key: string]: any;
 		static _instances = new Set<any>();
 		// Promise resolves with `value` passed to close()

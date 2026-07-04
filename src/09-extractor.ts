@@ -1,8 +1,12 @@
+import {
+	decodeMaybe,
+	sanitizeHandle
+} from './02-utils-i18n.ts';
 
 	/* ----------------------------------------------------------
 	 * 8. Handle extractor (robust to DOM changes)
 	 * ---------------------------------------------------------- */
-	class Extractor {
+	export class Extractor {
 		[key: string]: any;
 		// Try multiple routes to get "@handle" from a comment root
 		static getHandle(root: Element | null | undefined): string | null {

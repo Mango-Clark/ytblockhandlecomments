@@ -1,8 +1,7 @@
-'use strict';
+import fs from 'node:fs';
+import path from 'node:path';
 
-const fs = require('node:fs');
-const path = require('node:path');
-
+const __dirname = path.dirname(path.resolve(process.argv[1] || 'scripts/bump-version.ts'));
 const root = path.resolve(__dirname, '..');
 const version = process.argv.find(arg => /^\d+\.\d+\.\d+$/.test(arg));
 const check = process.argv.includes('--check');
@@ -27,7 +26,7 @@ const replaceAllRequired = (text: string, replacements: Replacement[], file: str
 	text
 );
 
-const buildFreshUnreleased = (file: string): string => {
+export const buildFreshUnreleased = (file: string): string => {
 	const emptyEntry = file.endsWith('.ko.md') ? '없음' : 'None';
 	const sections = CHANGELOG_SECTIONS
 		.map(section => `### ${section}\n\n- ${emptyEntry}`)
@@ -47,7 +46,7 @@ const cleanReleaseBody = (body: string): string => CHANGELOG_SECTIONS.reduce((cu
 	});
 }, body);
 
-const releaseChangelog = (text: string, file: string, releaseVersion = version || '', releaseDate = today): string => {
+export const releaseChangelog = (text: string, file: string, releaseVersion = version || '', releaseDate = today): string => {
 	const version = releaseVersion;
 	if (text.includes(`## [${version}] - `)) return text;
 	const match = /^## \[Unreleased\]\n([\s\S]*?)(?=\n## \[)/m.exec(text);
@@ -152,11 +151,6 @@ const main = () => {
 	}
 };
 
-if (require.main === module) {
+if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve('scripts/bump-version.ts')) {
 	main();
 }
-
-module.exports = {
-	buildFreshUnreleased,
-	releaseChangelog
-};

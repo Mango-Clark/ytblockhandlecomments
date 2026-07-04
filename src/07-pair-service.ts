@@ -1,8 +1,25 @@
+import {
+	PAIR_NOTICE_COOLDOWN_MS,
+	PAIR_STALE_MS,
+	getHandleCompareKey,
+	getLang,
+	isChannelId,
+	sanitizeHandle,
+	t,
+	type ApiConfigLike,
+	type BlockItem,
+	type PairRecord,
+	type PairRunItem,
+	type PairRunStats,
+	type PairStoreLike,
+	type SettingsLike,
+	type StorageLike
+} from './02-utils-i18n.ts';
 
 	/* ----------------------------------------------------------
 	 * 6. Pair resolution and policy
 	 * ---------------------------------------------------------- */
-	class PairService {
+	export class PairService {
 		[key: string]: any;
 		constructor(storage: StorageLike, pairStore: PairStoreLike, apiConfig: ApiConfigLike, settings: SettingsLike) {
 			this.storage = storage;

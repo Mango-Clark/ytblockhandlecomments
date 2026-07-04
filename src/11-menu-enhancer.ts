@@ -1,8 +1,15 @@
+import {
+	t,
+	type AppLike,
+	type DialogRefreshContext
+} from './02-utils-i18n.ts';
+import { Dialog, Toast } from './08-toast-dialog.ts';
+import { Extractor } from './09-extractor.ts';
 
 	/* ----------------------------------------------------------
 	 * 6. MenuEnhancer (⋯ menu item injection)
 	 * ---------------------------------------------------------- */
-	class MenuEnhancer {
+	export class MenuEnhancer {
 		[key: string]: any;
 		constructor(app: AppLike) {
 			this.app = app;

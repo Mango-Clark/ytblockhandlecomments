@@ -1,8 +1,33 @@
+import {
+	exportRegexLiteral,
+	formatDateTime,
+	getApiTestCategoryLabel,
+	getItemKey,
+	getLang,
+	getScriptVersion,
+	isChannelId,
+	isNonNull,
+	parseRegexLiteral,
+	REGEX_MATCH_INITIAL_LIMIT,
+	REGEX_MATCH_PAGE_SIZE,
+	safeRegexTest,
+	searchManagerIndex,
+	buildManagerSearchIndex,
+	t,
+	validateRegexSpec,
+	type ApiTestResult,
+	type AppLike,
+	type BlockItem,
+	type DialogRefreshContext,
+	type PairOutcome,
+	type PairRunStats
+} from './02-utils-i18n.ts';
+import { Dialog, Toast } from './08-toast-dialog.ts';
 
 	/* ----------------------------------------------------------
 	 * 7. BlockListManager (UI + Import/Export)
 	 * ---------------------------------------------------------- */
-	class BlockListManager {
+	export class BlockListManager {
 		[key: string]: any;
 		constructor(app: AppLike) {
 			this.app = app;

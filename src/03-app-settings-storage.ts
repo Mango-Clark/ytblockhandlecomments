@@ -2,7 +2,7 @@
 	/* ----------------------------------------------------------
 	 * 2. App settings storage
 	 * ---------------------------------------------------------- */
-	class AppSettingsStorage {
+	export class AppSettingsStorage {
 		[key: string]: any;
 		constructor() {
 			this.KEY = 'app_settings_v1';

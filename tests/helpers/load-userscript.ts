@@ -1,10 +1,7 @@
-
-'use strict';
-
-const fs = require('node:fs');
-const path = require('node:path');
-const vm = require('node:vm');
-const { createDom } = require('./fake-dom.ts');
+import fs from 'node:fs';
+import path from 'node:path';
+import vm from 'node:vm';
+import { createDom } from './fake-dom.ts';
 
 type LoadOptions = {
 	gmStore?: Record<string, unknown>;
@@ -52,10 +49,10 @@ class FakeIntersectionObserver {
 	}
 }
 
-function loadUserscript(options: LoadOptions = {}) {
+export function loadUserscript(options: LoadOptions = {}) {
 	const { document, Node, Element } = createDom();
 	const gmStore = new Map(Object.entries(options.gmStore || {}));
-	const hook = { skipBootstrap: true };
+	const hook: TestContext = { skipBootstrap: true };
 	const location = new URL(options.url || 'https://www.youtube.com/watch?v=video-a');
 	let perfNow = 0;
 
@@ -100,7 +97,7 @@ function loadUserscript(options: LoadOptions = {}) {
 	context.self = context;
 	context.globalThis = context;
 
-	const source = fs.readFileSync(path.resolve(__dirname, '..', '..', 'ytblockhandlecomments.js'), 'utf8');
+	const source = fs.readFileSync(path.resolve('ytblockhandlecomments.js'), 'utf8');
 	vm.createContext(context);
 	vm.runInContext(source, context, { filename: 'ytblockhandlecomments.js' });
 
@@ -117,7 +114,3 @@ function loadUserscript(options: LoadOptions = {}) {
 		}
 	};
 }
-
-module.exports = {
-	loadUserscript
-};

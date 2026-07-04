@@ -2,7 +2,7 @@
 	/* ----------------------------------------------------------
 	 * 0. Global styles
 	 * ---------------------------------------------------------- */
-	const style = document.createElement('style');
+	export const style = document.createElement('style');
 	style.textContent = `
     .tm-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#323232;color:#fff;padding:8px 16px;border-radius:6px;opacity:0;transition:opacity .2s ease;z-index:10000;font-size:15px;pointer-events:none}
     .tm-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;z-index:10000}

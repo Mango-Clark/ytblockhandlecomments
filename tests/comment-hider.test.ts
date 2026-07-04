@@ -1,8 +1,6 @@
-'use strict';
-
-const test = require('node:test');
-const assert = require('node:assert/strict');
-const { loadUserscript } = require('./helpers/load-userscript.ts');
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { loadUserscript } from './helpers/load-userscript.ts';
 
 function createBlockedComment(document: any, handle = '@alpha') {
 	const comment = document.createElement('ytd-comment-renderer');

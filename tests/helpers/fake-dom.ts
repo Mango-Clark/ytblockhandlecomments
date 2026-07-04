@@ -1,6 +1,4 @@
 
-'use strict';
-
 type FakeEvent = {
 	[key: string]: any;
 	type: string;
@@ -230,7 +228,8 @@ class FakeElement extends FakeNode {
 	}
 
 	closest(selector: string) {
-		let current = this;
+		if (this.matches(selector)) return this;
+		let current = this.parentElement;
 		while (current?.nodeType === 1) {
 			if (current.matches(selector)) return current;
 			current = current.parentElement;
@@ -309,7 +308,7 @@ function matchesSimple(element: FakeElement, selector: string) {
 			continue;
 		}
 		if (rest.startsWith('[')) {
-			const match = /^\[([^\^\*=\]]+)(?:(\^=|\*=|=)"([^"]*)")?\]/.exec(rest);
+			const match = /^\[([^^*=\]]+)(?:(\^=|\*=|=)"([^"]*)")?\]/.exec(rest);
 			if (!match) return false;
 			const [, attr, op, value] = match;
 			const current = element.getAttribute(attr);
@@ -366,7 +365,7 @@ function querySelectorAllFrom(root: FakeNode, selector: string) {
 	return results;
 }
 
-function createDom() {
+export function createDom() {
 	const document = new FakeDocument();
 	return {
 		document,
@@ -374,7 +373,3 @@ function createDom() {
 		Element: FakeElement
 	};
 }
-
-module.exports = {
-	createDom
-};

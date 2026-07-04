@@ -1,12 +1,14 @@
+import { I18N_EN } from './i18n/en.ts';
+import { I18N_KO } from './i18n/ko.ts';
 
 	/* ----------------------------------------------------------
 	 * 1. Utilities and i18n
 	 * ---------------------------------------------------------- */
-	type LooseObject = { [key: string]: any };
-	type BlockItemType = 'handle' | 'id' | 'regex';
-	type BlockItem = { type: BlockItemType; value: string; flags?: string };
-	type PairStatus = 'verified' | 'stale' | 'mismatch' | 'unverified';
-	type PairRecord = {
+	export type LooseObject = { [key: string]: any };
+	export type BlockItemType = 'handle' | 'id' | 'regex';
+	export type BlockItem = { type: BlockItemType; value: string; flags?: string };
+	export type PairStatus = 'verified' | 'stale' | 'mismatch' | 'unverified';
+	export type PairRecord = {
 		handle: string;
 		uid: string;
 		verifiedAt: number | null;
@@ -15,15 +17,15 @@
 		lastResolvedUid: string | null;
 		lastError: string | null;
 	};
-	type PairOutcome = 'created' | 'updated' | 'mismatch' | 'failed' | 'skipped';
-	type PairRunItem = {
+	export type PairOutcome = 'created' | 'updated' | 'mismatch' | 'failed' | 'skipped';
+	export type PairRunItem = {
 		handle: string;
 		outcome: PairOutcome;
 		uid?: string;
 		resolvedUid?: string;
 		message?: string;
 	};
-	type PairRunStats = {
+	export type PairRunStats = {
 		created: number;
 		refreshed: number;
 		mismatches: number;
@@ -32,7 +34,7 @@
 		skipped: number;
 		items: PairRunItem[];
 	};
-	type PairSummary = {
+	export type PairSummary = {
 		handles: number;
 		paired: number;
 		handleOnly: number;
@@ -41,17 +43,17 @@
 		unverified: number;
 		pairNeeded: number;
 	};
-	type ApiTestCategory = 'ok' | 'invalid' | 'quota' | 'forbidden' | 'network' | 'unknown';
-	type ApiTestResult = {
+	export type ApiTestCategory = 'ok' | 'invalid' | 'quota' | 'forbidden' | 'network' | 'unknown';
+	export type ApiTestResult = {
 		checkedAt: number;
 		ok: boolean;
 		category: ApiTestCategory;
 		httpStatus: number | null;
 		message: string;
 	};
-	type RegexSpec = { pattern: string; flags: string };
-	type DialogButton = { label: string; value: any; primary?: boolean };
-	type DialogRefreshContext = {
+	export type RegexSpec = { pattern: string; flags: string };
+	export type DialogButton = { label: string; value: any; primary?: boolean };
+	export type DialogRefreshContext = {
 		dialog: HTMLElement;
 		header: HTMLElement;
 		content: HTMLElement;
@@ -60,43 +62,43 @@
 		setTitle: (nextTitle: string) => void;
 		setBody: (nextBody: Node | string) => void;
 	};
-	type I18nMessage = string | ((...args: any[]) => string);
-	type I18nBundle = { [key: string]: I18nMessage };
-	type ManagerSearchRecord = {
+	export type I18nMessage = string | ((...args: any[]) => string);
+	export type I18nBundle = { [key: string]: I18nMessage };
+	export type ManagerSearchRecord = {
 		index: number;
 		item: BlockItem;
 		label: string;
 		labelNorm: string;
 	};
-	type ManagerSearchIndex = {
+	export type ManagerSearchIndex = {
 		records: ManagerSearchRecord[];
 		firstCharBuckets: Map<string, number[]>;
 		bigramIndex: Map<string, number[]>;
 	};
-	type AppLike = LooseObject;
-	type StorageLike = LooseObject;
-	type PairStoreLike = LooseObject;
-	type ApiConfigLike = LooseObject;
-	type SettingsLike = LooseObject;
-	type CommentBlockMode = 'hide' | 'placeholder' | 'placeholder-reveal';
+	export type AppLike = LooseObject;
+	export type StorageLike = LooseObject;
+	export type PairStoreLike = LooseObject;
+	export type ApiConfigLike = LooseObject;
+	export type SettingsLike = LooseObject;
+	export type CommentBlockMode = 'hide' | 'placeholder' | 'placeholder-reveal';
 
-	const isNonNull = <T>(value: T | null | undefined): value is T => value != null;
-	const sanitizeHandle = (h: any): string | null => {
+	export const isNonNull = <T>(value: T | null | undefined): value is T => value != null;
+	export const sanitizeHandle = (h: any): string | null => {
 		if (!h) return null;
 		h = String(h).trim();
 		if (!h.startsWith('@')) return null;
 		return h;
 	};
-	const norm = (h: any): string | null => {
+	export const norm = (h: any): string | null => {
 		const handle = sanitizeHandle(h);
 		return handle ? handle.toLowerCase() : null;
 	};
-	const getHandleCompareKey = (h: any, caseSensitive = false): string | null => {
+	export const getHandleCompareKey = (h: any, caseSensitive = false): string | null => {
 		const handle = sanitizeHandle(h);
 		if (!handle) return null;
 		return caseSensitive ? handle : handle.toLowerCase();
 	};
-	const getItemKey = (item: BlockItem | null | undefined): string | null => {
+	export const getItemKey = (item: BlockItem | null | undefined): string | null => {
 		if (!item || !item.type) return null;
 		if (item.type === 'handle') {
 			const handle = sanitizeHandle(item.value);
@@ -108,30 +110,30 @@
 		}
 		return item.type === 'regex' ? `r:${String(item.value)}/${item.flags || ''}` : null;
 	};
-	const decodeMaybe = (value: string): string => {
+	export const decodeMaybe = (value: string): string => {
 		try { return decodeURIComponent(value); } catch { return value; }
 	};
-	const findHandleItem = (items: BlockItem[], handle: any, caseSensitive = false): BlockItem | null => {
+	export const findHandleItem = (items: BlockItem[], handle: any, caseSensitive = false): BlockItem | null => {
 		const key = getHandleCompareKey(handle, caseSensitive);
 		if (!key) return null;
 		return (items || []).find(item =>
 			item?.type === 'handle' && getHandleCompareKey(item.value, caseSensitive) === key
 		) || null;
 	};
-	const isChannelId = (value: any): boolean => /^UC[0-9A-Za-z_-]{10,}$/.test(String(value || '').trim());
-	const SAFE_REGEX_MAX_PATTERN = 256;
-	const SAFE_REGEX_MAX_TARGET = 128;
-	const SAFE_REGEX_MAX_RUNTIME_MS = 5;
-	const SAFE_REGEX_FLAGS = /^[gimsuy]*$/;
-	const REGEX_MATCH_INITIAL_LIMIT = 20;
-	const REGEX_MATCH_PAGE_SIZE = 50;
-	const UNSAFE_REGEX_PATTERNS = [
+	export const isChannelId = (value: any): boolean => /^UC[0-9A-Za-z_-]{10,}$/.test(String(value || '').trim());
+	export const SAFE_REGEX_MAX_PATTERN = 256;
+	export const SAFE_REGEX_MAX_TARGET = 128;
+	export const SAFE_REGEX_MAX_RUNTIME_MS = 5;
+	export const SAFE_REGEX_FLAGS = /^[gimsuy]*$/;
+	export const REGEX_MATCH_INITIAL_LIMIT = 20;
+	export const REGEX_MATCH_PAGE_SIZE = 50;
+	export const UNSAFE_REGEX_PATTERNS = [
 		/\((?:\\.|[^()\\])*(?:[+*?]|\{\d*,?\d*\})(?:\\.|[^()\\])*\)(?:[+*?]|\{)/,
 		/\((?:\\.|[^()\\])+\|(?:\\.|[^()\\])+\)(?:[+*?]|\{)/,
 		/(?:\.\*){2,}/,
 		/(?:\[[^\]]+\][+*]){2,}/
 	];
-	const validateRegexSpec = (pattern: any, flags = ''): RegexSpec | null => {
+	export const validateRegexSpec = (pattern: any, flags = ''): RegexSpec | null => {
 		const value = String(pattern || '');
 		const flagText = String(flags || '');
 		if (!value || value.length > SAFE_REGEX_MAX_PATTERN) return null;
@@ -144,7 +146,7 @@
 			return null;
 		}
 	};
-	const parseRegexLiteral = (text: any): RegexSpec | null => {
+	export const parseRegexLiteral = (text: any): RegexSpec | null => {
 		const s = String(text || '').trim();
 		if (!s.startsWith('/')) return null;
 		let escaped = false;
@@ -156,8 +158,8 @@
 		}
 		return null;
 	};
-	const exportRegexLiteral = (item: BlockItem): string => `/${String(item.value || '').replace(/\//g, '\\/')}/${item.flags || ''}`;
-	const safeRegexTest = (rx: RegExp | null | undefined, value: any): boolean => {
+	export const exportRegexLiteral = (item: BlockItem): string => `/${String(item.value || '').replace(/\//g, '\\/')}/${item.flags || ''}`;
+	export const safeRegexTest = (rx: RegExp | null | undefined, value: any): boolean => {
 		if (!rx || !value) return false;
 		const target = String(value).slice(0, SAFE_REGEX_MAX_TARGET);
 		const startedAt = performance.now();
@@ -169,34 +171,34 @@
 			return false;
 		}
 	};
-	const COMMENT_SELECTOR = 'ytd-comment-thread-renderer, ytd-comment-renderer, ytd-comment-view-model';
-	const HIDEABLE_COMMENT_SELECTOR = 'ytd-comment-renderer, ytd-comment-view-model';
-	const COMMENTS_HOST_SELECTOR = 'ytd-comments#comments, ytd-comments';
-	const WATCH_ROOT_SELECTOR = 'ytd-watch-flexy, ytd-watch-grid, ytd-page-manager';
-	const SHORTS_ROOT_SELECTOR = 'ytd-reel-video-renderer, ytd-shorts, ytd-app, ytd-page-manager';
-	const PAIR_STALE_MS = 7 * 24 * 60 * 60 * 1000;
-	const PAIR_NOTICE_COOLDOWN_MS = PAIR_STALE_MS;
-	const FALLBACK_SCRIPT_VERSION = '0.9.0';
-	const getScriptVersion = () => {
+	export const COMMENT_SELECTOR = 'ytd-comment-thread-renderer, ytd-comment-renderer, ytd-comment-view-model';
+	export const HIDEABLE_COMMENT_SELECTOR = 'ytd-comment-renderer, ytd-comment-view-model';
+	export const COMMENTS_HOST_SELECTOR = 'ytd-comments#comments, ytd-comments';
+	export const WATCH_ROOT_SELECTOR = 'ytd-watch-flexy, ytd-watch-grid, ytd-page-manager';
+	export const SHORTS_ROOT_SELECTOR = 'ytd-reel-video-renderer, ytd-shorts, ytd-app, ytd-page-manager';
+	export const PAIR_STALE_MS = 7 * 24 * 60 * 60 * 1000;
+	export const PAIR_NOTICE_COOLDOWN_MS = PAIR_STALE_MS;
+	export const FALLBACK_SCRIPT_VERSION = '0.9.0';
+	export const getScriptVersion = () => {
 		try {
 			if (typeof GM_info === 'object' && GM_info?.script?.version) return GM_info.script.version;
 		} catch { }
 		return FALLBACK_SCRIPT_VERSION;
 	};
 
-	const I18N: { ko: I18nBundle; en: I18nBundle } = {
+	export const I18N: { ko: I18nBundle; en: I18nBundle } = {
 		ko: I18N_KO,
 		en: I18N_EN
 	};
-	const getLang = () => {
+	export const getLang = () => {
 		try { return (GM_getValue('lang') || navigator.language || 'ko').startsWith('ko') ? 'ko' : 'en'; } catch { return 'ko'; }
 	};
-	const t = (key: string, ...args: any[]): string => {
+	export const t = (key: string, ...args: any[]): string => {
 		const lang = getLang();
 		const val = I18N[lang][key];
 		return typeof val === 'function' ? val(...args) : val;
 	};
-	const formatDateTime = (ts: any): string | null => {
+	export const formatDateTime = (ts: any): string | null => {
 		if (!Number.isFinite(ts) || ts <= 0) return null;
 		try {
 			return new Date(ts).toLocaleString(getLang() === 'ko' ? 'ko-KR' : 'en-US');
@@ -204,12 +206,12 @@
 			return new Date(ts).toISOString();
 		}
 	};
-	const makePlainTextNode = (value: any): HTMLElement => {
+	export const makePlainTextNode = (value: any): HTMLElement => {
 		const div = document.createElement('div');
 		div.textContent = String(value ?? '');
 		return div;
 	};
-	const binaryHas = (arr: string[] | number[], value: any): boolean => {
+	export const binaryHas = (arr: string[] | number[], value: any): boolean => {
 		let lo = 0, hi = arr.length - 1;
 		while (lo <= hi) {
 			const mid = (lo + hi) >> 1;
@@ -219,7 +221,7 @@
 		}
 		return false;
 	};
-	const intersectSortedPostings = (lists: number[][]): number[] => {
+	export const intersectSortedPostings = (lists: number[][]): number[] => {
 		if (!lists.length) return [];
 		const sortedLists = lists.filter(Boolean).sort((a, b) => a.length - b.length);
 		if (!sortedLists.length) return [];
@@ -231,7 +233,7 @@
 		}
 		return result;
 	};
-	const getSearchBigrams = (query: any): string[] => {
+	export const getSearchBigrams = (query: any): string[] => {
 		const normalized = String(query || '').trim().toLowerCase();
 		if (!normalized) return [];
 		if (normalized.length < 2) return [normalized];
@@ -245,7 +247,7 @@
 		}
 		return grams;
 	};
-	const buildManagerSearchIndex = (items: BlockItem[]): ManagerSearchIndex => {
+	export const buildManagerSearchIndex = (items: BlockItem[]): ManagerSearchIndex => {
 		const records = (items || []).map((item, index) => {
 			const label = item?.type === 'regex' ? `/${item.value}/${item.flags || ''}` : String(item?.value || '');
 			return {
@@ -272,24 +274,23 @@
 		}
 		return { records, firstCharBuckets, bigramIndex };
 	};
-	const searchManagerIndex = (index: ManagerSearchIndex, query: any): BlockItem[] => {
+	export const searchManagerIndex = (index: ManagerSearchIndex, query: any): BlockItem[] => {
 		const normalized = String(query || '').trim().toLowerCase();
 		if (!normalized) return index.records.map(record => record.item);
-		let candidateIndexes: number[] = [];
-		if (normalized.length === 1) {
-			candidateIndexes = (index.firstCharBuckets.get(normalized) || []).slice();
-		} else {
+		const candidateIndexes = normalized.length === 1
+			? (index.firstCharBuckets.get(normalized) || []).slice()
+			: (() => {
 			const grams = getSearchBigrams(normalized);
 			const postings = grams.map(gram => index.bigramIndex.get(gram) || []);
-			candidateIndexes = intersectSortedPostings(postings);
-		}
+			return intersectSortedPostings(postings);
+		})();
 		if (!candidateIndexes.length) return [];
 		return candidateIndexes
 			.map(idx => index.records[idx])
 			.filter(record => record.labelNorm.includes(normalized))
 			.map(record => record.item);
 	};
-	const getApiTestCategoryLabel = (category: ApiTestCategory | string): string => {
+	export const getApiTestCategoryLabel = (category: ApiTestCategory | string): string => {
 		switch (category) {
 			case 'ok': return t('apiKeyTestOk');
 			case 'invalid': return t('apiKeyTestInvalid');

@@ -1,8 +1,18 @@
+import {
+	PAIR_STALE_MS,
+	getHandleCompareKey,
+	isChannelId,
+	sanitizeHandle,
+	type LooseObject,
+	type PairRecord,
+	type PairStatus,
+	type SettingsLike
+} from './02-utils-i18n.ts';
 
 	/* ----------------------------------------------------------
 	 * 4. Pair metadata storage
 	 * ---------------------------------------------------------- */
-	class PairMetaStorage {
+	export class PairMetaStorage {
 		[key: string]: any;
 		constructor(settings: SettingsLike) {
 			this.settings = settings;

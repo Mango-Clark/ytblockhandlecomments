@@ -1,8 +1,12 @@
+import {
+	type ApiTestResult,
+	type LooseObject
+} from './02-utils-i18n.ts';
 
 	/* ----------------------------------------------------------
 	 * 5. API config storage
 	 * ---------------------------------------------------------- */
-	class ApiConfigStorage {
+	export class ApiConfigStorage {
 		[key: string]: any;
 		constructor() {
 			this.KEY = 'youtube_data_api_v3_config';

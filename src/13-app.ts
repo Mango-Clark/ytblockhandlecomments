@@ -1,8 +1,33 @@
+import {
+	COMMENT_SELECTOR,
+	COMMENTS_HOST_SELECTOR,
+	SHORTS_ROOT_SELECTOR,
+	WATCH_ROOT_SELECTOR,
+	decodeMaybe,
+	findHandleItem,
+	getItemKey,
+	getLang,
+	sanitizeHandle,
+	t,
+	type BlockItem,
+	type DialogRefreshContext,
+	type PairRunStats
+} from './02-utils-i18n.ts';
+import { AppSettingsStorage } from './03-app-settings-storage.ts';
+import { StorageV2 } from './04-storage-v2.ts';
+import { PairMetaStorage } from './05-pair-meta-storage.ts';
+import { ApiConfigStorage } from './06-api-config-storage.ts';
+import { PairService } from './07-pair-service.ts';
+import { Dialog, Toast } from './08-toast-dialog.ts';
+import { Extractor } from './09-extractor.ts';
+import { CommentHider } from './10-comment-hider.ts';
+import { MenuEnhancer } from './11-menu-enhancer.ts';
+import { BlockListManager } from './12-block-list-manager.ts';
 
 	/* ----------------------------------------------------------
 	 * 8. App Orchestrator (events, observers, cross-tab sync)
 	 * ---------------------------------------------------------- */
-	class App {
+	export class App {
 		[key: string]: any;
 		constructor() {
 			this.settings = new AppSettingsStorage();

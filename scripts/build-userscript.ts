@@ -1,50 +1,17 @@
-'use strict';
+import * as esbuild from 'esbuild';
+import fs from 'node:fs';
+import path from 'node:path';
 
-const fs = require('node:fs');
-const path = require('node:path');
-const ts = require('typescript');
-
+const __dirname = path.dirname(path.resolve(process.argv[1] || 'scripts/build-userscript.ts'));
 const root = path.resolve(__dirname, '..');
 const outputPath = path.join(root, 'ytblockhandlecomments.js');
-const sourceFiles: string[] = [
-	'00-userscript-header.ts',
-	'01-global-styles.ts',
-	'i18n/ko.ts',
-	'i18n/en.ts',
-	'02-utils-i18n.ts',
-	'03-app-settings-storage.ts',
-	'04-storage-v2.ts',
-	'05-pair-meta-storage.ts',
-	'06-api-config-storage.ts',
-	'07-pair-service.ts',
-	'08-toast-dialog.ts',
-	'09-extractor.ts',
-	'10-comment-hider.ts',
-	'11-menu-enhancer.ts',
-	'12-block-list-manager.ts',
-	'13-app.ts',
-	'14-bootstrap.ts'
-];
+const headerPath = path.join(root, 'src', '00-userscript-header.ts');
+const entryPoint = path.join(root, 'src', '14-bootstrap.ts');
 
 type CompactState = 'normal' | 'single' | 'double' | 'regex' | 'regex-class' | 'template';
 
 const normalizeNewlines = (value: unknown): string => String(value || '').replace(/\r\n/g, '\n');
-const readRawSource = (file: string): string => normalizeNewlines(fs.readFileSync(path.join(root, 'src', file), 'utf8')).trimEnd();
-const stripLeadingStrictDirective = (source: string): string => source.replace(/^\s*(['"])use strict\1;\s*/, '');
-const transpileSource = (source: string, file: string): string => {
-	const result = ts.transpileModule(source, {
-		fileName: file,
-		compilerOptions: {
-			module: ts.ModuleKind.None,
-			noImplicitUseStrict: true,
-			removeComments: true,
-			target: ts.ScriptTarget.ES2022,
-			useDefineForClassFields: false
-		}
-	});
-	return normalizeNewlines(result.outputText).trimEnd();
-};
-const readBodySource = (file: string): string => stripLeadingStrictDirective(transpileSource(readRawSource(file), file));
+const readRawSource = (file: string): string => normalizeNewlines(fs.readFileSync(file, 'utf8')).trimEnd();
 const isWord = (ch: string | undefined): boolean => /[A-Za-z0-9_$]/.test(ch || '');
 const needsSpace = (prev: string | undefined, next: string | undefined): boolean => isWord(prev) && isWord(next);
 const canStartRegex = (prev: string | undefined): boolean => !prev || /[({[=,:;!&|?]/.test(prev);
@@ -153,18 +120,36 @@ const compactBody = (source: string): string => {
 	}
 	return out.join('').trim();
 };
-const header = readRawSource(sourceFiles[0]);
-const wrapperPrefix = "(() => {\n\t'use strict';\n\tconst TEST_HOOK = typeof window === 'object' ? window.__YT_BLOCK_TEST_HOOK__ || null : null;\n";
-const body = compactBody(sourceFiles.slice(1).map(readBodySource).join('\n'));
-const generated = `${header}\n${wrapperPrefix}${body}\n})();\n`;
+const main = async (): Promise<void> => {
+	const header = readRawSource(headerPath);
+	const result = await esbuild.build({
+		bundle: true,
+		entryPoints: [entryPoint],
+		format: 'iife',
+		globalName: 'YTBlockHandleComments',
+		legalComments: 'none',
+		minify: true,
+		platform: 'browser',
+		target: 'es2022',
+		treeShaking: true,
+		write: false
+	});
+	const body = compactBody(normalizeNewlines(result.outputFiles[0].text));
+	const generated = `${header}\n${body}\n`;
 
-if (process.argv.includes('--check')) {
-	const current = normalizeNewlines(fs.readFileSync(outputPath, 'utf8'));
-	if (current !== generated) {
-		console.error('ytblockhandlecomments.js is out of sync with src/. Run npm run build.');
-		process.exit(1);
+	if (process.argv.includes('--check')) {
+		const current = normalizeNewlines(fs.readFileSync(outputPath, 'utf8'));
+		if (current !== generated) {
+			console.error('ytblockhandlecomments.js is out of sync with src/. Run npm run build.');
+			process.exit(1);
+		}
+		process.exit(0);
 	}
-	process.exit(0);
-}
 
-fs.writeFileSync(outputPath, generated, 'utf8');
+	fs.writeFileSync(outputPath, generated, 'utf8');
+};
+
+main().catch(error => {
+	console.error(error);
+	process.exit(1);
+});

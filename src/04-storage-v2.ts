@@ -1,8 +1,19 @@
+import {
+	getHandleCompareKey,
+	getItemKey,
+	isChannelId,
+	isNonNull,
+	norm,
+	sanitizeHandle,
+	validateRegexSpec,
+	type BlockItem,
+	type SettingsLike
+} from './02-utils-i18n.ts';
 
 	/* ----------------------------------------------------------
 	 * 3. Storage V2 (id/handle/regex) + migration
 	 * ---------------------------------------------------------- */
-	class StorageV2 {
+	export class StorageV2 {
 		[key: string]: any;
 		// v2 schema: { version: 2, updatedAt: number, items: Array<{type:'id'|'handle'|'regex', value:string, flags?:string}> }
 		constructor(settings: SettingsLike) {

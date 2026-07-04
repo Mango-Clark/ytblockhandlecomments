@@ -1,8 +1,21 @@
+import {
+	COMMENTS_HOST_SELECTOR,
+	HIDEABLE_COMMENT_SELECTOR,
+	getHandleCompareKey,
+	safeRegexTest,
+	t,
+	validateRegexSpec,
+	type CommentBlockMode,
+	type PairStoreLike,
+	type SettingsLike,
+	type StorageLike
+} from './02-utils-i18n.ts';
+import { Extractor } from './09-extractor.ts';
 
 	/* ----------------------------------------------------------
 	 * 9. CommentHider (scoped refresh + cached metadata)
 	 * ---------------------------------------------------------- */
-	class CommentHider {
+	export class CommentHider {
 		[key: string]: any;
 		constructor(storage: StorageLike, pairStore: PairStoreLike, settings: SettingsLike) {
 			this.storage = storage;

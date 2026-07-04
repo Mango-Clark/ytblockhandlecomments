@@ -1,8 +1,10 @@
-	/* ----------------------------------------------------------
+import type { I18nBundle } from '../02-utils-i18n.ts';
+
+/* ----------------------------------------------------------
 	 * 1b. English i18n strings
 	 * ---------------------------------------------------------- */
 
-	const I18N_EN: I18nBundle = {
+	export const I18N_EN: I18nBundle = {
 			block: 'Block',
 			unblock: 'Unblock',
 			confirmBlock: '🛑 Block this channel?',
