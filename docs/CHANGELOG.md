@@ -15,6 +15,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- None
+
+### Deprecated
+
+- None
+
+### Removed
+
+- None
+
+### Fixed
+
+- None
+
+### Security
+
+- None
+
+## [1.0.0] - 2026-07-04
+
+### Added
+
+- None
+
+### Changed
+
 - Changed readable `src/` source slices from JavaScript files to TypeScript files while keeping the generated userscript output unchanged.
 - Changed test files from JavaScript to TypeScript while keeping the Node test runner workflow unchanged.
 - Changed build and version scripts from JavaScript to TypeScript while preserving existing npm commands.
@@ -37,6 +63,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 
 - None
+
 
 ## [0.9.0] - 2026-06-24
 

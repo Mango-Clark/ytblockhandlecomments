@@ -1,4 +1,4 @@
-# 📚 YouTube Comment Blocker Wiki — v0.9.0
+# 📚 YouTube Comment Blocker Wiki — v1.0.0
 
 [English](WIKI.md) | [한국어](WIKI.ko.md)
 
@@ -55,7 +55,7 @@ Out of scope:
 
 ## 2. Metadata And Runtime
 
-- `@version`: `0.9.0`
+- `@version`: `1.0.0`
 - `@match`: `https://www.youtube.com/*`
 - `@grant`: `GM_getValue`, `GM_setValue`, `GM_addValueChangeListener`,
   `GM_registerMenuCommand`, `GM_unregisterMenuCommand`
@@ -335,7 +335,7 @@ shows guidance with an estimated 24-hour reset window from the latest quota fail
 
 ## 11. Remaining Work
 
-After `v0.9.0`, the large manager, security, i18n, regex-selection performance, Shorts
+After `v1.0.0`, the large manager, security, i18n, regex-selection performance, Shorts
 comment-hiding, long-session memory cleanup, pair-update minimization, visible-version, settings
 dialog, regex auto-add, and manager polish TODO items are considered implemented. Future work
 should focus on incremental improvements rather than baseline feature completion.

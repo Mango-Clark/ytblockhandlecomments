@@ -15,6 +15,32 @@
 
 ### Changed
 
+- 없음
+
+### Deprecated
+
+- 없음
+
+### Removed
+
+- 없음
+
+### Fixed
+
+- 없음
+
+### Security
+
+- 없음
+
+## [1.0.0] - 2026-07-04
+
+### Added
+
+- 없음
+
+### Changed
+
 - 읽기 쉬운 `src/` source slice를 JavaScript 파일에서 TypeScript 파일로 변경했으며, 생성된 userscript 출력은 그대로 유지했습니다.
 - Node test runner workflow는 그대로 유지하면서 test file을 JavaScript에서 TypeScript로 변경했습니다.
 - 기존 npm command를 유지하면서 build/version script를 JavaScript에서 TypeScript로 변경했습니다.
@@ -37,6 +63,7 @@
 ### Security
 
 - 없음
+
 
 ## [0.9.0] - 2026-06-24
 
