@@ -272,6 +272,30 @@ test('settings and block list dialogs can open each other', () => {
 	assert.ok(document.querySelectorAll('.tm-dialog').some((dialog: any) => dialog.textContent.includes('표시 크기')));
 });
 
+test('settings dialog uses grouped task list layout', () => {
+	const { api, document } = loadUserscript();
+	const settings = new api.AppSettingsStorage();
+	const storage = new api.StorageV2(settings);
+	const pairStore = new api.PairMetaStorage(settings);
+	const apiConfig = new api.ApiConfigStorage();
+	const manager = new api.BlockListManager({
+		settings,
+		storage,
+		pairStore,
+		apiConfig,
+		pairService: new api.PairService(storage, pairStore, apiConfig, settings),
+		getLastPairRunResult: () => null,
+		refreshAfterStorageChange: () => {}
+	});
+
+	manager.openSettings();
+
+	assert.ok(document.querySelector('.tm-settings-panel'));
+	assert.ok(document.querySelector('.tm-settings-intro').textContent.includes('자동으로 저장'));
+	assert.equal(document.querySelectorAll('.tm-settings-list > .tm-setting-group').length, 4);
+	assert.equal(document.querySelectorAll('.tm-setting-controls').length, 4);
+});
+
 test('api busy state shows a loading bar', () => {
 	const { api, document } = loadUserscript({
 		gmStore: {

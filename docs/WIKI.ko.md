@@ -1,4 +1,4 @@
-# 📚 YouTube Comment Blocker 위키 — v1.0.1
+# 📚 YouTube Comment Blocker 위키 — v1.0.2
 
 [English](WIKI.md) | [한국어](WIKI.ko.md)
 
@@ -55,7 +55,7 @@
 
 ## 2. 메타데이터와 런타임
 
-- `@version`: `1.0.1`
+- `@version`: `1.0.2`
 - `@match`: `https://www.youtube.com/*`
 - `@grant`: `GM_getValue`, `GM_setValue`, `GM_addValueChangeListener`,
   `GM_registerMenuCommand`, `GM_unregisterMenuCommand`
@@ -252,6 +252,8 @@ Pair 결과:
 
 설정 dialog:
 
+- `GM_setting`을 참고한 카테고리 목록 레이아웃을 사용해 각 작업 그룹에 제목, 컨트롤, 짧은 도움말을 표시합니다
+- 변경 사항이 자동 저장된다는 안내를 표시합니다
 - 컨트롤을 매칭, 댓글 표시, 표시 크기, 유지보수 섹션으로 구분
 - handle 대소문자 구분
 - regex 매칭 handle 자동 추가
@@ -344,7 +346,7 @@ API 키 테스트가 반복해서 `quota`를 보고하면 관리자는 연속 qu
 
 ## 11. 이후 작업
 
-`v1.0.1` 이후에는 큰 관리자/보안/i18n/regex-selection 성능/Shorts 댓글 숨김/긴 세션
+`v1.0.2` 이후에는 큰 관리자/보안/i18n/regex-selection 성능/Shorts 댓글 숨김/긴 세션
 메모리 정리/pair update 최소화/버전 표시/설정 dialog/regex 자동 추가/관리자 polish
 TODO가 기본적으로 마무리된 상태로 봅니다. 이후 작업은 베이스라인 미구현이 아니라
 점진적 개선 중심으로 다룹니다.

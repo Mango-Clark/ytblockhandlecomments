@@ -1,11 +1,11 @@
-# 📌 YouTube Comment Blocker — v1.0.1
+# 📌 YouTube Comment Blocker — v1.0.2
 
 [English](README.md) | [한국어](README.ko.md)
 
 Full reference: [WIKI.md](docs/WIKI.md) | [WIKI.ko.md](docs/WIKI.ko.md)
 
-A Tampermonkey userscript for hiding YouTube comments by channel identity. `v1.0.1` keeps the
-`v0.6.x` safety, settings, and pair-maintenance fixes, then adds a separate settings dialog,
+A Tampermonkey userscript for hiding YouTube comments by channel identity. `v1.0.2` keeps the
+`v0.6.x` safety, settings, and pair-maintenance fixes, then refines the separate settings dialog,
 regex auto-add, debug counters, pair result tools, quota guidance, paged regex match lists,
 role-based source files, and compact generated userscript output.
 
@@ -42,6 +42,7 @@ Source layout:
 - Stores a local-only YouTube Data API v3 key and validates it before pair maintenance
 - Supports case-sensitive handle matching
 - Supports a separate settings dialog with API, UID, regex auto-add, display sizing, and debug counters
+- Uses a category-list settings layout with task-grouped controls, descriptions, and automatic saves
 - Groups settings controls by matching, comment display, display size, and maintenance
 - Supports resetting app display and matching settings after a confirmation prompt
 - Supports five-level text and UI scale settings; level 2 matches the previous size and level 3 is the default
@@ -196,7 +197,7 @@ Notes:
 ## Userscript Metadata
 
 - `@name`: `YouTube Comment Blocker`
-- `@version`: `1.0.1`
+- `@version`: `1.0.2`
 - `@match`: `https://www.youtube.com/*`
 - `@grant`: `GM_getValue`, `GM_setValue`, `GM_addValueChangeListener`,
   `GM_registerMenuCommand`, `GM_unregisterMenuCommand`

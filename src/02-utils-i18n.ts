@@ -178,7 +178,7 @@ import { I18N_KO } from './i18n/ko.ts';
 	export const SHORTS_ROOT_SELECTOR = 'ytd-reel-video-renderer, ytd-shorts, ytd-app, ytd-page-manager';
 	export const PAIR_STALE_MS = 7 * 24 * 60 * 60 * 1000;
 	export const PAIR_NOTICE_COOLDOWN_MS = PAIR_STALE_MS;
-	export const FALLBACK_SCRIPT_VERSION = '1.0.1';
+	export const FALLBACK_SCRIPT_VERSION = '1.0.2';
 	export const getScriptVersion = () => {
 		try {
 			if (typeof GM_info === 'object' && GM_info?.script?.version) return GM_info.script.version;

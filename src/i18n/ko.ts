@@ -23,6 +23,7 @@ import type { I18nBundle } from '../02-utils-i18n.ts';
 			versionTitle: '스크립트 정보',
 			versionValue: (version) => `버전: ${version}`,
 			settingsTitle: '설정',
+			settingsIntro: '설정은 작업별로 묶여 있으며 변경하면 자동으로 저장됩니다.',
 			settingsMatchingTitle: '매칭',
 			settingsCommentTitle: '댓글 표시',
 			settingsDisplayTitle: '표시 크기',

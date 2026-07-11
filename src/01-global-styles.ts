@@ -34,6 +34,16 @@
     .tm-block-meta{font-size:12px;line-height:1.5;color:#5f6368}
     .tm-section{border:1px solid #e5e5e5;border-radius:12px;padding:14px 16px;margin-bottom:14px}
     .tm-section h3{margin:0 0 10px 0;font-size:15px}
+    .tm-settings-panel{padding:0;overflow:hidden}
+    .tm-settings-panel > h3{padding:14px 16px 0 16px}
+    .tm-settings-intro{padding:0 16px 12px 16px;margin:0;border-bottom:1px solid #ececec}
+    .tm-settings-list{list-style:none;margin:0;padding:0}
+    .tm-settings-list > .tm-setting-group{display:grid;grid-template-columns:minmax(130px,.7fr) minmax(0,2fr);gap:12px;border-top:1px solid #ececec;padding:14px 16px;margin:0}
+    .tm-settings-list > .tm-setting-group:first-child{border-top:none}
+    .tm-settings-list > .tm-setting-group h4{margin:0;font-size:13px;color:#3c4043}
+    .tm-setting-controls{display:flex;flex-direction:column;gap:10px;min-width:0}
+    .tm-setting-controls label{display:flex;align-items:center;gap:8px;font-weight:600;flex-wrap:wrap}
+    .tm-setting-controls p{margin:2px 0 0 0;font-size:12px;color:#5f6368}
     .tm-setting-group{border-top:1px solid #ececec;padding-top:12px;margin-top:12px}
     .tm-setting-group:first-of-type{border-top:none;padding-top:0;margin-top:0}
     .tm-setting-group h4{margin:0 0 8px 0;font-size:13px;color:#3c4043}
@@ -95,6 +105,7 @@
     button.tm-block-placeholder:hover{background:#e8eaed;color:#202124}
     @media (max-width: 640px){
       .tm-dialog{padding:18px}
+      .tm-settings-list > .tm-setting-group{grid-template-columns:1fr}
       .tm-block-list li{flex-direction:column}
       .tm-block-list li button{align-self:flex-end}
       .tm-toolbar-row,.tm-toolbar-group{align-items:stretch}
@@ -106,6 +117,7 @@
       .tm-dialog{background:#1f1f1f;color:#fff}
       .tm-dialog button.secondary{background:#333;color:#fff}
       .tm-section,.tm-regex-bar{background:#1f1f1f;border-color:#444}
+      .tm-settings-intro,.tm-settings-list > .tm-setting-group{border-color:#333}
       .tm-setting-group{border-color:#333}
       .tm-setting-group h4{color:#e8eaed}
       .tm-summary-card{background:#2a2a2a}

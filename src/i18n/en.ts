@@ -23,6 +23,7 @@ import type { I18nBundle } from '../02-utils-i18n.ts';
 			versionTitle: 'Script Info',
 			versionValue: (version) => `Version: ${version}`,
 			settingsTitle: 'Settings',
+			settingsIntro: 'Options are grouped by task and saved automatically as you change them.',
 			settingsMatchingTitle: 'Matching',
 			settingsCommentTitle: 'Comment display',
 			settingsDisplayTitle: 'Display size',

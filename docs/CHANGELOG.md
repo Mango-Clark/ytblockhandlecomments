@@ -33,6 +33,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - None
 
+## [1.0.2] - 2026-07-11
+
+### Added
+
+- None
+
+### Changed
+
+- Updated the settings dialog to a category-list layout with grouped controls, descriptions, and an automatic-save note.
+
+### Deprecated
+
+- None
+
+### Removed
+
+- None
+
+### Fixed
+
+- None
+
+### Security
+
+- None
+
+
 ## [1.0.1] - 2026-07-04
 
 ### Added

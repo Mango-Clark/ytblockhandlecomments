@@ -1,12 +1,12 @@
-# 📌 YouTube Comment Blocker — v1.0.1
+# 📌 YouTube Comment Blocker — v1.0.2
 
 [English](README.md) | [한국어](README.ko.md)
 
 상세 문서: [WIKI.md](docs/WIKI.md) | [WIKI.ko.md](docs/WIKI.ko.md)
 
 YouTube 댓글을 채널 식별자 기준으로 숨기는 Tampermonkey 사용자 스크립트입니다.
-기본 흐름은 여전히 handle 차단이며, `v1.0.1`은 `v0.6.x`의 안전성, 설정, pair 유지보수
-수정을 유지하면서 별도 설정 창, regex 자동 추가, debug counter, pair 결과 도구,
+기본 흐름은 여전히 handle 차단이며, `v1.0.2`은 `v0.6.x`의 안전성, 설정, pair 유지보수
+수정을 유지하면서 별도 설정 창을 개선하고, regex 자동 추가, debug counter, pair 결과 도구,
 quota 안내, 페이지 단위 regex 매칭 목록, 역할별 소스 파일, 압축된 userscript 생성물을
 추가합니다.
 
@@ -48,6 +48,7 @@ quota 안내, 페이지 단위 regex 매칭 목록, 역할별 소스 파일, 압
 - handle별 상태 배지 제공: `handle-only`, `paired`, `stale`, `mismatch`, `unverified`
 - 관리자 대화상자에 로컬 `Handle Case Sensitive` 설정 추가
 - API, UID, regex 자동 추가, 표시 크기, debug counter를 다루는 별도 설정 창 추가
+- 작업별 카테고리 목록, 설명, 자동 저장 안내를 포함한 설정 창 레이아웃 적용
 - 설정 창의 기능을 매칭, 댓글 표시, 표시 크기, 유지보수 그룹으로 구분
 - 확인 팝업 이후 앱 표시/매칭 설정 초기화 지원
 - 글자 크기와 UI 크기를 5단계로 조절 가능. 2단계는 기존 크기이며 기본값은 3단계
@@ -148,7 +149,7 @@ Pair 메타 저장소:
 - 기본 `commentBlockMode`는 `hide`입니다
 - 기본 `fontSizeLevel`과 `uiScaleLevel`은 `3`이며, `2`는 이전 시각 크기와 같습니다
 - 레거시 규칙 키 `blockedHandles`, `blockedHandles_v1`는 계속 자동 마이그레이션됩니다
-- `v1.0.1`에서도 pair 메타데이터를 import/export에 포함하지 않습니다
+- `v1.0.2`에서도 pair 메타데이터를 import/export에 포함하지 않습니다
 - API 키는 Tampermonkey 로컬 저장소에만 저장되며 스크립트 코드에 포함되지 않습니다
 
 ---
@@ -203,7 +204,7 @@ Pair 메타 저장소:
 ## 사용자 스크립트 메타데이터
 
 - `@name`: `YouTube Comment Blocker`
-- `@version`: `1.0.1`
+- `@version`: `1.0.2`
 - `@match`: `https://www.youtube.com/*`
 - `@grant`: `GM_getValue`, `GM_setValue`, `GM_addValueChangeListener`,
   `GM_registerMenuCommand`, `GM_unregisterMenuCommand`
