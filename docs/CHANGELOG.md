@@ -11,6 +11,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- None
+
+### Changed
+
+- None
+
+### Deprecated
+
+- None
+
+### Removed
+
+- None
+
+### Fixed
+
+- None
+
+### Security
+
+- None
+
+## [1.3.0] - 2026-07-11
+
+### Added
+
 - Added V0-V5 diagnostic-detail settings for log payloads.
 - Added JSON and plain-text file downloads plus a return action to the block-list export dialog.
 - Added per-option explanations to keyword automation settings.
@@ -37,6 +63,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 
 - None
+
 
 ## [1.2.0] - 2026-07-11
 
