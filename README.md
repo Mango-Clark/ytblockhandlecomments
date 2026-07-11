@@ -36,7 +36,7 @@ Source layout:
 - Hides matching comments in real time on YouTube watch pages and Shorts pages
 - Configurable blocked-comment display: hide completely, show a gray placeholder, or click to reveal
 - Configurable comment auto-dislike mode, defaulting to off: off, only when newly hidden, or always while hidden
-- Supports keyword automation over comment text, author handles, and pinned labels with independent dislike, handle-block, and UID-pair actions
+- Supports a unified block and keyword automation dialog for regex rules, keyword matching fields, and independent dislike, handle-block, and UID-pair actions
 - Supports independent local log retention and browser-console logging, with level and retention controls plus log-file download
 - Supports V0-V5 diagnostic-detail settings for log payloads, defaulting to balanced V3 output
 - Supports `handle`, `id`, and `regex` rules in `blocked_v2`
@@ -47,7 +47,7 @@ Source layout:
 - Supports case-sensitive handle matching
 - Supports a separate settings dialog with API, UID, regex auto-add, display sizing, and debug counters
 - Uses a category-list settings layout with task-grouped controls, descriptions, and automatic saves
-- Groups settings controls by matching, comment display, display size, and maintenance
+- Groups settings controls by matching, comment display, keyword automation, logging, display size, and maintenance
 - Supports resetting app display and matching settings after a confirmation prompt
 - Supports five-level text and UI scale settings; level 2 matches the previous size and level 3 is the default
 - Adds in-dialog navigation buttons between settings and the block list
@@ -72,9 +72,9 @@ Source layout:
 4. Right-click a comment author's handle, or use the comment `⋯` menu, to block/unblock.
 5. Open `Tampermonkey -> YouTube Comment Blocker -> Manage block list`.
 6. Save your YouTube Data API v3 key and optionally run `Test API Key`.
-7. Use search, filters, regex tools, and bulk actions to maintain the list.
+7. Use search, filters, the block and keyword automation dialog, and bulk actions to maintain the list.
 8. Turn on `UID Detection`, choose `UID pair rules`, and run `Create Pair` / `Update Pair` when you want UID-backed matching.
-9. In Settings, add keyword rules and choose the inputs and actions that should run after a match.
+9. In Settings, enable or disable keyword automation, then use the block and keyword automation dialog to configure its rules and actions.
 
 Typical pair flow:
 
@@ -131,6 +131,7 @@ App settings:
 	blockMatchMode: 'handle' | 'pair',
 	pairUpdateUidCheck: boolean,
 	pairUpdateHandleLookup: boolean,
+	keywordAutomationEnabled: boolean,
 	keywordRules: string[],
 	keywordFields: { commentText: boolean, handle: boolean, pinned: boolean },
 	keywordActions: { dislike: boolean, blockHandle: boolean, createPair: boolean },

@@ -265,6 +265,160 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				}
 			});
 		}
+		openBlockKeywordAutomation() {
+			const body = document.createElement('div');
+			body.className = 'tm-automation-panel';
+			const intro = document.createElement('p');
+			intro.className = 'tm-muted';
+			const regexSection = document.createElement('section');
+			regexSection.className = 'tm-section';
+			const regexTitle = document.createElement('h3');
+			const patternLabel = document.createElement('label');
+			const patternText = document.createElement('span');
+			const patternInput = document.createElement('input');
+			patternInput.dataset.setting = 'regex-pattern';
+			const flagsLabel = document.createElement('label');
+			const flagsText = document.createElement('span');
+			const flagsInput = document.createElement('input');
+			flagsInput.dataset.setting = 'regex-flags';
+			const addRegexBtn = Object.assign(document.createElement('button'), { className: 'primary' });
+			patternLabel.append(patternText, patternInput);
+			flagsLabel.append(flagsText, flagsInput);
+			regexSection.append(regexTitle, patternLabel, flagsLabel, addRegexBtn);
+
+			const keywordSection = document.createElement('section');
+			keywordSection.className = 'tm-section';
+			const keywordTitle = document.createElement('h3');
+			const keywordLabel = document.createElement('label');
+			const keywordText = document.createElement('span');
+			const keywordInput = document.createElement('textarea');
+			keywordInput.dataset.setting = 'keyword-rules';
+			keywordInput.rows = 4;
+			keywordLabel.append(keywordText, keywordInput);
+			const fieldsTitle = document.createElement('strong');
+			const actionsTitle = document.createElement('strong');
+			const makeToggle = () => {
+				const label = document.createElement('label');
+				const input = document.createElement('input');
+				input.type = 'checkbox';
+				const text = document.createElement('span');
+				const help = document.createElement('p');
+				label.append(input, text);
+				return { label, input, text, help };
+			};
+			const commentField = makeToggle();
+			const handleField = makeToggle();
+			const pinnedField = makeToggle();
+			const dislikeAction = makeToggle();
+			const blockAction = makeToggle();
+			const pairAction = makeToggle();
+			const keywordHelp = document.createElement('p');
+			keywordSection.append(
+				keywordTitle,
+				keywordLabel,
+				fieldsTitle,
+				commentField.label, commentField.help,
+				handleField.label, handleField.help,
+				pinnedField.label, pinnedField.help,
+				actionsTitle,
+				dislikeAction.label, dislikeAction.help,
+				blockAction.label, blockAction.help,
+				pairAction.label, pairAction.help,
+				keywordHelp
+			);
+			body.append(intro, regexSection, keywordSection);
+
+			const renderAll = () => {
+				const config = this.app.settings.getKeywordAutomation();
+				keywordInput.value = config.keywords.join('\n');
+				commentField.input.checked = !!config.fields.commentText;
+				handleField.input.checked = !!config.fields.handle;
+				pinnedField.input.checked = !!config.fields.pinned;
+				dislikeAction.input.checked = !!config.actions.dislike;
+				blockAction.input.checked = !!config.actions.blockHandle;
+				pairAction.input.checked = !!config.actions.createPair;
+			};
+			const applyLanguage = () => {
+				intro.textContent = t('blockKeywordAutomationHelp');
+				regexTitle.textContent = t('addRegex');
+				patternText.textContent = t('patternLabel') + ':';
+				flagsText.textContent = t('flagsLabel') + ':';
+				addRegexBtn.textContent = t('addBtn');
+				keywordTitle.textContent = t('keywordAutomationTitle');
+				keywordText.textContent = t('keywordRulesLabel');
+				keywordInput.placeholder = t('keywordRulesPlaceholder');
+				fieldsTitle.textContent = t('keywordFieldsTitle');
+				commentField.text.textContent = t('keywordFieldComment');
+				commentField.help.textContent = t('keywordFieldCommentHelp');
+				handleField.text.textContent = t('keywordFieldHandle');
+				handleField.help.textContent = t('keywordFieldHandleHelp');
+				pinnedField.text.textContent = t('keywordFieldPinned');
+				pinnedField.help.textContent = t('keywordFieldPinnedHelp');
+				actionsTitle.textContent = t('keywordActionsTitle');
+				dislikeAction.text.textContent = t('keywordActionDislike');
+				dislikeAction.help.textContent = t('keywordActionDislikeHelp');
+				blockAction.text.textContent = t('keywordActionBlockHandle');
+				blockAction.help.textContent = t('keywordActionBlockHandleHelp');
+				pairAction.text.textContent = t('keywordActionCreatePair');
+				pairAction.help.textContent = t('keywordActionCreatePairHelp');
+				keywordHelp.textContent = t('keywordAutomationHelp');
+				renderAll();
+			};
+			const saveKeywords = () => {
+				this.app.settings.setKeywordAutomation({
+					keywords: keywordInput.value.split(/\r?\n/),
+					fields: {
+						commentText: commentField.input.checked,
+						handle: handleField.input.checked,
+						pinned: pinnedField.input.checked
+					},
+					actions: {
+						dislike: dislikeAction.input.checked,
+						blockHandle: blockAction.input.checked,
+						createPair: pairAction.input.checked
+					}
+				});
+				this.app.refreshAfterStorageChange();
+				renderAll();
+			};
+			keywordInput.addEventListener('change', saveKeywords);
+			[commentField, handleField, pinnedField, dislikeAction, blockAction, pairAction].forEach(toggle => {
+				toggle.input.addEventListener('change', saveKeywords);
+			});
+			addRegexBtn.addEventListener('click', () => {
+				let pattern = (patternInput.value || '').trim();
+				let flags = (flagsInput.value || '').trim();
+				if (!pattern) return;
+				const literal = parseRegexLiteral(pattern);
+				if (literal) { pattern = literal.pattern; flags = literal.flags || ''; }
+				if (!validateRegexSpec(pattern, flags)) { Toast.show(t('invalidRegex')); return; }
+				if (!this.app.storage.addRegex(pattern, flags)) { Toast.show(t('exists')); return; }
+				this.app.refreshAfterStorageChange();
+				patternInput.value = '';
+				flagsInput.value = '';
+				Toast.show(t('addedRegex'));
+			});
+			applyLanguage();
+			Dialog.show({
+				title: t('blockKeywordAutomationTitle'),
+				body,
+				buttons: [
+					{ label: t('openBlockList'), value: 'list' },
+					{ label: t('openSettings'), value: 'settings' },
+					{ label: t('close'), value: false, primary: true }
+				],
+				onRefresh: (ctx: DialogRefreshContext) => {
+					ctx.setTitle(t('blockKeywordAutomationTitle'));
+					ctx.buttons[0].textContent = t('openBlockList');
+					ctx.buttons[1].textContent = t('openSettings');
+					ctx.buttons[2].textContent = t('close');
+					applyLanguage();
+				}
+			}).then(value => {
+				if (value === 'list') this.openList();
+				else if (value === 'settings') this.openSettings();
+			});
+		}
 		openSettings() {
 			const body = document.createElement('div');
 			const settingsSection = document.createElement('section');
@@ -341,69 +495,15 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			const keywordTitle = document.createElement('h4');
 			const keywordControls = document.createElement('div');
 			keywordControls.className = 'tm-setting-controls';
-			const keywordLabel = document.createElement('label');
-			const keywordText = document.createElement('span');
-			const keywordInput = document.createElement('textarea');
-			keywordInput.dataset.setting = 'keyword-rules';
-			keywordInput.rows = 4;
-			keywordLabel.append(keywordText, keywordInput);
-			const keywordFieldsTitle = document.createElement('strong');
-			const keywordCommentLabel = document.createElement('label');
-			const keywordCommentToggle = document.createElement('input');
-			keywordCommentToggle.type = 'checkbox';
-			const keywordCommentText = document.createElement('span');
-			keywordCommentLabel.append(keywordCommentToggle, keywordCommentText);
-			const keywordCommentHelp = document.createElement('p');
-			const keywordHandleLabel = document.createElement('label');
-			const keywordHandleToggle = document.createElement('input');
-			keywordHandleToggle.type = 'checkbox';
-			const keywordHandleText = document.createElement('span');
-			keywordHandleLabel.append(keywordHandleToggle, keywordHandleText);
-			const keywordHandleHelp = document.createElement('p');
-			const keywordPinnedLabel = document.createElement('label');
-			const keywordPinnedToggle = document.createElement('input');
-			keywordPinnedToggle.type = 'checkbox';
-			const keywordPinnedText = document.createElement('span');
-			keywordPinnedLabel.append(keywordPinnedToggle, keywordPinnedText);
-			const keywordPinnedHelp = document.createElement('p');
-			const keywordActionsTitle = document.createElement('strong');
-			const keywordDislikeLabel = document.createElement('label');
-			const keywordDislikeToggle = document.createElement('input');
-			keywordDislikeToggle.type = 'checkbox';
-			const keywordDislikeText = document.createElement('span');
-			keywordDislikeLabel.append(keywordDislikeToggle, keywordDislikeText);
-			const keywordDislikeHelp = document.createElement('p');
-			const keywordBlockLabel = document.createElement('label');
-			const keywordBlockToggle = document.createElement('input');
-			keywordBlockToggle.type = 'checkbox';
-			const keywordBlockText = document.createElement('span');
-			keywordBlockLabel.append(keywordBlockToggle, keywordBlockText);
-			const keywordBlockHelp = document.createElement('p');
-			const keywordPairLabel = document.createElement('label');
-			const keywordPairToggle = document.createElement('input');
-			keywordPairToggle.type = 'checkbox';
-			const keywordPairText = document.createElement('span');
-			keywordPairLabel.append(keywordPairToggle, keywordPairText);
-			const keywordPairHelp = document.createElement('p');
-			const keywordHelp = document.createElement('p');
-			keywordControls.append(
-				keywordLabel,
-				keywordFieldsTitle,
-				keywordCommentLabel,
-				keywordCommentHelp,
-				keywordHandleLabel,
-				keywordHandleHelp,
-				keywordPinnedLabel,
-				keywordPinnedHelp,
-				keywordActionsTitle,
-				keywordDislikeLabel,
-				keywordDislikeHelp,
-				keywordBlockLabel,
-				keywordBlockHelp,
-				keywordPairLabel,
-				keywordPairHelp,
-				keywordHelp
-			);
+			const keywordEnabledLabel = document.createElement('label');
+			const keywordEnabledToggle = document.createElement('input');
+			keywordEnabledToggle.type = 'checkbox';
+			keywordEnabledToggle.dataset.setting = 'keyword-automation-enabled';
+			const keywordEnabledText = document.createElement('span');
+			keywordEnabledLabel.append(keywordEnabledToggle, keywordEnabledText);
+			const keywordEnabledHelp = document.createElement('p');
+			const openAutomationBtn = Object.assign(document.createElement('button'), { className: 'secondary' });
+			keywordControls.append(keywordEnabledLabel, keywordEnabledHelp, openAutomationBtn);
 			keywordGroup.append(keywordTitle, keywordControls);
 
 			const loggingGroup = document.createElement('li');
@@ -636,14 +736,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				caseToggle.checked = this.app.settings.isHandleCaseSensitive();
 				autoToggle.checked = this.app.settings.isAutoAddRegexHandlesEnabled();
 				matchModeSelect.value = this.app.settings.getBlockMatchMode();
-				const keywordAutomation = this.app.settings.getKeywordAutomation();
-				keywordInput.value = keywordAutomation.keywords.join('\n');
-				keywordCommentToggle.checked = !!keywordAutomation.fields.commentText;
-				keywordHandleToggle.checked = !!keywordAutomation.fields.handle;
-				keywordPinnedToggle.checked = !!keywordAutomation.fields.pinned;
-				keywordDislikeToggle.checked = !!keywordAutomation.actions.dislike;
-				keywordBlockToggle.checked = !!keywordAutomation.actions.blockHandle;
-				keywordPairToggle.checked = !!keywordAutomation.actions.createPair;
+				keywordEnabledToggle.checked = this.app.settings.isKeywordAutomationEnabled();
 				const logging = this.app.settings.getLogging();
 				logFileToggle.checked = !!logging.fileEnabled;
 				logConsoleToggle.checked = !!logging.consoleEnabled;
@@ -673,23 +766,9 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				matchModeHelp.textContent = t('blockMatchModeHelp');
 				commentTitle.textContent = t('settingsCommentTitle');
 				keywordTitle.textContent = t('keywordAutomationTitle');
-				keywordText.textContent = t('keywordRulesLabel');
-				keywordInput.placeholder = t('keywordRulesPlaceholder');
-				keywordFieldsTitle.textContent = t('keywordFieldsTitle');
-				keywordCommentText.textContent = t('keywordFieldComment');
-				keywordCommentHelp.textContent = t('keywordFieldCommentHelp');
-				keywordHandleText.textContent = t('keywordFieldHandle');
-				keywordHandleHelp.textContent = t('keywordFieldHandleHelp');
-				keywordPinnedText.textContent = t('keywordFieldPinned');
-				keywordPinnedHelp.textContent = t('keywordFieldPinnedHelp');
-				keywordActionsTitle.textContent = t('keywordActionsTitle');
-				keywordDislikeText.textContent = t('keywordActionDislike');
-				keywordDislikeHelp.textContent = t('keywordActionDislikeHelp');
-				keywordBlockText.textContent = t('keywordActionBlockHandle');
-				keywordBlockHelp.textContent = t('keywordActionBlockHandleHelp');
-				keywordPairText.textContent = t('keywordActionCreatePair');
-				keywordPairHelp.textContent = t('keywordActionCreatePairHelp');
-				keywordHelp.textContent = t('keywordAutomationHelp');
+				keywordEnabledText.textContent = t('keywordAutomationEnabled');
+				keywordEnabledHelp.textContent = t('keywordAutomationEnabledHelp');
+				openAutomationBtn.textContent = t('openBlockKeywordAutomation');
 				loggingTitle.textContent = t('loggingTitle');
 				logFileText.textContent = t('loggingFileLabel');
 				logConsoleText.textContent = t('loggingConsoleLabel');
@@ -764,30 +843,15 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				this.app.refreshAfterStorageChange();
 				renderAll();
 			});
-			const saveKeywordAutomation = () => {
-				this.app.settings.setKeywordAutomation({
-					keywords: keywordInput.value.split(/\r?\n/),
-					fields: {
-						commentText: keywordCommentToggle.checked,
-						handle: keywordHandleToggle.checked,
-						pinned: keywordPinnedToggle.checked
-					},
-					actions: {
-						dislike: keywordDislikeToggle.checked,
-						blockHandle: keywordBlockToggle.checked,
-						createPair: keywordPairToggle.checked
-					}
-				});
+			keywordEnabledToggle.addEventListener('change', () => {
+				this.app.settings.setKeywordAutomationEnabled(keywordEnabledToggle.checked);
 				this.app.refreshAfterStorageChange();
 				renderAll();
-			};
-			keywordInput.addEventListener('change', saveKeywordAutomation);
-			keywordCommentToggle.addEventListener('change', saveKeywordAutomation);
-			keywordHandleToggle.addEventListener('change', saveKeywordAutomation);
-			keywordPinnedToggle.addEventListener('change', saveKeywordAutomation);
-			keywordDislikeToggle.addEventListener('change', saveKeywordAutomation);
-			keywordBlockToggle.addEventListener('change', saveKeywordAutomation);
-			keywordPairToggle.addEventListener('change', saveKeywordAutomation);
+			});
+			openAutomationBtn.addEventListener('click', () => {
+				Dialog.closeAll('navigate');
+				this.openBlockKeywordAutomation();
+			});
 			const saveLogging = () => {
 				this.app.settings.setLogging({
 					fileEnabled: logFileToggle.checked,
@@ -1033,39 +1097,13 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			const pairResultPanel = document.createElement('div');
 			pairSection.append(pairTitle, toggleRow, summaryTitle, lastCheck, summaryGrid, pairProgress, pairResultPanel);
 
-			const form = document.createElement('div');
-			form.className = 'tm-regex-bar';
-			const formTitle = document.createElement('header');
-			const titleRow = document.createElement('div');
-			titleRow.className = 'row';
-			const regexrBtn = Object.assign(document.createElement('button'), {
-				className: 'primary'
-			});
-			regexrBtn.style.padding = '6px 12px';
-			regexrBtn.style.fontSize = '13px';
-			regexrBtn.addEventListener('click', () => {
-				try { window.open('https://regexr.com/', '_blank', 'noopener'); } catch { location.href = 'https://regexr.com/'; }
-			});
-			titleRow.append(formTitle, regexrBtn);
-			const controls = document.createElement('div');
-			controls.className = 'controls';
-			const patternLabel = document.createElement('label');
-			const patternInput = document.createElement('input');
-			patternInput.type = 'text';
-			patternInput.style.width = '60%';
-			patternInput.placeholder = '/^@spam.*/i or ^@promo';
-			const flagsLabel = document.createElement('label');
-			const flagsInput = document.createElement('input');
-			flagsInput.type = 'text';
-			flagsInput.style.width = '80px';
-			flagsInput.placeholder = 'i';
-			const addBtn = Object.assign(document.createElement('button'), {
-				className: 'secondary'
-			});
-			addBtn.style.padding = '6px 12px';
-			addBtn.style.fontSize = '13px';
-			controls.append(patternLabel, patternInput, flagsLabel, flagsInput, addBtn);
-			form.append(titleRow, controls);
+			const form = document.createElement('section');
+			form.className = 'tm-section tm-automation-entry';
+			const formTitle = document.createElement('h3');
+			const formHelp = document.createElement('p');
+			formHelp.className = 'tm-muted';
+			const openAutomationBtn = Object.assign(document.createElement('button'), { className: 'secondary' });
+			form.append(formTitle, formHelp, openAutomationBtn);
 
 			const listSection = document.createElement('section');
 			listSection.className = 'tm-section';
@@ -1611,11 +1649,9 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				createBtn.textContent = t('pairCreate');
 				updateBtn.textContent = t('pairUpdate');
 				summaryTitle.textContent = t('pairSummary');
-				formTitle.textContent = t('addRegex');
-				regexrBtn.textContent = t('testRegex');
-				patternLabel.textContent = t('patternLabel') + ':';
-				flagsLabel.textContent = t('flagsLabel') + ':';
-				addBtn.textContent = t('addBtn');
+				formTitle.textContent = t('blockKeywordAutomationTitle');
+				formHelp.textContent = t('blockKeywordAutomationHelp');
+				openAutomationBtn.textContent = t('openBlockKeywordAutomation');
 				masterText.textContent = t('selectVisible');
 				searchLabel.textContent = t('searchLabel');
 				searchInput.placeholder = t('searchPlaceholder');
@@ -1747,20 +1783,9 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				Toast.show(t('pairResult', stats), 3200);
 				renderAll();
 			});
-			addBtn.addEventListener('click', () => {
-				let pattern = (patternInput.value || '').trim();
-				let flags = (flagsInput.value || '').trim();
-				if (!pattern) return;
-				const literal = parseRegexLiteral(pattern);
-				if (literal) { pattern = literal.pattern; flags = literal.flags || ''; }
-				if (!validateRegexSpec(pattern, flags)) { Toast.show(t('invalidRegex')); return; }
-				const ok = this.app.storage.addRegex(pattern, flags);
-				if (!ok) { Toast.show(t('exists')); return; }
-				this.app.refreshAfterStorageChange();
-				patternInput.value = '';
-				flagsInput.value = '';
-				renderAll();
-				Toast.show(t('addedRegex'));
+			openAutomationBtn.addEventListener('click', () => {
+				Dialog.closeAll('navigate');
+				this.openBlockKeywordAutomation();
 			});
 
 			applyLanguage();

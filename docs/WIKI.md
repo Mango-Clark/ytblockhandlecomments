@@ -119,6 +119,7 @@ App settings:
 	blockMatchMode: 'handle' | 'pair',
 	pairUpdateUidCheck: boolean,
 	pairUpdateHandleLookup: boolean,
+	keywordAutomationEnabled: boolean,
 	keywordRules: string[],
 	keywordFields: { commentText: boolean, handle: boolean, pinned: boolean },
 	keywordActions: { dislike: boolean, blockHandle: boolean, createPair: boolean },
@@ -161,7 +162,9 @@ Notes:
 - Default `app_settings_v1.blockMatchMode` is `handle`
 - At least one of `app_settings_v1.pairUpdateUidCheck` and `pairUpdateHandleLookup` stays enabled;
   handle lookup is the default
-- Keyword matching is case-insensitive, defaults to comment text, and has no enabled action by default
+- Keyword automation is enabled by default to preserve existing behavior. It can be disabled without deleting
+  its case-insensitive rules, fields, or actions; matching defaults to comment text and has no enabled action
+  by default
 - Logging is off by default. File logging retains entries in Tampermonkey storage until users download
   or clear them; the browser controls the downloaded file location
 - `app_settings_v1.verboseLevel` defaults to `3`. V0/V1 omit diagnostic payloads, V2 records one
@@ -302,11 +305,13 @@ Settings dialog:
 - Identity block method: `handle` rules or UID pair `id` rules
 - Regex matched-handle auto-add
 - Auto-dislike mode
-- Keyword rules, match inputs, and per-match actions, each with its checked field or performed action explained
+- A master keyword-automation toggle, with its regex rule editor and keyword rules, match inputs, and per-match
+  actions moved to the block and keyword automation dialog
 - Independent saved-log and browser-console toggles, log level, retention count, download, and clear controls
 - Blocked-comment display mode
 - Five-level text and UI scale controls; level 2 matches the previous size and level 3 is the default
 - Button to open the block list from settings, with a matching button back to settings in the block list
+- Navigation buttons between the block list, settings, and the block and keyword automation dialog
 - Red destructive reset button and confirmation action for app display and matching settings
 - YouTube Data API v3 key/test controls
 - UID detection, pair summary, and pair actions

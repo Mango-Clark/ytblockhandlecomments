@@ -135,8 +135,8 @@ test('settings dialog groups related controls', () => {
 	assert.deepEqual(titles, ['매칭', '댓글 표시', '키워드 자동 처리', '로그', '표시 크기', '유지보수']);
 	assert.ok(document.querySelector('.tm-setting-group-matching'));
 	assert.equal(document.querySelectorAll('.tm-setting-group-matching').length, 1);
-	assert.match(document.querySelector('.tm-settings-panel').textContent, /각 댓글에 작성된 화면상 본문 텍스트를 검사합니다/);
-	assert.match(document.querySelector('.tm-settings-panel').textContent, /API 키가 있으면 해당 UID pair를 생성합니다/);
+	assert.match(document.querySelector('.tm-settings-panel').textContent, /키워드 매칭과 선택한 모든 동작을 한 번에 켜거나 끕니다/);
+	assert.match(document.querySelector('.tm-settings-panel').textContent, /차단 및 키워드 자동 처리 열기/);
 });
 
 test('comment menu item is idempotent and refreshes its blocked state', () => {
@@ -339,7 +339,7 @@ test('settings dialog updates the identity block method', () => {
 	assert.equal(settings.getBlockMatchMode(), 'pair');
 });
 
-test('settings dialog saves keyword automation settings', () => {
+test('block and keyword automation dialog saves keyword settings', () => {
 	const { api, document } = loadUserscript();
 	const settings = new api.AppSettingsStorage();
 	const storage = new api.StorageV2(settings);
@@ -355,12 +355,54 @@ test('settings dialog saves keyword automation settings', () => {
 		refreshAfterStorageChange: () => {}
 	});
 
-	manager.openSettings();
+	manager.openBlockKeywordAutomation();
 	const keywordInput = document.querySelectorAll('textarea').find((item: any) => item.dataset.setting === 'keyword-rules');
 	keywordInput.value = 'spam\nPromo';
 	keywordInput.dispatchEvent({ type: 'change' });
 
 	assert.deepEqual(Array.from(settings.getKeywordAutomation().keywords), ['spam', 'Promo']);
+	const patternInput = document.querySelectorAll('input').find((item: any) => item.dataset.setting === 'regex-pattern');
+	const flagsInput = document.querySelectorAll('input').find((item: any) => item.dataset.setting === 'regex-flags');
+	patternInput.value = '^@promo';
+	flagsInput.value = 'i';
+	document.querySelectorAll('button').find((button: any) => button.textContent === '추가').click();
+	const regex = storage.all().find((item: any) => item.type === 'regex');
+	assert.equal(regex.value, '^@promo');
+	assert.equal(regex.flags, 'i');
+});
+
+test('block and keyword automation dialog links settings and block list', async () => {
+	const { api, document } = loadUserscript();
+	const settings = new api.AppSettingsStorage();
+	const storage = new api.StorageV2(settings);
+	const pairStore = new api.PairMetaStorage(settings);
+	const apiConfig = new api.ApiConfigStorage();
+	const manager = new api.BlockListManager({
+		settings,
+		storage,
+		pairStore,
+		apiConfig,
+		pairService: new api.PairService(storage, pairStore, apiConfig, settings),
+		getLastPairRunResult: () => null,
+		refreshAfterStorageChange: () => {}
+	});
+
+	manager.openBlockKeywordAutomation();
+	const buttons = document.querySelector('.tm-dialog footer').querySelectorAll('button');
+	assert.deepEqual(buttons.map((button: any) => button.textContent), ['차단 목록 열기', '설정 열기', '닫기']);
+	buttons[0].click();
+	await Promise.resolve();
+	assert.ok(document.querySelector('.tm-automation-entry'));
+	assert.ok(document.querySelectorAll('button').some((button: any) => button.textContent === '차단 및 키워드 자동 처리 열기'));
+
+	manager.openSettings();
+	const openAutomation = document.querySelectorAll('button').find((button: any) => button.textContent === '차단 및 키워드 자동 처리 열기');
+	const enabled = document.querySelectorAll('input').find((input: any) => input.dataset.setting === 'keyword-automation-enabled');
+	enabled.checked = false;
+	enabled.dispatchEvent({ type: 'change' });
+	assert.equal(settings.isKeywordAutomationEnabled(), false);
+	openAutomation.click();
+	assert.ok(document.querySelector('.tm-automation-panel'));
 });
 
 test('settings dialog confirms and resets app settings', async () => {

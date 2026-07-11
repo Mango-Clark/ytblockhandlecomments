@@ -118,6 +118,7 @@ Pair 메타데이터:
 	blockMatchMode: 'handle' | 'pair',
 	pairUpdateUidCheck: boolean,
 	pairUpdateHandleLookup: boolean,
+	keywordAutomationEnabled: boolean,
 	keywordRules: string[],
 	keywordFields: { commentText: boolean, handle: boolean, pinned: boolean },
 	keywordActions: { dislike: boolean, blockHandle: boolean, createPair: boolean },
@@ -160,7 +161,8 @@ API 설정:
 - 기본 `app_settings_v1.blockMatchMode`는 `handle`입니다
 - `app_settings_v1.pairUpdateUidCheck`와 `pairUpdateHandleLookup` 중 하나는 항상 켜져 있고,
   기본값은 handle 다시 조회입니다
-- 키워드는 대소문자를 구분하지 않고 기본으로 댓글 본문을 검사하며, 동작은 기본으로 꺼져 있습니다
+- 기존 동작을 유지하도록 키워드 자동 처리는 기본으로 켜져 있습니다. 끄더라도 대소문자 구분 없는 규칙, 검사 대상,
+  동작 설정은 지우지 않으며, 기본 검사 대상은 댓글 본문이고 동작은 기본으로 꺼져 있습니다
 - 로그는 기본으로 꺼져 있습니다. 파일 로그는 사용자가 다운로드하거나 지울 때까지 Tampermonkey 저장소에
   보관되며, 다운로드 파일 위치는 브라우저 설정을 따릅니다
 - `app_settings_v1.verboseLevel`의 기본값은 `3`입니다. V0/V1은 진단 payload를 생략하고,
@@ -300,11 +302,12 @@ Pair 결과:
 - 신원 차단 방식: `handle` 규칙 또는 UID pair `id` 규칙
 - regex 매칭 handle 자동 추가
 - 자동 싫어요 mode
-- 키워드 규칙, 검사 대상, 일치 시 동작과 각 선택사항의 검사 범위 또는 수행 결과 설명
+- 키워드 자동 처리 전체 토글과, 정규식 규칙 편집기 및 키워드 규칙, 검사 대상, 일치 시 동작을 차단 및 키워드 자동 처리 창으로 이관
 - 저장 로그와 브라우저 console 로그를 분리한 토글, 로그 수준, 보관 수, 다운로드/지우기 제어
 - 차단 댓글 표시 mode
 - 글자 크기와 UI 크기를 5단계로 조절. 2단계는 기존 크기이고 3단계가 기본값
 - 설정에서 차단 목록을 열고, 차단 목록에서 다시 설정을 여는 버튼
+- 차단 목록, 설정, 차단 및 키워드 자동 처리 창을 오가는 이동 버튼
 - 앱 표시/매칭 설정을 초기화하기 전에 빨간색 파괴적 버튼과 확인 dialog로 경고
 - YouTube Data API v3 키/테스트 제어
 - 저장 UID 확인과 handle 재조회를 위한 pair 갱신 검사

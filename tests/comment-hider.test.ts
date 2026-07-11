@@ -275,6 +275,31 @@ test('keyword automation can match the pinned label without scanning comment tex
 	assert.equal(clicks, 1);
 });
 
+test('keyword automation master toggle prevents keyword actions', () => {
+	const { api, document } = loadUserscript();
+	const settings = new api.AppSettingsStorage();
+	const storage = new api.StorageV2(settings);
+	const pairStore = new api.PairMetaStorage(settings);
+	const hider = new api.CommentHider(storage, pairStore, settings);
+	const { comment, dislike } = createBlockedComment(document, '@alpha');
+	const content = document.createElement('div');
+	content.id = 'content-text';
+	content.textContent = 'spam comment';
+	comment.appendChild(content);
+	let clicks = 0;
+	dislike.addEventListener('click', () => { clicks += 1; });
+	settings.setKeywordAutomation({
+		keywords: ['spam'],
+		fields: { commentText: true, handle: false, pinned: false },
+		actions: { dislike: true, blockHandle: false, createPair: false }
+	});
+	settings.setKeywordAutomationEnabled(false);
+
+	hider.applyHide(comment);
+
+	assert.equal(clicks, 0);
+});
+
 test('keyword UID-pair action adds the handle and queues pair creation once', async () => {
 	const { api, document, context } = loadUserscript();
 	context.addEventListener = () => {};

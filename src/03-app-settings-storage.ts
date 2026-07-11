@@ -56,6 +56,7 @@
 				blockMatchMode: ['handle', 'pair'].includes(src.blockMatchMode) ? src.blockMatchMode : 'handle',
 				pairUpdateUidCheck,
 				pairUpdateHandleLookup: pairUpdateUidCheck || pairUpdateHandleLookup ? pairUpdateHandleLookup : true,
+				keywordAutomationEnabled: src.keywordAutomationEnabled !== false,
 				keywordRules: this._normalizeKeywords(src.keywordRules),
 				keywordFields: {
 					commentText: keywordFields.commentText !== false,
@@ -104,6 +105,7 @@
 				this._state.blockMatchMode === normalized.blockMatchMode &&
 				this._state.pairUpdateUidCheck === normalized.pairUpdateUidCheck &&
 				this._state.pairUpdateHandleLookup === normalized.pairUpdateHandleLookup &&
+				this._state.keywordAutomationEnabled === normalized.keywordAutomationEnabled &&
 				JSON.stringify(this._state.keywordRules) === JSON.stringify(normalized.keywordRules) &&
 				JSON.stringify(this._state.keywordFields) === JSON.stringify(normalized.keywordFields) &&
 				JSON.stringify(this._state.keywordActions) === JSON.stringify(normalized.keywordActions) &&
@@ -152,6 +154,12 @@
 		}
 		setPairUpdateHandleLookupEnabled(enabled: any) {
 			return this._saveState({ ...this._state, pairUpdateHandleLookup: !!enabled });
+		}
+		isKeywordAutomationEnabled() {
+			return this._state.keywordAutomationEnabled !== false;
+		}
+		setKeywordAutomationEnabled(enabled: any) {
+			return this._saveState({ ...this._state, keywordAutomationEnabled: !!enabled });
 		}
 		getKeywordAutomation() {
 			return {

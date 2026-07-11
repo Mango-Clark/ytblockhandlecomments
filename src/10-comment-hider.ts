@@ -76,6 +76,7 @@ import { Extractor } from './09-extractor.ts';
 		}
 		_getKeywordMatch(node: Element, meta: any) {
 			const config = this.settings?.getKeywordAutomation?.();
+			if (this.settings?.isKeywordAutomationEnabled?.() === false) return null;
 			const keywords = config?.keywords || [];
 			if (!keywords.length) return null;
 			const fields = config?.fields || {};

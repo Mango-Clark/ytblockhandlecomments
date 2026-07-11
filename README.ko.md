@@ -39,7 +39,7 @@ quota 안내, 페이지 단위 regex 매칭 목록, 역할별 소스 파일, 압
 - YouTube watch 페이지와 Shorts 페이지에서 댓글을 실시간으로 숨김
 - 차단 댓글 표시 방식 제공: 완전 차단, 회색 대체 문구, 클릭해서 보기
 - 댓글 자동 싫어요 모드 제공. 기본값은 안함이며, 새로 숨길 때만 또는 숨긴 상태에서 항상으로 변경 가능
-- 댓글 본문, 작성자 handle, 고정 표시 문구를 검사하고 싫어요, handle 차단, UID pair 생성을 각각 고를 수 있는 키워드 자동 처리 지원
+- 정규식 규칙, 키워드 검사 대상, 싫어요·handle 차단·UID pair 생성을 한 곳에서 설정하는 차단 및 키워드 자동 처리 창 지원
 - 로컬 로그 보관과 브라우저 console 로그를 독립적으로 켜고 끌 수 있으며, 로그 수준/보관 수 설정과 로그 파일 다운로드 지원
 - 로그 payload의 진단 상세도를 V0-V5로 설정할 수 있고 기본값은 균형 잡힌 V3
 - `blocked_v2`에 `handle`, `id`, `regex` 규칙 저장
@@ -53,7 +53,7 @@ quota 안내, 페이지 단위 regex 매칭 목록, 역할별 소스 파일, 압
 - 관리자 대화상자에 로컬 `Handle Case Sensitive` 설정 추가
 - API, UID, regex 자동 추가, 표시 크기, debug counter를 다루는 별도 설정 창 추가
 - 작업별 카테고리 목록, 설명, 자동 저장 안내를 포함한 설정 창 레이아웃 적용
-- 설정 창의 기능을 매칭, 댓글 표시, 표시 크기, 유지보수 그룹으로 구분
+- 설정 창의 기능을 매칭, 댓글 표시, 키워드 자동 처리, 로그, 표시 크기, 유지보수 그룹으로 구분
 - 확인 팝업 이후 앱 표시/매칭 설정 초기화 지원
 - 글자 크기와 UI 크기를 5단계로 조절 가능. 2단계는 기존 크기이며 기본값은 3단계
 - 설정 창과 차단 목록 사이를 오가는 버튼 추가
@@ -81,9 +81,9 @@ quota 안내, 페이지 단위 regex 매칭 목록, 역할별 소스 파일, 압
 4. 댓글 작성자 handle을 우클릭해 차단 또는 해제합니다.
 5. `Tampermonkey -> YouTube Comment Blocker -> Manage block list`를 엽니다.
 6. Pair 기능을 쓰기 전에 YouTube Data API v3 API 키를 저장합니다.
-7. handle 대소문자 설정, 신원 차단 방식, UID 감지 토글, 로그 보관/console 출력, 목록 필터, 선택 항목 bulk 액션, regex 추가,
+7. handle 대소문자 설정, 신원 차단 방식, UID 감지 토글, 로그 보관/console 출력, 차단 및 키워드 자동 처리, 목록 필터, 선택 항목 bulk 액션,
    import/export를 사용합니다.
-8. 설정에서 키워드를 추가하고, 일치할 때 검사할 입력과 실행할 동작을 선택합니다.
+8. 설정에서 키워드 자동 처리를 켜거나 끄고, 차단 및 키워드 자동 처리 창에서 규칙과 동작을 설정합니다.
 
 일반적인 UID 흐름:
 
@@ -142,6 +142,7 @@ Pair 메타 저장소:
 	blockMatchMode: 'handle' | 'pair',
 	pairUpdateUidCheck: boolean,
 	pairUpdateHandleLookup: boolean,
+	keywordAutomationEnabled: boolean,
 	keywordRules: string[],
 	keywordFields: { commentText: boolean, handle: boolean, pinned: boolean },
 	keywordActions: { dislike: boolean, blockHandle: boolean, createPair: boolean },
