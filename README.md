@@ -50,6 +50,7 @@ Source layout:
 - Groups settings controls by matching, comment display, keyword automation, logging, display size, and maintenance
 - Supports resetting app display and matching settings after a confirmation prompt
 - Supports five-level text and UI scale settings; level 2 matches the previous size and level 3 is the default
+- Supports light, dark, system, inverted system, YouTube, inverted YouTube, and custom themes for userscript UI only
 - Adds in-dialog navigation buttons between settings and the block list
 - Can auto-save handles first hidden by regex so later checks use handle matching
 - Supports block-list search, type filters, tag filters, row selection, and bulk actions
@@ -132,6 +133,8 @@ App settings:
 	pairUpdateUidCheck: boolean,
 	pairUpdateHandleLookup: boolean,
 	keywordAutomationEnabled: boolean,
+	themeMode: 'light' | 'dark' | 'system' | 'system-inverted' | 'youtube' | 'youtube-inverted' | 'custom',
+	themeCustom: { background: string, surface: string, text: string, muted: string, border: string, primary: string, danger: string },
 	keywordRules: string[],
 	keywordFields: { commentText: boolean, handle: boolean, pinned: boolean },
 	keywordActions: { dislike: boolean, blockHandle: boolean, createPair: boolean },

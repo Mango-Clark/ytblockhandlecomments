@@ -6,6 +6,11 @@
 		[key: string]: any;
 		constructor() {
 			this.KEY = 'app_settings_v1';
+			this.THEME_MODES = ['light', 'dark', 'system', 'system-inverted', 'youtube', 'youtube-inverted', 'custom'];
+			this.THEME_DEFAULTS = {
+				background: '#f8f9fa', surface: '#ffffff', text: '#202124', muted: '#5f6368',
+				border: '#d0d7de', primary: '#065fd4', danger: '#b3261e'
+			};
 			this.DISPLAY_SCALE = {
 				1: 0.92,
 				2: 1,
@@ -15,6 +20,8 @@
 			};
 			this._state = this._init();
 			this._applyDisplaySettings();
+			this._bindThemeUpdates();
+			this._applyThemeSettings();
 		}
 		_getGM(key: string, def: any) { try { return GM_getValue(key, def); } catch { return def; } }
 		_setGM(key: string, val: any) { try { GM_setValue(key, val); } catch { } }
@@ -27,6 +34,16 @@
 			const level = Number(value);
 			if (!Number.isInteger(level) || level < 0 || level > 5) return 3;
 			return level;
+		}
+		_normalizeThemeColor(value: any, fallback: string) {
+			const color = String(value || '').trim();
+			return /^#[0-9a-fA-F]{6}$/.test(color) ? color.toLowerCase() : fallback;
+		}
+		_normalizeThemeCustom(value: any) {
+			const source = value && typeof value === 'object' ? value : {};
+			return Object.fromEntries(Object.entries(this.THEME_DEFAULTS).map(([key, fallback]) => [
+				key, this._normalizeThemeColor(source[key], String(fallback))
+			]));
 		}
 		_normalizeKeywords(value: any): string[] {
 			const source = Array.isArray(value) ? value : typeof value === 'string' ? value.split(/\r?\n/) : [];
@@ -49,6 +66,7 @@
 			const keywordFields = src.keywordFields && typeof src.keywordFields === 'object' ? src.keywordFields : {};
 			const keywordActions = src.keywordActions && typeof src.keywordActions === 'object' ? src.keywordActions : {};
 			const logging = src.logging && typeof src.logging === 'object' ? src.logging : {};
+			const themeMode = this.THEME_MODES.includes(src.themeMode) ? src.themeMode : 'system';
 			return {
 				version: 1,
 				handleCaseSensitive: !!src.handleCaseSensitive,
@@ -57,6 +75,8 @@
 				pairUpdateUidCheck,
 				pairUpdateHandleLookup: pairUpdateUidCheck || pairUpdateHandleLookup ? pairUpdateHandleLookup : true,
 				keywordAutomationEnabled: src.keywordAutomationEnabled !== false,
+				themeMode,
+				themeCustom: this._normalizeThemeCustom(src.themeCustom),
 				keywordRules: this._normalizeKeywords(src.keywordRules),
 				keywordFields: {
 					commentText: keywordFields.commentText !== false,
@@ -86,6 +106,46 @@
 			document.documentElement.style.setProperty('--tm-font-scale', String(this.DISPLAY_SCALE[this.getFontSizeLevel()] || 1.08));
 			document.documentElement.style.setProperty('--tm-ui-scale', String(this.DISPLAY_SCALE[this.getUiScaleLevel()] || 1.08));
 		}
+		_getSystemDark() {
+			try { return !!window.matchMedia?.('(prefers-color-scheme: dark)').matches; } catch { return false; }
+		}
+		_getYouTubeDark() {
+			if (typeof document !== 'object') return this._getSystemDark();
+			const root = document.documentElement;
+			return !!(root?.hasAttribute?.('dark') || root?.classList?.contains?.('dark') || document.querySelector?.('ytd-app[dark]'));
+		}
+		_resolveThemeDark(mode = this.getThemeMode()) {
+			if (mode === 'dark') return true;
+			if (mode === 'light' || mode === 'custom') return false;
+			const dark = mode.startsWith('youtube') ? this._getYouTubeDark() : this._getSystemDark();
+			return mode.endsWith('inverted') ? !dark : dark;
+		}
+		_applyThemeSettings() {
+			if (typeof document !== 'object' || !document?.documentElement) return;
+			const root = document.documentElement;
+			const mode = this.getThemeMode();
+			const isCustom = mode === 'custom';
+			root.classList?.remove?.('tm-theme-light', 'tm-theme-dark', 'tm-theme-custom');
+			root.classList?.add?.(isCustom ? 'tm-theme-custom' : this._resolveThemeDark(mode) ? 'tm-theme-dark' : 'tm-theme-light');
+			root.dataset.tmThemeMode = mode;
+			for (const [key, value] of Object.entries(this.getThemeCustom())) {
+				const variable = `--tm-theme-${key}`;
+				if (isCustom) root.style?.setProperty?.(variable, String(value));
+				else root.style?.removeProperty?.(variable);
+			}
+		}
+		_bindThemeUpdates() {
+			try {
+				this._themeMediaQuery = window.matchMedia?.('(prefers-color-scheme: dark)');
+				this._themeMediaQuery?.addEventListener?.('change', () => this._applyThemeSettings());
+			} catch { }
+			try {
+				this._themeObserver = new MutationObserver(() => {
+					if (this.getThemeMode().startsWith('youtube')) this._applyThemeSettings();
+				});
+				this._themeObserver.observe(document.documentElement, { attributes: true, subtree: true, attributeFilter: ['class', 'dark'] });
+			} catch { }
+		}
 		_init() {
 			return this._normalizeState(this._getGM(this.KEY, null));
 		}
@@ -95,6 +155,7 @@
 		setAllLocal(state: any) {
 			this._state = this._normalizeState(state);
 			this._applyDisplaySettings();
+			this._applyThemeSettings();
 			return this.getState();
 		}
 		_saveState(nextState: any) {
@@ -106,6 +167,8 @@
 				this._state.pairUpdateUidCheck === normalized.pairUpdateUidCheck &&
 				this._state.pairUpdateHandleLookup === normalized.pairUpdateHandleLookup &&
 				this._state.keywordAutomationEnabled === normalized.keywordAutomationEnabled &&
+				this._state.themeMode === normalized.themeMode &&
+				JSON.stringify(this._state.themeCustom) === JSON.stringify(normalized.themeCustom) &&
 				JSON.stringify(this._state.keywordRules) === JSON.stringify(normalized.keywordRules) &&
 				JSON.stringify(this._state.keywordFields) === JSON.stringify(normalized.keywordFields) &&
 				JSON.stringify(this._state.keywordActions) === JSON.stringify(normalized.keywordActions) &&
@@ -118,10 +181,12 @@
 			) {
 				this._state = normalized;
 				this._applyDisplaySettings();
+				this._applyThemeSettings();
 				return this.getState();
 			}
 			this._state = normalized;
 			this._applyDisplaySettings();
+			this._applyThemeSettings();
 			this._setGM(this.KEY, this._state);
 			return this.getState();
 		}
@@ -160,6 +225,21 @@
 		}
 		setKeywordAutomationEnabled(enabled: any) {
 			return this._saveState({ ...this._state, keywordAutomationEnabled: !!enabled });
+		}
+		getThemeMode() {
+			return this.THEME_MODES.includes(this._state.themeMode) ? this._state.themeMode : 'system';
+		}
+		setThemeMode(mode: any) {
+			return this._saveState({ ...this._state, themeMode: mode });
+		}
+		getThemeCustom() {
+			return { ...this._state.themeCustom };
+		}
+		setThemeCustom(colors: any) {
+			return this._saveState({ ...this._state, themeCustom: colors });
+		}
+		resetThemeCustom() {
+			return this._saveState({ ...this._state, themeCustom: this.THEME_DEFAULTS });
 		}
 		getKeywordAutomation() {
 			return {

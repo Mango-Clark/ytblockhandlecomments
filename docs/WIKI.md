@@ -120,6 +120,8 @@ App settings:
 	pairUpdateUidCheck: boolean,
 	pairUpdateHandleLookup: boolean,
 	keywordAutomationEnabled: boolean,
+	themeMode: 'light' | 'dark' | 'system' | 'system-inverted' | 'youtube' | 'youtube-inverted' | 'custom',
+	themeCustom: { background: string, surface: string, text: string, muted: string, border: string, primary: string, danger: string },
 	keywordRules: string[],
 	keywordFields: { commentText: boolean, handle: boolean, pinned: boolean },
 	keywordActions: { dislike: boolean, blockHandle: boolean, createPair: boolean },
@@ -165,6 +167,10 @@ Notes:
 - Keyword automation is enabled by default to preserve existing behavior. It can be disabled without deleting
   its case-insensitive rules, fields, or actions; matching defaults to comment text and has no enabled action
   by default
+- `app_settings_v1.themeMode` defaults to `system`. System and YouTube modes follow their respective current
+  dark setting, while the inverted modes use its opposite. Custom colors are six-digit hex values and are
+  validated before saving
+- Theme styles apply only to the userscript's dialogs, panels, lists, and notices; they never style YouTube UI
 - Logging is off by default. File logging retains entries in Tampermonkey storage until users download
   or clear them; the browser controls the downloaded file location
 - `app_settings_v1.verboseLevel` defaults to `3`. V0/V1 omit diagnostic payloads, V2 records one
@@ -307,6 +313,9 @@ Settings dialog:
 - Auto-dislike mode
 - A master keyword-automation toggle, with its regex rule editor and keyword rules, match inputs, and per-match
   actions moved to the block and keyword automation dialog
+- Theme mode control with light, dark, system, inverted system, YouTube, inverted YouTube, and custom choices
+- Custom theme editor for background, surface, text, muted text, border, primary, and destructive colors with
+  default restoration and input validation
 - Independent saved-log and browser-console toggles, log level, retention count, download, and clear controls
 - Blocked-comment display mode
 - Five-level text and UI scale controls; level 2 matches the previous size and level 3 is the default

@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added JSON and plain-text file downloads plus a return action to the block-list export dialog.
 - Added per-option explanations to keyword automation settings.
 - Added a unified block and keyword automation dialog for regex rules and detailed keyword settings.
+- Added selectable system, YouTube, inverted, and custom userscript UI themes.
 
 ### Changed
 

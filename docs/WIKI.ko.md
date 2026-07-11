@@ -119,6 +119,8 @@ Pair 메타데이터:
 	pairUpdateUidCheck: boolean,
 	pairUpdateHandleLookup: boolean,
 	keywordAutomationEnabled: boolean,
+	themeMode: 'light' | 'dark' | 'system' | 'system-inverted' | 'youtube' | 'youtube-inverted' | 'custom',
+	themeCustom: { background: string, surface: string, text: string, muted: string, border: string, primary: string, danger: string },
 	keywordRules: string[],
 	keywordFields: { commentText: boolean, handle: boolean, pinned: boolean },
 	keywordActions: { dislike: boolean, blockHandle: boolean, createPair: boolean },
@@ -163,6 +165,9 @@ API 설정:
   기본값은 handle 다시 조회입니다
 - 기존 동작을 유지하도록 키워드 자동 처리는 기본으로 켜져 있습니다. 끄더라도 대소문자 구분 없는 규칙, 검사 대상,
   동작 설정은 지우지 않으며, 기본 검사 대상은 댓글 본문이고 동작은 기본으로 꺼져 있습니다
+- `app_settings_v1.themeMode` 기본값은 `system`입니다. 기기설정과 yt설정은 각각 현재 다크 설정을 따르고,
+  반대 모드는 그 결과를 반대로 적용합니다. 커스텀 색상은 저장 전에 여섯 자리 hex 값인지 검증합니다
+- 테마 스타일은 userscript의 dialog, 패널, 목록, 알림에만 적용하며 YouTube UI에는 적용하지 않습니다
 - 로그는 기본으로 꺼져 있습니다. 파일 로그는 사용자가 다운로드하거나 지울 때까지 Tampermonkey 저장소에
   보관되며, 다운로드 파일 위치는 브라우저 설정을 따릅니다
 - `app_settings_v1.verboseLevel`의 기본값은 `3`입니다. V0/V1은 진단 payload를 생략하고,
@@ -303,6 +308,8 @@ Pair 결과:
 - regex 매칭 handle 자동 추가
 - 자동 싫어요 mode
 - 키워드 자동 처리 전체 토글과, 정규식 규칙 편집기 및 키워드 규칙, 검사 대상, 일치 시 동작을 차단 및 키워드 자동 처리 창으로 이관
+- 라이트, 다크, 기기설정, 기기설정(반대), yt설정, yt설정(inverted), 커스텀 테마 모드 제어
+- 배경, 표면, 텍스트, 보조 텍스트, 테두리, 주요 동작, 파괴적 동작 색상을 편집하고 기본값 복원 및 입력 검증을 제공하는 커스텀 테마 창
 - 저장 로그와 브라우저 console 로그를 분리한 토글, 로그 수준, 보관 수, 다운로드/지우기 제어
 - 차단 댓글 표시 mode
 - 글자 크기와 UI 크기를 5단계로 조절. 2단계는 기존 크기이고 3단계가 기본값

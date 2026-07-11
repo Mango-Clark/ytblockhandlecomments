@@ -132,7 +132,7 @@ test('settings dialog groups related controls', () => {
 	manager.openSettings();
 	const titles = document.querySelectorAll('.tm-setting-group h4').map((node: any) => node.textContent);
 
-	assert.deepEqual(titles, ['매칭', '댓글 표시', '키워드 자동 처리', '로그', '표시 크기', '유지보수']);
+	assert.deepEqual(titles, ['매칭', '댓글 표시', '키워드 자동 처리', '로그', '표시 크기', '테마', '유지보수']);
 	assert.ok(document.querySelector('.tm-setting-group-matching'));
 	assert.equal(document.querySelectorAll('.tm-setting-group-matching').length, 1);
 	assert.match(document.querySelector('.tm-settings-panel').textContent, /키워드 매칭과 선택한 모든 동작을 한 번에 켜거나 끕니다/);
@@ -313,6 +313,56 @@ test('display size levels normalize invalid stored values', () => {
 
 	assert.equal(settings.getFontSizeLevel(), 3);
 	assert.equal(settings.getUiScaleLevel(), 3);
+});
+
+test('theme settings persist validated colors and resolve YouTube dark mode', () => {
+	const { api, document } = loadUserscript({
+		gmStore: {
+			app_settings_v1: {
+				themeMode: 'custom',
+				themeCustom: { primary: '#ABCDEF', border: 'invalid' }
+			}
+		}
+	});
+	const settings = new api.AppSettingsStorage();
+	assert.equal(settings.getThemeMode(), 'custom');
+	assert.equal(settings.getThemeCustom().primary, '#abcdef');
+	assert.equal(settings.getThemeCustom().border, '#d0d7de');
+	assert.ok(document.documentElement.classList.contains('tm-theme-custom'));
+	assert.equal(document.documentElement.style.getPropertyValue('--tm-theme-primary'), '#abcdef');
+
+	const app = document.createElement('ytd-app');
+	app.setAttribute('dark', '');
+	document.body.appendChild(app);
+	settings.setThemeMode('youtube');
+	assert.ok(document.documentElement.classList.contains('tm-theme-dark'));
+	settings.setThemeMode('youtube-inverted');
+	assert.ok(document.documentElement.classList.contains('tm-theme-light'));
+});
+
+test('settings dialog exposes all theme modes and custom editor', () => {
+	const { api, document } = loadUserscript();
+	const settings = new api.AppSettingsStorage();
+	const storage = new api.StorageV2(settings);
+	const pairStore = new api.PairMetaStorage(settings);
+	const apiConfig = new api.ApiConfigStorage();
+	const manager = new api.BlockListManager({
+		settings,
+		storage,
+		pairStore,
+		apiConfig,
+		pairService: new api.PairService(storage, pairStore, apiConfig, settings),
+		getLastPairRunResult: () => null,
+		refreshAfterStorageChange: () => {}
+	});
+
+	manager.openSettings();
+	const modeSelect = document.querySelectorAll('select').find((select: any) => select.dataset.setting === 'theme-mode');
+	assert.equal(modeSelect.options.length, 7);
+	modeSelect.value = 'custom';
+	modeSelect.dispatchEvent({ type: 'change' });
+	assert.equal(settings.getThemeMode(), 'custom');
+	assert.ok(document.querySelectorAll('.tm-dialog').some((dialog: any) => dialog.textContent.includes('테마 커스텀')));
 });
 
 test('settings dialog updates the identity block method', () => {
@@ -507,8 +557,8 @@ test('settings dialog uses grouped task list layout', () => {
 
 	assert.ok(document.querySelector('.tm-settings-panel'));
 	assert.ok(document.querySelector('.tm-settings-intro').textContent.includes('자동으로 저장'));
-	assert.equal(document.querySelectorAll('.tm-settings-list > .tm-setting-group').length, 6);
-	assert.equal(document.querySelectorAll('.tm-setting-controls').length, 6);
+	assert.equal(document.querySelectorAll('.tm-settings-list > .tm-setting-group').length, 7);
+	assert.equal(document.querySelectorAll('.tm-setting-controls').length, 7);
 });
 
 test('api busy state shows a loading bar', () => {

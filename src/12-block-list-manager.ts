@@ -419,6 +419,74 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				else if (value === 'settings') this.openSettings();
 			});
 		}
+		openThemeCustomizer() {
+			const body = document.createElement('div');
+			const help = document.createElement('p');
+			help.className = 'tm-muted';
+			const controls = document.createElement('div');
+			controls.className = 'tm-setting-controls';
+			const colorKeys = ['background', 'surface', 'text', 'muted', 'border', 'primary', 'danger'];
+			const inputs = new Map<string, HTMLInputElement>();
+			const labels = new Map<string, HTMLSpanElement>();
+			for (const key of colorKeys) {
+				const label = document.createElement('label');
+				const text = document.createElement('span');
+				const input = document.createElement('input');
+				input.type = 'text';
+				input.dataset.themeColor = key;
+				label.append(text, input);
+				controls.append(label);
+				inputs.set(key, input);
+				labels.set(key, text);
+			}
+			body.append(help, controls);
+			const isValid = () => Array.from(inputs.values()).every(input => /^#[0-9a-fA-F]{6}$/.test(input.value.trim()));
+			const render = () => {
+				const colors = this.app.settings.getThemeCustom();
+				for (const [key, input] of inputs) input.value = colors[key];
+			};
+			const applyLanguage = () => {
+				help.textContent = t('customThemeHelp');
+				for (const [key] of inputs) {
+					labels.get(key)!.textContent = t(`themeColor${key[0].toUpperCase()}${key.slice(1)}`);
+				}
+			};
+			inputs.forEach(input => input.addEventListener('input', () => {
+				const saveButton = Array.from(document.querySelectorAll('.tm-dialog footer button')).find(button => button.textContent === t('customThemeSave')) as HTMLButtonElement | undefined;
+				if (saveButton) saveButton.disabled = !isValid();
+			}));
+			render();
+			applyLanguage();
+			Dialog.show({
+				title: t('customThemeTitle'),
+				body,
+				buttons: [
+					{ label: t('customThemeReset'), value: 'reset' },
+					{ label: t('close'), value: false },
+					{ label: t('customThemeSave'), value: 'save', primary: true }
+				],
+				onRefresh: (ctx: DialogRefreshContext) => {
+					ctx.setTitle(t('customThemeTitle'));
+					ctx.buttons[0].textContent = t('customThemeReset');
+					ctx.buttons[1].textContent = t('close');
+					ctx.buttons[2].textContent = t('customThemeSave');
+					ctx.buttons[2].disabled = !isValid();
+					applyLanguage();
+				}
+			}).then(value => {
+				if (value === 'reset') {
+					this.app.settings.resetThemeCustom();
+					this.app.refreshAfterStorageChange();
+					this.openThemeCustomizer();
+					return;
+				}
+				if (value !== 'save') return;
+				if (!isValid()) { Toast.show(t('customThemeInvalid')); return; }
+				const colors = Object.fromEntries(Array.from(inputs.entries()).map(([key, input]) => [key, input.value.trim()]));
+				this.app.settings.setThemeCustom(colors);
+				this.app.refreshAfterStorageChange();
+			});
+		}
 		openSettings() {
 			const body = document.createElement('div');
 			const settingsSection = document.createElement('section');
@@ -586,6 +654,26 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			displayControls.append(fontSizeLabel, uiScaleLabel, displayHelp);
 			displayGroup.append(displayTitle, displayControls);
 
+			const themeGroup = document.createElement('li');
+			themeGroup.className = 'tm-setting-group';
+			const themeTitle = document.createElement('h4');
+			const themeControls = document.createElement('div');
+			themeControls.className = 'tm-setting-controls';
+			const themeModeLabel = document.createElement('label');
+			const themeModeText = document.createElement('span');
+			const themeModeSelect = document.createElement('select');
+			themeModeSelect.dataset.setting = 'theme-mode';
+			['light', 'dark', 'system', 'system-inverted', 'youtube', 'youtube-inverted', 'custom'].forEach(value => {
+				const option = document.createElement('option');
+				option.value = value;
+				themeModeSelect.appendChild(option);
+			});
+			themeModeLabel.append(themeModeText, themeModeSelect);
+			const themeHelp = document.createElement('p');
+			const customizeThemeBtn = Object.assign(document.createElement('button'), { className: 'secondary' });
+			themeControls.append(themeModeLabel, themeHelp, customizeThemeBtn);
+			themeGroup.append(themeTitle, themeControls);
+
 			const maintenanceGroup = document.createElement('li');
 			maintenanceGroup.className = 'tm-setting-group';
 			const maintenanceTitle = document.createElement('h4');
@@ -598,7 +686,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			resetSettingsActions.append(openListBtn, resetSettingsBtn);
 			maintenanceControls.append(resetSettingsActions);
 			maintenanceGroup.append(maintenanceTitle, maintenanceControls);
-			settingsList.append(matchingGroup, commentGroup, keywordGroup, loggingGroup, displayGroup, maintenanceGroup);
+			settingsList.append(matchingGroup, commentGroup, keywordGroup, loggingGroup, displayGroup, themeGroup, maintenanceGroup);
 			settingsSection.append(settingsTitle, settingsIntro, settingsList);
 
 			const apiSection = document.createElement('section');
@@ -747,6 +835,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				blockModeSelect.value = this.app.settings.getCommentBlockMode();
 				fontSizeSelect.value = String(this.app.settings.getFontSizeLevel());
 				uiScaleSelect.value = String(this.app.settings.getUiScaleLevel());
+				themeModeSelect.value = this.app.settings.getThemeMode();
 				uidToggle.checked = this.app.pairStore.isUidDetectionEnabled();
 				pairUpdateUidToggle.checked = this.app.settings.isPairUpdateUidCheckEnabled();
 				pairUpdateHandleToggle.checked = this.app.settings.isPairUpdateHandleLookupEnabled();
@@ -808,6 +897,13 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 					option.textContent = t('levelLabel', index + 1);
 				});
 				displayHelp.textContent = t('displayLevelHelp');
+				themeTitle.textContent = t('settingsThemeTitle');
+				themeModeText.textContent = t('themeModeLabel') + ': ';
+				['Light', 'Dark', 'System', 'SystemInverted', 'YouTube', 'YouTubeInverted', 'Custom'].forEach((name, index) => {
+					themeModeSelect.options[index].textContent = t(`themeMode${name}`);
+				});
+				themeHelp.textContent = t('themeModeHelp');
+				customizeThemeBtn.textContent = t('customizeTheme');
 				openListBtn.textContent = t('openBlockList');
 				resetSettingsBtn.textContent = t('resetSettings');
 				apiTitle.textContent = t('apiKeyTitle');
@@ -891,6 +987,13 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				this.app.refreshAfterStorageChange();
 				renderAll();
 			});
+			themeModeSelect.addEventListener('change', () => {
+				this.app.settings.setThemeMode(themeModeSelect.value);
+				this.app.refreshAfterStorageChange();
+				renderAll();
+				if (themeModeSelect.value === 'custom') this.openThemeCustomizer();
+			});
+			customizeThemeBtn.addEventListener('click', () => this.openThemeCustomizer());
 			openListBtn.addEventListener('click', () => {
 				Dialog.closeAll('navigate');
 				this.openList();
