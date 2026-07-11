@@ -16,14 +16,14 @@ Keep docs, versioning, Git workflow aligned. Change files only when code or repo
 - Do not bump versions unless the user explicitly instructs a version bump.
 - Bump `VERSION` or package manifest only when explicitly instructed and shipping user-visible change.
 - Use `npm run bump:version -- <MAJOR.MINOR.PATCH>` for mechanical version/docs references.
-- When bumping version, create matching git tag `vMAJOR.MINOR.PATCH`.
+- When bumping version, also create matching git tag `vMAJOR.MINOR.PATCH`.
 - Check `docs/TODO.md`. Mark done items. Remove old done items when version bumps.
-- Edit `src/`, then run `npm run build`.
+- Edit userscript source in `src/`, then run `npm run build`.
 - Keep root `ytblockhandlecomments.js` in sync with `npm run check:build`.
 - Tampermonkey loads only root `ytblockhandlecomments.js`, not `src/`.
 - Commit changed `src/` files together with rebuilt `ytblockhandlecomments.js`.
-- Run ESLint via project-local binary, e.g. `.\node_modules\.bin\eslint.cmd .` on Windows.
-- Do not git-track local-only ESLint setup files or install outputs unless user asks.
+- Run ESLint via the project-local binary, e.g. `.\node_modules\.bin\eslint.cmd .` on Windows.
+- Do not git-track local-only ESLint setup files or install outputs unless the user explicitly asks.
 - Keep `git status` clean before PR or commit.
 - Request maintainer review for code or changelog changes.
 - Commit after each small patch or root-cause fix.
@@ -97,16 +97,16 @@ Patch rule:
 ## Commit
 
 - Always commit after a patch.
-- Before final commit, run project-local ESLint when available and report result.
+- Before the final commit, run the project-local ESLint when available and report the result.
 - Use Conventional Commits: `<type>(<scope>): <imperative summary>`.
 - Allowed types: `feat`, `fix`, `refactor`, `perf`, `docs`, `test`, `chore`, `build`, `ci`, `style`, `revert`.
-- Scope is optional but should stay consistent for repeated areas, e.g. `manager`, `docs`, `build`.
+- Scope is optional but should be consistent for repeated areas, e.g. `manager`, `docs`, `build`.
 - Commit messages in English.
-- Use imperative mood after colon.
+- Use imperative mood after the colon.
 - Keep subject under 50 chars when feasible.
 - Include body only when why is not obvious.
 - Prefer one commit per focused patch.
-- Before next patch, commit previous completed patch.
+- Before starting the next patch, commit the previous completed patch.
 
 ## Precedence
 
