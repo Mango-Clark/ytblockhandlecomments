@@ -11,6 +11,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- None
+
+### Changed
+
+- None
+
+### Deprecated
+
+- None
+
+### Removed
+
+- None
+
+### Fixed
+
+- None
+
+### Security
+
+- None
+
+## [1.1.0] - 2026-07-11
+
+### Added
+
 - Added selectable identity blocking with default `handle` rules or UID pair `id` rules.
 - Added independent pair-update checks for stored UID verification and handle re-resolution.
 - Added configurable keyword automation for comment text, author handles, and pinned labels.
@@ -35,6 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 
 - None
+
 
 ## [1.0.2] - 2026-07-11
 
