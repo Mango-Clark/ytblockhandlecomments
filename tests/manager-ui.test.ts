@@ -132,7 +132,7 @@ test('settings dialog groups related controls', () => {
 	manager.openSettings();
 	const titles = document.querySelectorAll('.tm-setting-group h4').map((node: any) => node.textContent);
 
-	assert.deepEqual(titles, ['매칭', '댓글 표시', '표시 크기', '유지보수']);
+	assert.deepEqual(titles, ['매칭', '댓글 표시', '키워드 자동 처리', '표시 크기', '유지보수']);
 });
 
 test('settings dialog updates comment block mode', () => {
@@ -229,6 +229,30 @@ test('settings dialog updates the identity block method', () => {
 	assert.equal(settings.getBlockMatchMode(), 'pair');
 });
 
+test('settings dialog saves keyword automation settings', () => {
+	const { api, document } = loadUserscript();
+	const settings = new api.AppSettingsStorage();
+	const storage = new api.StorageV2(settings);
+	const pairStore = new api.PairMetaStorage(settings);
+	const apiConfig = new api.ApiConfigStorage();
+	const manager = new api.BlockListManager({
+		settings,
+		storage,
+		pairStore,
+		apiConfig,
+		pairService: new api.PairService(storage, pairStore, apiConfig, settings),
+		getLastPairRunResult: () => null,
+		refreshAfterStorageChange: () => {}
+	});
+
+	manager.openSettings();
+	const keywordInput = document.querySelectorAll('textarea').find((item: any) => item.dataset.setting === 'keyword-rules');
+	keywordInput.value = 'spam\nPromo';
+	keywordInput.dispatchEvent({ type: 'change' });
+
+	assert.deepEqual(Array.from(settings.getKeywordAutomation().keywords), ['spam', 'Promo']);
+});
+
 test('settings dialog confirms and resets app settings', async () => {
 	const { api, document } = loadUserscript();
 	const settings = new api.AppSettingsStorage();
@@ -250,6 +274,11 @@ test('settings dialog confirms and resets app settings', async () => {
 	settings.setBlockMatchMode('pair');
 	settings.setPairUpdateUidCheckEnabled(true);
 	settings.setPairUpdateHandleLookupEnabled(false);
+	settings.setKeywordAutomation({
+		keywords: ['spam'],
+		fields: { commentText: false, handle: true, pinned: true },
+		actions: { dislike: true, blockHandle: true, createPair: true }
+	});
 	settings.setDislikeMode('always');
 	settings.setCommentBlockMode('placeholder-reveal');
 	settings.setFontSizeLevel(5);
@@ -269,6 +298,7 @@ test('settings dialog confirms and resets app settings', async () => {
 	assert.equal(settings.getBlockMatchMode(), 'handle');
 	assert.equal(settings.isPairUpdateUidCheckEnabled(), false);
 	assert.equal(settings.isPairUpdateHandleLookupEnabled(), true);
+	assert.deepEqual(Array.from(settings.getKeywordAutomation().keywords), []);
 	assert.equal(settings.getDislikeMode(), 'none');
 	assert.equal(settings.getCommentBlockMode(), 'hide');
 	assert.equal(settings.getFontSizeLevel(), 3);
@@ -323,8 +353,8 @@ test('settings dialog uses grouped task list layout', () => {
 
 	assert.ok(document.querySelector('.tm-settings-panel'));
 	assert.ok(document.querySelector('.tm-settings-intro').textContent.includes('자동으로 저장'));
-	assert.equal(document.querySelectorAll('.tm-settings-list > .tm-setting-group').length, 4);
-	assert.equal(document.querySelectorAll('.tm-setting-controls').length, 4);
+	assert.equal(document.querySelectorAll('.tm-settings-list > .tm-setting-group').length, 5);
+	assert.equal(document.querySelectorAll('.tm-setting-controls').length, 5);
 });
 
 test('api busy state shows a loading bar', () => {

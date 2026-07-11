@@ -35,7 +35,9 @@ import { BlockListManager } from './12-block-list-manager.ts';
 			this.pairStore = new PairMetaStorage(this.settings);
 			this.apiConfig = new ApiConfigStorage();
 			this.pairService = new PairService(this.storage, this.pairStore, this.apiConfig, this.settings);
-			this.hider = new CommentHider(this.storage, this.pairStore, this.settings);
+			this._keywordPairInFlight = new Set();
+			this._keywordRefreshPending = false;
+			this.hider = new CommentHider(this.storage, this.pairStore, this.settings, (match: any) => this._handleKeywordMatch(match));
 			this.menu = new MenuEnhancer(this);
 			this.manager = new BlockListManager(this);
 			this._menuCommandIds = [];
@@ -137,6 +139,37 @@ import { BlockListManager } from './12-block-list-manager.ts';
 			this._lastPairRunResult = stats;
 			this.refreshAfterStorageChange();
 			return stats;
+		}
+
+		_scheduleKeywordRefresh() {
+			if (this._keywordRefreshPending) return;
+			this._keywordRefreshPending = true;
+			requestAnimationFrame(() => {
+				this._keywordRefreshPending = false;
+				this.refreshAfterStorageChange();
+			});
+		}
+
+		_handleKeywordMatch(match: any) {
+			const handle = sanitizeHandle(match?.handle);
+			const actions = match?.actions || {};
+			if (!handle || (!actions.blockHandle && !actions.createPair)) return;
+			const added = this.storage.addHandle(handle);
+			if (added) {
+				this.hider.rebuildLookup();
+				this._scheduleKeywordRefresh();
+			}
+			if (!actions.createPair || !this.apiConfig.hasApiKey() || this.pairStore.getPair(handle)) return;
+			const key = this.settings.isHandleCaseSensitive() ? handle : handle.toLocaleLowerCase();
+			if (this._keywordPairInFlight.has(key)) return;
+			this._keywordPairInFlight.add(key);
+			void this.pairService.createPairsForHandles([handle])
+				.then((stats: PairRunStats) => { this._lastPairRunResult = stats; })
+				.catch(() => { })
+				.finally(() => {
+					this._keywordPairInFlight.delete(key);
+					this._scheduleKeywordRefresh();
+				});
 		}
 
 		_bindGlobalEvents() {

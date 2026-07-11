@@ -17,15 +17,17 @@ import { Extractor } from './09-extractor.ts';
 	 * ---------------------------------------------------------- */
 	export class CommentHider {
 		[key: string]: any;
-		constructor(storage: StorageLike, pairStore: PairStoreLike, settings: SettingsLike) {
+		constructor(storage: StorageLike, pairStore: PairStoreLike, settings: SettingsLike, onKeywordMatch: any = null) {
 			this.storage = storage;
 			this.pairStore = pairStore;
 			this.settings = settings;
+			this.onKeywordMatch = onKeywordMatch;
 			this._idSet = new Set();
 			this._handleSet = new Set();
 			this._regexes = [];
 			this._metaCache = new WeakMap();
 			this._autoDisliked = new WeakSet();
+			this._keywordHandled = new WeakSet();
 			this._observed = new Set();
 			this._pending = false;
 			this._pendingRoot = null;
@@ -70,6 +72,43 @@ import { Extractor } from './09-extractor.ts';
 			if (this.storage.addHandle(handle)) {
 				this._handleSet.add(handleKey);
 				this._metrics.autoAddedRegexHandles += 1;
+			}
+		}
+		_getKeywordMatch(node: Element, meta: any) {
+			const config = this.settings?.getKeywordAutomation?.();
+			const keywords = config?.keywords || [];
+			if (!keywords.length) return null;
+			const fields = config?.fields || {};
+			const targets: Array<{ field: string; value: string }> = [];
+			if (fields.commentText) {
+				const text = node.querySelector?.('#content-text, #content-text > yt-attributed-string, ytd-expander #content')?.textContent?.trim();
+				if (text) targets.push({ field: 'commentText', value: text });
+			}
+			if (fields.handle && meta.handle) targets.push({ field: 'handle', value: meta.handle });
+			if (fields.pinned) {
+				const text = node.querySelector?.('#pinned-comment-badge, ytd-pinned-comment-badge-renderer, [aria-label*="Pinned"], [aria-label*="pinned"], [aria-label*="고정"]')?.textContent?.trim();
+				if (text) targets.push({ field: 'pinned', value: text });
+			}
+			for (const target of targets) {
+				const normalized = target.value.toLocaleLowerCase();
+				for (const keyword of keywords) {
+					if (normalized.includes(String(keyword).toLocaleLowerCase())) {
+						return { keyword, field: target.field };
+					}
+				}
+			}
+			return null;
+		}
+		_applyKeywordAutomation(node: Element, meta: any) {
+			if (this._keywordHandled.has(node)) return;
+			const match = this._getKeywordMatch(node, meta);
+			if (!match) return;
+			const actions = this.settings?.getKeywordAutomation?.()?.actions || {};
+			if (!actions.dislike && !actions.blockHandle && !actions.createPair) return;
+			this._keywordHandled.add(node);
+			if (actions.dislike) this._autoDislikeBeforeHide(node);
+			if ((actions.blockHandle || actions.createPair) && meta.handle) {
+				this.onKeywordMatch?.({ ...match, handle: meta.handle, actions: { ...actions } });
 			}
 		}
 		_getDefaultRoot() {
@@ -195,6 +234,8 @@ import { Extractor } from './09-extractor.ts';
 		}
 		applyHide(node: Element | null | undefined) {
 			if (!node) return;
+			const meta = this._getMeta(node);
+			this._applyKeywordAutomation(node, meta);
 			const shouldHide = this._matches(node);
 			const dislikeMode = this.settings?.getDislikeMode?.() || 'none';
 			const alreadyBlocked = node.classList.contains('tm-hidden') || node.classList.contains('tm-block-placeholder-mode');
@@ -227,6 +268,7 @@ import { Extractor } from './09-extractor.ts';
 			this.resetObservation();
 			this._metaCache = new WeakMap();
 			this._autoDisliked = new WeakSet();
+			this._keywordHandled = new WeakSet();
 			this._pending = false;
 			this._pendingRoot = null;
 		}

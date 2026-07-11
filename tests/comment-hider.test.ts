@@ -214,3 +214,89 @@ test('pair match mode uses UID rules instead of handle rules', () => {
 	hider.applyHide(handleOnlyComment);
 	assert.equal(handleOnlyComment.classList.contains('tm-hidden'), false);
 });
+
+test('keyword automation dislikes once and registers the matching handle', () => {
+	const { api, document } = loadUserscript();
+	const settings = new api.AppSettingsStorage();
+	const storage = new api.StorageV2(settings);
+	const pairStore = new api.PairMetaStorage(settings);
+	let hider: any = null;
+	const matched: any[] = [];
+	hider = new api.CommentHider(storage, pairStore, settings, (match: any) => {
+		matched.push(match);
+		storage.addHandle(match.handle);
+		hider.rebuildLookup();
+	});
+	const { comment, dislike } = createBlockedComment(document, '@promo');
+	const content = document.createElement('div');
+	content.id = 'content-text';
+	content.textContent = 'This is spam content';
+	comment.appendChild(content);
+	let clicks = 0;
+	dislike.addEventListener('click', () => { clicks += 1; });
+	settings.setKeywordAutomation({
+		keywords: ['spam'],
+		fields: { commentText: true, handle: false, pinned: false },
+		actions: { dislike: true, blockHandle: true, createPair: false }
+	});
+
+	hider.applyHide(comment);
+	hider.applyHide(comment);
+
+	assert.equal(clicks, 1);
+	assert.equal(matched.length, 1);
+	assert.equal(matched[0].handle, '@promo');
+	assert.equal(matched[0].field, 'commentText');
+	assert.equal(storage.all().some((item: any) => item.type === 'handle' && item.value === '@promo'), true);
+	assert.equal(comment.classList.contains('tm-hidden'), true);
+});
+
+test('keyword automation can match the pinned label without scanning comment text', () => {
+	const { api, document } = loadUserscript();
+	const settings = new api.AppSettingsStorage();
+	const storage = new api.StorageV2(settings);
+	const pairStore = new api.PairMetaStorage(settings);
+	const hider = new api.CommentHider(storage, pairStore, settings);
+	const { comment, dislike } = createBlockedComment(document, '@alpha');
+	const pinned = document.createElement('div');
+	pinned.id = 'pinned-comment-badge';
+	pinned.textContent = 'Pinned by channel owner';
+	comment.appendChild(pinned);
+	let clicks = 0;
+	dislike.addEventListener('click', () => { clicks += 1; });
+	settings.setKeywordAutomation({
+		keywords: ['pinned'],
+		fields: { commentText: false, handle: false, pinned: true },
+		actions: { dislike: true, blockHandle: false, createPair: false }
+	});
+
+	hider.applyHide(comment);
+
+	assert.equal(clicks, 1);
+});
+
+test('keyword UID-pair action adds the handle and queues pair creation once', async () => {
+	const { api, document, context } = loadUserscript();
+	context.addEventListener = () => {};
+	const app = new api.App();
+	app.apiConfig.setApiKey('test-key');
+	app.settings.setKeywordAutomation({
+		keywords: ['promo'],
+		fields: { commentText: false, handle: true, pinned: false },
+		actions: { dislike: false, blockHandle: false, createPair: true }
+	});
+	let pairCalls = 0;
+	app.pairService.createPairsForHandles = async (handles: string[]) => {
+		pairCalls += 1;
+		assert.deepEqual(Array.from(handles), ['@promo']);
+		return { created: 1, refreshed: 0, mismatches: 0, failed: 0, addedIds: 1, skipped: 0, items: [] };
+	};
+	const { comment } = createBlockedComment(document, '@promo');
+
+	app.hider.applyHide(comment);
+	app.hider.applyHide(comment);
+	await Promise.resolve();
+
+	assert.equal(app.storage.all().some((item: any) => item.type === 'handle' && item.value === '@promo'), true);
+	assert.equal(pairCalls, 1);
+});

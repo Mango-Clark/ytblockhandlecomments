@@ -49,7 +49,6 @@ Supported page modes for comment hiding:
 
 Out of scope:
 
-- Comment-body keyword blocking
 - Pair metadata import/export
 - Background polling for pair refresh
 
@@ -66,6 +65,10 @@ can be hidden completely, replaced with a gray placeholder, or replaced with a c
 placeholder. Auto dislike defaults to off and is configurable as off, only when a comment is newly
 hidden, or always while a blocked comment is hidden; already pressed dislike buttons are not
 toggled.
+
+Keyword automation can inspect comment text, author handles, and pinned labels. It is
+case-insensitive and runs only the selected actions: dislike, add the author handle to the block
+list, or create a UID pair after adding the handle.
 
 ## 3. Storage Model
 
@@ -113,6 +116,9 @@ App settings:
 	blockMatchMode: 'handle' | 'pair',
 	pairUpdateUidCheck: boolean,
 	pairUpdateHandleLookup: boolean,
+	keywordRules: string[],
+	keywordFields: { commentText: boolean, handle: boolean, pinned: boolean },
+	keywordActions: { dislike: boolean, blockHandle: boolean, createPair: boolean },
   dislikeMode: 'none' | 'new-hidden' | 'always',
   commentBlockMode: 'hide' | 'placeholder' | 'placeholder-reveal',
   fontSizeLevel: 1 | 2 | 3 | 4 | 5,
@@ -146,6 +152,7 @@ Notes:
 - Default `app_settings_v1.blockMatchMode` is `handle`
 - At least one of `app_settings_v1.pairUpdateUidCheck` and `pairUpdateHandleLookup` stays enabled;
   handle lookup is the default
+- Keyword matching is case-insensitive, defaults to comment text, and has no enabled action by default
 - Default `app_settings_v1.fontSizeLevel` and `app_settings_v1.uiScaleLevel` are `3`; level `2`
   matches the previous visual size
 - Pair metadata and API config are excluded from import/export
@@ -182,6 +189,13 @@ Per-comment matching order:
 
 1. Selected identity rule type (`id` for `pair`, `handle` for `handle`)
 2. Regex
+
+Keyword automation:
+
+- Reads only the configured comment text, author handle, and/or pinned-label fields
+- Uses case-insensitive substring matching against up to 50 saved keywords
+- Runs each selected action once per comment DOM node
+- `Create UID pair` also adds the author handle first and runs only when an API key is saved
 
 ## 5. Pair And API Flow
 
@@ -275,6 +289,7 @@ Settings dialog:
 - Identity block method: `handle` rules or UID pair `id` rules
 - Regex matched-handle auto-add
 - Auto-dislike mode
+- Keyword rules, match inputs, and per-match actions
 - Blocked-comment display mode
 - Five-level text and UI scale controls; level 2 matches the previous size and level 3 is the default
 - Button to open the block list from settings, with a matching button back to settings in the block list

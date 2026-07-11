@@ -336,6 +336,64 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			commentControls.append(dislikeLabel, dislikeHelp, blockModeLabel, blockModeHelp);
 			commentGroup.append(commentTitle, commentControls);
 
+			const keywordGroup = document.createElement('li');
+			keywordGroup.className = 'tm-setting-group';
+			const keywordTitle = document.createElement('h4');
+			const keywordControls = document.createElement('div');
+			keywordControls.className = 'tm-setting-controls';
+			const keywordLabel = document.createElement('label');
+			const keywordText = document.createElement('span');
+			const keywordInput = document.createElement('textarea');
+			keywordInput.dataset.setting = 'keyword-rules';
+			keywordInput.rows = 4;
+			keywordLabel.append(keywordText, keywordInput);
+			const keywordFieldsTitle = document.createElement('strong');
+			const keywordCommentLabel = document.createElement('label');
+			const keywordCommentToggle = document.createElement('input');
+			keywordCommentToggle.type = 'checkbox';
+			const keywordCommentText = document.createElement('span');
+			keywordCommentLabel.append(keywordCommentToggle, keywordCommentText);
+			const keywordHandleLabel = document.createElement('label');
+			const keywordHandleToggle = document.createElement('input');
+			keywordHandleToggle.type = 'checkbox';
+			const keywordHandleText = document.createElement('span');
+			keywordHandleLabel.append(keywordHandleToggle, keywordHandleText);
+			const keywordPinnedLabel = document.createElement('label');
+			const keywordPinnedToggle = document.createElement('input');
+			keywordPinnedToggle.type = 'checkbox';
+			const keywordPinnedText = document.createElement('span');
+			keywordPinnedLabel.append(keywordPinnedToggle, keywordPinnedText);
+			const keywordActionsTitle = document.createElement('strong');
+			const keywordDislikeLabel = document.createElement('label');
+			const keywordDislikeToggle = document.createElement('input');
+			keywordDislikeToggle.type = 'checkbox';
+			const keywordDislikeText = document.createElement('span');
+			keywordDislikeLabel.append(keywordDislikeToggle, keywordDislikeText);
+			const keywordBlockLabel = document.createElement('label');
+			const keywordBlockToggle = document.createElement('input');
+			keywordBlockToggle.type = 'checkbox';
+			const keywordBlockText = document.createElement('span');
+			keywordBlockLabel.append(keywordBlockToggle, keywordBlockText);
+			const keywordPairLabel = document.createElement('label');
+			const keywordPairToggle = document.createElement('input');
+			keywordPairToggle.type = 'checkbox';
+			const keywordPairText = document.createElement('span');
+			keywordPairLabel.append(keywordPairToggle, keywordPairText);
+			const keywordHelp = document.createElement('p');
+			keywordControls.append(
+				keywordLabel,
+				keywordFieldsTitle,
+				keywordCommentLabel,
+				keywordHandleLabel,
+				keywordPinnedLabel,
+				keywordActionsTitle,
+				keywordDislikeLabel,
+				keywordBlockLabel,
+				keywordPairLabel,
+				keywordHelp
+			);
+			keywordGroup.append(keywordTitle, keywordControls);
+
 			const displayGroup = document.createElement('li');
 			displayGroup.className = 'tm-setting-group';
 			const displayTitle = document.createElement('h4');
@@ -375,7 +433,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			resetSettingsActions.append(openListBtn, resetSettingsBtn);
 			maintenanceControls.append(resetSettingsActions);
 			maintenanceGroup.append(maintenanceTitle, maintenanceControls);
-			settingsList.append(matchingGroup, commentGroup, displayGroup, maintenanceGroup);
+			settingsList.append(matchingGroup, commentGroup, keywordGroup, displayGroup, maintenanceGroup);
 			settingsSection.append(settingsTitle, settingsIntro, settingsList);
 
 			const apiSection = document.createElement('section');
@@ -513,6 +571,14 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				caseToggle.checked = this.app.settings.isHandleCaseSensitive();
 				autoToggle.checked = this.app.settings.isAutoAddRegexHandlesEnabled();
 				matchModeSelect.value = this.app.settings.getBlockMatchMode();
+				const keywordAutomation = this.app.settings.getKeywordAutomation();
+				keywordInput.value = keywordAutomation.keywords.join('\n');
+				keywordCommentToggle.checked = !!keywordAutomation.fields.commentText;
+				keywordHandleToggle.checked = !!keywordAutomation.fields.handle;
+				keywordPinnedToggle.checked = !!keywordAutomation.fields.pinned;
+				keywordDislikeToggle.checked = !!keywordAutomation.actions.dislike;
+				keywordBlockToggle.checked = !!keywordAutomation.actions.blockHandle;
+				keywordPairToggle.checked = !!keywordAutomation.actions.createPair;
 				dislikeSelect.value = this.app.settings.getDislikeMode();
 				blockModeSelect.value = this.app.settings.getCommentBlockMode();
 				fontSizeSelect.value = String(this.app.settings.getFontSizeLevel());
@@ -535,6 +601,18 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				matchModeSelect.options[1].textContent = t('blockMatchModePair');
 				matchModeHelp.textContent = t('blockMatchModeHelp');
 				commentTitle.textContent = t('settingsCommentTitle');
+				keywordTitle.textContent = t('keywordAutomationTitle');
+				keywordText.textContent = t('keywordRulesLabel');
+				keywordInput.placeholder = t('keywordRulesPlaceholder');
+				keywordFieldsTitle.textContent = t('keywordFieldsTitle');
+				keywordCommentText.textContent = t('keywordFieldComment');
+				keywordHandleText.textContent = t('keywordFieldHandle');
+				keywordPinnedText.textContent = t('keywordFieldPinned');
+				keywordActionsTitle.textContent = t('keywordActionsTitle');
+				keywordDislikeText.textContent = t('keywordActionDislike');
+				keywordBlockText.textContent = t('keywordActionBlockHandle');
+				keywordPairText.textContent = t('keywordActionCreatePair');
+				keywordHelp.textContent = t('keywordAutomationHelp');
 				displayTitle.textContent = t('settingsDisplayTitle');
 				maintenanceTitle.textContent = t('settingsMaintenanceTitle');
 				caseText.textContent = t('handleCaseLabel');
@@ -596,6 +674,30 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				this.app.refreshAfterStorageChange();
 				renderAll();
 			});
+			const saveKeywordAutomation = () => {
+				this.app.settings.setKeywordAutomation({
+					keywords: keywordInput.value.split(/\r?\n/),
+					fields: {
+						commentText: keywordCommentToggle.checked,
+						handle: keywordHandleToggle.checked,
+						pinned: keywordPinnedToggle.checked
+					},
+					actions: {
+						dislike: keywordDislikeToggle.checked,
+						blockHandle: keywordBlockToggle.checked,
+						createPair: keywordPairToggle.checked
+					}
+				});
+				this.app.refreshAfterStorageChange();
+				renderAll();
+			};
+			keywordInput.addEventListener('change', saveKeywordAutomation);
+			keywordCommentToggle.addEventListener('change', saveKeywordAutomation);
+			keywordHandleToggle.addEventListener('change', saveKeywordAutomation);
+			keywordPinnedToggle.addEventListener('change', saveKeywordAutomation);
+			keywordDislikeToggle.addEventListener('change', saveKeywordAutomation);
+			keywordBlockToggle.addEventListener('change', saveKeywordAutomation);
+			keywordPairToggle.addEventListener('change', saveKeywordAutomation);
 			dislikeSelect.addEventListener('change', () => {
 				this.app.settings.setDislikeMode(dislikeSelect.value);
 				this.app.refreshAfterStorageChange();

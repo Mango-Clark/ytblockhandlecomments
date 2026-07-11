@@ -13,10 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added selectable identity blocking with default `handle` rules or UID pair `id` rules.
 - Added independent pair-update checks for stored UID verification and handle re-resolution.
+- Added configurable keyword automation for comment text, author handles, and pinned labels.
 
 ### Changed
 
 - Pair creation continues to resolve `handle` to UID regardless of the update-check settings.
+- Keyword actions now deduplicate per comment and avoid duplicate block-list or pair requests.
 
 ### Deprecated
 

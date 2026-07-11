@@ -49,7 +49,6 @@
 
 범위 밖 기능:
 
-- 댓글 본문 키워드 차단
 - pair 메타데이터 import/export
 - 백그라운드 polling 기반 pair 자동 갱신
 
@@ -65,6 +64,10 @@
 숨기거나, 회색 대체 문구로 바꾸거나, 클릭해서 볼 수 있는 대체 문구로 바꿀 수
 있습니다. 자동 싫어요는 기본값이 안함이며, 새로 숨길 때만 또는 차단 댓글이 숨겨진
 상태에서 항상으로 바꿀 수 있고 이미 눌린 싫어요 버튼은 다시 토글하지 않습니다.
+
+키워드 자동 처리는 댓글 본문, 작성자 handle, 고정 표시 문구를 검사합니다. 대소문자를
+구분하지 않으며, 싫어요, 작성자 handle 차단 목록 등록, handle 등록 뒤 UID pair 생성 중
+선택한 동작만 실행합니다.
 
 ## 3. 저장 구조
 
@@ -112,6 +115,9 @@ Pair 메타데이터:
 	blockMatchMode: 'handle' | 'pair',
 	pairUpdateUidCheck: boolean,
 	pairUpdateHandleLookup: boolean,
+	keywordRules: string[],
+	keywordFields: { commentText: boolean, handle: boolean, pinned: boolean },
+	keywordActions: { dislike: boolean, blockHandle: boolean, createPair: boolean },
   dislikeMode: 'none' | 'new-hidden' | 'always',
   commentBlockMode: 'hide' | 'placeholder' | 'placeholder-reveal',
   fontSizeLevel: 1 | 2 | 3 | 4 | 5,
@@ -145,6 +151,7 @@ API 설정:
 - 기본 `app_settings_v1.blockMatchMode`는 `handle`입니다
 - `app_settings_v1.pairUpdateUidCheck`와 `pairUpdateHandleLookup` 중 하나는 항상 켜져 있고,
   기본값은 handle 다시 조회입니다
+- 키워드는 대소문자를 구분하지 않고 기본으로 댓글 본문을 검사하며, 동작은 기본으로 꺼져 있습니다
 - 기본 `app_settings_v1.fontSizeLevel`과 `app_settings_v1.uiScaleLevel`은 `3`이며, `2`는
   이전 시각 크기와 같습니다
 - pair 메타데이터와 API 설정은 import/export에 포함되지 않습니다
@@ -181,6 +188,13 @@ API 설정:
 
 1. 선택된 신원 규칙 타입(`pair`는 `id`, `handle`은 `handle`)
 2. Regex
+
+키워드 자동 처리:
+
+- 설정에서 고른 댓글 본문, 작성자 handle, 고정 표시 문구만 읽습니다
+- 저장한 키워드 최대 50개를 대소문자 구분 없이 부분 일치로 검사합니다
+- 선택한 동작은 댓글 DOM 노드마다 한 번만 실행합니다
+- `UID pair 생성`은 먼저 작성자 handle을 추가하고 API 키가 저장됐을 때만 실행합니다
 
 ## 5. Pair 및 API 흐름
 
@@ -273,6 +287,7 @@ Pair 결과:
 - 신원 차단 방식: `handle` 규칙 또는 UID pair `id` 규칙
 - regex 매칭 handle 자동 추가
 - 자동 싫어요 mode
+- 키워드 규칙, 검사 대상, 일치 시 동작
 - 차단 댓글 표시 mode
 - 글자 크기와 UI 크기를 5단계로 조절. 2단계는 기존 크기이고 3단계가 기본값
 - 설정에서 차단 목록을 열고, 차단 목록에서 다시 설정을 여는 버튼

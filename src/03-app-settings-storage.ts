@@ -23,10 +23,26 @@
 			if (!Number.isInteger(level) || level < 1 || level > 5) return 3;
 			return level;
 		}
+		_normalizeKeywords(value: any): string[] {
+			const source = Array.isArray(value) ? value : typeof value === 'string' ? value.split(/\r?\n/) : [];
+			const seen = new Set<string>();
+			const keywords: string[] = [];
+			for (const item of source) {
+				const keyword = String(item || '').trim().slice(0, 128);
+				const key = keyword.toLocaleLowerCase();
+				if (!key || seen.has(key)) continue;
+				seen.add(key);
+				keywords.push(keyword);
+				if (keywords.length >= 50) break;
+			}
+			return keywords;
+		}
 		_normalizeState(raw: any) {
 			const src = raw && typeof raw === 'object' ? raw : {};
 			const pairUpdateUidCheck = !!src.pairUpdateUidCheck;
 			const pairUpdateHandleLookup = src.pairUpdateHandleLookup !== false;
+			const keywordFields = src.keywordFields && typeof src.keywordFields === 'object' ? src.keywordFields : {};
+			const keywordActions = src.keywordActions && typeof src.keywordActions === 'object' ? src.keywordActions : {};
 			return {
 				version: 1,
 				handleCaseSensitive: !!src.handleCaseSensitive,
@@ -34,6 +50,17 @@
 				blockMatchMode: ['handle', 'pair'].includes(src.blockMatchMode) ? src.blockMatchMode : 'handle',
 				pairUpdateUidCheck,
 				pairUpdateHandleLookup: pairUpdateUidCheck || pairUpdateHandleLookup ? pairUpdateHandleLookup : true,
+				keywordRules: this._normalizeKeywords(src.keywordRules),
+				keywordFields: {
+					commentText: keywordFields.commentText !== false,
+					handle: !!keywordFields.handle,
+					pinned: !!keywordFields.pinned
+				},
+				keywordActions: {
+					dislike: !!keywordActions.dislike,
+					blockHandle: !!keywordActions.blockHandle,
+					createPair: !!keywordActions.createPair
+				},
 				dislikeMode: ['none', 'new-hidden', 'always'].includes(src.dislikeMode) ? src.dislikeMode : 'none',
 				commentBlockMode: ['hide', 'placeholder', 'placeholder-reveal'].includes(src.commentBlockMode) ? src.commentBlockMode : 'hide',
 				fontSizeLevel: this._normalizeLevel(src.fontSizeLevel),
@@ -64,6 +91,9 @@
 				this._state.blockMatchMode === normalized.blockMatchMode &&
 				this._state.pairUpdateUidCheck === normalized.pairUpdateUidCheck &&
 				this._state.pairUpdateHandleLookup === normalized.pairUpdateHandleLookup &&
+				JSON.stringify(this._state.keywordRules) === JSON.stringify(normalized.keywordRules) &&
+				JSON.stringify(this._state.keywordFields) === JSON.stringify(normalized.keywordFields) &&
+				JSON.stringify(this._state.keywordActions) === JSON.stringify(normalized.keywordActions) &&
 				this._state.dislikeMode === normalized.dislikeMode &&
 				this._state.commentBlockMode === normalized.commentBlockMode &&
 				this._state.fontSizeLevel === normalized.fontSizeLevel &&
@@ -107,6 +137,21 @@
 		}
 		setPairUpdateHandleLookupEnabled(enabled: any) {
 			return this._saveState({ ...this._state, pairUpdateHandleLookup: !!enabled });
+		}
+		getKeywordAutomation() {
+			return {
+				keywords: this._state.keywordRules.slice(),
+				fields: { ...this._state.keywordFields },
+				actions: { ...this._state.keywordActions }
+			};
+		}
+		setKeywordAutomation(config: any) {
+			return this._saveState({
+				...this._state,
+				keywordRules: config?.keywords,
+				keywordFields: config?.fields,
+				keywordActions: config?.actions
+			});
 		}
 		getDislikeMode() {
 			return this._state.dislikeMode || 'none';

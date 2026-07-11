@@ -36,6 +36,7 @@ Source layout:
 - Hides matching comments in real time on YouTube watch pages and Shorts pages
 - Configurable blocked-comment display: hide completely, show a gray placeholder, or click to reveal
 - Configurable comment auto-dislike mode, defaulting to off: off, only when newly hidden, or always while hidden
+- Supports keyword automation over comment text, author handles, and pinned labels with independent dislike, handle-block, and UID-pair actions
 - Supports `handle`, `id`, and `regex` rules in `blocked_v2`
 - Supports selectable identity matching: `handle` rules by default or UID pair `id` rules; regex rules remain independent
 - Applies regex length, flag, target, and heuristic safety checks before storing or matching rules
@@ -70,6 +71,7 @@ Source layout:
 6. Save your YouTube Data API v3 key and optionally run `Test API Key`.
 7. Use search, filters, regex tools, and bulk actions to maintain the list.
 8. Turn on `UID Detection`, choose `UID pair rules`, and run `Create Pair` / `Update Pair` when you want UID-backed matching.
+9. In Settings, add keyword rules and choose the inputs and actions that should run after a match.
 
 Typical pair flow:
 
@@ -126,6 +128,9 @@ App settings:
 	blockMatchMode: 'handle' | 'pair',
 	pairUpdateUidCheck: boolean,
 	pairUpdateHandleLookup: boolean,
+	keywordRules: string[],
+	keywordFields: { commentText: boolean, handle: boolean, pinned: boolean },
+	keywordActions: { dislike: boolean, blockHandle: boolean, createPair: boolean },
   dislikeMode: 'none' | 'new-hidden' | 'always',
   commentBlockMode: 'hide' | 'placeholder' | 'placeholder-reveal',
   fontSizeLevel: 1 | 2 | 3 | 4 | 5,
@@ -160,6 +165,7 @@ Notes:
 - Default `blockMatchMode` is `handle`; `pair` requires UID Detection and matches stored `id` rules
 - At least one pair update check stays enabled; the default re-resolves handles
 - If a pair is missing or unverified, switch back to `handle` mode until a UID rule is created
+- Keyword matching is case-insensitive; it checks comment text by default and runs no actions until enabled
 - Default `fontSizeLevel` and `uiScaleLevel` are `3`; level `2` matches the previous visual size
 - Pair metadata and API config are excluded from import/export
 - Older handles may already be stored in lowercase, so exact handle matching is guaranteed only
@@ -194,7 +200,7 @@ Notes:
 - Regex expand/collapse and match-list pagination update only the affected row
 - API-key tests track repeated `quota` failures and show reset-window guidance in the manager
 - Pair run details can be filtered/sorted, and failed handles can be copied or exported
-- Regex rules only target handles, not comment text
+- Regex rules only target handles; keyword rules can target comment text, author handles, and pinned labels
 - Plain-text import/export round-trips regex literals as `/pattern/flags`
 - Comment hiding is intentionally scoped to watch-page and Shorts comments
 - The pair review banner remains intentionally scoped to watch pages
