@@ -13,10 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added V0-V5 diagnostic-detail settings for log payloads.
 - Added JSON and plain-text file downloads plus a return action to the block-list export dialog.
+- Added per-option explanations to keyword automation settings.
 
 ### Changed
 
-- None
+- Added spacing before the settings matching group and highlighted settings reset actions as destructive.
 
 ### Deprecated
 

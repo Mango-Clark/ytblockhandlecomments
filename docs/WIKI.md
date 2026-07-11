@@ -297,17 +297,17 @@ Settings dialog:
 
 - Uses a category-list layout inspired by `GM_setting`: each task group has a title, controls, and short help text
 - Shows an introductory note that changes are saved automatically
-- Groups controls into matching, comment display, display size, and maintenance sections
+- Groups controls into matching, comment display, keyword automation, logging, display size, and maintenance sections
 - Handle case sensitivity
 - Identity block method: `handle` rules or UID pair `id` rules
 - Regex matched-handle auto-add
 - Auto-dislike mode
-- Keyword rules, match inputs, and per-match actions
+- Keyword rules, match inputs, and per-match actions, each with its checked field or performed action explained
 - Independent saved-log and browser-console toggles, log level, retention count, download, and clear controls
 - Blocked-comment display mode
 - Five-level text and UI scale controls; level 2 matches the previous size and level 3 is the default
 - Button to open the block list from settings, with a matching button back to settings in the block list
-- Reset button for app display and matching settings, gated by a confirmation dialog
+- Red destructive reset button and confirmation action for app display and matching settings
 - YouTube Data API v3 key/test controls
 - UID detection, pair summary, and pair actions
 - Pair update checks for stored UID verification and handle re-resolution

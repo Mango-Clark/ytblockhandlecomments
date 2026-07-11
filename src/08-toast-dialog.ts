@@ -84,7 +84,7 @@ import {
 				buttons.forEach(btn => {
 					const b = Object.assign(document.createElement('button'), {
 						textContent: btn.label,
-						className: btn.primary ? 'primary' : 'secondary'
+						className: `${btn.primary ? 'primary' : 'secondary'}${btn.danger ? ' danger' : ''}`
 					});
 					b.addEventListener('click', () => close(btn.value));
 					renderedButtons.push(b);

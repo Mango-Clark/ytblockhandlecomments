@@ -133,6 +133,10 @@ test('settings dialog groups related controls', () => {
 	const titles = document.querySelectorAll('.tm-setting-group h4').map((node: any) => node.textContent);
 
 	assert.deepEqual(titles, ['매칭', '댓글 표시', '키워드 자동 처리', '로그', '표시 크기', '유지보수']);
+	assert.ok(document.querySelector('.tm-setting-group-matching'));
+	assert.equal(document.querySelectorAll('.tm-setting-group-matching').length, 1);
+	assert.match(document.querySelector('.tm-settings-panel').textContent, /각 댓글에 작성된 화면상 본문 텍스트를 검사합니다/);
+	assert.match(document.querySelector('.tm-settings-panel').textContent, /API 키가 있으면 해당 UID pair를 생성합니다/);
 });
 
 test('comment menu item is idempotent and refreshes its blocked state', () => {
@@ -393,9 +397,11 @@ test('settings dialog confirms and resets app settings', async () => {
 	manager.openSettings();
 	const buttons = document.querySelectorAll('button');
 	const resetButton = buttons.find((button: any) => button.textContent === '설정 초기화');
+	assert.ok(resetButton.className.includes('danger'));
 	resetButton.click();
 	const dialogs = document.querySelectorAll('.tm-dialog');
 	const confirmButtons = dialogs[dialogs.length - 1].querySelectorAll('button');
+	assert.ok(confirmButtons[1].className.includes('danger'));
 	confirmButtons[1].click();
 	await Promise.resolve();
 

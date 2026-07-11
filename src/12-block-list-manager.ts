@@ -275,7 +275,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			const settingsList = document.createElement('ul');
 			settingsList.className = 'tm-settings-list';
 			const matchingGroup = document.createElement('li');
-			matchingGroup.className = 'tm-setting-group';
+			matchingGroup.className = 'tm-setting-group tm-setting-group-matching';
 			const matchingTitle = document.createElement('h4');
 			const matchingControls = document.createElement('div');
 			matchingControls.className = 'tm-setting-controls';
@@ -353,43 +353,55 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			keywordCommentToggle.type = 'checkbox';
 			const keywordCommentText = document.createElement('span');
 			keywordCommentLabel.append(keywordCommentToggle, keywordCommentText);
+			const keywordCommentHelp = document.createElement('p');
 			const keywordHandleLabel = document.createElement('label');
 			const keywordHandleToggle = document.createElement('input');
 			keywordHandleToggle.type = 'checkbox';
 			const keywordHandleText = document.createElement('span');
 			keywordHandleLabel.append(keywordHandleToggle, keywordHandleText);
+			const keywordHandleHelp = document.createElement('p');
 			const keywordPinnedLabel = document.createElement('label');
 			const keywordPinnedToggle = document.createElement('input');
 			keywordPinnedToggle.type = 'checkbox';
 			const keywordPinnedText = document.createElement('span');
 			keywordPinnedLabel.append(keywordPinnedToggle, keywordPinnedText);
+			const keywordPinnedHelp = document.createElement('p');
 			const keywordActionsTitle = document.createElement('strong');
 			const keywordDislikeLabel = document.createElement('label');
 			const keywordDislikeToggle = document.createElement('input');
 			keywordDislikeToggle.type = 'checkbox';
 			const keywordDislikeText = document.createElement('span');
 			keywordDislikeLabel.append(keywordDislikeToggle, keywordDislikeText);
+			const keywordDislikeHelp = document.createElement('p');
 			const keywordBlockLabel = document.createElement('label');
 			const keywordBlockToggle = document.createElement('input');
 			keywordBlockToggle.type = 'checkbox';
 			const keywordBlockText = document.createElement('span');
 			keywordBlockLabel.append(keywordBlockToggle, keywordBlockText);
+			const keywordBlockHelp = document.createElement('p');
 			const keywordPairLabel = document.createElement('label');
 			const keywordPairToggle = document.createElement('input');
 			keywordPairToggle.type = 'checkbox';
 			const keywordPairText = document.createElement('span');
 			keywordPairLabel.append(keywordPairToggle, keywordPairText);
+			const keywordPairHelp = document.createElement('p');
 			const keywordHelp = document.createElement('p');
 			keywordControls.append(
 				keywordLabel,
 				keywordFieldsTitle,
 				keywordCommentLabel,
+				keywordCommentHelp,
 				keywordHandleLabel,
+				keywordHandleHelp,
 				keywordPinnedLabel,
+				keywordPinnedHelp,
 				keywordActionsTitle,
 				keywordDislikeLabel,
+				keywordDislikeHelp,
 				keywordBlockLabel,
+				keywordBlockHelp,
 				keywordPairLabel,
+				keywordPairHelp,
 				keywordHelp
 			);
 			keywordGroup.append(keywordTitle, keywordControls);
@@ -482,7 +494,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			const resetSettingsActions = document.createElement('div');
 			resetSettingsActions.className = 'tm-inline-actions';
 			const openListBtn = Object.assign(document.createElement('button'), { className: 'secondary' });
-			const resetSettingsBtn = Object.assign(document.createElement('button'), { className: 'secondary' });
+			const resetSettingsBtn = Object.assign(document.createElement('button'), { className: 'danger' });
 			resetSettingsActions.append(openListBtn, resetSettingsBtn);
 			maintenanceControls.append(resetSettingsActions);
 			maintenanceGroup.append(maintenanceTitle, maintenanceControls);
@@ -665,12 +677,18 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				keywordInput.placeholder = t('keywordRulesPlaceholder');
 				keywordFieldsTitle.textContent = t('keywordFieldsTitle');
 				keywordCommentText.textContent = t('keywordFieldComment');
+				keywordCommentHelp.textContent = t('keywordFieldCommentHelp');
 				keywordHandleText.textContent = t('keywordFieldHandle');
+				keywordHandleHelp.textContent = t('keywordFieldHandleHelp');
 				keywordPinnedText.textContent = t('keywordFieldPinned');
+				keywordPinnedHelp.textContent = t('keywordFieldPinnedHelp');
 				keywordActionsTitle.textContent = t('keywordActionsTitle');
 				keywordDislikeText.textContent = t('keywordActionDislike');
+				keywordDislikeHelp.textContent = t('keywordActionDislikeHelp');
 				keywordBlockText.textContent = t('keywordActionBlockHandle');
+				keywordBlockHelp.textContent = t('keywordActionBlockHandleHelp');
 				keywordPairText.textContent = t('keywordActionCreatePair');
+				keywordPairHelp.textContent = t('keywordActionCreatePairHelp');
 				keywordHelp.textContent = t('keywordAutomationHelp');
 				loggingTitle.textContent = t('loggingTitle');
 				logFileText.textContent = t('loggingFileLabel');
@@ -823,7 +841,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 					})(),
 					buttons: [
 						{ label: t('close'), value: false },
-						{ label: t('resetSettings'), value: true, primary: true }
+						{ label: t('resetSettings'), value: true, primary: true, danger: true }
 					],
 					onRefresh: (ctx: DialogRefreshContext) => {
 						ctx.setTitle(t('resetSettings'));

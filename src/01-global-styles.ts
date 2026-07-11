@@ -14,6 +14,7 @@
     .tm-dialog button{padding:10px 16px;border:none;border-radius:8px;font-size:14px;cursor:pointer}
     .tm-dialog button.primary{background:#065fd4;color:#fff}
     .tm-dialog button.secondary{background:#eee;color:#000}
+    .tm-dialog button.danger{background:#b3261e;color:#fff}
     .tm-dialog button[disabled]{opacity:.6;cursor:wait}
     .tm-dialog textarea{width:100%;height:260px;resize:vertical;margin-top:8px;font-family:monospace;font-size:14px}
     .tm-block-list{list-style:none;padding:0;margin:0}
@@ -40,6 +41,7 @@
     .tm-settings-list{list-style:none;margin:0;padding:0}
     .tm-settings-list > .tm-setting-group{display:grid;grid-template-columns:minmax(130px,.7fr) minmax(0,2fr);gap:12px;border-top:1px solid #ececec;padding:14px 16px;margin:0}
     .tm-settings-list > .tm-setting-group:first-child{border-top:none}
+    .tm-settings-list > .tm-setting-group.tm-setting-group-matching{margin-top:8px}
     .tm-settings-list > .tm-setting-group h4{margin:0;font-size:13px;color:#3c4043}
     .tm-setting-controls{display:flex;flex-direction:column;gap:10px;min-width:0}
     .tm-setting-controls label{display:flex;align-items:center;gap:8px;font-weight:600;flex-wrap:wrap}
@@ -118,6 +120,7 @@
     @media (prefers-color-scheme: dark){
       .tm-dialog{background:#1f1f1f;color:#fff}
       .tm-dialog button.secondary{background:#333;color:#fff}
+      .tm-dialog button.danger{background:#b3261e;color:#fff}
       .tm-section,.tm-regex-bar{background:#1f1f1f;border-color:#444}
       .tm-settings-intro,.tm-settings-list > .tm-setting-group{border-color:#333}
       .tm-setting-group{border-color:#333}

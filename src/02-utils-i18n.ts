@@ -52,7 +52,7 @@ import { I18N_KO } from './i18n/ko.ts';
 		message: string;
 	};
 	export type RegexSpec = { pattern: string; flags: string };
-	export type DialogButton = { label: string; value: any; primary?: boolean };
+	export type DialogButton = { label: string; value: any; primary?: boolean; danger?: boolean };
 	export type DialogRefreshContext = {
 		dialog: HTMLElement;
 		header: HTMLElement;
@@ -300,4 +300,3 @@ import { I18N_KO } from './i18n/ko.ts';
 			default: return t('apiKeyTestUnknown');
 		}
 	};
-
