@@ -40,6 +40,7 @@ quota 안내, 페이지 단위 regex 매칭 목록, 역할별 소스 파일, 압
 - 차단 댓글 표시 방식 제공: 완전 차단, 회색 대체 문구, 클릭해서 보기
 - 댓글 자동 싫어요 모드 제공. 기본값은 안함이며, 새로 숨길 때만 또는 숨긴 상태에서 항상으로 변경 가능
 - `blocked_v2`에 `handle`, `id`, `regex` 규칙 저장
+- 신원 차단 방식을 기본 `handle` 규칙 또는 UID pair `id` 규칙으로 선택하고, regex 규칙은 두 방식 모두에서 적용
 - regex 규칙 저장/매칭 전에 길이, flag, 대상 길이, 휴리스틱 safety 검사를 적용
 - 관리자 대화상자에 선택적 `UID Detection` 토글 추가
 - 관리자 대화상자에 로컬 전용 YouTube Data API 키 입력 섹션 추가
@@ -76,7 +77,7 @@ quota 안내, 페이지 단위 regex 매칭 목록, 역할별 소스 파일, 압
 4. 댓글 작성자 handle을 우클릭해 차단 또는 해제합니다.
 5. `Tampermonkey -> YouTube Comment Blocker -> Manage block list`를 엽니다.
 6. Pair 기능을 쓰기 전에 YouTube Data API v3 API 키를 저장합니다.
-7. handle 대소문자 설정, UID 감지 토글, 목록 필터, 선택 항목 bulk 액션, regex 추가,
+7. handle 대소문자 설정, 신원 차단 방식, UID 감지 토글, 목록 필터, 선택 항목 bulk 액션, regex 추가,
    import/export를 사용합니다.
 
 일반적인 UID 흐름:
@@ -87,7 +88,8 @@ quota 안내, 페이지 단위 regex 매칭 목록, 역할별 소스 파일, 압
 4. `UID Detection`을 켭니다.
 5. pair가 없는 항목에 대해 `Create Pair`를 실행합니다.
 6. 필요하면 타입/태그 필터와 bulk action으로 일부 항목만 대상으로 작업합니다.
-7. 이후 stale 또는 mismatch가 보이면 `Update Pair`를 실행합니다.
+7. `Update Pair`에서 저장 UID 확인, handle 다시 조회 또는 둘 다를 선택합니다.
+8. 이후 stale 또는 mismatch가 보이면 `Update Pair`를 실행합니다.
 
 ---
 
@@ -129,9 +131,12 @@ Pair 메타 저장소:
 
 ```ts
 {
-  version: 1,
-  handleCaseSensitive: boolean,
-  autoAddRegexHandles: boolean,
+	version: 1,
+	handleCaseSensitive: boolean,
+	autoAddRegexHandles: boolean,
+	blockMatchMode: 'handle' | 'pair',
+	pairUpdateUidCheck: boolean,
+	pairUpdateHandleLookup: boolean,
   dislikeMode: 'none' | 'new-hidden' | 'always',
   commentBlockMode: 'hide' | 'placeholder' | 'placeholder-reveal',
   fontSizeLevel: 1 | 2 | 3 | 4 | 5,
@@ -147,6 +152,9 @@ Pair 메타 저장소:
 - API 설정 저장 키: `youtube_data_api_v3_config`
 - 기본 `dislikeMode`는 `none`입니다
 - 기본 `commentBlockMode`는 `hide`입니다
+- 기본 `blockMatchMode`는 `handle`이고, `pair`는 UID 감지가 켜진 동안 저장된 `id` 규칙을 사용합니다
+- pair 갱신 검사는 하나 이상 항상 켜져 있으며, 기본값은 handle 다시 조회입니다
+- pair가 없거나 unverified이면 UID 규칙을 만들 때까지 `handle` 방식으로 전환합니다
 - 기본 `fontSizeLevel`과 `uiScaleLevel`은 `3`이며, `2`는 이전 시각 크기와 같습니다
 - 레거시 규칙 키 `blockedHandles`, `blockedHandles_v1`는 계속 자동 마이그레이션됩니다
 - `v1.0.2`에서도 pair 메타데이터를 import/export에 포함하지 않습니다
@@ -167,13 +175,14 @@ Pair 메타 저장소:
 
 ## 참고 사항
 
-- handle 매칭은 항상 활성 상태로 유지됩니다
+- 기본 신원 차단 방식은 `handle`이며, `pair`는 UID 감지가 켜진 동안 `id` 규칙을 매칭합니다
 - handle 매칭 기본값은 case-insensitive이며, exact 비교로 전환할 수 있습니다
 - 기존 handle은 이미 소문자로 저장됐을 수 있어 exact 비교 보장은 재저장하거나 새로
   추가한 항목부터 적용됩니다
 - UID 매칭은 `UID Detection` 토글로 켜고 끌 수 있습니다
-- 현재 구현에서는 UID 감지가 켜져 있을 때만 `id` 규칙 매칭이 활성화됩니다
-- UID 조회는 YouTube Data API v3 `channels.list`의 `forHandle` 필터를 사용합니다
+- 현재 구현에서는 `pair` 방식과 UID 감지가 모두 켜져 있을 때만 `id` 규칙 매칭이 활성화됩니다
+- pair 생성과 handle 재조회는 YouTube Data API v3 `channels.list`의 `forHandle` 필터를 사용합니다
+- 선택적 저장 UID 확인은 같은 API의 저장된 channel ID 조회를 사용합니다
 - pair 데이터가 있으면 UID 매칭은 로컬에서만 수행되며, API 호출은 pair 작업 중에만
   발생합니다
 - regex 자동 추가를 켜면 regex로 매칭된 handle을 `handle` 규칙으로 저장해, 같은

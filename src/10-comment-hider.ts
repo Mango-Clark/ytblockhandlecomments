@@ -45,13 +45,16 @@ import { Extractor } from './09-extractor.ts';
 		}
 		rebuildLookup() {
 			this._idSet.clear(); this._handleSet.clear(); this._regexes = [];
-			const useUidDetection = this.pairStore.isUidDetectionEnabled();
+			const blockMatchMode = this.settings?.getBlockMatchMode?.() || 'handle';
+			const useUidDetection = blockMatchMode === 'pair' && this.pairStore.isUidDetectionEnabled();
+			const useHandleMatching = blockMatchMode === 'handle';
 			const caseSensitive = this.settings?.isHandleCaseSensitive?.() || false;
 			for (const it of this.storage.all()) {
 				if (it.type === 'id') {
 					if (useUidDetection) this._idSet.add(it.value);
 				}
 				else if (it.type === 'handle') {
+					if (!useHandleMatching) continue;
 					const key = getHandleCompareKey(it.value, caseSensitive);
 					if (key) this._handleSet.add(key);
 				}

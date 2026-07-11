@@ -37,6 +37,7 @@ Source layout:
 - Configurable blocked-comment display: hide completely, show a gray placeholder, or click to reveal
 - Configurable comment auto-dislike mode, defaulting to off: off, only when newly hidden, or always while hidden
 - Supports `handle`, `id`, and `regex` rules in `blocked_v2`
+- Supports selectable identity matching: `handle` rules by default or UID pair `id` rules; regex rules remain independent
 - Applies regex length, flag, target, and heuristic safety checks before storing or matching rules
 - Supports optional UID detection with handle↔UID metadata in `pair_meta_v1`
 - Stores a local-only YouTube Data API v3 key and validates it before pair maintenance
@@ -68,7 +69,7 @@ Source layout:
 5. Open `Tampermonkey -> YouTube Comment Blocker -> Manage block list`.
 6. Save your YouTube Data API v3 key and optionally run `Test API Key`.
 7. Use search, filters, regex tools, and bulk actions to maintain the list.
-8. Turn on `UID Detection` and run `Create Pair` / `Update Pair` when you want UID-backed matching.
+8. Turn on `UID Detection`, choose `UID pair rules`, and run `Create Pair` / `Update Pair` when you want UID-backed matching.
 
 Typical pair flow:
 
@@ -76,7 +77,8 @@ Typical pair flow:
 2. Save and test your API key.
 3. Turn on `UID Detection`.
 4. Run `Create Pair` for missing handles.
-5. Review `Last Pair Run` details or the watch-page banner when updates are needed.
+5. Choose whether `Update Pair` verifies stored UIDs, re-resolves handles, or both.
+6. Review `Last Pair Run` details or the watch-page banner when updates are needed.
 
 ## Storage
 
@@ -118,9 +120,12 @@ App settings:
 
 ```ts
 {
-  version: 1,
-  handleCaseSensitive: boolean,
-  autoAddRegexHandles: boolean,
+	version: 1,
+	handleCaseSensitive: boolean,
+	autoAddRegexHandles: boolean,
+	blockMatchMode: 'handle' | 'pair',
+	pairUpdateUidCheck: boolean,
+	pairUpdateHandleLookup: boolean,
   dislikeMode: 'none' | 'new-hidden' | 'always',
   commentBlockMode: 'hide' | 'placeholder' | 'placeholder-reveal',
   fontSizeLevel: 1 | 2 | 3 | 4 | 5,
@@ -152,6 +157,9 @@ Notes:
 - API config key: `youtube_data_api_v3_config`
 - Default `dislikeMode` is `none`
 - Default `commentBlockMode` is `hide`
+- Default `blockMatchMode` is `handle`; `pair` requires UID Detection and matches stored `id` rules
+- At least one pair update check stays enabled; the default re-resolves handles
+- If a pair is missing or unverified, switch back to `handle` mode until a UID rule is created
 - Default `fontSizeLevel` and `uiScaleLevel` are `3`; level `2` matches the previous visual size
 - Pair metadata and API config are excluded from import/export
 - Older handles may already be stored in lowercase, so exact handle matching is guaranteed only
@@ -168,9 +176,9 @@ Notes:
 
 ## Notes
 
-- Handle blocking always stays enabled
-- `id` rules participate only while `UID Detection` is enabled
-- UID lookup uses YouTube Data API v3 `channels.list` with the `forHandle` filter
+- `handle` is the default identity blocking method; `pair` matches `id` rules only while `UID Detection` is enabled
+- Pair creation and handle re-checks use YouTube Data API v3 `channels.list` with the `forHandle` filter
+- Optional stored-UID verification uses `channels.list` with the saved channel ID
 - UID matching is local after pair data exists; API calls happen only during pair actions
 - `Update Pair` skips fresh verified pairs until their stale interval expires, while selected-handle
   bulk updates still force a lookup for those selected handles

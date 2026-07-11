@@ -106,7 +106,7 @@ test('settings dialog updates auto-dislike mode', () => {
 	});
 
 	manager.openSettings();
-	const select = document.querySelector('select');
+	const select = document.querySelectorAll('select').find((item: any) => item.dataset.setting === 'dislike-mode');
 	select.value = 'always';
 	select.dispatchEvent({ type: 'change' });
 
@@ -152,8 +152,7 @@ test('settings dialog updates comment block mode', () => {
 	});
 
 	manager.openSettings();
-	const selects = document.querySelectorAll('select');
-	const blockModeSelect = selects[1];
+	const blockModeSelect = document.querySelectorAll('select').find((select: any) => select.dataset.setting === 'comment-block-mode');
 	blockModeSelect.value = 'placeholder-reveal';
 	blockModeSelect.dispatchEvent({ type: 'change' });
 
@@ -178,10 +177,12 @@ test('settings dialog updates display size levels', () => {
 
 	manager.openSettings();
 	const selects = document.querySelectorAll('select');
-	selects[2].value = '5';
-	selects[2].dispatchEvent({ type: 'change' });
-	selects[3].value = '1';
-	selects[3].dispatchEvent({ type: 'change' });
+	const fontSizeSelect = selects.find((select: any) => select.dataset.setting === 'font-size-level');
+	const uiScaleSelect = selects.find((select: any) => select.dataset.setting === 'ui-scale-level');
+	fontSizeSelect.value = '5';
+	fontSizeSelect.dispatchEvent({ type: 'change' });
+	uiScaleSelect.value = '1';
+	uiScaleSelect.dispatchEvent({ type: 'change' });
 
 	assert.equal(settings.getFontSizeLevel(), 5);
 	assert.equal(settings.getUiScaleLevel(), 1);
@@ -204,6 +205,30 @@ test('display size levels normalize invalid stored values', () => {
 	assert.equal(settings.getUiScaleLevel(), 3);
 });
 
+test('settings dialog updates the identity block method', () => {
+	const { api, document } = loadUserscript();
+	const settings = new api.AppSettingsStorage();
+	const storage = new api.StorageV2(settings);
+	const pairStore = new api.PairMetaStorage(settings);
+	const apiConfig = new api.ApiConfigStorage();
+	const manager = new api.BlockListManager({
+		settings,
+		storage,
+		pairStore,
+		apiConfig,
+		pairService: new api.PairService(storage, pairStore, apiConfig, settings),
+		getLastPairRunResult: () => null,
+		refreshAfterStorageChange: () => {}
+	});
+
+	manager.openSettings();
+	const matchModeSelect = document.querySelectorAll('select').find((select: any) => select.dataset.setting === 'block-match-mode');
+	matchModeSelect.value = 'pair';
+	matchModeSelect.dispatchEvent({ type: 'change' });
+
+	assert.equal(settings.getBlockMatchMode(), 'pair');
+});
+
 test('settings dialog confirms and resets app settings', async () => {
 	const { api, document } = loadUserscript();
 	const settings = new api.AppSettingsStorage();
@@ -222,6 +247,9 @@ test('settings dialog confirms and resets app settings', async () => {
 
 	settings.setHandleCaseSensitive(true);
 	settings.setAutoAddRegexHandlesEnabled(true);
+	settings.setBlockMatchMode('pair');
+	settings.setPairUpdateUidCheckEnabled(true);
+	settings.setPairUpdateHandleLookupEnabled(false);
 	settings.setDislikeMode('always');
 	settings.setCommentBlockMode('placeholder-reveal');
 	settings.setFontSizeLevel(5);
@@ -238,6 +266,9 @@ test('settings dialog confirms and resets app settings', async () => {
 
 	assert.equal(settings.isHandleCaseSensitive(), false);
 	assert.equal(settings.isAutoAddRegexHandlesEnabled(), false);
+	assert.equal(settings.getBlockMatchMode(), 'handle');
+	assert.equal(settings.isPairUpdateUidCheckEnabled(), false);
+	assert.equal(settings.isPairUpdateHandleLookupEnabled(), true);
 	assert.equal(settings.getDislikeMode(), 'none');
 	assert.equal(settings.getCommentBlockMode(), 'hide');
 	assert.equal(settings.getFontSizeLevel(), 3);

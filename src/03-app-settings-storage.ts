@@ -25,10 +25,15 @@
 		}
 		_normalizeState(raw: any) {
 			const src = raw && typeof raw === 'object' ? raw : {};
+			const pairUpdateUidCheck = !!src.pairUpdateUidCheck;
+			const pairUpdateHandleLookup = src.pairUpdateHandleLookup !== false;
 			return {
 				version: 1,
 				handleCaseSensitive: !!src.handleCaseSensitive,
 				autoAddRegexHandles: !!src.autoAddRegexHandles,
+				blockMatchMode: ['handle', 'pair'].includes(src.blockMatchMode) ? src.blockMatchMode : 'handle',
+				pairUpdateUidCheck,
+				pairUpdateHandleLookup: pairUpdateUidCheck || pairUpdateHandleLookup ? pairUpdateHandleLookup : true,
 				dislikeMode: ['none', 'new-hidden', 'always'].includes(src.dislikeMode) ? src.dislikeMode : 'none',
 				commentBlockMode: ['hide', 'placeholder', 'placeholder-reveal'].includes(src.commentBlockMode) ? src.commentBlockMode : 'hide',
 				fontSizeLevel: this._normalizeLevel(src.fontSizeLevel),
@@ -56,6 +61,9 @@
 			if (
 				this._state.handleCaseSensitive === normalized.handleCaseSensitive &&
 				this._state.autoAddRegexHandles === normalized.autoAddRegexHandles &&
+				this._state.blockMatchMode === normalized.blockMatchMode &&
+				this._state.pairUpdateUidCheck === normalized.pairUpdateUidCheck &&
+				this._state.pairUpdateHandleLookup === normalized.pairUpdateHandleLookup &&
 				this._state.dislikeMode === normalized.dislikeMode &&
 				this._state.commentBlockMode === normalized.commentBlockMode &&
 				this._state.fontSizeLevel === normalized.fontSizeLevel &&
@@ -81,6 +89,24 @@
 		}
 		setAutoAddRegexHandlesEnabled(enabled: any) {
 			return this._saveState({ ...this._state, autoAddRegexHandles: !!enabled });
+		}
+		getBlockMatchMode() {
+			return this._state.blockMatchMode || 'handle';
+		}
+		setBlockMatchMode(mode: any) {
+			return this._saveState({ ...this._state, blockMatchMode: mode });
+		}
+		isPairUpdateUidCheckEnabled() {
+			return !!this._state.pairUpdateUidCheck;
+		}
+		setPairUpdateUidCheckEnabled(enabled: any) {
+			return this._saveState({ ...this._state, pairUpdateUidCheck: !!enabled });
+		}
+		isPairUpdateHandleLookupEnabled() {
+			return this._state.pairUpdateHandleLookup !== false;
+		}
+		setPairUpdateHandleLookupEnabled(enabled: any) {
+			return this._saveState({ ...this._state, pairUpdateHandleLookup: !!enabled });
 		}
 		getDislikeMode() {
 			return this._state.dislikeMode || 'none';

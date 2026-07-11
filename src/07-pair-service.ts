@@ -159,15 +159,15 @@ import {
 					items: skipped
 				};
 			}
-			const stats = await this._processHandles(handles);
+			const stats = await this._processHandles(handles, { update: true });
 			stats.skipped += skipped.length;
 			stats.items.push(...skipped);
 			return stats;
 		}
 		async updatePairsForHandles(handles: any[]) {
-			return this._processHandles(handles || []);
+			return this._processHandles(handles || [], { update: true });
 		}
-		async _processHandles(handles: any[]): Promise<PairRunStats> {
+		async _processHandles(handles: any[], { update = false } = {}): Promise<PairRunStats> {
 			if (this._busy) return {
 				created: 0,
 				refreshed: 0,
@@ -203,7 +203,22 @@ import {
 			try {
 				for (const handle of uniqueHandles) {
 					const existing = this.pairStore.getPair(handle);
-					try {
+					const checkStoredUid = update && !!existing?.uid && !!this.settings?.isPairUpdateUidCheckEnabled?.();
+					const lookupHandle = !update || !existing?.uid || this.settings?.isPairUpdateHandleLookupEnabled?.() !== false;
+					let uidVerified = false;
+					let uidError = '';
+					let handleError = '';
+					let handleResolved = false;
+					if (checkStoredUid) {
+						try {
+							await this.resolveUid(existing.uid);
+							uidVerified = true;
+						} catch (error) {
+							uidError = error instanceof Error ? error.message : String(error);
+						}
+					}
+					if (lookupHandle) {
+						try {
 						const resolved = await this.resolveHandle(handle);
 						if (existing?.uid && existing.uid !== resolved.uid) {
 							this.pairStore.upsertPair({
@@ -246,38 +261,57 @@ import {
 							stats.refreshed += 1;
 							stats.items.push({ handle, outcome: 'updated', uid: resolved.uid });
 						}
-						else {
-							stats.created += 1;
-							stats.items.push({ handle, outcome: 'created', uid: resolved.uid });
+							else {
+								stats.created += 1;
+								stats.items.push({ handle, outcome: 'created', uid: resolved.uid });
+							}
+							handleResolved = true;
+						} catch (error) {
+							handleError = error instanceof Error ? error.message : String(error);
 						}
-					} catch (error) {
-						const message = error instanceof Error ? error.message : String(error);
-						const fallbackStatus = existing?.uid
-							? (existing.status === 'mismatch'
-								? 'mismatch'
-								: (existing.verifiedAt && (Date.now() - existing.verifiedAt) >= PAIR_STALE_MS
-									? 'stale'
-									: 'unverified'))
-							: 'unverified';
+					}
+					if (handleResolved) continue;
+					if (uidVerified && existing?.uid) {
 						this.pairStore.upsertPair({
 							...existing,
 							handle,
-							uid: existing?.uid || '',
-							verifiedAt: existing?.verifiedAt || null,
-							status: fallbackStatus,
-							source: existing?.source || 'youtube-data-api-v3',
-							lastResolvedUid: existing?.lastResolvedUid || null,
-							lastError: message
+							verifiedAt: Date.now(),
+							status: 'verified',
+							source: existing.source || 'youtube-data-api-v3',
+							lastResolvedUid: existing.uid,
+							lastError: handleError || null
 						});
-						stats.failed += 1;
-						stats.items.push({
-							handle,
-							outcome: 'failed',
-							uid: existing?.uid || undefined,
-							resolvedUid: existing?.lastResolvedUid || undefined,
-							message
-						});
+						stats.refreshed += 1;
+						stats.items.push({ handle, outcome: 'updated', uid: existing.uid, message: handleError || undefined });
+						continue;
 					}
+					if (!lookupHandle) continue;
+					const message = handleError || uidError;
+					const fallbackStatus = existing?.uid
+						? (existing.status === 'mismatch'
+							? 'mismatch'
+							: (existing.verifiedAt && (Date.now() - existing.verifiedAt) >= PAIR_STALE_MS
+								? 'stale'
+								: 'unverified'))
+						: 'unverified';
+					this.pairStore.upsertPair({
+						...existing,
+						handle,
+						uid: existing?.uid || '',
+						verifiedAt: existing?.verifiedAt || null,
+						status: fallbackStatus,
+						source: existing?.source || 'youtube-data-api-v3',
+						lastResolvedUid: existing?.lastResolvedUid || null,
+						lastError: message
+					});
+					stats.failed += 1;
+					stats.items.push({
+						handle,
+						outcome: 'failed',
+						uid: existing?.uid || undefined,
+						resolvedUid: existing?.lastResolvedUid || undefined,
+						message
+					});
 				}
 			} finally {
 				this._busy = false;
@@ -363,6 +397,28 @@ import {
 			const uid = payload?.items?.[0]?.id;
 			if (!isChannelId(uid)) throw new Error(t('pairLookupNoUid'));
 			return { uid, source: 'youtube-data-api-v3' };
+		}
+		async resolveUid(uid: string) {
+			const apiKey = this.apiConfig.getApiKey();
+			if (!apiKey) throw new Error(t('apiKeyRequired'));
+
+			const url = new URL('https://www.googleapis.com/youtube/v3/channels');
+			url.searchParams.set('part', 'id');
+			url.searchParams.set('id', uid);
+			url.searchParams.set('key', apiKey);
+			url.searchParams.set('hl', getLang() === 'ko' ? 'ko' : 'en');
+
+			const response = await fetch(url.toString(), { cache: 'no-store', referrerPolicy: 'no-referrer' });
+			let payload = null;
+			try { payload = await response.json(); } catch { }
+
+			if (!response.ok) {
+				const message = payload?.error?.message || `${t('pairLookupFailed')} (${response.status})`;
+				throw new Error(message);
+			}
+			const resolvedUid = payload?.items?.[0]?.id;
+			if (!isChannelId(resolvedUid)) throw new Error(t('pairLookupNoUid'));
+			return { uid: resolvedUid, source: 'youtube-data-api-v3' };
 		}
 	}
 

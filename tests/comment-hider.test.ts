@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { loadUserscript } from './helpers/load-userscript.ts';
 
-function createBlockedComment(document: any, handle = '@alpha') {
+function createBlockedComment(document: any, handle = '@alpha', uid = '') {
 	const comment = document.createElement('ytd-comment-renderer');
 	const author = document.createElement('div');
 	author.id = 'author-text';
@@ -12,6 +12,11 @@ function createBlockedComment(document: any, handle = '@alpha') {
 	dislike.setAttribute('aria-label', 'Dislike');
 
 	author.appendChild(span);
+	if (uid) {
+		const channel = document.createElement('a');
+		channel.setAttribute('href', `/channel/${uid}`);
+		author.appendChild(channel);
+	}
 	comment.append(author, dislike);
 	return { comment, dislike };
 }
@@ -186,4 +191,26 @@ test('placeholder reveal mode toggles revealed state', () => {
 
 	assert.equal(placeholder.tagName.toLowerCase(), 'button');
 	assert.equal(comment.classList.contains('tm-block-revealed'), true);
+});
+
+test('pair match mode uses UID rules instead of handle rules', () => {
+	const { api, document } = loadUserscript();
+	const settings = new api.AppSettingsStorage();
+	const storage = new api.StorageV2(settings);
+	const pairStore = new api.PairMetaStorage(settings);
+	const hider = new api.CommentHider(storage, pairStore, settings);
+	const { comment } = createBlockedComment(document, '@alpha', 'UC1234567890');
+
+	storage.addHandle('@alpha');
+	storage.addId('UC1234567890');
+	pairStore.setUidDetectionEnabled(true);
+	settings.setBlockMatchMode('pair');
+	hider.rebuildLookup();
+	hider.applyHide(comment);
+
+	assert.equal(comment.classList.contains('tm-hidden'), true);
+
+	const { comment: handleOnlyComment } = createBlockedComment(document, '@alpha', 'UC0987654321');
+	hider.applyHide(handleOnlyComment);
+	assert.equal(handleOnlyComment.classList.contains('tm-hidden'), false);
 });

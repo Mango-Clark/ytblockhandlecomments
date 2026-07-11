@@ -279,6 +279,17 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			const matchingTitle = document.createElement('h4');
 			const matchingControls = document.createElement('div');
 			matchingControls.className = 'tm-setting-controls';
+			const matchModeLabel = document.createElement('label');
+			const matchModeText = document.createElement('span');
+			const matchModeSelect = document.createElement('select');
+			matchModeSelect.dataset.setting = 'block-match-mode';
+			['handle', 'pair'].forEach(value => {
+				const option = document.createElement('option');
+				option.value = value;
+				matchModeSelect.appendChild(option);
+			});
+			matchModeLabel.append(matchModeText, matchModeSelect);
+			const matchModeHelp = document.createElement('p');
 			const caseLabel = document.createElement('label');
 			const caseToggle = document.createElement('input');
 			caseToggle.type = 'checkbox';
@@ -292,7 +303,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			const autoText = document.createElement('span');
 			autoLabel.append(autoToggle, autoText);
 			const autoHelp = document.createElement('p');
-			matchingControls.append(caseLabel, caseHelp, caseLegacy, autoLabel, autoHelp);
+			matchingControls.append(matchModeLabel, matchModeHelp, caseLabel, caseHelp, caseLegacy, autoLabel, autoHelp);
 			matchingGroup.append(matchingTitle, matchingControls);
 
 			const commentGroup = document.createElement('li');
@@ -302,6 +313,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			commentControls.className = 'tm-setting-controls';
 			const dislikeLabel = document.createElement('label');
 			const dislikeSelect = document.createElement('select');
+			dislikeSelect.dataset.setting = 'dislike-mode';
 			const dislikeText = document.createElement('span');
 			['none', 'new-hidden', 'always'].forEach(value => {
 				const option = document.createElement('option');
@@ -313,6 +325,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			const blockModeLabel = document.createElement('label');
 			const blockModeText = document.createElement('span');
 			const blockModeSelect = document.createElement('select');
+			blockModeSelect.dataset.setting = 'comment-block-mode';
 			['hide', 'placeholder', 'placeholder-reveal'].forEach(value => {
 				const option = document.createElement('option');
 				option.value = value;
@@ -331,9 +344,11 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			const fontSizeLabel = document.createElement('label');
 			const fontSizeText = document.createElement('span');
 			const fontSizeSelect = document.createElement('select');
+			fontSizeSelect.dataset.setting = 'font-size-level';
 			const uiScaleLabel = document.createElement('label');
 			const uiScaleText = document.createElement('span');
 			const uiScaleSelect = document.createElement('select');
+			uiScaleSelect.dataset.setting = 'ui-scale-level';
 			[1, 2, 3, 4, 5].forEach(value => {
 				const fontOption = document.createElement('option');
 				fontOption.value = String(value);
@@ -396,6 +411,18 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			const uidText = document.createElement('span');
 			toggleLabel.append(uidToggle, uidText);
 			const toggleHelp = document.createElement('p');
+			const pairUpdateTitle = document.createElement('h4');
+			const pairUpdateUidLabel = document.createElement('label');
+			const pairUpdateUidToggle = document.createElement('input');
+			pairUpdateUidToggle.type = 'checkbox';
+			const pairUpdateUidText = document.createElement('span');
+			pairUpdateUidLabel.append(pairUpdateUidToggle, pairUpdateUidText);
+			const pairUpdateHandleLabel = document.createElement('label');
+			const pairUpdateHandleToggle = document.createElement('input');
+			pairUpdateHandleToggle.type = 'checkbox';
+			const pairUpdateHandleText = document.createElement('span');
+			pairUpdateHandleLabel.append(pairUpdateHandleToggle, pairUpdateHandleText);
+			const pairUpdateHelp = document.createElement('p');
 			const pairActions = document.createElement('div');
 			pairActions.className = 'tm-inline-actions';
 			const createBtn = Object.assign(document.createElement('button'), { className: 'secondary' });
@@ -409,7 +436,20 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			pairProgress.className = 'tm-progress';
 			pairProgress.hidden = true;
 			const pairResultPanel = document.createElement('div');
-			pairSection.append(pairTitle, toggleLabel, toggleHelp, pairActions, lastCheck, summaryGrid, pairProgress, pairResultPanel);
+			pairSection.append(
+				pairTitle,
+				toggleLabel,
+				toggleHelp,
+				pairUpdateTitle,
+				pairUpdateUidLabel,
+				pairUpdateHandleLabel,
+				pairUpdateHelp,
+				pairActions,
+				lastCheck,
+				summaryGrid,
+				pairProgress,
+				pairResultPanel
+			);
 
 			const debugSection = document.createElement('section');
 			debugSection.className = 'tm-section';
@@ -472,11 +512,14 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			const renderAll = () => {
 				caseToggle.checked = this.app.settings.isHandleCaseSensitive();
 				autoToggle.checked = this.app.settings.isAutoAddRegexHandlesEnabled();
+				matchModeSelect.value = this.app.settings.getBlockMatchMode();
 				dislikeSelect.value = this.app.settings.getDislikeMode();
 				blockModeSelect.value = this.app.settings.getCommentBlockMode();
 				fontSizeSelect.value = String(this.app.settings.getFontSizeLevel());
 				uiScaleSelect.value = String(this.app.settings.getUiScaleLevel());
 				uidToggle.checked = this.app.pairStore.isUidDetectionEnabled();
+				pairUpdateUidToggle.checked = this.app.settings.isPairUpdateUidCheckEnabled();
+				pairUpdateHandleToggle.checked = this.app.settings.isPairUpdateHandleLookupEnabled();
 				apiProgress.hidden = !apiTestBusy;
 				pairProgress.hidden = !pairBusy;
 				renderApiStatus();
@@ -487,6 +530,10 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				settingsTitle.textContent = t('settingsTitle');
 				settingsIntro.textContent = t('settingsIntro');
 				matchingTitle.textContent = t('settingsMatchingTitle');
+				matchModeText.textContent = t('blockMatchModeLabel') + ': ';
+				matchModeSelect.options[0].textContent = t('blockMatchModeHandle');
+				matchModeSelect.options[1].textContent = t('blockMatchModePair');
+				matchModeHelp.textContent = t('blockMatchModeHelp');
 				commentTitle.textContent = t('settingsCommentTitle');
 				displayTitle.textContent = t('settingsDisplayTitle');
 				maintenanceTitle.textContent = t('settingsMaintenanceTitle');
@@ -525,6 +572,10 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				pairTitle.textContent = t('uidDetectionLabel');
 				uidText.textContent = t('uidDetectionLabel');
 				toggleHelp.textContent = t('uidDetectionHelp');
+				pairUpdateTitle.textContent = t('pairUpdatePolicyTitle');
+				pairUpdateUidText.textContent = t('pairUpdateUidCheckLabel');
+				pairUpdateHandleText.textContent = t('pairUpdateHandleLookupLabel');
+				pairUpdateHelp.textContent = t('pairUpdatePolicyHelp');
 				createBtn.textContent = pairBusy ? t('pairWorking') : t('pairCreate');
 				updateBtn.textContent = pairBusy ? t('pairWorking') : t('pairUpdate');
 				debugTitle.textContent = t('debugTitle');
@@ -537,6 +588,11 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			});
 			autoToggle.addEventListener('change', () => {
 				this.app.settings.setAutoAddRegexHandlesEnabled(autoToggle.checked);
+				this.app.refreshAfterStorageChange();
+				renderAll();
+			});
+			matchModeSelect.addEventListener('change', () => {
+				this.app.settings.setBlockMatchMode(matchModeSelect.value);
 				this.app.refreshAfterStorageChange();
 				renderAll();
 			});
@@ -592,6 +648,16 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			});
 			uidToggle.addEventListener('change', () => {
 				this.app.pairStore.setUidDetectionEnabled(uidToggle.checked);
+				this.app.refreshAfterStorageChange();
+				renderAll();
+			});
+			pairUpdateUidToggle.addEventListener('change', () => {
+				this.app.settings.setPairUpdateUidCheckEnabled(pairUpdateUidToggle.checked);
+				this.app.refreshAfterStorageChange();
+				renderAll();
+			});
+			pairUpdateHandleToggle.addEventListener('change', () => {
+				this.app.settings.setPairUpdateHandleLookupEnabled(pairUpdateHandleToggle.checked);
 				this.app.refreshAfterStorageChange();
 				renderAll();
 			});
@@ -1587,4 +1653,3 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			});
 		}
 	}
-

@@ -11,11 +11,12 @@
 
 ### Added
 
-- 없음
+- 기본 `handle` 규칙 또는 UID pair `id` 규칙을 고르는 신원 차단 방식을 추가했습니다.
+- 저장 UID 확인과 handle 재조회를 각각 고르는 pair 갱신 검사를 추가했습니다.
 
 ### Changed
 
-- 없음
+- pair 최초 생성은 갱신 검사 설정과 관계없이 계속 handle에서 UID를 조회합니다.
 
 ### Deprecated
 

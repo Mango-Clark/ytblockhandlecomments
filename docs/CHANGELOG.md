@@ -11,11 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- None
+- Added selectable identity blocking with default `handle` rules or UID pair `id` rules.
+- Added independent pair-update checks for stored UID verification and handle re-resolution.
 
 ### Changed
 
-- None
+- Pair creation continues to resolve `handle` to UID regardless of the update-check settings.
 
 ### Deprecated
 

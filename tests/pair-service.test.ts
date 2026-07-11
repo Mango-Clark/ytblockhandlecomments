@@ -63,6 +63,55 @@ test('selected-handle pair update still forces refresh', async () => {
 	assert.equal(stats.refreshed, 1);
 });
 
+test('UID-only pair updates verify the stored UID without handle lookup', async () => {
+	const { storage, pairStore, service } = createService();
+	storage.addHandle('@alpha');
+	storage.addId('UC1234567890');
+	pairStore.upsertPair({
+		handle: '@alpha',
+		uid: 'UC1234567890',
+		verifiedAt: Date.now() - (8 * 24 * 60 * 60 * 1000),
+		status: 'verified',
+		source: 'youtube-data-api-v3'
+	});
+	service.settings.setPairUpdateUidCheckEnabled(true);
+	service.settings.setPairUpdateHandleLookupEnabled(false);
+	let uidCalls = 0;
+	let handleCalls = 0;
+	service.resolveUid = async () => {
+		uidCalls += 1;
+		return { uid: 'UC1234567890', source: 'youtube-data-api-v3' };
+	};
+	service.resolveHandle = async () => {
+		handleCalls += 1;
+		return { uid: 'UC1234567890', source: 'youtube-data-api-v3' };
+	};
+
+	const stats = await service.updatePairsForHandles(['@alpha']);
+
+	assert.equal(uidCalls, 1);
+	assert.equal(handleCalls, 0);
+	assert.equal(stats.refreshed, 1);
+	assert.equal(pairStore.getPair('@alpha').status, 'verified');
+});
+
+test('pair creation always resolves handle to UID', async () => {
+	const { storage, service } = createService();
+	storage.addHandle('@alpha');
+	service.settings.setPairUpdateUidCheckEnabled(true);
+	service.settings.setPairUpdateHandleLookupEnabled(false);
+	let handleCalls = 0;
+	service.resolveHandle = async () => {
+		handleCalls += 1;
+		return { uid: 'UC1234567890', source: 'youtube-data-api-v3' };
+	};
+
+	const stats = await service.createMissingPairs();
+
+	assert.equal(handleCalls, 1);
+	assert.equal(stats.created, 1);
+});
+
 test('api config tracks repeated quota failures for guidance', () => {
 	const { api } = loadUserscript();
 	const apiConfig = new api.ApiConfigStorage();

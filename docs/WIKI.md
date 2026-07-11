@@ -107,9 +107,12 @@ App settings:
 
 ```ts
 {
-  version: 1,
-  handleCaseSensitive: boolean,
-  autoAddRegexHandles: boolean,
+	version: 1,
+	handleCaseSensitive: boolean,
+	autoAddRegexHandles: boolean,
+	blockMatchMode: 'handle' | 'pair',
+	pairUpdateUidCheck: boolean,
+	pairUpdateHandleLookup: boolean,
   dislikeMode: 'none' | 'new-hidden' | 'always',
   commentBlockMode: 'hide' | 'placeholder' | 'placeholder-reveal',
   fontSizeLevel: 1 | 2 | 3 | 4 | 5,
@@ -140,15 +143,20 @@ Notes:
 - Legacy `blockedHandles` and `blockedHandles_v1` still migrate automatically
 - Default `app_settings_v1.dislikeMode` is `none`
 - Default `app_settings_v1.commentBlockMode` is `hide`
+- Default `app_settings_v1.blockMatchMode` is `handle`
+- At least one of `app_settings_v1.pairUpdateUidCheck` and `pairUpdateHandleLookup` stays enabled;
+  handle lookup is the default
 - Default `app_settings_v1.fontSizeLevel` and `app_settings_v1.uiScaleLevel` are `3`; level `2`
   matches the previous visual size
 - Pair metadata and API config are excluded from import/export
 
 ## 4. Matching Model
 
-Always-on behavior:
+Identity matching:
 
-- Handle matching always stays enabled
+- `app_settings_v1.blockMatchMode` chooses the active identity rule type
+- `handle` is the default and matches stored `handle` rules
+- `pair` matches stored `id` rules after UID Detection is enabled
 - Regex rules are tested against extracted handle text only
 - Regex rules are rejected when they exceed safety limits for pattern length, flags, target length,
   or known high-risk backtracking shapes
@@ -162,8 +170,8 @@ Case sensitivity:
 
 Optional UID behavior:
 
-- Controlled by `pair_meta_v1.enableUidDetection`
-- `id` rules are active only while UID detection is enabled
+- Controlled by both `app_settings_v1.blockMatchMode` and `pair_meta_v1.enableUidDetection`
+- `id` rules are active only in `pair` mode while UID detection is enabled
 - Turning UID detection off keeps stored `id` rules and pair metadata
 - Runtime UID matching compares stored `id` rules to channel IDs already present in the comment DOM;
   it does not call the YouTube Data API
@@ -172,9 +180,8 @@ Optional UID behavior:
 
 Per-comment matching order:
 
-1. Channel ID
-2. Handle
-3. Regex
+1. Selected identity rule type (`id` for `pair`, `handle` for `handle`)
+2. Regex
 
 ## 5. Pair And API Flow
 
@@ -185,6 +192,12 @@ UID lookup:
 3. Send `part=id`, `forHandle=@handle`, `key=<apiKey>`
 4. Read `items[0].id`
 
+Stored UID verification:
+
+1. Call the same endpoint with `part=id` and `id=<stored UID>`
+2. Keep the pair verified when the stored channel ID still resolves
+3. Optionally run the independent handle re-resolution check to detect a replacement UID
+
 API-key test:
 
 1. Use the saved API key
@@ -194,7 +207,7 @@ API-key test:
 
 Fallback behavior:
 
-- Handle blocking still works when UID lookup fails
+- Handle mode still works when UID lookup fails; pair mode needs an existing verified `id` rule
 - Failed pairs stay `unverified` or `stale`
 - Existing pair data is not silently removed on lookup failure
 - When a pair update resolves a different UID, the stored pair and `id` rule are replaced with the
@@ -204,6 +217,8 @@ API minimization:
 
 - `Create Pair` looks up only missing or unverified handle pairs
 - Default `Update Pair` skips fresh verified pairs until the stale interval expires
+- Pair update settings can independently verify the stored UID and re-resolve the handle; at least
+  one check is always enabled
 - Selected-handle bulk `Update Pair` is treated as an explicit user request and refreshes selected
   handles even if their pair is still fresh
 - Watch-page pair review prompts are suppressed for the same stale interval after `Later` or a
@@ -257,6 +272,7 @@ Settings dialog:
 - Shows an introductory note that changes are saved automatically
 - Groups controls into matching, comment display, display size, and maintenance sections
 - Handle case sensitivity
+- Identity block method: `handle` rules or UID pair `id` rules
 - Regex matched-handle auto-add
 - Auto-dislike mode
 - Blocked-comment display mode
@@ -265,6 +281,7 @@ Settings dialog:
 - Reset button for app display and matching settings, gated by a confirmation dialog
 - YouTube Data API v3 key/test controls
 - UID detection, pair summary, and pair actions
+- Pair update checks for stored UID verification and handle re-resolution
 - Loading bars while API key tests and pair actions are waiting for API responses
 - Debug counters from `window.__ytCommentBlockerPerf`
 

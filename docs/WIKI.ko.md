@@ -106,9 +106,12 @@ Pair 메타데이터:
 
 ```ts
 {
-  version: 1,
-  handleCaseSensitive: boolean,
-  autoAddRegexHandles: boolean,
+	version: 1,
+	handleCaseSensitive: boolean,
+	autoAddRegexHandles: boolean,
+	blockMatchMode: 'handle' | 'pair',
+	pairUpdateUidCheck: boolean,
+	pairUpdateHandleLookup: boolean,
   dislikeMode: 'none' | 'new-hidden' | 'always',
   commentBlockMode: 'hide' | 'placeholder' | 'placeholder-reveal',
   fontSizeLevel: 1 | 2 | 3 | 4 | 5,
@@ -139,15 +142,20 @@ API 설정:
 - 레거시 `blockedHandles`, `blockedHandles_v1`는 계속 자동 마이그레이션됩니다
 - 기본 `app_settings_v1.dislikeMode`는 `none`입니다
 - 기본 `app_settings_v1.commentBlockMode`는 `hide`입니다
+- 기본 `app_settings_v1.blockMatchMode`는 `handle`입니다
+- `app_settings_v1.pairUpdateUidCheck`와 `pairUpdateHandleLookup` 중 하나는 항상 켜져 있고,
+  기본값은 handle 다시 조회입니다
 - 기본 `app_settings_v1.fontSizeLevel`과 `app_settings_v1.uiScaleLevel`은 `3`이며, `2`는
   이전 시각 크기와 같습니다
 - pair 메타데이터와 API 설정은 import/export에 포함되지 않습니다
 
 ## 4. 매칭 모델
 
-항상 켜져 있는 동작:
+신원 매칭:
 
-- handle 차단은 항상 유지됩니다
+- `app_settings_v1.blockMatchMode`가 활성 신원 규칙 타입을 선택합니다
+- `handle`은 기본값이며 저장된 `handle` 규칙을 매칭합니다
+- `pair`는 UID 감지가 켜진 뒤 저장된 `id` 규칙을 매칭합니다
 - regex 규칙은 추출된 handle 텍스트에만 적용됩니다
 - regex 규칙은 pattern 길이, flag, 대상 길이, 위험한 backtracking 형태에 대한 safety
   제한을 넘으면 저장하지 않습니다
@@ -161,8 +169,8 @@ API 설정:
 
 선택적 UID 동작:
 
-- `pair_meta_v1.enableUidDetection`으로 제어합니다
-- `id` 규칙은 UID 감지가 켜져 있을 때만 매칭에 참여합니다
+- `app_settings_v1.blockMatchMode`와 `pair_meta_v1.enableUidDetection`을 함께 사용합니다
+- `id` 규칙은 `pair` 방식과 UID 감지가 모두 켜져 있을 때만 매칭에 참여합니다
 - UID 감지를 꺼도 저장된 `id` 규칙과 pair 메타데이터는 유지됩니다
 - 런타임 UID 매칭은 저장된 `id` 규칙과 댓글 DOM에 이미 있는 channel ID를 로컬에서
   비교하며 YouTube Data API를 호출하지 않습니다
@@ -171,9 +179,8 @@ API 설정:
 
 댓글별 매칭 순서:
 
-1. 채널 ID
-2. Handle
-3. Regex
+1. 선택된 신원 규칙 타입(`pair`는 `id`, `handle`은 `handle`)
+2. Regex
 
 ## 5. Pair 및 API 흐름
 
@@ -184,6 +191,12 @@ UID 조회:
 3. `part=id`, `forHandle=@handle`, `key=<apiKey>`를 보냅니다
 4. `items[0].id`를 읽습니다
 
+저장 UID 확인:
+
+1. 같은 endpoint에 `part=id`, `id=<저장 UID>`를 보냅니다
+2. 저장된 channel ID가 계속 조회되면 pair를 verified 상태로 유지합니다
+3. 선택적으로 독립적인 handle 재조회를 함께 실행해 UID 교체 여부를 확인합니다
+
 API 키 테스트:
 
 1. 저장된 API 키를 사용합니다
@@ -193,7 +206,7 @@ API 키 테스트:
 
 Fallback 동작:
 
-- UID 조회가 실패해도 handle 차단은 계속 동작합니다
+- UID 조회가 실패해도 handle 방식은 계속 동작하지만, pair 방식에는 verified `id` 규칙이 필요합니다
 - 실패한 pair는 `unverified` 또는 `stale` 상태로 남습니다
 - 조회 실패만으로 기존 pair 데이터를 조용히 삭제하지 않습니다
 - pair update에서 다른 UID가 조회되면 저장된 pair와 `id` 규칙을 최신 UID로 교체해
@@ -203,6 +216,7 @@ API 호출 최소화:
 
 - `Create Pair`는 missing 또는 unverified handle pair만 조회합니다
 - 기본 `Update Pair`는 stale 주기가 지나기 전의 fresh verified pair를 건너뜁니다
+- pair 갱신 설정에서 저장 UID 확인과 handle 재조회를 각각 선택할 수 있으며, 하나는 항상 켜져 있습니다
 - 선택 handle bulk `Update Pair`는 명시적 사용자 요청으로 보고, 선택한 handle은 fresh
   상태여도 다시 조회합니다
 - watch 페이지 pair 검토 알림은 `나중에` 또는 최근 pair 검사 후 같은 stale 주기 동안
@@ -256,6 +270,7 @@ Pair 결과:
 - 변경 사항이 자동 저장된다는 안내를 표시합니다
 - 컨트롤을 매칭, 댓글 표시, 표시 크기, 유지보수 섹션으로 구분
 - handle 대소문자 구분
+- 신원 차단 방식: `handle` 규칙 또는 UID pair `id` 규칙
 - regex 매칭 handle 자동 추가
 - 자동 싫어요 mode
 - 차단 댓글 표시 mode
@@ -263,6 +278,7 @@ Pair 결과:
 - 설정에서 차단 목록을 열고, 차단 목록에서 다시 설정을 여는 버튼
 - 확인 dialog 이후 앱 표시/매칭 설정을 초기화하는 버튼
 - YouTube Data API v3 키/테스트 제어
+- 저장 UID 확인과 handle 재조회를 위한 pair 갱신 검사
 - UID detection, pair 요약, pair 액션
 - API 키 테스트와 pair 작업이 API 응답을 기다리는 동안 loading bar 표시
 - `window.__ytCommentBlockerPerf` 기반 debug counter

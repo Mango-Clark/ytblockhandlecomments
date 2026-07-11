@@ -2,7 +2,7 @@
 
 ## Important
 
-- 다양한 차단 방식 지원 설정 추가.
+- [x] 다양한 차단 방식 지원 설정 추가.
   - 기본 차단 기준은 `handle` 유지.
   - `pair` 최초 생성 시에는 `handle -> UID` 조회를 사용.
   - `pair update` 는 저장된 `UID` 를 기준으로 handle 상태를 갱신하는 흐름을 지원.
