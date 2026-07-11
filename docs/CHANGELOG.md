@@ -24,11 +24,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
-- Restored idempotent comment `⋯` menu injection for reused and delayed YouTube popups.
+- None
 
 ### Fixed
 
-- None
+- Restored idempotent comment `⋯` menu injection for reused and delayed YouTube popups.
 
 ### Security
 
@@ -60,7 +60,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - None
 
-
 ## [1.1.0] - 2026-07-11
 
 ### Added
@@ -90,7 +89,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - None
 
-
 ## [1.0.2] - 2026-07-11
 
 ### Added
@@ -116,7 +114,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 
 - None
-
 
 ## [1.0.1] - 2026-07-04
 

@@ -6,3 +6,5 @@
 - Edit `src/`; run `npm run build`; verify root `ytblockhandlecomments.js` with `npm run check:build`.
 - Tampermonkey loads generated root `ytblockhandlecomments.js`; commit it with changed `src/` files.
 - Behavior change: update tests; inspect async, cross-tab, repeated-navigation behavior.
+- UI/UX change: add or update a TODO item with affected view and verification criteria before implementation.
+- Settings/navigation changes: verify tab entry points, return paths, labels, spacing, destructive-action emphasis, and state preservation.
