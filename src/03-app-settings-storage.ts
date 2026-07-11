@@ -23,6 +23,11 @@
 			if (!Number.isInteger(level) || level < 1 || level > 5) return 3;
 			return level;
 		}
+		_normalizeVerboseLevel(value: any) {
+			const level = Number(value);
+			if (!Number.isInteger(level) || level < 0 || level > 5) return 3;
+			return level;
+		}
 		_normalizeKeywords(value: any): string[] {
 			const source = Array.isArray(value) ? value : typeof value === 'string' ? value.split(/\r?\n/) : [];
 			const seen = new Set<string>();
@@ -68,6 +73,7 @@
 					level: ['error', 'warn', 'info', 'debug'].includes(logging.level) ? logging.level : 'warn',
 					retention: [100, 500, 1000].includes(Number(logging.retention)) ? Number(logging.retention) : 500
 				},
+				verboseLevel: this._normalizeVerboseLevel(src.verboseLevel),
 				dislikeMode: ['none', 'new-hidden', 'always'].includes(src.dislikeMode) ? src.dislikeMode : 'none',
 				commentBlockMode: ['hide', 'placeholder', 'placeholder-reveal'].includes(src.commentBlockMode) ? src.commentBlockMode : 'hide',
 				fontSizeLevel: this._normalizeLevel(src.fontSizeLevel),
@@ -102,6 +108,7 @@
 				JSON.stringify(this._state.keywordFields) === JSON.stringify(normalized.keywordFields) &&
 				JSON.stringify(this._state.keywordActions) === JSON.stringify(normalized.keywordActions) &&
 				JSON.stringify(this._state.logging) === JSON.stringify(normalized.logging) &&
+				this._state.verboseLevel === normalized.verboseLevel &&
 				this._state.dislikeMode === normalized.dislikeMode &&
 				this._state.commentBlockMode === normalized.commentBlockMode &&
 				this._state.fontSizeLevel === normalized.fontSizeLevel &&
@@ -166,6 +173,12 @@
 		}
 		setLogging(config: any) {
 			return this._saveState({ ...this._state, logging: config });
+		}
+		getVerboseLevel() {
+			return this._normalizeVerboseLevel(this._state.verboseLevel);
+		}
+		setVerboseLevel(level: any) {
+			return this._saveState({ ...this._state, verboseLevel: this._normalizeVerboseLevel(level) });
 		}
 		getDislikeMode() {
 			return this._state.dislikeMode || 'none';

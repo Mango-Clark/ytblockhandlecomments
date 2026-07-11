@@ -176,6 +176,8 @@ import type { I18nBundle } from '../02-utils-i18n.ts';
 			loggingLevelInfo: '정보, 경고 및 오류',
 			loggingLevelDebug: '모든 debug 로그',
 			loggingRetentionValue: (count) => `${count}개`,
+			verboseLevelLabel: '진단 상세도',
+			verboseLevelValue: (level) => `V${level}`,
 			loggingDownload: '로그 파일 다운로드',
 			loggingClear: '저장 로그 지우기',
 			loggingCleared: '저장된 로그를 지웠습니다',

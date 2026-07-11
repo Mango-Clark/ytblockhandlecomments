@@ -193,6 +193,7 @@ test('logging settings persist independently and retain the configured level', (
 	const { api, gmStore } = loadUserscript();
 	const settings = new api.AppSettingsStorage();
 	settings.setLogging({ fileEnabled: true, consoleEnabled: false, level: 'info', retention: 100 });
+	settings.setVerboseLevel(2);
 	const logger = new api.Logger(settings);
 	logger.debug('ignored');
 	logger.info('saved', { source: 'test' });
@@ -201,6 +202,8 @@ test('logging settings persist independently and retain the configured level', (
 	assert.equal(settings.getLogging().consoleEnabled, false);
 	assert.equal(settings.getLogging().level, 'info');
 	assert.equal(settings.getLogging().retention, 100);
+	assert.equal(settings.getVerboseLevel(), 2);
+	assert.equal(logger._formatDetail({ first: true, second: false }), '{"first":true}');
 	assert.equal((gmStore.get('yt_comment_blocker_logs_v1') as any[]).length, 1);
 	assert.equal((gmStore.get('yt_comment_blocker_logs_v1') as any[])[0].message, 'saved');
 	logger.clear();

@@ -20,8 +20,14 @@ export class Logger {
 		return !!(config.fileEnabled || config.consoleEnabled) && LEVEL_WEIGHT[level] <= LEVEL_WEIGHT[configuredLevel];
 	}
 	_formatDetail(detail: unknown) {
-		if (detail == null) return '';
-		try { return JSON.stringify(detail); } catch { return String(detail); }
+		const verboseLevel = this.settings.getVerboseLevel?.() ?? 3;
+		if (detail == null || verboseLevel < 2) return '';
+		if (typeof detail !== 'object') return String(detail);
+		const maxFields = verboseLevel === 2 ? 1 : verboseLevel === 3 ? 3 : Number.POSITIVE_INFINITY;
+		try {
+			const entries = Object.entries(detail as Record<string, unknown>).slice(0, maxFields);
+			return JSON.stringify(Object.fromEntries(entries));
+		} catch { return String(detail); }
 	}
 	log(level: LogLevel, message: string, detail?: unknown) {
 		if (!this._shouldLog(level)) return;

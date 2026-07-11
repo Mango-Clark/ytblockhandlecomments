@@ -176,6 +176,8 @@ import type { I18nBundle } from '../02-utils-i18n.ts';
 			loggingLevelInfo: 'Information, warnings, and errors',
 			loggingLevelDebug: 'All debug logs',
 			loggingRetentionValue: (count) => `${count} entries`,
+			verboseLevelLabel: 'Diagnostic detail',
+			verboseLevelValue: (level) => `V${level}`,
 			loggingDownload: 'Download log file',
 			loggingClear: 'Clear saved logs',
 			loggingCleared: 'Saved logs cleared',
