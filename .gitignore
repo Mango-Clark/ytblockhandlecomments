@@ -5,3 +5,4 @@ package-lock.json
 eslint.config.*
 .*
 *.log
+skills-lock.json
