@@ -11,8 +11,17 @@ declare const module: {
 
 declare const process: {
 	argv: string[];
+	execPath: string;
 	exit(code?: number): never;
 };
+
+declare module 'node:child_process' {
+	export function execFileSync(
+	file: string,
+	args: string[],
+	options?: { cwd?: string; encoding?: string; stdio?: string }
+	): string;
+}
 
 declare module 'node:fs' {
 	const fs: {

@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { execFileSync } from 'node:child_process';
 
 const __dirname = path.dirname(path.resolve(process.argv[1] || 'scripts/bump-version.ts'));
 const root = path.resolve(__dirname, '..');
@@ -15,6 +16,19 @@ type VersionFile = {
 };
 
 const CHANGELOG_SECTIONS = ['Added', 'Changed', 'Deprecated', 'Removed', 'Fixed', 'Security'];
+const versionTag = version ? `v${version}` : '';
+const versionFiles = [
+	'src/00-userscript-header.ts',
+	'src/02-utils-i18n.ts',
+	'README.md',
+	'README.ko.md',
+	'docs/WIKI.md',
+	'docs/WIKI.ko.md',
+	'docs/CHANGELOG.md',
+	'docs/CHANGELOG.ko.md',
+	'docs/TODO.md',
+	'ytblockhandlecomments.js'
+];
 
 const replaceRequired = (text: string, pattern: RegExp, replacement: string, label: string): string => {
 	if (!pattern.test(text)) throw new Error(`Missing version target: ${label}`);
@@ -123,6 +137,13 @@ const main = () => {
 		process.exit(1);
 	}
 
+	if (!check) {
+		const status = execFileSync('git', ['status', '--porcelain'], { cwd: root, encoding: 'utf8' }).trim();
+		if (status) throw new Error('Working tree must be clean before bumping version.');
+		const existingTag = execFileSync('git', ['tag', '--list', versionTag], { cwd: root, encoding: 'utf8' }).trim();
+		if (existingTag) throw new Error(`Tag already exists: ${versionTag}`);
+	}
+
 	let changed = false;
 
 	for (const item of files) {
@@ -147,7 +168,17 @@ const main = () => {
 	}
 
 	if (!check) {
-		console.log(`Updated version references to ${version}. Run npm run build next.`);
+		execFileSync(process.execPath, [path.join(root, 'scripts', 'build-userscript.ts')], {
+			cwd: root,
+			stdio: 'inherit'
+		});
+		execFileSync('git', ['add', ...versionFiles], { cwd: root, stdio: 'inherit' });
+		execFileSync('git', ['commit', '-m', `chore: bump version to ${version}`], {
+			cwd: root,
+			stdio: 'inherit'
+		});
+		execFileSync('git', ['tag', versionTag], { cwd: root, stdio: 'inherit' });
+		console.log(`Bumped ${version}, committed, and tagged ${versionTag}.`);
 	}
 };
 

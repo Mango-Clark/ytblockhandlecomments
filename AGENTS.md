@@ -18,7 +18,7 @@ Substantial child rule/shared workflow change: update relevant parent with conci
 - Do not bump versions unless the user explicitly instructs a version bump.
 - Bump `VERSION` or package manifest only when explicitly instructed and shipping user-visible change.
 - Use `npm run bump:version -- <MAJOR.MINOR.PATCH>` for mechanical version/docs references.
-- When bumping version, create matching git tag `vMAJOR.MINOR.PATCH`.
+- Run `npm run bump:version -- <MAJOR.MINOR.PATCH>` for version update, build, commit, and matching tag `vMAJOR.MINOR.PATCH`.
 - Check `docs/TODO.md`. Mark done items. Remove old done items when version bumps.
 - Source/generated userscript/Tampermonkey rules: see `src/AGENTS.md`.
 - Run ESLint via project-local binary, e.g. `.\node_modules\.bin\eslint.cmd .` on Windows.
