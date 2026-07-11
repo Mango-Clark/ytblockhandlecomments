@@ -1,14 +1,16 @@
 # AGENTS.md
 
-Codex rules for this repo. Short. Concrete.
+Repo rules. Short. Concrete.
 
 ## Purpose
 
-Keep docs, versioning, Git workflow aligned. Change files only when code or repo rules need it.
+Align docs, versioning, Git. Change files only for code/rule needs.
+Child `AGENTS.md`: keep parent rule to one key sentence; detail stays child.
+Substantial child rule/shared workflow change: update relevant parent with concise summary.
 
 ## Quick Rules
 
-- Work on `dev` unless user says else.
+- Work on `dev` unless user says otherwise.
 - Update `README.md` first, then `README.ko.md`.
 - Update `docs/WIKI.md` first, then `docs/WIKI.ko.md` when behavior/storage changes.
 - Update `docs/CHANGELOG.md` first, then `docs/CHANGELOG.ko.md`.
@@ -18,25 +20,19 @@ Keep docs, versioning, Git workflow aligned. Change files only when code or repo
 - Use `npm run bump:version -- <MAJOR.MINOR.PATCH>` for mechanical version/docs references.
 - When bumping version, create matching git tag `vMAJOR.MINOR.PATCH`.
 - Check `docs/TODO.md`. Mark done items. Remove old done items when version bumps.
-- Edit `src/`, then run `npm run build`.
-- Keep root `ytblockhandlecomments.js` in sync with `npm run check:build`.
-- Tampermonkey loads only root `ytblockhandlecomments.js`, not `src/`.
-- Commit changed `src/` files together with rebuilt `ytblockhandlecomments.js`.
+- Source/generated userscript/Tampermonkey rules: see `src/AGENTS.md`.
 - Run ESLint via project-local binary, e.g. `.\node_modules\.bin\eslint.cmd .` on Windows.
 - Do not git-track local-only ESLint setup files or install outputs unless user asks.
 - Keep `git status` clean before PR or commit.
-- Request maintainer review for code or changelog changes.
+- Request maintainer review for code/changelog changes.
 - Commit after each small patch or root-cause fix.
 - Do not batch unrelated fixes into one commit.
-- Commit docs-only, tests-only, build/tooling, and behavior changes separately when feasible.
+- Separate docs-only, tests-only, build/tooling, and behavior commits when feasible.
 - Keep worktree clean.
 
 ## Docs
 
-- English first. Korean right after.
-- Keep code blocks, inline code, paths, commands, dates, versions exact.
-- Keep section order same across languages.
-- Do not add extra locales unless asked.
+- Docs language/pairing/structure/changelog: see `docs/AGENTS.md`.
 
 ## Git
 
