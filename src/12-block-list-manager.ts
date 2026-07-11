@@ -394,6 +394,48 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			);
 			keywordGroup.append(keywordTitle, keywordControls);
 
+			const loggingGroup = document.createElement('li');
+			loggingGroup.className = 'tm-setting-group';
+			const loggingTitle = document.createElement('h4');
+			const loggingControls = document.createElement('div');
+			loggingControls.className = 'tm-setting-controls';
+			const logFileLabel = document.createElement('label');
+			const logFileToggle = document.createElement('input');
+			logFileToggle.type = 'checkbox';
+			const logFileText = document.createElement('span');
+			logFileLabel.append(logFileToggle, logFileText);
+			const logConsoleLabel = document.createElement('label');
+			const logConsoleToggle = document.createElement('input');
+			logConsoleToggle.type = 'checkbox';
+			const logConsoleText = document.createElement('span');
+			logConsoleLabel.append(logConsoleToggle, logConsoleText);
+			const logLevelLabel = document.createElement('label');
+			const logLevelText = document.createElement('span');
+			const logLevelSelect = document.createElement('select');
+			['error', 'warn', 'info', 'debug'].forEach(value => {
+				const option = document.createElement('option');
+				option.value = value;
+				logLevelSelect.appendChild(option);
+			});
+			logLevelLabel.append(logLevelText, logLevelSelect);
+			const logRetentionLabel = document.createElement('label');
+			const logRetentionText = document.createElement('span');
+			const logRetentionSelect = document.createElement('select');
+			[100, 500, 1000].forEach(value => {
+				const option = document.createElement('option');
+				option.value = String(value);
+				logRetentionSelect.appendChild(option);
+			});
+			logRetentionLabel.append(logRetentionText, logRetentionSelect);
+			const logActions = document.createElement('div');
+			logActions.className = 'tm-inline-actions';
+			const downloadLogBtn = Object.assign(document.createElement('button'), { className: 'secondary' });
+			const clearLogBtn = Object.assign(document.createElement('button'), { className: 'secondary' });
+			logActions.append(downloadLogBtn, clearLogBtn);
+			const logHelp = document.createElement('p');
+			loggingControls.append(logFileLabel, logConsoleLabel, logLevelLabel, logRetentionLabel, logActions, logHelp);
+			loggingGroup.append(loggingTitle, loggingControls);
+
 			const displayGroup = document.createElement('li');
 			displayGroup.className = 'tm-setting-group';
 			const displayTitle = document.createElement('h4');
@@ -433,7 +475,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			resetSettingsActions.append(openListBtn, resetSettingsBtn);
 			maintenanceControls.append(resetSettingsActions);
 			maintenanceGroup.append(maintenanceTitle, maintenanceControls);
-			settingsList.append(matchingGroup, commentGroup, keywordGroup, displayGroup, maintenanceGroup);
+			settingsList.append(matchingGroup, commentGroup, keywordGroup, loggingGroup, displayGroup, maintenanceGroup);
 			settingsSection.append(settingsTitle, settingsIntro, settingsList);
 
 			const apiSection = document.createElement('section');
@@ -579,6 +621,11 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				keywordDislikeToggle.checked = !!keywordAutomation.actions.dislike;
 				keywordBlockToggle.checked = !!keywordAutomation.actions.blockHandle;
 				keywordPairToggle.checked = !!keywordAutomation.actions.createPair;
+				const logging = this.app.settings.getLogging();
+				logFileToggle.checked = !!logging.fileEnabled;
+				logConsoleToggle.checked = !!logging.consoleEnabled;
+				logLevelSelect.value = logging.level;
+				logRetentionSelect.value = String(logging.retention);
 				dislikeSelect.value = this.app.settings.getDislikeMode();
 				blockModeSelect.value = this.app.settings.getCommentBlockMode();
 				fontSizeSelect.value = String(this.app.settings.getFontSizeLevel());
@@ -613,6 +660,16 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				keywordBlockText.textContent = t('keywordActionBlockHandle');
 				keywordPairText.textContent = t('keywordActionCreatePair');
 				keywordHelp.textContent = t('keywordAutomationHelp');
+				loggingTitle.textContent = t('loggingTitle');
+				logFileText.textContent = t('loggingFileLabel');
+				logConsoleText.textContent = t('loggingConsoleLabel');
+				logLevelText.textContent = t('loggingLevelLabel') + ': ';
+				logRetentionText.textContent = t('loggingRetentionLabel') + ': ';
+				Array.from(logLevelSelect.options).forEach(option => { option.textContent = t(`loggingLevel${option.value[0].toUpperCase()}${option.value.slice(1)}`); });
+				Array.from(logRetentionSelect.options).forEach(option => { option.textContent = t('loggingRetentionValue', option.value); });
+				downloadLogBtn.textContent = t('loggingDownload');
+				clearLogBtn.textContent = t('loggingClear');
+				logHelp.textContent = t('loggingHelp');
 				displayTitle.textContent = t('settingsDisplayTitle');
 				maintenanceTitle.textContent = t('settingsMaintenanceTitle');
 				caseText.textContent = t('handleCaseLabel');
@@ -698,6 +755,21 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			keywordDislikeToggle.addEventListener('change', saveKeywordAutomation);
 			keywordBlockToggle.addEventListener('change', saveKeywordAutomation);
 			keywordPairToggle.addEventListener('change', saveKeywordAutomation);
+			const saveLogging = () => {
+				this.app.settings.setLogging({
+					fileEnabled: logFileToggle.checked,
+					consoleEnabled: logConsoleToggle.checked,
+					level: logLevelSelect.value,
+					retention: Number(logRetentionSelect.value)
+				});
+				renderAll();
+			};
+			logFileToggle.addEventListener('change', saveLogging);
+			logConsoleToggle.addEventListener('change', saveLogging);
+			logLevelSelect.addEventListener('change', saveLogging);
+			logRetentionSelect.addEventListener('change', saveLogging);
+			downloadLogBtn.addEventListener('click', () => this.app.logger.download());
+			clearLogBtn.addEventListener('click', () => { this.app.logger.clear(); Toast.show(t('loggingCleared')); });
 			dislikeSelect.addEventListener('change', () => {
 				this.app.settings.setDislikeMode(dislikeSelect.value);
 				this.app.refreshAfterStorageChange();

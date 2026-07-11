@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- None
+- Added independent local log retention and browser-console logging settings with configurable level, retention, and text-file download.
 
 ### Changed
 

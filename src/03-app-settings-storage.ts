@@ -43,6 +43,7 @@
 			const pairUpdateHandleLookup = src.pairUpdateHandleLookup !== false;
 			const keywordFields = src.keywordFields && typeof src.keywordFields === 'object' ? src.keywordFields : {};
 			const keywordActions = src.keywordActions && typeof src.keywordActions === 'object' ? src.keywordActions : {};
+			const logging = src.logging && typeof src.logging === 'object' ? src.logging : {};
 			return {
 				version: 1,
 				handleCaseSensitive: !!src.handleCaseSensitive,
@@ -60,6 +61,12 @@
 					dislike: !!keywordActions.dislike,
 					blockHandle: !!keywordActions.blockHandle,
 					createPair: !!keywordActions.createPair
+				},
+				logging: {
+					fileEnabled: !!logging.fileEnabled,
+					consoleEnabled: !!logging.consoleEnabled,
+					level: ['error', 'warn', 'info', 'debug'].includes(logging.level) ? logging.level : 'warn',
+					retention: [100, 500, 1000].includes(Number(logging.retention)) ? Number(logging.retention) : 500
 				},
 				dislikeMode: ['none', 'new-hidden', 'always'].includes(src.dislikeMode) ? src.dislikeMode : 'none',
 				commentBlockMode: ['hide', 'placeholder', 'placeholder-reveal'].includes(src.commentBlockMode) ? src.commentBlockMode : 'hide',
@@ -94,6 +101,7 @@
 				JSON.stringify(this._state.keywordRules) === JSON.stringify(normalized.keywordRules) &&
 				JSON.stringify(this._state.keywordFields) === JSON.stringify(normalized.keywordFields) &&
 				JSON.stringify(this._state.keywordActions) === JSON.stringify(normalized.keywordActions) &&
+				JSON.stringify(this._state.logging) === JSON.stringify(normalized.logging) &&
 				this._state.dislikeMode === normalized.dislikeMode &&
 				this._state.commentBlockMode === normalized.commentBlockMode &&
 				this._state.fontSizeLevel === normalized.fontSizeLevel &&
@@ -152,6 +160,12 @@
 				keywordFields: config?.fields,
 				keywordActions: config?.actions
 			});
+		}
+		getLogging() {
+			return { ...this._state.logging };
+		}
+		setLogging(config: any) {
+			return this._saveState({ ...this._state, logging: config });
 		}
 		getDislikeMode() {
 			return this._state.dislikeMode || 'none';

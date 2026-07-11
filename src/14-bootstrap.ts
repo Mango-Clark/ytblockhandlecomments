@@ -18,6 +18,7 @@ import { CommentHider } from './10-comment-hider.ts';
 import { Dialog } from './08-toast-dialog.ts';
 import { BlockListManager } from './12-block-list-manager.ts';
 import { App } from './13-app.ts';
+import { Logger } from './15-logger.ts';
 
 const TEST_HOOK = typeof window === 'object' ? window.__YT_BLOCK_TEST_HOOK__ || null : null;
 
@@ -35,6 +36,7 @@ const TEST_HOOK = typeof window === 'object' ? window.__YT_BLOCK_TEST_HOOK__ || 
 			Dialog,
 			BlockListManager,
 			App,
+			Logger,
 			t,
 			validateRegexSpec,
 			parseRegexLiteral,

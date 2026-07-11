@@ -37,6 +37,7 @@ Source layout:
 - Configurable blocked-comment display: hide completely, show a gray placeholder, or click to reveal
 - Configurable comment auto-dislike mode, defaulting to off: off, only when newly hidden, or always while hidden
 - Supports keyword automation over comment text, author handles, and pinned labels with independent dislike, handle-block, and UID-pair actions
+- Supports independent local log retention and browser-console logging, with level and retention controls plus log-file download
 - Supports `handle`, `id`, and `regex` rules in `blocked_v2`
 - Supports selectable identity matching: `handle` rules by default or UID pair `id` rules; regex rules remain independent
 - Applies regex length, flag, target, and heuristic safety checks before storing or matching rules
@@ -131,6 +132,7 @@ App settings:
 	keywordRules: string[],
 	keywordFields: { commentText: boolean, handle: boolean, pinned: boolean },
 	keywordActions: { dislike: boolean, blockHandle: boolean, createPair: boolean },
+  logging: { fileEnabled: boolean, consoleEnabled: boolean, level: 'error' | 'warn' | 'info' | 'debug', retention: 100 | 500 | 1000 },
   dislikeMode: 'none' | 'new-hidden' | 'always',
   commentBlockMode: 'hide' | 'placeholder' | 'placeholder-reveal',
   fontSizeLevel: 1 | 2 | 3 | 4 | 5,
@@ -166,6 +168,7 @@ Notes:
 - At least one pair update check stays enabled; the default re-resolves handles
 - If a pair is missing or unverified, switch back to `handle` mode until a UID rule is created
 - Keyword matching is case-insensitive; it checks comment text by default and runs no actions until enabled
+- Logging is off by default. Saved log entries stay in Tampermonkey storage and can be downloaded as a text file; browser download location is browser-controlled
 - Default `fontSizeLevel` and `uiScaleLevel` are `3`; level `2` matches the previous visual size
 - Pair metadata and API config are excluded from import/export
 - Older handles may already be stored in lowercase, so exact handle matching is guaranteed only
@@ -207,6 +210,7 @@ Notes:
 - Navigation resets transient comment observers and metadata caches so long YouTube sessions do not
   retain old comment DOM nodes
 - Performance counters are exposed in the settings dialog and on `window.__ytCommentBlockerPerf`
+- Logging is limited to low-frequency app and pair/API events, never the per-comment matching hot path
 
 ## Userscript Metadata
 

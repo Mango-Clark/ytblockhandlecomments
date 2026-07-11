@@ -69,6 +69,9 @@
 구분하지 않으며, 싫어요, 작성자 handle 차단 목록 등록, handle 등록 뒤 UID pair 생성 중
 선택한 동작만 실행합니다.
 
+로그는 다운로드용 로컬 보관과 브라우저 console 출력을 각각 설정할 수 있습니다. 앱 시작,
+API 테스트, pair 실행처럼 저빈도 이벤트만 기록합니다.
+
 ## 3. 저장 구조
 
 메인 규칙:
@@ -118,6 +121,12 @@ Pair 메타데이터:
 	keywordRules: string[],
 	keywordFields: { commentText: boolean, handle: boolean, pinned: boolean },
 	keywordActions: { dislike: boolean, blockHandle: boolean, createPair: boolean },
+	logging: {
+		fileEnabled: boolean,
+		consoleEnabled: boolean,
+		level: 'error' | 'warn' | 'info' | 'debug',
+		retention: 100 | 500 | 1000
+	},
   dislikeMode: 'none' | 'new-hidden' | 'always',
   commentBlockMode: 'hide' | 'placeholder' | 'placeholder-reveal',
   fontSizeLevel: 1 | 2 | 3 | 4 | 5,
@@ -152,6 +161,8 @@ API 설정:
 - `app_settings_v1.pairUpdateUidCheck`와 `pairUpdateHandleLookup` 중 하나는 항상 켜져 있고,
   기본값은 handle 다시 조회입니다
 - 키워드는 대소문자를 구분하지 않고 기본으로 댓글 본문을 검사하며, 동작은 기본으로 꺼져 있습니다
+- 로그는 기본으로 꺼져 있습니다. 파일 로그는 사용자가 다운로드하거나 지울 때까지 Tampermonkey 저장소에
+  보관되며, 다운로드 파일 위치는 브라우저 설정을 따릅니다
 - 기본 `app_settings_v1.fontSizeLevel`과 `app_settings_v1.uiScaleLevel`은 `3`이며, `2`는
   이전 시각 크기와 같습니다
 - pair 메타데이터와 API 설정은 import/export에 포함되지 않습니다
@@ -288,6 +299,7 @@ Pair 결과:
 - regex 매칭 handle 자동 추가
 - 자동 싫어요 mode
 - 키워드 규칙, 검사 대상, 일치 시 동작
+- 저장 로그와 브라우저 console 로그를 분리한 토글, 로그 수준, 보관 수, 다운로드/지우기 제어
 - 차단 댓글 표시 mode
 - 글자 크기와 UI 크기를 5단계로 조절. 2단계는 기존 크기이고 3단계가 기본값
 - 설정에서 차단 목록을 열고, 차단 목록에서 다시 설정을 여는 버튼

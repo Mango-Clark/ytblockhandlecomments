@@ -132,7 +132,25 @@ test('settings dialog groups related controls', () => {
 	manager.openSettings();
 	const titles = document.querySelectorAll('.tm-setting-group h4').map((node: any) => node.textContent);
 
-	assert.deepEqual(titles, ['매칭', '댓글 표시', '키워드 자동 처리', '표시 크기', '유지보수']);
+	assert.deepEqual(titles, ['매칭', '댓글 표시', '키워드 자동 처리', '로그', '표시 크기', '유지보수']);
+});
+
+test('logging settings persist independently and retain the configured level', () => {
+	const { api, gmStore } = loadUserscript();
+	const settings = new api.AppSettingsStorage();
+	settings.setLogging({ fileEnabled: true, consoleEnabled: false, level: 'info', retention: 100 });
+	const logger = new api.Logger(settings);
+	logger.debug('ignored');
+	logger.info('saved', { source: 'test' });
+
+	assert.equal(settings.getLogging().fileEnabled, true);
+	assert.equal(settings.getLogging().consoleEnabled, false);
+	assert.equal(settings.getLogging().level, 'info');
+	assert.equal(settings.getLogging().retention, 100);
+	assert.equal((gmStore.get('yt_comment_blocker_logs_v1') as any[]).length, 1);
+	assert.equal((gmStore.get('yt_comment_blocker_logs_v1') as any[])[0].message, 'saved');
+	logger.clear();
+	assert.equal((gmStore.get('yt_comment_blocker_logs_v1') as any[]).length, 0);
 });
 
 test('settings dialog updates comment block mode', () => {
@@ -353,8 +371,8 @@ test('settings dialog uses grouped task list layout', () => {
 
 	assert.ok(document.querySelector('.tm-settings-panel'));
 	assert.ok(document.querySelector('.tm-settings-intro').textContent.includes('자동으로 저장'));
-	assert.equal(document.querySelectorAll('.tm-settings-list > .tm-setting-group').length, 5);
-	assert.equal(document.querySelectorAll('.tm-setting-controls').length, 5);
+	assert.equal(document.querySelectorAll('.tm-settings-list > .tm-setting-group').length, 6);
+	assert.equal(document.querySelectorAll('.tm-setting-controls').length, 6);
 });
 
 test('api busy state shows a loading bar', () => {

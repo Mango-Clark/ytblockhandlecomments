@@ -40,6 +40,7 @@ quota 안내, 페이지 단위 regex 매칭 목록, 역할별 소스 파일, 압
 - 차단 댓글 표시 방식 제공: 완전 차단, 회색 대체 문구, 클릭해서 보기
 - 댓글 자동 싫어요 모드 제공. 기본값은 안함이며, 새로 숨길 때만 또는 숨긴 상태에서 항상으로 변경 가능
 - 댓글 본문, 작성자 handle, 고정 표시 문구를 검사하고 싫어요, handle 차단, UID pair 생성을 각각 고를 수 있는 키워드 자동 처리 지원
+- 로컬 로그 보관과 브라우저 console 로그를 독립적으로 켜고 끌 수 있으며, 로그 수준/보관 수 설정과 로그 파일 다운로드 지원
 - `blocked_v2`에 `handle`, `id`, `regex` 규칙 저장
 - 신원 차단 방식을 기본 `handle` 규칙 또는 UID pair `id` 규칙으로 선택하고, regex 규칙은 두 방식 모두에서 적용
 - regex 규칙 저장/매칭 전에 길이, flag, 대상 길이, 휴리스틱 safety 검사를 적용
@@ -78,7 +79,7 @@ quota 안내, 페이지 단위 regex 매칭 목록, 역할별 소스 파일, 압
 4. 댓글 작성자 handle을 우클릭해 차단 또는 해제합니다.
 5. `Tampermonkey -> YouTube Comment Blocker -> Manage block list`를 엽니다.
 6. Pair 기능을 쓰기 전에 YouTube Data API v3 API 키를 저장합니다.
-7. handle 대소문자 설정, 신원 차단 방식, UID 감지 토글, 목록 필터, 선택 항목 bulk 액션, regex 추가,
+7. handle 대소문자 설정, 신원 차단 방식, UID 감지 토글, 로그 보관/console 출력, 목록 필터, 선택 항목 bulk 액션, regex 추가,
    import/export를 사용합니다.
 8. 설정에서 키워드를 추가하고, 일치할 때 검사할 입력과 실행할 동작을 선택합니다.
 
@@ -142,6 +143,7 @@ Pair 메타 저장소:
 	keywordRules: string[],
 	keywordFields: { commentText: boolean, handle: boolean, pinned: boolean },
 	keywordActions: { dislike: boolean, blockHandle: boolean, createPair: boolean },
+	logging: { fileEnabled: boolean, consoleEnabled: boolean, level: 'error' | 'warn' | 'info' | 'debug', retention: 100 | 500 | 1000 },
   dislikeMode: 'none' | 'new-hidden' | 'always',
   commentBlockMode: 'hide' | 'placeholder' | 'placeholder-reveal',
   fontSizeLevel: 1 | 2 | 3 | 4 | 5,
@@ -161,6 +163,7 @@ Pair 메타 저장소:
 - pair 갱신 검사는 하나 이상 항상 켜져 있으며, 기본값은 handle 다시 조회입니다
 - pair가 없거나 unverified이면 UID 규칙을 만들 때까지 `handle` 방식으로 전환합니다
 - 키워드는 대소문자를 구분하지 않고 기본으로 댓글 본문을 검사하며, 동작은 직접 켜기 전까지 실행하지 않습니다
+- 로그는 기본으로 꺼져 있습니다. 저장 로그는 Tampermonkey 저장소에 보관되며 텍스트 파일로 내려받을 수 있고, 다운로드 위치는 브라우저 설정을 따릅니다
 - 기본 `fontSizeLevel`과 `uiScaleLevel`은 `3`이며, `2`는 이전 시각 크기와 같습니다
 - 레거시 규칙 키 `blockedHandles`, `blockedHandles_v1`는 계속 자동 마이그레이션됩니다
 - `v1.1.0`에서도 pair 메타데이터를 import/export에 포함하지 않습니다
@@ -213,6 +216,7 @@ Pair 메타 저장소:
 - 탐색 시 임시 댓글 observer와 메타데이터 캐시를 초기화해 긴 YouTube 세션에서 오래된
   댓글 DOM 노드를 붙잡지 않도록 합니다
 - 가벼운 성능 카운터는 설정 창과 `window.__ytCommentBlockerPerf`에서 확인할 수 있습니다
+- 로그는 앱 시작, API 테스트, pair 실행 같은 저빈도 이벤트만 기록하며 댓글별 매칭 고빈도 경로에서는 기록하지 않습니다
 
 ---
 

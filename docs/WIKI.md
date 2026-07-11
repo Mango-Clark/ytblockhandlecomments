@@ -70,6 +70,9 @@ Keyword automation can inspect comment text, author handles, and pinned labels. 
 case-insensitive and runs only the selected actions: dislike, add the author handle to the block
 list, or create a UID pair after adding the handle.
 
+Logging can independently retain local entries for download and write to the browser console.
+It records only low-frequency app, API-test, and pair-operation events.
+
 ## 3. Storage Model
 
 Main rules:
@@ -119,6 +122,12 @@ App settings:
 	keywordRules: string[],
 	keywordFields: { commentText: boolean, handle: boolean, pinned: boolean },
 	keywordActions: { dislike: boolean, blockHandle: boolean, createPair: boolean },
+	logging: {
+		fileEnabled: boolean,
+		consoleEnabled: boolean,
+		level: 'error' | 'warn' | 'info' | 'debug',
+		retention: 100 | 500 | 1000
+	},
   dislikeMode: 'none' | 'new-hidden' | 'always',
   commentBlockMode: 'hide' | 'placeholder' | 'placeholder-reveal',
   fontSizeLevel: 1 | 2 | 3 | 4 | 5,
@@ -153,6 +162,8 @@ Notes:
 - At least one of `app_settings_v1.pairUpdateUidCheck` and `pairUpdateHandleLookup` stays enabled;
   handle lookup is the default
 - Keyword matching is case-insensitive, defaults to comment text, and has no enabled action by default
+- Logging is off by default. File logging retains entries in Tampermonkey storage until users download
+  or clear them; the browser controls the downloaded file location
 - Default `app_settings_v1.fontSizeLevel` and `app_settings_v1.uiScaleLevel` are `3`; level `2`
   matches the previous visual size
 - Pair metadata and API config are excluded from import/export
@@ -290,6 +301,7 @@ Settings dialog:
 - Regex matched-handle auto-add
 - Auto-dislike mode
 - Keyword rules, match inputs, and per-match actions
+- Independent saved-log and browser-console toggles, log level, retention count, download, and clear controls
 - Blocked-comment display mode
 - Five-level text and UI scale controls; level 2 matches the previous size and level 3 is the default
 - Button to open the block list from settings, with a matching button back to settings in the block list

@@ -23,6 +23,7 @@ import { Extractor } from './09-extractor.ts';
 import { CommentHider } from './10-comment-hider.ts';
 import { MenuEnhancer } from './11-menu-enhancer.ts';
 import { BlockListManager } from './12-block-list-manager.ts';
+import { Logger } from './15-logger.ts';
 
 	/* ----------------------------------------------------------
 	 * 8. App Orchestrator (events, observers, cross-tab sync)
@@ -31,6 +32,7 @@ import { BlockListManager } from './12-block-list-manager.ts';
 		[key: string]: any;
 		constructor() {
 			this.settings = new AppSettingsStorage();
+			this.logger = new Logger(this.settings);
 			this.storage = new StorageV2(this.settings);
 			this.pairStore = new PairMetaStorage(this.settings);
 			this.apiConfig = new ApiConfigStorage();
@@ -53,6 +55,7 @@ import { BlockListManager } from './12-block-list-manager.ts';
 			this._syncAcrossTabs();
 			this._registerMenu();
 			this._schedulePageSync();
+			this.logger.info('Application started');
 		}
 
 		findHandleRule(handle: any) {
@@ -129,6 +132,7 @@ import { BlockListManager } from './12-block-list-manager.ts';
 			const result = await this.pairService.testApiKey();
 			this.apiConfig.setLastTestResult(result);
 			this.refreshAfterStorageChange();
+			this.logger.info('API key test completed', { category: result.category, ok: result.ok });
 			return result;
 		}
 
@@ -138,6 +142,7 @@ import { BlockListManager } from './12-block-list-manager.ts';
 				: (handles ? await this.pairService.updatePairsForHandles(handles) : await this.pairService.updatePairs({ includeMissing: true }));
 			this._lastPairRunResult = stats;
 			this.refreshAfterStorageChange();
+			this.logger.info('Pair operation completed', { mode, created: stats.created, refreshed: stats.refreshed, failed: stats.failed });
 			return stats;
 		}
 
@@ -156,6 +161,7 @@ import { BlockListManager } from './12-block-list-manager.ts';
 			if (!handle || (!actions.blockHandle && !actions.createPair)) return;
 			const added = this.storage.addHandle(handle);
 			if (added) {
+				this.logger.info('Keyword action added a block rule', { handle, createPair: !!actions.createPair });
 				this.hider.rebuildLookup();
 				this._scheduleKeywordRefresh();
 			}
