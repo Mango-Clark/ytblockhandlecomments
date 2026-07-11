@@ -324,8 +324,11 @@ Pair 결과:
 메뉴 주입:
 
 - `⋯` 메뉴는 더 이상 상시 global popup observer를 사용하지 않습니다
-- 관련 버튼 클릭 후에만 짧은 수명 observer를 붙입니다
-- popup 처리, timeout, navigation 시 observer를 끕니다
+- 클릭한 댓글의 `ytd-menu-renderer`에서 짧은 수명 observer를 시작하므로 버튼 wrapper가
+  바뀌어도 handle 탐색이 막히지 않습니다
+- 재사용하는 popup과 popup 뒤에 삽입되는 menu 모두에 handle별 항목 하나만 추가합니다
+- 주입 항목에는 `CB` 표식을 표시하고, 이미 차단한 handle은 차단 해제 동작으로 갱신하며,
+  popup 처리, timeout, navigation 시 observer를 끕니다
 
 댓글 관찰:
 

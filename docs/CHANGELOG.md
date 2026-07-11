@@ -23,7 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
-- None
+- Restored idempotent comment `⋯` menu injection for reused and delayed YouTube popups.
 
 ### Fixed
 

@@ -4,15 +4,6 @@
 
 ## P1 — High
 
-- [ ] 댓글 `⋯` 메뉴에 `Hide comments from this channel` 항목 추가
-
-  - `README.md`에는 이미 지원 기능으로 설명되어 있지만, 현재 실제 댓글 메뉴에는 신고 항목만 표시되는 회귀/누락이 있음.
-  - 기존 YouTube 메뉴와 동일한 UX를 유지하되, 아이콘·색상·보조 표식 등 사소하지만 직관적인 UI 차이를 추가해 YouTube 기본 설정이 아닌 이 스크립트가 만든 항목임을 구분.
-  - 메뉴를 연 댓글의 작성자 handle을 기준으로 차단하고, 기존 handle-UID pair 저장 및 차단 흐름과 동일하게 처리.
-  - watch page와 Shorts page에서 동작하고, 메뉴를 닫았다 다시 열어도 중복 항목이 생성되지 않도록 idempotent하게 삽입.
-  - 차단 완료 후 메뉴/댓글 상태를 즉시 갱신하고, 이미 차단된 채널에는 차단 해제 또는 비활성 상태를 명확히 표시.
-  - YouTube DOM 변경에 대비해 메뉴 위치 탐색, 이벤트 연결, 중복 삽입 방지, 기능 동작을 테스트.
-
 ## P2 — Normal
 
 - [ ] 테마 설정 확장
@@ -45,3 +36,5 @@
 ## Backlog
 
 ## Done
+
+- [x] 댓글 `⋯` 메뉴에 `Hide comments from this channel` 항목 추가

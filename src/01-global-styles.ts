@@ -96,6 +96,8 @@
     .tm-banner .actions .primary{background:#065fd4;color:#fff}
     .tm-banner .actions .secondary{background:#fff;color:#3d2f00;border:1px solid #ffd27a}
     .tm-muted{font-size:12px;color:#5f6368}
+    .tm-hide-channel{display:flex !important;align-items:center;gap:10px;color:#b3261e;font-weight:600}
+    .tm-menu-script-mark{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;border-radius:4px;background:#b3261e;color:#fff;font-size:10px;font-weight:700;letter-spacing:0}
     .tm-hidden{display:none !important}
     .tm-block-placeholder-mode > :not(.tm-block-placeholder){display:none !important}
     .tm-block-placeholder-mode.tm-block-revealed > :not(.tm-block-placeholder){display:revert !important}

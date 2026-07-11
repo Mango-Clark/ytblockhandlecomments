@@ -326,8 +326,11 @@ Live i18n:
 Menu injection:
 
 - The `⋯` menu no longer uses an always-on global popup observer
-- A short-lived observer starts only after a relevant menu-button click
-- It disconnects after popup handling, timeout, or navigation
+- A short-lived observer starts from the clicked comment's `ytd-menu-renderer`, so button-wrapper
+  changes do not prevent handle discovery
+- Reused popups and menus inserted after the popup both receive one handle-specific item
+- The injected item uses a `CB` marker, refreshes to an unhide action for blocked handles, and
+  disconnects its observer after popup handling, timeout, or navigation
 
 Comment observation:
 

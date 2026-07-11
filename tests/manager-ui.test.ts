@@ -135,6 +135,60 @@ test('settings dialog groups related controls', () => {
 	assert.deepEqual(titles, ['매칭', '댓글 표시', '키워드 자동 처리', '로그', '표시 크기', '유지보수']);
 });
 
+test('comment menu item is idempotent and refreshes its blocked state', () => {
+	const { api, context, document } = loadUserscript();
+	context.addEventListener = () => {};
+	const blocked = new Set<string>();
+	const enhancer = new api.MenuEnhancer({
+		hasHandleRule: (handle: string) => blocked.has(handle),
+		storage: {}
+	});
+	const menu = document.createElement('tp-yt-paper-listbox');
+
+	enhancer._addItem(menu, '@alpha');
+	enhancer._addItem(menu, '@alpha');
+	assert.equal(menu.querySelectorAll('.tm-hide-channel').length, 1);
+	assert.equal(menu.querySelector('.tm-hide-channel').children[1].textContent, '이 채널의 댓글 숨김');
+	assert.equal(menu.querySelector('.tm-menu-script-mark').textContent, 'CB');
+
+	blocked.add('@alpha');
+	enhancer._addItem(menu, '@alpha');
+	assert.equal(menu.querySelectorAll('.tm-hide-channel').length, 1);
+	assert.equal(menu.querySelector('.tm-hide-channel').children[1].textContent, '이 채널 댓글 숨김 해제');
+});
+
+test('menu enhancer finds a reused popup with a delayed menu list', () => {
+	const { api, context, document } = loadUserscript();
+	context.addEventListener = () => {};
+	const enhancer = new api.MenuEnhancer({ hasHandleRule: () => false, storage: {} });
+	const popup = document.createElement('ytd-menu-popup-renderer');
+	const menu = document.createElement('tp-yt-paper-listbox');
+	document.body.appendChild(popup);
+	enhancer.lastHandle = '@shorts';
+	assert.equal(enhancer._enhanceOpenPopups(), false);
+
+	popup.appendChild(menu);
+	assert.equal(enhancer._enhanceOpenPopups(), true);
+	assert.equal(menu.querySelector('.tm-hide-channel').getAttribute('data-tm-handle'), '@shorts');
+});
+
+test('menu enhancer resolves the handle from a comment menu renderer', () => {
+	const { api, context, document } = loadUserscript();
+	context.addEventListener = () => {};
+	const enhancer = new api.MenuEnhancer({ hasHandleRule: () => false, storage: {} });
+	const comment = document.createElement('ytd-comment-thread-renderer');
+	const author = document.createElement('a');
+	author.setAttribute('href', '/@alpha');
+	const menuRenderer = document.createElement('ytd-menu-renderer');
+	const button = document.createElement('button');
+	menuRenderer.appendChild(button);
+	comment.append(author, menuRenderer);
+	document.body.appendChild(comment);
+
+	assert.equal(enhancer._captureMenuHandle(button), true);
+	assert.equal(enhancer.lastHandle, '@alpha');
+});
+
 test('logging settings persist independently and retain the configured level', () => {
 	const { api, gmStore } = loadUserscript();
 	const settings = new api.AppSettingsStorage();
