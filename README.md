@@ -38,6 +38,7 @@ Source layout:
 - Configurable comment auto-dislike mode, defaulting to off: off, only when newly hidden, or always while hidden
 - Supports keyword automation over comment text, author handles, and pinned labels with independent dislike, handle-block, and UID-pair actions
 - Supports independent local log retention and browser-console logging, with level and retention controls plus log-file download
+- Supports V0-V5 diagnostic-detail settings for log payloads, defaulting to balanced V3 output
 - Supports `handle`, `id`, and `regex` rules in `blocked_v2`
 - Supports selectable identity matching: `handle` rules by default or UID pair `id` rules; regex rules remain independent
 - Applies regex length, flag, target, and heuristic safety checks before storing or matching rules
@@ -58,6 +59,7 @@ Source layout:
 - Pages expanded regex match lists in the manager so very large match sets do not render at once
 - Shows handle-level pair results after create/update runs
 - Supports filtering/sorting pair results and copying/exporting failed handles
+- Lets the block-list export dialog return to the list or download the current rules as JSON or plain text
 - Shows loading bars while API key tests or pair create/update actions are waiting on the network
 - Shows structured quota guidance after repeated API-key quota failures
 - Refreshes manager UI, dialogs, banner text, and menu labels after language changes
@@ -133,6 +135,7 @@ App settings:
 	keywordFields: { commentText: boolean, handle: boolean, pinned: boolean },
 	keywordActions: { dislike: boolean, blockHandle: boolean, createPair: boolean },
   logging: { fileEnabled: boolean, consoleEnabled: boolean, level: 'error' | 'warn' | 'info' | 'debug', retention: 100 | 500 | 1000 },
+  verboseLevel: 0 | 1 | 2 | 3 | 4 | 5,
   dislikeMode: 'none' | 'new-hidden' | 'always',
   commentBlockMode: 'hide' | 'placeholder' | 'placeholder-reveal',
   fontSizeLevel: 1 | 2 | 3 | 4 | 5,
@@ -169,6 +172,7 @@ Notes:
 - If a pair is missing or unverified, switch back to `handle` mode until a UID rule is created
 - Keyword matching is case-insensitive; it checks comment text by default and runs no actions until enabled
 - Logging is off by default. Saved log entries stay in Tampermonkey storage and can be downloaded as a text file; browser download location is browser-controlled
+- Default `verboseLevel` is `3`; V0/V1 omit diagnostic payloads, V2 limits payload fields, V3 keeps three fields, and V4/V5 keep all fields
 - Default `fontSizeLevel` and `uiScaleLevel` are `3`; level `2` matches the previous visual size
 - Pair metadata and API config are excluded from import/export
 - Older handles may already be stored in lowercase, so exact handle matching is guaranteed only
@@ -205,6 +209,7 @@ Notes:
 - Pair run details can be filtered/sorted, and failed handles can be copied or exported
 - Regex rules only target handles; keyword rules can target comment text, author handles, and pinned labels
 - Plain-text import/export round-trips regex literals as `/pattern/flags`
+- Block-list export can download the displayed JSON or text representation without including pair metadata or API configuration
 - Comment hiding is intentionally scoped to watch-page and Shorts comments
 - The pair review banner remains intentionally scoped to watch pages
 - Navigation resets transient comment observers and metadata caches so long YouTube sessions do not

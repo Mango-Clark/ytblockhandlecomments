@@ -163,6 +163,8 @@ API 설정:
 - 키워드는 대소문자를 구분하지 않고 기본으로 댓글 본문을 검사하며, 동작은 기본으로 꺼져 있습니다
 - 로그는 기본으로 꺼져 있습니다. 파일 로그는 사용자가 다운로드하거나 지울 때까지 Tampermonkey 저장소에
   보관되며, 다운로드 파일 위치는 브라우저 설정을 따릅니다
+- `app_settings_v1.verboseLevel`의 기본값은 `3`입니다. V0/V1은 진단 payload를 생략하고,
+  V2는 한 필드, V3은 세 필드, V4/V5는 가능한 전체 필드를 기록합니다
 - 기본 `app_settings_v1.fontSizeLevel`과 `app_settings_v1.uiScaleLevel`은 `3`이며, `2`는
   이전 시각 크기와 같습니다
 - pair 메타데이터와 API 설정은 import/export에 포함되지 않습니다
@@ -365,6 +367,9 @@ Pair 결과:
 
 Regex literal은 export 시 `/`를 `\/`로 escape하고, import 시 escaped 형태를
 받아들입니다.
+
+내보내기 dialog에서는 차단 목록으로 돌아가거나 같은 규칙 전용 데이터를
+`youtube-comment-blocker-export.json` 또는 `youtube-comment-blocker-export.txt`로 다운로드할 수 있습니다.
 
 지원하는 JSON 형태:
 

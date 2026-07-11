@@ -164,6 +164,8 @@ Notes:
 - Keyword matching is case-insensitive, defaults to comment text, and has no enabled action by default
 - Logging is off by default. File logging retains entries in Tampermonkey storage until users download
   or clear them; the browser controls the downloaded file location
+- `app_settings_v1.verboseLevel` defaults to `3`. V0/V1 omit diagnostic payloads, V2 records one
+  field, V3 records three fields, and V4/V5 retain all available fields
 - Default `app_settings_v1.fontSizeLevel` and `app_settings_v1.uiScaleLevel` are `3`; level `2`
   matches the previous visual size
 - Pair metadata and API config are excluded from import/export
@@ -365,6 +367,9 @@ Supported plain-text entries:
 - `/regex/flags`
 
 Regex literals escape `/` as `\/` on export and accept the escaped form on import.
+
+The export dialog can return to the block list or download the same rule-only data as
+`youtube-comment-blocker-export.json` or `youtube-comment-blocker-export.txt`.
 
 Supported JSON shapes:
 

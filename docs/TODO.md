@@ -18,19 +18,6 @@
 
 ## P3 — Low
 
-- [ ] verbose level 설정 추가
-
-  - V=0: Get straight to the answer with zero extra commentary.
-  - V=1: Provide a brief, straightforward answer.
-  - V=2: Add moderate detail.
-  - V=3: Default balanced explanation.
-  - V=4: In-depth analysis and context.
-  - V=5: Extremely verbose and exhaustive
-
-- [ ] 내보내기 창에 뒤로가기 버튼 추가
-
-- [ ] 내보내기 창에 파일로 내보내기 버튼 추가
-
 ## Blocked
 
 ## Backlog
@@ -38,3 +25,6 @@
 ## Done
 
 - [x] 댓글 `⋯` 메뉴에 `Hide comments from this channel` 항목 추가
+- [x] verbose level 설정 추가
+- [x] 내보내기 창에 뒤로가기 버튼 추가
+- [x] 내보내기 창에 파일로 내보내기 버튼 추가

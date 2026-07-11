@@ -41,6 +41,7 @@ quota 안내, 페이지 단위 regex 매칭 목록, 역할별 소스 파일, 압
 - 댓글 자동 싫어요 모드 제공. 기본값은 안함이며, 새로 숨길 때만 또는 숨긴 상태에서 항상으로 변경 가능
 - 댓글 본문, 작성자 handle, 고정 표시 문구를 검사하고 싫어요, handle 차단, UID pair 생성을 각각 고를 수 있는 키워드 자동 처리 지원
 - 로컬 로그 보관과 브라우저 console 로그를 독립적으로 켜고 끌 수 있으며, 로그 수준/보관 수 설정과 로그 파일 다운로드 지원
+- 로그 payload의 진단 상세도를 V0-V5로 설정할 수 있고 기본값은 균형 잡힌 V3
 - `blocked_v2`에 `handle`, `id`, `regex` 규칙 저장
 - 신원 차단 방식을 기본 `handle` 규칙 또는 UID pair `id` 규칙으로 선택하고, regex 규칙은 두 방식 모두에서 적용
 - regex 규칙 저장/매칭 전에 길이, flag, 대상 길이, 휴리스틱 safety 검사를 적용
@@ -64,6 +65,7 @@ quota 안내, 페이지 단위 regex 매칭 목록, 역할별 소스 파일, 압
 - regex 매칭 결과 캐시로 `matching handle 선택` 시 전체 목록 재생성을 피함
 - 펼친 regex 매칭 목록은 페이지 단위로 표시해 큰 목록을 한 번에 렌더링하지 않음
 - 최근 pair 실행 결과를 필터/정렬하고 실패 handle을 복사/내보내기 가능
+- 차단 목록 내보내기 창에서 목록으로 돌아가거나 현재 규칙을 JSON/텍스트 파일로 다운로드 가능
 - API 키 테스트와 pair 생성/갱신이 네트워크 응답을 기다리는 동안 loading bar 표시
 - API 키 테스트에서 quota 실패가 반복되면 구조화된 안내 표시
 - stale 또는 mismatch pair가 있으면 watch 페이지에 검토 배너 표시
@@ -144,6 +146,7 @@ Pair 메타 저장소:
 	keywordFields: { commentText: boolean, handle: boolean, pinned: boolean },
 	keywordActions: { dislike: boolean, blockHandle: boolean, createPair: boolean },
 	logging: { fileEnabled: boolean, consoleEnabled: boolean, level: 'error' | 'warn' | 'info' | 'debug', retention: 100 | 500 | 1000 },
+	verboseLevel: 0 | 1 | 2 | 3 | 4 | 5,
   dislikeMode: 'none' | 'new-hidden' | 'always',
   commentBlockMode: 'hide' | 'placeholder' | 'placeholder-reveal',
   fontSizeLevel: 1 | 2 | 3 | 4 | 5,
@@ -164,6 +167,7 @@ Pair 메타 저장소:
 - pair가 없거나 unverified이면 UID 규칙을 만들 때까지 `handle` 방식으로 전환합니다
 - 키워드는 대소문자를 구분하지 않고 기본으로 댓글 본문을 검사하며, 동작은 직접 켜기 전까지 실행하지 않습니다
 - 로그는 기본으로 꺼져 있습니다. 저장 로그는 Tampermonkey 저장소에 보관되며 텍스트 파일로 내려받을 수 있고, 다운로드 위치는 브라우저 설정을 따릅니다
+- 기본 `verboseLevel`은 `3`입니다. V0/V1은 진단 payload를 생략하고, V2는 일부 필드, V3은 세 필드, V4/V5는 전체 필드를 기록합니다
 - 기본 `fontSizeLevel`과 `uiScaleLevel`은 `3`이며, `2`는 이전 시각 크기와 같습니다
 - 레거시 규칙 키 `blockedHandles`, `blockedHandles_v1`는 계속 자동 마이그레이션됩니다
 - `v1.2.0`에서도 pair 메타데이터를 import/export에 포함하지 않습니다
@@ -211,6 +215,7 @@ Pair 메타 저장소:
 - UID 조회가 실패해도 handle 차단은 계속 동작하며, pair는 `unverified` 또는 `stale` 상태로 남습니다
 - regex 규칙은 handle 텍스트에만 적용되며, 키워드 규칙은 댓글 본문, 작성자 handle, 고정 표시 문구를 검사할 수 있습니다
 - plain-text import/export는 regex literal을 `/pattern/flags` 형태로 왕복합니다
+- 차단 목록 내보내기는 pair 메타데이터나 API 설정을 포함하지 않고, 화면의 JSON 또는 텍스트 표현을 파일로 다운로드할 수 있습니다
 - 댓글 숨김은 의도적으로 watch 페이지와 Shorts 댓글 범위에 한정됩니다
 - pair 검토 배너는 의도적으로 watch 페이지에만 표시됩니다
 - 탐색 시 임시 댓글 observer와 메타데이터 캐시를 초기화해 긴 YouTube 세션에서 오래된

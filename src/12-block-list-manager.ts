@@ -437,13 +437,14 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				verboseSelect.appendChild(option);
 			});
 			verboseLabel.append(verboseText, verboseSelect);
+			const verboseHelp = document.createElement('p');
 			const logActions = document.createElement('div');
 			logActions.className = 'tm-inline-actions';
 			const downloadLogBtn = Object.assign(document.createElement('button'), { className: 'secondary' });
 			const clearLogBtn = Object.assign(document.createElement('button'), { className: 'secondary' });
 			logActions.append(downloadLogBtn, clearLogBtn);
 			const logHelp = document.createElement('p');
-			loggingControls.append(logFileLabel, logConsoleLabel, logLevelLabel, logRetentionLabel, verboseLabel, logActions, logHelp);
+			loggingControls.append(logFileLabel, logConsoleLabel, logLevelLabel, logRetentionLabel, verboseLabel, verboseHelp, logActions, logHelp);
 			loggingGroup.append(loggingTitle, loggingControls);
 
 			const displayGroup = document.createElement('li');
@@ -680,6 +681,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				Array.from(logLevelSelect.options).forEach(option => { option.textContent = t(`loggingLevel${option.value[0].toUpperCase()}${option.value.slice(1)}`); });
 				Array.from(logRetentionSelect.options).forEach(option => { option.textContent = t('loggingRetentionValue', option.value); });
 				Array.from(verboseSelect.options).forEach(option => { option.textContent = t('verboseLevelValue', option.value); });
+				verboseHelp.textContent = t('verboseLevelHelp');
 				downloadLogBtn.textContent = t('loggingDownload');
 				clearLogBtn.textContent = t('loggingClear');
 				logHelp.textContent = t('loggingHelp');
@@ -1766,28 +1768,58 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 		}
 
 		exportList() {
-			const json = JSON.stringify({ version: 2, exportedAt: Date.now(), items: this.app.storage.all() }, null, 2);
+			const payload = this._getExportPayload();
 			const body = document.createElement('div');
 
 			const p = document.createElement('p'); p.textContent = t('exportHint');
 			const h4a = document.createElement('h4'); h4a.textContent = t('json');
-			const ta1 = document.createElement('textarea'); ta1.readOnly = true; ta1.value = json;
+			const ta1 = document.createElement('textarea'); ta1.readOnly = true; ta1.value = payload.json;
 			const h4b = document.createElement('h4'); h4b.textContent = t('text');
 			const ta2 = document.createElement('textarea'); ta2.readOnly = true;
-			ta2.value = this.app.storage.all().map((it: BlockItem) => it.type === 'regex' ? exportRegexLiteral(it) : it.value).join('\n');
+			ta2.value = payload.text;
 			body.append(p, h4a, ta1, h4b, ta2);
 			Dialog.show({
 				title: t('export'),
 				body,
-				buttons: [{ label: t('close'), value: false, primary: true }],
+				buttons: [
+					{ label: t('back'), value: 'back' },
+					{ label: t('exportDownloadJson'), value: 'download-json' },
+					{ label: t('exportDownloadText'), value: 'download-text' },
+					{ label: t('close'), value: false, primary: true }
+				],
 				onRefresh: (ctx) => {
 					ctx.setTitle(t('export'));
 					p.textContent = t('exportHint');
 					h4a.textContent = t('json');
 					h4b.textContent = t('text');
-					ctx.buttons[0].textContent = t('close');
+					ctx.buttons[0].textContent = t('back');
+					ctx.buttons[1].textContent = t('exportDownloadJson');
+					ctx.buttons[2].textContent = t('exportDownloadText');
+					ctx.buttons[3].textContent = t('close');
 				}
+			}).then(value => {
+				if (value === 'back') this.openList();
+				else if (value === 'download-json') this._downloadExport('youtube-comment-blocker-export.json', payload.json, 'application/json');
+				else if (value === 'download-text') this._downloadExport('youtube-comment-blocker-export.txt', payload.text, 'text/plain');
 			});
+		}
+
+		_getExportPayload() {
+			const items = this.app.storage.all();
+			return {
+				json: JSON.stringify({ version: 2, exportedAt: Date.now(), items }, null, 2),
+				text: items.map((it: BlockItem) => it.type === 'regex' ? exportRegexLiteral(it) : it.value).join('\n')
+			};
+		}
+
+		_downloadExport(filename: string, content: string, type: string) {
+			const blob = new Blob([content], { type: `${type};charset=utf-8` });
+			const url = URL.createObjectURL(blob);
+			const link = document.createElement('a');
+			link.href = url;
+			link.download = filename;
+			link.click();
+			setTimeout(() => URL.revokeObjectURL(url), 0);
 		}
 
 		importList() {

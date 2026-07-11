@@ -189,6 +189,37 @@ test('menu enhancer resolves the handle from a comment menu renderer', () => {
 	assert.equal(enhancer.lastHandle, '@alpha');
 });
 
+test('export dialog returns to the list and downloads each format', async () => {
+	const { api, document } = loadUserscript();
+	const manager = new api.BlockListManager({
+		storage: { all: () => [{ type: 'handle', value: '@alpha' }] }
+	});
+	const downloads: Array<[string, string, string]> = [];
+	let openedLists = 0;
+	manager._downloadExport = (filename: string, content: string, type: string) => downloads.push([filename, content, type]);
+	manager.openList = () => { openedLists += 1; };
+
+	manager.exportList();
+	let buttons = document.querySelectorAll('.tm-dialog button');
+	assert.deepEqual(buttons.map((button: any) => button.textContent), ['뒤로가기', 'JSON 파일 다운로드', '텍스트 파일 다운로드', '닫기']);
+	buttons[1].click();
+	await Promise.resolve();
+	assert.equal(downloads[0][0], 'youtube-comment-blocker-export.json');
+	assert.match(downloads[0][1], /"@alpha"/);
+
+	manager.exportList();
+	buttons = document.querySelectorAll('.tm-dialog button');
+	buttons[2].click();
+	await Promise.resolve();
+	assert.deepEqual(downloads[1], ['youtube-comment-blocker-export.txt', '@alpha', 'text/plain']);
+
+	manager.exportList();
+	buttons = document.querySelectorAll('.tm-dialog button');
+	buttons[0].click();
+	await Promise.resolve();
+	assert.equal(openedLists, 1);
+});
+
 test('logging settings persist independently and retain the configured level', () => {
 	const { api, gmStore } = loadUserscript();
 	const settings = new api.AppSettingsStorage();
