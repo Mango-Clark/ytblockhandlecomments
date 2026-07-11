@@ -16,6 +16,7 @@ Keep docs, versioning, Git workflow aligned. Change files only when code or repo
 - Do not bump versions unless the user explicitly instructs a version bump.
 - Bump `VERSION` or package manifest only when explicitly instructed and shipping user-visible change.
 - Use `npm run bump:version -- <MAJOR.MINOR.PATCH>` for mechanical version/docs references.
+- When bumping version, also create matching git tag `vMAJOR.MINOR.PATCH`.
 - Check `docs/TODO.md`. Mark done items. Remove old done items when version bumps.
 - Edit userscript source in `src/`, then run `npm run build`.
 - Keep root `ytblockhandlecomments.js` in sync with `npm run check:build`.
@@ -46,6 +47,7 @@ Keep docs, versioning, Git workflow aligned. Change files only when code or repo
 - Use clear branch names: `feature/<slug>`, `fix/<slug>`, `docs/<slug>`.
 - Release tags must use `vMAJOR.MINOR.PATCH`, e.g. `v0.6.0`.
 - Keep historical and new release tag naming consistent; do not mix `0.6.0` and `v0.6.0`.
+- `docs/TODO.md` only changes are exempt from git push requirement.
 - Validate with `git status` and `git diff --stat`.
 
 ## Changelog
