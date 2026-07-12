@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Prevented YouTube theme observers from reacting to userscript theme-class changes and repeatedly refreshing the page.
 - None
 
 ### Security

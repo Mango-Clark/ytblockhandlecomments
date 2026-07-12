@@ -22,11 +22,16 @@ class FakeMutationObserver {
 	}
 
 	observe(target: any, options: any) {
+		this.disconnected = false;
 		this.observeCalls.push({ target, options });
 	}
 
 	disconnect() {
 		this.disconnected = true;
+	}
+
+	trigger(records: any[] = []) {
+		if (!this.disconnected) this.callback(records);
 	}
 }
 

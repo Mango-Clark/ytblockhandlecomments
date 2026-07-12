@@ -168,6 +168,7 @@ API 설정:
 - `app_settings_v1.themeMode` 기본값은 `system`입니다. 기기설정과 yt설정은 각각 현재 다크 설정을 따르고,
   반대 모드는 그 결과를 반대로 적용합니다. 커스텀 색상은 저장 전에 여섯 자리 hex 값인지 검증합니다
 - 테마 스타일은 userscript의 dialog, 패널, 목록, 알림에만 적용하며 YouTube UI에는 적용하지 않습니다
+- YouTube 테마 동기화는 userscript 테마 클래스가 아닌 YouTube 자체 다크 상태 신호만 관찰합니다
 - 로그는 기본으로 꺼져 있습니다. 파일 로그는 사용자가 다운로드하거나 지울 때까지 Tampermonkey 저장소에
   보관되며, 다운로드 파일 위치는 브라우저 설정을 따릅니다
 - `app_settings_v1.verboseLevel`의 기본값은 `3`입니다. V0/V1은 진단 payload를 생략하고,

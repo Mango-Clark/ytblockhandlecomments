@@ -51,6 +51,7 @@ Source layout:
 - Supports resetting app display and matching settings after a confirmation prompt
 - Supports five-level text and UI scale settings; level 2 matches the previous size and level 3 is the default
 - Supports light, dark, system, inverted system, YouTube, inverted YouTube, and custom themes for userscript UI only
+- Keeps YouTube-theme synchronization limited to native YouTube dark-state signals
 - Adds in-dialog navigation buttons between settings and the block list
 - Can auto-save handles first hidden by regex so later checks use handle matching
 - Supports block-list search, type filters, tag filters, row selection, and bulk actions

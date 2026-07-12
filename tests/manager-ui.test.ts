@@ -340,6 +340,33 @@ test('theme settings persist validated colors and resolve YouTube dark mode', ()
 	assert.ok(document.documentElement.classList.contains('tm-theme-light'));
 });
 
+test('YouTube theme observers ignore userscript classes and stay stable', () => {
+	const { api, document } = loadUserscript();
+	const app = document.createElement('ytd-app');
+	app.setAttribute('dark', '');
+	document.body.appendChild(app);
+	const settings = new api.AppSettingsStorage();
+	settings.setThemeMode('youtube');
+	let applyCalls = 0;
+	const apply = settings._applyThemeSettings.bind(settings);
+	settings._applyThemeSettings = () => {
+		applyCalls += 1;
+		apply();
+	};
+
+	assert.deepEqual(Array.from(settings._youtubeRootThemeObserver.observeCalls[0].options.attributeFilter), ['dark']);
+	settings._youtubeRootThemeObserver.trigger([{ target: document.documentElement, attributeName: 'class' }]);
+	assert.equal(applyCalls, 0);
+	settings._youtubeAppThemeObserver.trigger([{ target: app, attributeName: 'dark' }]);
+	assert.equal(applyCalls, 1);
+	assert.ok(document.documentElement.classList.contains('tm-theme-dark'));
+
+	settings.setThemeMode('youtube-inverted');
+	assert.ok(document.documentElement.classList.contains('tm-theme-light'));
+	settings._youtubeAppThemeObserver.trigger([{ target: app, attributeName: 'class' }]);
+	assert.equal(applyCalls, 3);
+});
+
 test('settings dialog exposes all theme modes and custom editor', () => {
 	const { api, document } = loadUserscript();
 	const settings = new api.AppSettingsStorage();

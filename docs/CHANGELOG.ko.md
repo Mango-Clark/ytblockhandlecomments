@@ -28,6 +28,7 @@
 
 ### Fixed
 
+- YouTube 테마 관찰자가 userscript 테마 클래스 변경에 다시 반응해 페이지를 반복 갱신하던 문제를 수정했습니다.
 - 없음
 
 ### Security

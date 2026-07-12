@@ -125,14 +125,37 @@
 			const root = document.documentElement;
 			const mode = this.getThemeMode();
 			const isCustom = mode === 'custom';
-			root.classList?.remove?.('tm-theme-light', 'tm-theme-dark', 'tm-theme-custom');
-			root.classList?.add?.(isCustom ? 'tm-theme-custom' : this._resolveThemeDark(mode) ? 'tm-theme-dark' : 'tm-theme-light');
-			root.dataset.tmThemeMode = mode;
+			const themeClass = isCustom ? 'tm-theme-custom' : this._resolveThemeDark(mode) ? 'tm-theme-dark' : 'tm-theme-light';
+			for (const name of ['tm-theme-light', 'tm-theme-dark', 'tm-theme-custom']) {
+				if (name !== themeClass && root.classList?.contains?.(name)) root.classList.remove(name);
+			}
+			if (!root.classList?.contains?.(themeClass)) root.classList?.add?.(themeClass);
+			if (root.dataset.tmThemeMode !== mode) root.dataset.tmThemeMode = mode;
 			for (const [key, value] of Object.entries(this.getThemeCustom())) {
 				const variable = `--tm-theme-${key}`;
-				if (isCustom) root.style?.setProperty?.(variable, String(value));
-				else root.style?.removeProperty?.(variable);
+				if (isCustom) {
+					if (root.style?.getPropertyValue?.(variable) !== String(value)) root.style?.setProperty?.(variable, String(value));
+				} else if (root.style?.getPropertyValue?.(variable)) {
+					root.style?.removeProperty?.(variable);
+				}
 			}
+		}
+		_onYouTubeThemeMutation(records: MutationRecord[] = []) {
+			if (!this.getThemeMode().startsWith('youtube')) return;
+			const root = typeof document === 'object' ? document.documentElement : null;
+			const app = this._youtubeThemeTarget;
+			const hasYouTubeThemeChange = records.some(record =>
+				(record.target === root && record.attributeName === 'dark') ||
+				(record.target === app && ['dark', 'class'].includes(record.attributeName || ''))
+			);
+			if (hasYouTubeThemeChange) this._applyThemeSettings();
+		}
+		_watchYouTubeThemeTarget() {
+			const app = typeof document === 'object' ? document.querySelector?.('ytd-app') : null;
+			if (app === this._youtubeThemeTarget) return;
+			this._youtubeThemeTarget = app;
+			this._youtubeAppThemeObserver?.disconnect?.();
+			if (app) this._youtubeAppThemeObserver?.observe?.(app, { attributes: true, attributeFilter: ['class', 'dark'] });
 		}
 		_bindThemeUpdates() {
 			try {
@@ -140,10 +163,12 @@
 				this._themeMediaQuery?.addEventListener?.('change', () => this._applyThemeSettings());
 			} catch { }
 			try {
-				this._themeObserver = new MutationObserver(() => {
-					if (this.getThemeMode().startsWith('youtube')) this._applyThemeSettings();
-				});
-				this._themeObserver.observe(document.documentElement, { attributes: true, subtree: true, attributeFilter: ['class', 'dark'] });
+				this._youtubeRootThemeObserver = new MutationObserver(records => this._onYouTubeThemeMutation(records));
+				this._youtubeAppThemeObserver = new MutationObserver(records => this._onYouTubeThemeMutation(records));
+				this._youtubeAppDiscoveryObserver = new MutationObserver(() => this._watchYouTubeThemeTarget());
+				this._youtubeRootThemeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['dark'] });
+				this._youtubeAppDiscoveryObserver.observe(document.body, { childList: true, subtree: true });
+				this._watchYouTubeThemeTarget();
 			} catch { }
 		}
 		_init() {

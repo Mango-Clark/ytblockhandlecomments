@@ -171,6 +171,7 @@ Notes:
   dark setting, while the inverted modes use its opposite. Custom colors are six-digit hex values and are
   validated before saving
 - Theme styles apply only to the userscript's dialogs, panels, lists, and notices; they never style YouTube UI
+- YouTube-theme synchronization watches only native YouTube dark-state signals, not userscript theme classes
 - Logging is off by default. File logging retains entries in Tampermonkey storage until users download
   or clear them; the browser controls the downloaded file location
 - `app_settings_v1.verboseLevel` defaults to `3`. V0/V1 omit diagnostic payloads, V2 records one
