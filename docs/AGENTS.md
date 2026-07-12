@@ -34,8 +34,8 @@
 - Keep exactly these sections in this order: `P0 — Critical`, `P1 — High`, `P2 — Normal`, `P3 — Low`, `Blocked`, `Backlog`, and `Done`.
 - Use `- [ ]` for open work and `- [x]` only for completed work in `Done`.
 - One concise, actionable task per top-level item; nested bullets only for acceptance details.
-- Prefix top-level items with per-section IDs in order: `A`, `B`, ..., then `AA`, `AB`, `AC`, `BA`, ...; restart IDs in each priority/status section, so different sections may reuse the same ID.
-- Prefix nested acceptance details with numeric IDs in order: `1`, `2`, `3`, ...; restart numbering under each top-level item.
+- Prefix top-level items with per-section IDs in order: `(A)`, `(B)`, ..., then `(AA)`, `(AB)`, `(AC)`, ... , `(BA)`, ...; restart IDs in each priority/status section, so different sections may reuse the same ID.
+- Prefix nested acceptance details with numeric IDs in order: `(1)`, `(2)`, `(3)`, ...; restart numbering under each top-level item.
 - Do not add assignees or deadlines.
 - Preserve existing meaning; merge duplicates/same-outcome items only.
 - Classify `P0` as execution blockers, data loss, security issues, or critical bugs.
