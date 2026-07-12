@@ -8,6 +8,16 @@ const version = process.argv.find(arg => /^\d+\.\d+\.\d+$/.test(arg));
 const check = process.argv.includes('--check');
 const today = new Date().toISOString().slice(0, 10);
 
+export type ReleaseOptions = {
+	fastForwardMaster: boolean;
+	pushMaster: boolean;
+};
+
+export const parseReleaseOptions = (args: string[] = process.argv): ReleaseOptions => ({
+	fastForwardMaster: args.includes('--ff-master'),
+	pushMaster: args.includes('--push-master')
+});
+
 type Replacement = [RegExp, string, string];
 type VersionFile = {
 	path: string;
@@ -17,6 +27,7 @@ type VersionFile = {
 
 const CHANGELOG_SECTIONS = ['Added', 'Changed', 'Deprecated', 'Removed', 'Fixed', 'Security'];
 const versionTag = version ? `v${version}` : '';
+const releaseOptions = parseReleaseOptions();
 const versionFiles = [
 	'src/00-userscript-header.ts',
 	'src/02-utils-i18n.ts',
@@ -131,16 +142,69 @@ const files: VersionFile[] = [
 	}
 ];
 
+const runGit = (args: string[], stdio: 'inherit' | 'ignore' = 'inherit') => execFileSync('git', args, {
+	cwd: root,
+	stdio,
+	encoding: 'utf8'
+});
+
+export const getMasterFastForwardInstructions = () => [
+		'Cannot fast-forward master because it is not an ancestor of dev.',
+		'Resolve it manually, then run the release again:',
+		'  git switch master',
+		'  git merge --ff-only dev',
+		'  git push origin master',
+		'  git switch dev'
+	].join('\n');
+
+const printMasterFastForwardInstructions = () => console.error(getMasterFastForwardInstructions());
+
+const ensureReleaseBranch = () => {
+	const branch = runGit(['branch', '--show-current'], 'ignore').trim();
+	if (branch !== 'dev') runGit(['switch', 'dev']);
+};
+
+const ensureMasterCanFastForward = () => {
+	if (!releaseOptions.fastForwardMaster) return;
+	try {
+		runGit(['merge-base', '--is-ancestor', 'master', 'dev'], 'ignore');
+	} catch {
+		printMasterFastForwardInstructions();
+		throw new Error('Aborted before release because master cannot fast-forward to dev.');
+	}
+};
+
+const fastForwardMaster = () => {
+	if (!releaseOptions.fastForwardMaster) return;
+	runGit(['switch', 'master']);
+	try {
+		try {
+			runGit(['merge', '--ff-only', 'dev']);
+		} catch {
+			printMasterFastForwardInstructions();
+			throw new Error('Aborted because master cannot fast-forward to dev.');
+		}
+		if (releaseOptions.pushMaster) runGit(['push', 'origin', 'master']);
+	} finally {
+		runGit(['switch', 'dev']);
+	}
+};
+
 const main = () => {
 	if (!version) {
-		console.error('Usage: npm run bump:version -- <MAJOR.MINOR.PATCH> [--check]');
+		console.error('Usage: npm run bump:version -- <MAJOR.MINOR.PATCH> [--check] [--ff-master] [--push-master]');
 		process.exit(1);
+	}
+	if (releaseOptions.pushMaster && !releaseOptions.fastForwardMaster) {
+		throw new Error('--push-master requires --ff-master.');
 	}
 
 	if (!check) {
-		const status = execFileSync('git', ['status', '--porcelain'], { cwd: root, encoding: 'utf8' }).trim();
+		const status = runGit(['status', '--porcelain'], 'ignore').trim();
 		if (status) throw new Error('Working tree must be clean before bumping version.');
-		const existingTag = execFileSync('git', ['tag', '--list', versionTag], { cwd: root, encoding: 'utf8' }).trim();
+		ensureReleaseBranch();
+		ensureMasterCanFastForward();
+		const existingTag = runGit(['tag', '--list', versionTag], 'ignore').trim();
 		if (existingTag) throw new Error(`Tag already exists: ${versionTag}`);
 	}
 
@@ -172,13 +236,12 @@ const main = () => {
 			cwd: root,
 			stdio: 'inherit'
 		});
-		execFileSync('git', ['add', ...versionFiles], { cwd: root, stdio: 'inherit' });
-		execFileSync('git', ['commit', '-m', `chore: bump version to ${version}`], {
-			cwd: root,
-			stdio: 'inherit'
-		});
-		execFileSync('git', ['tag', versionTag], { cwd: root, stdio: 'inherit' });
-		console.log(`Bumped ${version}, committed, and tagged ${versionTag}.`);
+		runGit(['add', ...versionFiles]);
+		runGit(['commit', '-m', `chore: bump version to ${version}`]);
+		runGit(['tag', versionTag]);
+		runGit(['push', 'origin', 'dev']);
+		fastForwardMaster();
+		console.log(`Bumped ${version}, committed, tagged ${versionTag}, and pushed origin/dev.`);
 	}
 };
 

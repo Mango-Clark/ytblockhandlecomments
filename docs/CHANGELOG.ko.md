@@ -11,6 +11,7 @@
 
 ### Added
 
+- 필수 `origin/dev` push 뒤 `master`를 fast-forward하고 선택적으로 push하는 릴리스 스크립트 옵션을 추가했습니다.
 - 없음
 
 ### Changed

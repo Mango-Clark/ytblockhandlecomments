@@ -14,3 +14,4 @@
 
 ## Done
 
+- [x] (A) `scripts/bump-version.ts`에 릴리스 브랜치 및 원격 반영 옵션 추가

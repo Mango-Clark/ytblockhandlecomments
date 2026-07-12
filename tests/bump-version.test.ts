@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { releaseChangelog } from '../scripts/bump-version.ts';
+import { getMasterFastForwardInstructions, parseReleaseOptions, releaseChangelog } from '../scripts/bump-version.ts';
 
 const makeChangelog = (emptyEntry: string) => `# Changelog
 
@@ -56,4 +56,17 @@ test('releaseChangelog resets Korean Unreleased sections with Korean empty text'
 	assert.doesNotMatch(unreleased, /- None/);
 	assert.doesNotMatch(unreleased, /- 없음\n- 없음/);
 	assert.match(result, /## \[0.2.0\] - 2026-06-24\n\n### Added\n\n- Added feature\n\n### Changed/);
+});
+
+test('release options keep master promotion opt-in', () => {
+	assert.deepEqual(parseReleaseOptions(['node', 'script', '1.3.1']), {
+		fastForwardMaster: false,
+		pushMaster: false
+	});
+	assert.deepEqual(parseReleaseOptions(['node', 'script', '1.3.1', '--ff-master', '--push-master']), {
+		fastForwardMaster: true,
+		pushMaster: true
+	});
+	assert.match(getMasterFastForwardInstructions(), /git merge --ff-only dev/);
+	assert.doesNotMatch(getMasterFastForwardInstructions(), /rebase/);
 });
