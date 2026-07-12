@@ -11,7 +11,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Added release-script options to fast-forward and optionally push `master` after the required `origin/dev` push.
 - None
 
 ### Changed
@@ -28,12 +27,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Prevented YouTube theme observers from reacting to userscript theme-class changes and repeatedly refreshing the page.
 - None
 
 ### Security
 
 - None
+
+## [1.4.0] - 2026-07-12
+
+### Added
+
+- Added release-script options to fast-forward and optionally push `master` after the required `origin/dev` push.
+
+### Changed
+
+- None
+
+### Deprecated
+
+- None
+
+### Removed
+
+- None
+
+### Fixed
+
+- Prevented YouTube theme observers from reacting to userscript theme-class changes and repeatedly refreshing the page.
+
+### Security
+
+- None
+
 
 ## [1.3.0] - 2026-07-11
 

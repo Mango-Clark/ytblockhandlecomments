@@ -11,7 +11,6 @@
 
 ### Added
 
-- 필수 `origin/dev` push 뒤 `master`를 fast-forward하고 선택적으로 push하는 릴리스 스크립트 옵션을 추가했습니다.
 - 없음
 
 ### Changed
@@ -28,12 +27,38 @@
 
 ### Fixed
 
-- YouTube 테마 관찰자가 userscript 테마 클래스 변경에 다시 반응해 페이지를 반복 갱신하던 문제를 수정했습니다.
 - 없음
 
 ### Security
 
 - 없음
+
+## [1.4.0] - 2026-07-12
+
+### Added
+
+- 필수 `origin/dev` push 뒤 `master`를 fast-forward하고 선택적으로 push하는 릴리스 스크립트 옵션을 추가했습니다.
+
+### Changed
+
+- 없음
+
+### Deprecated
+
+- 없음
+
+### Removed
+
+- 없음
+
+### Fixed
+
+- YouTube 테마 관찰자가 userscript 테마 클래스 변경에 다시 반응해 페이지를 반복 갱신하던 문제를 수정했습니다.
+
+### Security
+
+- 없음
+
 
 ## [1.3.0] - 2026-07-11
 
