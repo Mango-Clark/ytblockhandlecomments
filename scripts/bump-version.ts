@@ -142,7 +142,7 @@ const files: VersionFile[] = [
 	}
 ];
 
-const runGit = (args: string[], stdio: 'inherit' | 'ignore' = 'inherit') => execFileSync('git', args, {
+const runGit = (args: string[], stdio: 'inherit' | 'pipe' = 'inherit') => execFileSync('git', args, {
 	cwd: root,
 	stdio,
 	encoding: 'utf8'
@@ -160,14 +160,14 @@ export const getMasterFastForwardInstructions = () => [
 const printMasterFastForwardInstructions = () => console.error(getMasterFastForwardInstructions());
 
 const ensureReleaseBranch = () => {
-	const branch = runGit(['branch', '--show-current'], 'ignore').trim();
+		const branch = runGit(['branch', '--show-current'], 'pipe').trim();
 	if (branch !== 'dev') runGit(['switch', 'dev']);
 };
 
 const ensureMasterCanFastForward = () => {
 	if (!releaseOptions.fastForwardMaster) return;
 	try {
-		runGit(['merge-base', '--is-ancestor', 'master', 'dev'], 'ignore');
+		runGit(['merge-base', '--is-ancestor', 'master', 'dev'], 'pipe');
 	} catch {
 		printMasterFastForwardInstructions();
 		throw new Error('Aborted before release because master cannot fast-forward to dev.');
@@ -200,11 +200,11 @@ const main = () => {
 	}
 
 	if (!check) {
-		const status = runGit(['status', '--porcelain'], 'ignore').trim();
+		const status = runGit(['status', '--porcelain'], 'pipe').trim();
 		if (status) throw new Error('Working tree must be clean before bumping version.');
 		ensureReleaseBranch();
 		ensureMasterCanFastForward();
-		const existingTag = runGit(['tag', '--list', versionTag], 'ignore').trim();
+		const existingTag = runGit(['tag', '--list', versionTag], 'pipe').trim();
 		if (existingTag) throw new Error(`Tag already exists: ${versionTag}`);
 	}
 
