@@ -58,6 +58,11 @@ Substantial child rule/shared workflow change: update relevant parent with conci
 
 - Mark `- [x]` when done.
 - Remove old done items after version bump.
+- Before implementing a TODO item, read its full acceptance details and inspect related code, docs, settings, and existing UI patterns.
+- Keep each implementation consistent with neighboring workflows: reuse existing components, terminology, navigation, spacing, controls, defaults, and state handling.
+- For UI/UX changes, update every affected entry point and related screen together; preserve responsive behavior, accessibility, loading, empty, error, and disabled states.
+- Do not create parallel controls or alternate interaction patterns when an existing project pattern covers the same action.
+- Verify the complete user flow across adjacent screens before marking the TODO item done; record only verified work in `Done`.
 
 ## Reliability
 
