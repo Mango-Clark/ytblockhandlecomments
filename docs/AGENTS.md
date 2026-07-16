@@ -1,5 +1,7 @@
 # Docs Rules
 
+- Implementation-rule changes update root and affected child `AGENTS.md` together.
+
 ## Common
 
 - English first; Korean pair immediately after.

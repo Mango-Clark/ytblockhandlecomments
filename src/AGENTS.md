@@ -1,5 +1,7 @@
 # Source Rules
 
+- Implementation-rule changes update root and this child `AGENTS.md` together; source detail stays here.
+
 - Keep modules focused; preserve numeric load order.
 - Preserve userscript compatibility and storage/API contracts.
 - User-facing text: keep English/Korean translations aligned.

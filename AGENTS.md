@@ -10,6 +10,8 @@ Substantial child rule/shared workflow change: update relevant parent with conci
 
 ## Quick Rules
 
+- Any implementation-rule change must update this file and every affected child `AGENTS.md` in the same patch.
+
 - Work on `dev` unless user says otherwise.
 - Update `README.md` first, then `README.ko.md`.
 - Update `docs/WIKI.md` first, then `docs/WIKI.ko.md` when behavior/storage changes.
@@ -55,6 +57,8 @@ Substantial child rule/shared workflow change: update relevant parent with conci
 - Use `YYYY-MM-DD`.
 
 ## TODO
+
+- When implementation rules change, update relevant child `AGENTS.md` files and keep details consistent.
 
 - Mark `- [x]` when done.
 - Remove old done items after version bump.
