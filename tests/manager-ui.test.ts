@@ -588,6 +588,50 @@ test('settings dialog uses grouped task list layout', () => {
 	assert.equal(document.querySelectorAll('.tm-setting-controls').length, 7);
 });
 
+test('settings options mark their default values', () => {
+	const { api, document } = loadUserscript();
+	const settings = new api.AppSettingsStorage();
+	const storage = new api.StorageV2(settings);
+	const pairStore = new api.PairMetaStorage(settings);
+	const apiConfig = new api.ApiConfigStorage();
+	const manager = new api.BlockListManager({
+		settings,
+		storage,
+		pairStore,
+		apiConfig,
+		pairService: new api.PairService(storage, pairStore, apiConfig, settings),
+		getLastPairRunResult: () => null,
+		refreshAfterStorageChange: () => {}
+	});
+
+	manager.openSettings();
+	const defaults = [
+		['block-match-mode', 'handle'],
+		['dislike-mode', 'none'],
+		['comment-block-mode', 'hide'],
+		['verbose-level', '3'],
+		['font-size-level', '3'],
+		['ui-scale-level', '3'],
+		['theme-mode', 'system']
+	];
+	for (const [setting, value] of defaults) {
+		const select = document.querySelectorAll('select').find((item: any) => item.dataset.setting === setting);
+		const option = select.options.find((item: any) => item.value === value);
+		assert.ok(option.className.includes('tm-default-option'), `${setting} default option is not marked`);
+		assert.match(option.textContent, /\(기본\)$/);
+	}
+	const loggingDefaults = [
+		['warn', '경고 및 오류'],
+		['500', '500개']
+	];
+	const selects = document.querySelectorAll('select').filter((item: any) => !item.dataset.setting);
+	for (const [value, label] of loggingDefaults) {
+		const option = selects.flatMap((select: any) => select.options).find((item: any) => item.value === value);
+		assert.ok(option.className.includes('tm-default-option'));
+		assert.equal(option.textContent, `${label} (기본)`);
+	}
+});
+
 test('api busy state shows a loading bar', () => {
 	const { api, document } = loadUserscript({
 		gmStore: {

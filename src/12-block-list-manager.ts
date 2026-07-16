@@ -488,6 +488,12 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			});
 		}
 		openSettings() {
+			const markDefaultOption = (select: HTMLSelectElement, value: string | number) => {
+				const option = Array.from(select.options).find(item => item.value === String(value));
+				option?.classList.add('tm-default-option');
+			};
+			const defaultOptionText = (option: HTMLOptionElement, label: string) =>
+				option.classList.contains('tm-default-option') ? `${label} ${t('defaultOption')}` : label;
 			const body = document.createElement('div');
 			const settingsSection = document.createElement('section');
 			settingsSection.className = 'tm-section tm-settings-panel';
@@ -674,6 +680,16 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			themeControls.append(themeModeLabel, themeHelp, customizeThemeBtn);
 			themeGroup.append(themeTitle, themeControls);
 
+			markDefaultOption(matchModeSelect, 'handle');
+			markDefaultOption(dislikeSelect, 'none');
+			markDefaultOption(blockModeSelect, 'hide');
+			markDefaultOption(logLevelSelect, 'warn');
+			markDefaultOption(logRetentionSelect, 500);
+			markDefaultOption(verboseSelect, 3);
+			markDefaultOption(fontSizeSelect, 3);
+			markDefaultOption(uiScaleSelect, 3);
+			markDefaultOption(themeModeSelect, 'system');
+
 			const maintenanceGroup = document.createElement('li');
 			maintenanceGroup.className = 'tm-setting-group';
 			const maintenanceTitle = document.createElement('h4');
@@ -850,8 +866,8 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				settingsIntro.textContent = t('settingsIntro');
 				matchingTitle.textContent = t('settingsMatchingTitle');
 				matchModeText.textContent = t('blockMatchModeLabel') + ': ';
-				matchModeSelect.options[0].textContent = t('blockMatchModeHandle');
-				matchModeSelect.options[1].textContent = t('blockMatchModePair');
+				matchModeSelect.options[0].textContent = defaultOptionText(matchModeSelect.options[0], t('blockMatchModeHandle'));
+				matchModeSelect.options[1].textContent = defaultOptionText(matchModeSelect.options[1], t('blockMatchModePair'));
 				matchModeHelp.textContent = t('blockMatchModeHelp');
 				commentTitle.textContent = t('settingsCommentTitle');
 				keywordTitle.textContent = t('keywordAutomationTitle');
@@ -864,9 +880,9 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				logLevelText.textContent = t('loggingLevelLabel') + ': ';
 				logRetentionText.textContent = t('loggingRetentionLabel') + ': ';
 				verboseText.textContent = t('verboseLevelLabel') + ': ';
-				Array.from(logLevelSelect.options).forEach(option => { option.textContent = t(`loggingLevel${option.value[0].toUpperCase()}${option.value.slice(1)}`); });
-				Array.from(logRetentionSelect.options).forEach(option => { option.textContent = t('loggingRetentionValue', option.value); });
-				Array.from(verboseSelect.options).forEach(option => { option.textContent = t('verboseLevelValue', option.value); });
+				Array.from(logLevelSelect.options).forEach(option => { option.textContent = defaultOptionText(option, t(`loggingLevel${option.value[0].toUpperCase()}${option.value.slice(1)}`)); });
+				Array.from(logRetentionSelect.options).forEach(option => { option.textContent = defaultOptionText(option, t('loggingRetentionValue', option.value)); });
+				Array.from(verboseSelect.options).forEach(option => { option.textContent = defaultOptionText(option, t('verboseLevelValue', option.value)); });
 				verboseHelp.textContent = t('verboseLevelHelp');
 				downloadLogBtn.textContent = t('loggingDownload');
 				clearLogBtn.textContent = t('loggingClear');
@@ -879,28 +895,28 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				autoText.textContent = t('autoAddRegexLabel');
 				autoHelp.textContent = t('autoAddRegexHelp');
 				dislikeText.textContent = t('dislikeModeLabel') + ': ';
-				dislikeSelect.options[0].textContent = t('dislikeModeNone');
-				dislikeSelect.options[1].textContent = t('dislikeModeNewHidden');
-				dislikeSelect.options[2].textContent = t('dislikeModeAlways');
+				dislikeSelect.options[0].textContent = defaultOptionText(dislikeSelect.options[0], t('dislikeModeNone'));
+				dislikeSelect.options[1].textContent = defaultOptionText(dislikeSelect.options[1], t('dislikeModeNewHidden'));
+				dislikeSelect.options[2].textContent = defaultOptionText(dislikeSelect.options[2], t('dislikeModeAlways'));
 				dislikeHelp.textContent = t('dislikeModeHelp');
 				blockModeText.textContent = t('commentBlockModeLabel') + ': ';
-				blockModeSelect.options[0].textContent = t('commentBlockModeHide');
-				blockModeSelect.options[1].textContent = t('commentBlockModePlaceholder');
-				blockModeSelect.options[2].textContent = t('commentBlockModeReveal');
+				blockModeSelect.options[0].textContent = defaultOptionText(blockModeSelect.options[0], t('commentBlockModeHide'));
+				blockModeSelect.options[1].textContent = defaultOptionText(blockModeSelect.options[1], t('commentBlockModePlaceholder'));
+				blockModeSelect.options[2].textContent = defaultOptionText(blockModeSelect.options[2], t('commentBlockModeReveal'));
 				blockModeHelp.textContent = t('commentBlockModeHelp');
 				fontSizeText.textContent = t('fontSizeLevelLabel') + ': ';
 				uiScaleText.textContent = t('uiScaleLevelLabel') + ': ';
 				Array.from(fontSizeSelect.options).forEach((option, index) => {
-					option.textContent = t('levelLabel', index + 1);
+					option.textContent = defaultOptionText(option, t('levelLabel', index + 1));
 				});
 				Array.from(uiScaleSelect.options).forEach((option, index) => {
-					option.textContent = t('levelLabel', index + 1);
+					option.textContent = defaultOptionText(option, t('levelLabel', index + 1));
 				});
 				displayHelp.textContent = t('displayLevelHelp');
 				themeTitle.textContent = t('settingsThemeTitle');
 				themeModeText.textContent = t('themeModeLabel') + ': ';
 				['Light', 'Dark', 'System', 'SystemInverted', 'YouTube', 'YouTubeInverted', 'Custom'].forEach((name, index) => {
-					themeModeSelect.options[index].textContent = t(`themeMode${name}`);
+					themeModeSelect.options[index].textContent = defaultOptionText(themeModeSelect.options[index], t(`themeMode${name}`));
 				});
 				themeHelp.textContent = t('themeModeHelp');
 				customizeThemeBtn.textContent = t('customizeTheme');

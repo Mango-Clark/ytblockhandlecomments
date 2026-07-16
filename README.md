@@ -48,6 +48,7 @@ Source layout:
 - Supports a separate settings dialog with API, UID, regex auto-add, display sizing, and debug counters
 - Uses a category-list settings layout with task-grouped controls, descriptions, and automatic saves
 - Groups settings controls by matching, comment display, keyword automation, logging, display size, and maintenance
+- Marks default saved-setting choices with a muted `(Default)` label
 - Supports resetting app display and matching settings after a confirmation prompt
 - Supports five-level text and UI scale settings; level 2 matches the previous size and level 3 is the default
 - Supports light, dark, system, inverted system, YouTube, inverted YouTube, and custom themes for userscript UI only

@@ -32,6 +32,7 @@ import type { I18nBundle } from '../02-utils-i18n.ts';
 			resetSettings: '설정 초기화',
 			confirmResetSettings: '표시 크기, 댓글 표시, 자동 싫어요, regex 자동 추가, handle 대소문자 설정을 초기화할까요?',
 			settingsReset: '설정을 초기화했습니다',
+			defaultOption: '(기본)',
 			themeModeLabel: '테마 모드',
 			themeModeLight: '라이트',
 			themeModeDark: '다크',
