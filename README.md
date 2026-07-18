@@ -195,6 +195,7 @@ Notes:
 - If a pair is missing or unverified, switch back to `handle` mode until a UID rule is created
 - Keyword matching is case-insensitive; it checks comment text by default and runs no actions until enabled
 - Logging is off by default. Saved log entries stay in Tampermonkey storage and can be downloaded as a text file; browser download location is browser-controlled
+- If Tampermonkey rejects a settings, rule, pair, API-key, or log write, the previous saved value remains active and the UI asks you to retry
 - Default `verboseLevel` is `3`; V0/V1 omit diagnostic payloads, V2 limits payload fields, V3 keeps three fields, and V4/V5 keep all fields
 - Default `fontSizeLevel` and `uiScaleLevel` are `3`; level `2` matches the previous visual size
 - Pair metadata and API config are excluded from import/export

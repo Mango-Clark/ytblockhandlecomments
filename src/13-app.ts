@@ -94,34 +94,38 @@ import { Logger } from './15-logger.ts';
 		removeHandleRule(handle: any) {
 			const item = this.findHandleRule(handle);
 			if (!item) return false;
-			this.removeEntry(item);
-			return true;
+			return this.removeEntry(item);
 		}
 
 		removeEntry(item: BlockItem) {
+			if (!this.storage.remove(item)) return false;
 			if (item.type === 'handle') this.pairService.removeHandleArtifacts(item.value);
-			this.storage.remove(item);
 			this.refreshAfterStorageChange();
+			return true;
 		}
 
 		removeEntries(items: BlockItem[]) {
 			const selectedItems = (items || []).filter(Boolean);
-			if (!selectedItems.length) return;
+			if (!selectedItems.length) return false;
 			const removeKeys = new Set(selectedItems.map(getItemKey).filter(Boolean));
 			const handles = selectedItems.filter(item => item.type === 'handle').map(item => item.value);
 			const artifactIds = this.pairService.collectHandleArtifactIds(handles);
-			this.pairService.removeHandlePairs(handles);
-			this.storage.setAll(this.storage.all().filter((item: BlockItem) => {
+			const nextItems = this.storage.all().filter((item: BlockItem) => {
 				if (removeKeys.has(getItemKey(item))) return false;
 				return item.type !== 'id' || !artifactIds.has(item.value);
-			}));
+			});
+			this.storage.setAll(nextItems);
+			if (this.storage.getLastSaveError()) return false;
+			this.pairService.removeHandlePairs(handles);
 			this.refreshAfterStorageChange();
+			return true;
 		}
 
 		clearAllEntries() {
-			this.storage.clear();
+			if (!this.storage.clear()) return false;
 			this.pairService.clearPairArtifacts();
 			this.refreshAfterStorageChange();
+			return true;
 		}
 
 		refreshAfterStorageChange() {
@@ -235,12 +239,10 @@ import { Logger } from './15-logger.ts';
 				}).then(ok => {
 					if (!ok) return;
 					if (isBlocked) {
-						this.removeHandleRule(handle);
-						Toast.show(t('removed', handle));
+						Toast.show(this.removeHandleRule(handle) ? t('removed', handle) : t('storageSaveFailed'));
 					}
 					else {
-						this.addHandleRule(handle);
-						Toast.show(t('added', handle));
+						Toast.show(this.addHandleRule(handle) ? t('added', handle) : t('storageSaveFailed'));
 					}
 				});
 			}, { capture: true });
@@ -581,11 +583,10 @@ import { Logger } from './15-logger.ts';
 							ctx.buttons[0].textContent = t('close') || 'Close';
 							ctx.buttons[1].textContent = t('clear') || 'Reset';
 						}
-					}).then(ok => {
-						if (!ok) return;
-						this.clearAllEntries();
-						Toast.show(t('clear') || 'Reset');
-					});
+				}).then(ok => {
+					if (!ok) return;
+					Toast.show(this.clearAllEntries() ? (t('clear') || 'Reset') : t('storageSaveFailed'));
+				});
 				});
 				const langId = GM_registerMenuCommand('🌐 Language: ' + getLang().toUpperCase(), () => {
 					const next = getLang() === 'ko' ? 'en' : 'ko';

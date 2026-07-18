@@ -10,9 +10,14 @@ export class Logger {
 	constructor(settings: SettingsLike) {
 		this.settings = settings;
 		this.KEY = 'yt_comment_blocker_logs_v1';
+		this._lastSaveError = null;
 	}
 	_getGM(key: string, fallback: any) { try { return GM_getValue(key, fallback); } catch { return fallback; } }
-	_setGM(key: string, value: any) { try { GM_setValue(key, value); } catch { } }
+	_setGM(key: string, value: any) {
+		try { GM_setValue(key, value); this._lastSaveError = null; return true; }
+		catch (error) { this._lastSaveError = error; return false; }
+	}
+	getLastSaveError() { return this._lastSaveError; }
 	_getConfig() { return this.settings.getLogging?.() || {}; }
 	_getTimezone(config: any) {
 		const aliases: Record<string, string> = { KST: 'Asia/Seoul', JST: 'Asia/Tokyo', CET: 'Europe/Berlin', CEST: 'Europe/Berlin', EST: 'America/New_York', EDT: 'America/New_York', PST: 'America/Los_Angeles', PDT: 'America/Los_Angeles' };
@@ -102,7 +107,7 @@ export class Logger {
 		const entries = this._getGM(this.KEY, []);
 		return Array.isArray(entries) ? entries.slice() : [];
 	}
-	clear() { this._setGM(this.KEY, []); }
+	clear() { return this._setGM(this.KEY, []); }
 	download() {
 		const text = this.getEntries().map(entry => {
 			const timestamp = new Date(entry.at).toISOString();

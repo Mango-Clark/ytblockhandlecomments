@@ -22,13 +22,18 @@ import {
 			this.KEY_V1 = 'blockedHandles_v1';
 			this.KEY_V2 = 'blocked_v2';
 			this._writerId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+			this._lastSaveError = null;
 			this._clock = 0;
 			this._entries = {};
 			this._clearRevision = null;
 			this._items = this._init();
 		}
 		_getGM(key: string, def: any) { try { return GM_getValue(key, def); } catch { return def; } }
-		_setGM(key: string, val: any) { try { GM_setValue(key, val); } catch { } }
+		_setGM(key: string, val: any) {
+			try { GM_setValue(key, val); this._lastSaveError = null; return true; }
+			catch (error) { this._lastSaveError = error; return false; }
+		}
+		getLastSaveError() { return this._lastSaveError; }
 
 		_loadLegacy() {
 			const raw = this._getGM(this.KEY_LEGACY, []);
@@ -132,6 +137,14 @@ import {
 		_saveV2(items: any[]): BlockItem[] {
 			const unique = this._normalizeItems(items);
 			if (this._arraysEqual(this._items, unique)) { this._items = unique; return unique; }
+			const previousItems = this._items;
+			const previousEntries = Object.fromEntries(Object.entries(this._entries).map(([key, entry]: [string, any]) => [key, {
+				...entry,
+				revision: entry.revision ? { ...entry.revision } : entry.revision,
+				item: entry.item ? { ...entry.item } : entry.item
+			}]));
+			const previousClearRevision = this._clearRevision;
+			const previousClock = this._clock;
 			const previous = new Map<string, BlockItem>((this._items || []).map((item: BlockItem) => [this._itemKey(item), item]));
 			const next = new Map<string, BlockItem>(unique.map(item => [this._itemKey(item), item]));
 			const revision = this._nextRevision();
@@ -144,7 +157,13 @@ import {
 				if (!next.has(key) && unique.length) this._entries[key] = { revision, deleted: true, item: previous.get(key) };
 			}
 			this._items = unique;
-			this._setGM(this.KEY_V2, this._snapshot());
+			if (!this._setGM(this.KEY_V2, this._snapshot())) {
+				this._items = previousItems;
+				this._entries = previousEntries;
+				this._clearRevision = previousClearRevision;
+				this._clock = previousClock;
+				return this.all();
+			}
 			return unique;
 		}
 
@@ -154,6 +173,7 @@ import {
 			const localEntries = this._entries;
 			const localClear = this._clearRevision;
 			const localItems = this._items;
+			const localClock = this._clock;
 			const remoteItems = this._normalizeItems(raw.items);
 			this._hydrateSync(raw, remoteItems);
 			const remoteEntries = this._entries;
@@ -167,7 +187,13 @@ import {
 			this._clock = Math.max(this._clock, ...Object.values(this._entries).map((entry: any) => Number(entry.revision?.clock) || 0));
 			this._rebuildItems();
 			const changed = !this._arraysEqual(this._items, remoteItems) || this._compareRevision(localClear, remoteClear) > 0 || Object.keys(localEntries).some(key => !remoteEntries[key] || this._compareRevision(localEntries[key].revision, remoteEntries[key].revision) > 0);
-			if (changed) this._setGM(this.KEY_V2, this._snapshot());
+			if (changed && !this._setGM(this.KEY_V2, this._snapshot())) {
+				this._entries = localEntries;
+				this._clearRevision = localClear;
+				this._items = localItems;
+				this._clock = localClock;
+				return false;
+			}
 			return changed || !this._arraysEqual(localItems, this._items);
 		}
 
@@ -223,6 +249,6 @@ import {
 			}));
 			return this._items.length < before;
 		}
-		clear() { this._saveV2([]); }
+		clear() { return this._saveV2([]).length === 0; }
 	}
 

@@ -6,6 +6,7 @@
 		[key: string]: any;
 		constructor() {
 			this.KEY = 'app_settings_v1';
+			this._lastSaveError = null;
 			this.CONSOLE_TIME_FORMATS = ['iso', 'iso-date', 'iso-time', 'iso-basic'];
 			this.THEME_MODES = ['light', 'dark', 'system', 'system-inverted', 'youtube', 'youtube-inverted', 'custom'];
 			this.THEME_DEFAULTS = {
@@ -25,7 +26,11 @@
 			this._applyThemeSettings();
 		}
 		_getGM(key: string, def: any) { try { return GM_getValue(key, def); } catch { return def; } }
-		_setGM(key: string, val: any) { try { GM_setValue(key, val); } catch { } }
+		_setGM(key: string, val: any) {
+			try { GM_setValue(key, val); this._lastSaveError = null; return true; }
+			catch (error) { this._lastSaveError = error; return false; }
+		}
+		getLastSaveError() { return this._lastSaveError; }
 		_normalizeLevel(value: any) {
 			const level = Number(value);
 			if (!Number.isInteger(level) || level < 1 || level > 5) return 3;
@@ -261,10 +266,10 @@
 				this._applyThemeSettings();
 				return this.getState();
 			}
+			if (!this._setGM(this.KEY, normalized)) return this.getState();
 			this._state = normalized;
 			this._applyDisplaySettings();
 			this._applyThemeSettings();
-			this._setGM(this.KEY, this._state);
 			return this.getState();
 		}
 		isHandleCaseSensitive() {

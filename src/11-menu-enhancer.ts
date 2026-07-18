@@ -121,12 +121,10 @@ import { Extractor } from './09-extractor.ts';
 				});
 				if (!ok) return;
 				if (isBlocked) {
-					this.app.removeHandleRule(handle);
-					Toast.show(t('removed', handle));
+					Toast.show(this.app.removeHandleRule(handle) ? t('removed', handle) : t('storageSaveFailed'));
 				}
 				else {
-					this.app.addHandleRule(handle);
-					Toast.show(t('added', handle));
+					Toast.show(this.app.addHandleRule(handle) ? t('added', handle) : t('storageSaveFailed'));
 				}
 				document.body.click();
 			});

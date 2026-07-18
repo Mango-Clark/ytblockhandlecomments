@@ -17,10 +17,15 @@ import {
 		constructor(settings: SettingsLike) {
 			this.settings = settings;
 			this.KEY = 'pair_meta_v1';
+			this._lastSaveError = null;
 			this._state = this._init();
 		}
 		_getGM(key: string, def: any) { try { return GM_getValue(key, def); } catch { return def; } }
-		_setGM(key: string, val: any) { try { GM_setValue(key, val); } catch { } }
+		_setGM(key: string, val: any) {
+			try { GM_setValue(key, val); this._lastSaveError = null; return true; }
+			catch (error) { this._lastSaveError = error; return false; }
+		}
+		getLastSaveError() { return this._lastSaveError; }
 		_defaultState(): LooseObject {
 			return {
 				version: 1,
@@ -110,8 +115,8 @@ import {
 				this._state = normalized;
 				return this.getState();
 			}
+			if (!this._setGM(this.KEY, normalized)) return this.getState();
 			this._state = normalized;
-			this._setGM(this.KEY, this._state);
 			return this.getState();
 		}
 		getState() {

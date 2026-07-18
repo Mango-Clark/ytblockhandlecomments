@@ -196,6 +196,7 @@ Notes:
 - YouTube-theme synchronization watches only native YouTube dark-state signals, not userscript theme classes
 - Logging is off by default. File logging retains entries in Tampermonkey storage until users download
   or clear them; the browser controls the downloaded file location
+- If Tampermonkey rejects a settings, block-list, pair-metadata, API-key, or log write because of permissions, quota, or storage failure, the in-memory state remains unchanged. The affected action shows an error instead of a success notice so users can correct the problem and retry.
 - Console logging defaults to `[YTCB]` with timestamps off. Timestamps accept ISO extended, date, time, and basic presets, or `yyyy`, `yy`, `MM`, `dd`, `HH`, `mm`, `ss`, `SSS`, `X`, `XXX`, and `Z` tokens. Timezones support system, UTC offsets from `-12` to `+14`, listed IANA cities, and validated custom IANA or KST-style abbreviations.
 - `app_settings_v1.verboseLevel` defaults to `3`. V0/V1 omit diagnostic payloads, V2 records one
   field, V3 records three fields, and V4/V5 retain all available fields

@@ -10,10 +10,15 @@ import {
 		[key: string]: any;
 		constructor() {
 			this.KEY = 'youtube_data_api_v3_config';
+			this._lastSaveError = null;
 			this._state = this._init();
 		}
 		_getGM(key: string, def: any) { try { return GM_getValue(key, def); } catch { return def; } }
-		_setGM(key: string, val: any) { try { GM_setValue(key, val); } catch { } }
+		_setGM(key: string, val: any) {
+			try { GM_setValue(key, val); this._lastSaveError = null; return true; }
+			catch (error) { this._lastSaveError = error; return false; }
+		}
+		getLastSaveError() { return this._lastSaveError; }
 		_defaultState(): LooseObject {
 			return { version: 2, apiKey: '', lastTestResult: null, quotaFailureCount: 0, lastQuotaFailureAt: null };
 		}
@@ -74,8 +79,8 @@ import {
 				this._state = normalized;
 				return this.getState();
 			}
+			if (!this._setGM(this.KEY, normalized)) return this.getState();
 			this._state = normalized;
-			this._setGM(this.KEY, this._state);
 			return this.getState();
 		}
 		hasApiKey() {

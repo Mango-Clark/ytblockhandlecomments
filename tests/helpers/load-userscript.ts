@@ -5,6 +5,7 @@ import { createDom } from './fake-dom.ts';
 
 type LoadOptions = {
 	gmStore?: Record<string, unknown>;
+	gmSetValue?: (key: string, value: unknown) => void;
 	url?: string;
 	language?: string;
 };
@@ -99,9 +100,7 @@ export function loadUserscript(options: LoadOptions = {}) {
 		},
 		GM_info: { script: { version: '0.5.1-test' } },
 		GM_getValue: (key: string, fallback: unknown) => (gmStore.has(key) ? gmStore.get(key) : fallback),
-		GM_setValue: (key: string, value: unknown) => {
-			gmStore.set(key, value);
-		},
+		GM_setValue: (key: string, value: unknown) => options.gmSetValue ? options.gmSetValue(key, value) : gmStore.set(key, value),
 		GM_addValueChangeListener: () => 0,
 		GM_registerMenuCommand: () => 1,
 		GM_unregisterMenuCommand: () => {},

@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Preserved existing settings, rules, pair metadata, API keys, and logs when Tampermonkey rejects a write, with retry guidance instead of a success notice.
 - Prevented legacy block-list entries from reappearing after a migrated v2 rule is deleted or the list is cleared.
 - Prevented concurrent cross-tab block-list writes from losing additions; add, delete, and clear conflicts now converge deterministically.
 - Restricted handle context-menu interception to comment authors, preserving YouTube's context menu for other handle links.

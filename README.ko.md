@@ -187,6 +187,7 @@ Pair 메타 저장소:
 - pair가 없거나 unverified이면 UID 규칙을 만들 때까지 `handle` 방식으로 전환합니다
 - 키워드는 대소문자를 구분하지 않고 기본으로 댓글 본문을 검사하며, 동작은 직접 켜기 전까지 실행하지 않습니다
 - 로그는 기본으로 꺼져 있습니다. 저장 로그는 Tampermonkey 저장소에 보관되며 텍스트 파일로 내려받을 수 있고, 다운로드 위치는 브라우저 설정을 따릅니다
+- Tampermonkey가 설정, 규칙, pair, API 키, 로그 쓰기를 거부하면 기존 저장값을 유지하고 UI에서 재시도를 안내합니다
 - 기본 `verboseLevel`은 `3`입니다. V0/V1은 진단 payload를 생략하고, V2는 일부 필드, V3은 세 필드, V4/V5는 전체 필드를 기록합니다
 - 기본 `fontSizeLevel`과 `uiScaleLevel`은 `3`이며, `2`는 이전 시각 크기와 같습니다
 - 유효한 `blocked_v2` 저장소가 없을 때만 레거시 규칙 키 `blockedHandles`, `blockedHandles_v1`를 자동 migration합니다. 이후 삭제·전체 초기화 뒤에는 legacy 항목을 복원하지 않습니다.

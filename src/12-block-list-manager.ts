@@ -392,7 +392,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				const literal = parseRegexLiteral(pattern);
 				if (literal) { pattern = literal.pattern; flags = literal.flags || ''; }
 				if (!validateRegexSpec(pattern, flags)) { Toast.show(t('invalidRegex')); return; }
-				if (!this.app.storage.addRegex(pattern, flags)) { Toast.show(t('exists')); return; }
+				if (!this.app.storage.addRegex(pattern, flags)) { Toast.show(this.app.storage.getLastSaveError() ? t('storageSaveFailed') : t('exists')); return; }
 				this.app.refreshAfterStorageChange();
 				patternInput.value = '';
 				flagsInput.value = '';
@@ -1082,6 +1082,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 					consoleTimeZoneInput: consoleTimezoneInput.value
 				});
 				if (!saved) {
+					if (this.app.settings.getLastSaveError()) { Toast.show(t('storageSaveFailed')); renderAll(); return; }
 					const field = this.app.settings.getLoggingValidationError({ ...this.app.settings.getLogging(), consolePrefix: consolePrefixInput.value, consoleTimeFormat: consoleFormatSelect.value === 'custom' ? consoleFormatInput.value : consoleFormatSelect.value, consoleTimeZone: consoleTimezoneSelect.value, consoleTimeZoneInput: consoleTimezoneInput.value });
 					consoleLoggingStatus.textContent = t('consoleLoggingInvalid', field);
 					return;
@@ -1103,7 +1104,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				renderAll();
 			});
 			downloadLogBtn.addEventListener('click', () => this.app.logger.download());
-			clearLogBtn.addEventListener('click', () => { this.app.logger.clear(); Toast.show(t('loggingCleared')); });
+			clearLogBtn.addEventListener('click', () => { Toast.show(this.app.logger.clear() ? t('loggingCleared') : t('storageSaveFailed')); });
 			dislikeSelect.addEventListener('change', () => {
 				this.app.settings.setDislikeMode(dislikeSelect.value);
 				this.app.refreshAfterStorageChange();
@@ -1158,7 +1159,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 					this.app.settings.resetSettings();
 					this.app.refreshAfterStorageChange();
 					renderAll();
-					Toast.show(t('settingsReset'));
+					Toast.show(this.app.settings.getLastSaveError() ? t('storageSaveFailed') : t('settingsReset'));
 				});
 			});
 			uidToggle.addEventListener('change', () => {
@@ -1185,7 +1186,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				this.app.apiConfig.setApiKey(apiInput.value);
 				this.app.refreshAfterStorageChange();
 				renderAll();
-				Toast.show(t('apiKeySaved'));
+				Toast.show(this.app.apiConfig.getLastSaveError() ? t('storageSaveFailed') : t('apiKeySaved'));
 			});
 			testApiBtn.addEventListener('click', async () => {
 				apiTestBusy = true;
@@ -1199,7 +1200,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				this.app.apiConfig.clearApiKey();
 				this.app.refreshAfterStorageChange();
 				renderAll();
-				Toast.show(t('apiKeyCleared'));
+				Toast.show(this.app.apiConfig.getLastSaveError() ? t('storageSaveFailed') : t('apiKeyCleared'));
 			});
 			const runPair = async (mode: string) => {
 				pairBusy = true;
@@ -1858,9 +1859,9 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 					removeBtn.disabled = busy;
 					removeBtn.addEventListener('click', () => {
 						setSelectionValue(itemKey, false);
-						this.app.removeEntry(item);
+						const removed = this.app.removeEntry(item);
 						renderAll();
-						Toast.show(t('removed', label.textContent));
+						Toast.show(removed ? t('removed', label.textContent) : t('storageSaveFailed'));
 					});
 					left.append(label, badges);
 					if (meta.childNodes.length) left.appendChild(meta);
@@ -1975,7 +1976,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				this.app.apiConfig.setApiKey(apiInput.value);
 				this.app.refreshAfterStorageChange();
 				renderAll();
-				Toast.show(t('apiKeySaved'));
+				Toast.show(this.app.apiConfig.getLastSaveError() ? t('storageSaveFailed') : t('apiKeySaved'));
 			});
 			testApiBtn.addEventListener('click', async () => {
 				apiTestBusy = true;
@@ -1989,7 +1990,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				this.app.apiConfig.clearApiKey();
 				this.app.refreshAfterStorageChange();
 				renderAll();
-				Toast.show(t('apiKeyCleared'));
+				Toast.show(this.app.apiConfig.getLastSaveError() ? t('storageSaveFailed') : t('apiKeyCleared'));
 			});
 			createBtn.addEventListener('click', async () => {
 				setBusy(true);
@@ -2009,7 +2010,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				const selectedItems = computeViewState().selectedItems;
 				if (!selectedItems.length) return;
 				if (bulkSelect.value === 'delete') {
-					this.app.removeEntries(selectedItems);
+					if (!this.app.removeEntries(selectedItems)) { Toast.show(t('storageSaveFailed')); return; }
 					const removedCount = selectedItems.length;
 					selection.clear();
 					markSelectionChanged();

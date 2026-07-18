@@ -14,6 +14,12 @@
 
 ## Done
 
+- [x] (L) Tampermonkey 저장 실패 보존·재시도 안내
+
+  - (1) settings, block list, pair metadata, API key, logger write 실패 시 기존 state 유지.
+  - (2) 차단·API key·log clear 성공 toast를 오류·재시도 안내로 분기.
+  - (3) 5개 저장소 `GM_setValue` 예외 regression test 검증.
+
 - [x] (K) 재사용 comment DOM node identity 처리
 
   - (1) node identity는 channel ID, handle, 본문, pinned label 기반.

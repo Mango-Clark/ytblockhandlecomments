@@ -32,6 +32,7 @@ import type { I18nBundle } from '../02-utils-i18n.ts';
 			resetSettings: 'Reset settings',
 			confirmResetSettings: 'Reset display size, comment display, auto-dislike, regex auto-add, and handle case settings?',
 			settingsReset: 'Settings reset',
+			storageSaveFailed: 'Could not save the change. Check Tampermonkey storage permissions or quota, then retry.',
 			defaultOption: '(Default)',
 			themeModeLabel: 'Theme mode',
 			themeModeLight: 'Light',
