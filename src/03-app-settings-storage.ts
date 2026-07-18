@@ -176,6 +176,7 @@
 			if (typeof document !== 'object' || !document?.documentElement) return;
 			const root = document.documentElement;
 			const mode = this.getThemeMode();
+			this._syncYouTubeThemeObservers(mode);
 			const isCustom = mode === 'custom';
 			const themeClass = isCustom ? 'tm-theme-custom' : this._resolveThemeDark(mode) ? 'tm-theme-dark' : 'tm-theme-light';
 			for (const name of ['tm-theme-light', 'tm-theme-dark', 'tm-theme-custom']) {
@@ -204,10 +205,49 @@
 		}
 		_watchYouTubeThemeTarget() {
 			const app = typeof document === 'object' ? document.querySelector?.('ytd-app') : null;
-			if (app === this._youtubeThemeTarget) return;
+			if (app === this._youtubeThemeTarget) {
+				if (app) {
+					this._youtubeAppDiscoveryObserver?.disconnect?.();
+					this._youtubeDiscoveryActive = false;
+				} else if (!this._youtubeDiscoveryActive) {
+					this._youtubeAppDiscoveryObserver?.observe?.(document.body, { childList: true });
+					this._youtubeDiscoveryActive = true;
+				}
+				return;
+			}
 			this._youtubeThemeTarget = app;
 			this._youtubeAppThemeObserver?.disconnect?.();
-			if (app) this._youtubeAppThemeObserver?.observe?.(app, { attributes: true, attributeFilter: ['class', 'dark'] });
+			if (app) {
+				this._youtubeAppThemeObserver?.observe?.(app, { attributes: true, attributeFilter: ['class', 'dark'] });
+				this._youtubeAppDiscoveryObserver?.disconnect?.();
+				this._youtubeDiscoveryActive = false;
+			} else {
+				this._youtubeAppDiscoveryObserver?.observe?.(document.body, { childList: true });
+				this._youtubeDiscoveryActive = true;
+			}
+		}
+		_isYouTubeAppNodeChange(records: MutationRecord[] = []) {
+			return records.some(record => [...Array.from(record.addedNodes || []), ...Array.from(record.removedNodes || [])].some((node: any) =>
+				node === this._youtubeThemeTarget || node?.matches?.('ytd-app')
+			));
+		}
+		_syncYouTubeThemeObservers(mode = this.getThemeMode()) {
+			if (!mode.startsWith('youtube')) {
+				this._youtubeThemeTarget = null;
+				this._youtubeRootThemeObserver?.disconnect?.();
+				this._youtubeAppThemeObserver?.disconnect?.();
+				this._youtubeAppDiscoveryObserver?.disconnect?.();
+				this._youtubeAppReplacementObserver?.disconnect?.();
+				this._youtubeDiscoveryActive = false;
+				this._youtubeObserversActive = false;
+				return;
+			}
+			if (!this._youtubeObserversActive) {
+				this._youtubeRootThemeObserver?.observe?.(document.documentElement, { attributes: true, attributeFilter: ['dark'] });
+				this._youtubeAppReplacementObserver?.observe?.(document.body, { childList: true });
+				this._youtubeObserversActive = true;
+			}
+			this._watchYouTubeThemeTarget();
 		}
 		_bindThemeUpdates() {
 			try {
@@ -217,10 +257,12 @@
 			try {
 				this._youtubeRootThemeObserver = new MutationObserver(records => this._onYouTubeThemeMutation(records));
 				this._youtubeAppThemeObserver = new MutationObserver(records => this._onYouTubeThemeMutation(records));
-				this._youtubeAppDiscoveryObserver = new MutationObserver(() => this._watchYouTubeThemeTarget());
-				this._youtubeRootThemeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['dark'] });
-				this._youtubeAppDiscoveryObserver.observe(document.body, { childList: true, subtree: true });
-				this._watchYouTubeThemeTarget();
+				this._youtubeAppDiscoveryObserver = new MutationObserver(records => {
+					if (this._isYouTubeAppNodeChange(records)) this._watchYouTubeThemeTarget();
+				});
+				this._youtubeAppReplacementObserver = new MutationObserver(records => {
+					if (this._isYouTubeAppNodeChange(records)) this._watchYouTubeThemeTarget();
+				});
 			} catch { }
 		}
 		_init() {

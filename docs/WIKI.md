@@ -194,6 +194,7 @@ Notes:
   validated before saving
 - Theme styles apply only to the userscript's dialogs, panels, lists, and notices; they never style YouTube UI
 - YouTube-theme synchronization watches only native YouTube dark-state signals, not userscript theme classes
+- Theme discovery stops after finding `ytd-app`; while YouTube mode is active, direct body child changes are checked only for `ytd-app` replacement, so comment and feed mutations do not trigger app rediscovery
 - Logging is off by default. File logging retains entries in Tampermonkey storage until users download
   or clear them; the browser controls the downloaded file location
 - If Tampermonkey rejects a settings, block-list, pair-metadata, API-key, or log write because of permissions, quota, or storage failure, the in-memory state remains unchanged. The affected action shows an error instead of a success notice so users can correct the problem and retry.

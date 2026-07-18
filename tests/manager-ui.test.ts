@@ -393,6 +393,39 @@ test('YouTube theme observers ignore userscript classes and stay stable', () => 
 	assert.equal(applyCalls, 3);
 });
 
+test('YouTube theme discovery ignores unrelated body mutations and stops after finding ytd-app', () => {
+	const { api, document } = loadUserscript();
+	const settings = new api.AppSettingsStorage();
+	assert.equal(settings._youtubeRootThemeObserver.disconnected, true);
+	assert.equal(settings._youtubeAppReplacementObserver.disconnected, true);
+
+	settings.setThemeMode('youtube');
+	assert.equal(settings._youtubeAppDiscoveryObserver.observeCalls[0].options.childList, true);
+	assert.equal(settings._youtubeAppDiscoveryObserver.observeCalls[0].options.subtree, undefined);
+	assert.equal(settings._youtubeAppReplacementObserver.observeCalls[0].options.childList, true);
+	assert.equal(settings._youtubeAppReplacementObserver.observeCalls[0].options.subtree, undefined);
+	let lookups = 0;
+	const watch = settings._watchYouTubeThemeTarget.bind(settings);
+	settings._watchYouTubeThemeTarget = () => { lookups += 1; watch(); };
+	const unrelated = document.createElement('div');
+	settings._youtubeAppDiscoveryObserver.trigger([{ addedNodes: [unrelated], removedNodes: [] }]);
+	assert.equal(lookups, 0);
+
+	const app = document.createElement('ytd-app');
+	document.body.appendChild(app);
+	settings._youtubeAppDiscoveryObserver.trigger([{ addedNodes: [app], removedNodes: [] }]);
+	assert.equal(lookups, 1);
+	assert.equal(settings._youtubeAppDiscoveryObserver.disconnected, true);
+	assert.equal(settings._youtubeThemeTarget, app);
+
+	const replacement = document.createElement('ytd-app');
+	document.body.removeChild(app);
+	document.body.appendChild(replacement);
+	settings._youtubeAppReplacementObserver.trigger([{ addedNodes: [replacement], removedNodes: [app] }]);
+	assert.equal(lookups, 2);
+	assert.equal(settings._youtubeThemeTarget, replacement);
+});
+
 test('settings dialog exposes all theme modes and custom editor', () => {
 	const { api, document } = loadUserscript();
 	const settings = new api.AppSettingsStorage();

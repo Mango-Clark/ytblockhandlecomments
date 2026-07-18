@@ -238,6 +238,7 @@ Pair 메타 저장소:
 - regex 규칙은 handle 텍스트에만 적용되며, 키워드 규칙은 댓글 본문, 작성자 handle, 고정 표시 문구를 검사할 수 있습니다
 - plain-text import/export는 regex literal을 `/pattern/flags` 형태로 왕복합니다
 - 차단 목록 내보내기는 pair 메타데이터나 API 설정을 포함하지 않고, 화면의 JSON 또는 텍스트 표현을 파일로 다운로드할 수 있습니다
+- YouTube 테마 감지는 root, 현재 `ytd-app`, 직접 `ytd-app` 교체 이벤트만 관찰합니다
 - 댓글 숨김은 의도적으로 watch 페이지와 Shorts 댓글 범위에 한정됩니다
 - pair 검토 배너는 의도적으로 watch 페이지에만 표시됩니다
 - 탐색 시 임시 댓글 observer와 메타데이터 캐시를 초기화해 긴 YouTube 세션에서 오래된

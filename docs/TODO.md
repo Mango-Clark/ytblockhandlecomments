@@ -14,6 +14,12 @@
 
 ## Done
 
+- [x] (M) YouTube theme observer 범위 축소
+
+  - (1) `body subtree` discovery 제거; `ytd-app` 발견 뒤 discovery disconnect.
+  - (2) YouTube mode에서만 root/app observer 활성; 직계 `ytd-app` 교체만 재탐색.
+  - (3) unrelated body mutation, 발견 뒤 해제, replacement regression test 검증.
+
 - [x] (L) Tampermonkey 저장 실패 보존·재시도 안내
 
   - (1) settings, block list, pair metadata, API key, logger write 실패 시 기존 state 유지.
