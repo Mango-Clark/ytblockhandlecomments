@@ -45,7 +45,7 @@ quota 안내, 페이지 단위 regex 매칭 목록, 역할별 소스 파일, 압
 - YouTube가 comment DOM node를 새 작성자·본문에 재사용하면 keyword/자동 싫어요 동작을 다시 적용
 - 정규식 규칙, 키워드 검사 대상, 싫어요·handle 차단·UID pair 생성을 한 곳에서 설정하는 차단 및 키워드 자동 처리 창 지원
 - 로컬 로그 보관과 브라우저 console 로그를 독립적으로 켜고 끌 수 있으며, 로그 수준/보관 수 설정과 로그 파일 다운로드 지원
-- console 로그 prefix, 선택적 시간 표시, ISO/직접 시간 형식, timezone 선택 지원
+- console 로그 prefix, 선택적 시간 표시, calendar·week·ordinal·basic·직접 ISO 시간 형식, timezone 선택 지원
 - 개인정보를 제거하는 로그 payload 진단 상세도를 V0-V5로 설정할 수 있고 기본값은 균형 잡힌 V3
 - `blocked_v2`에 `handle`, `id`, `regex` 규칙 저장
 - 신원 차단 방식을 기본 `handle` 규칙 또는 UID pair `id` 규칙으로 선택하고, regex 규칙은 두 방식 모두에서 적용
@@ -187,6 +187,7 @@ Pair 메타 저장소:
 - pair가 없거나 unverified이면 UID 규칙을 만들 때까지 `handle` 방식으로 전환합니다
 - 키워드는 대소문자를 구분하지 않고 기본으로 댓글 본문을 검사하며, 동작은 직접 켜기 전까지 실행하지 않습니다
 - 로그는 기본으로 꺼져 있습니다. 저장 로그는 Tampermonkey 저장소에 보관되며 텍스트 파일로 내려받을 수 있고, 다운로드 위치는 브라우저 설정을 따릅니다
+- console 시간은 calendar(`iso`, `iso-date`, `iso-basic-date`), week(`iso-week-date`), ordinal(`iso-ordinal-date`) date를 지원합니다. 직접 형식은 `yyyy`, `MM`, `dd`, `DDD`, `ww`, `e`, `HH`, `mm`, `ss`, `SSS`, `X`, `XXX`, `Z`, `T`, `W`를 조합해 ISO basic/extended time·timezone 형식을 만들 수 있습니다.
 - Tampermonkey가 설정, 규칙, pair, API 키, 로그 쓰기를 거부하면 기존 저장값을 유지하고 UI에서 재시도를 안내합니다
 - 기본 `verboseLevel`은 `3`입니다. V0/V1은 진단 payload를 생략하고, V2는 한 필드, V3은 세 필드, V4는 여섯 필드, V5는 열 필드를 기록합니다. 중첩 API 키·token·URL·account·comment·handle·사용자 식별자는 console과 저장 로그 전에 제거합니다.
 - 기본 `fontSizeLevel`과 `uiScaleLevel`은 `3`이며, `2`는 이전 시각 크기와 같습니다

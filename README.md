@@ -42,7 +42,7 @@ Source layout:
 - Re-applies keyword and auto-dislike actions when YouTube reuses a comment DOM node for a new author or body
 - Supports a unified block and keyword automation dialog for regex rules, keyword matching fields, and independent dislike, handle-block, and UID-pair actions
 - Supports independent local log retention and browser-console logging, with level and retention controls plus log-file download
-- Supports configurable console-log prefixes and optional timestamps with ISO/custom formats and timezone selection
+- Supports configurable console-log prefixes and optional timestamps with calendar, week, ordinal, basic, and custom ISO formats plus timezone selection
 - Supports privacy-redacted V0-V5 diagnostic-detail settings for log payloads, defaulting to balanced V3 output
 - Supports `handle`, `id`, and `regex` rules in `blocked_v2`
 - Supports selectable identity matching: `handle` rules by default or UID pair `id` rules; regex rules remain independent
@@ -195,6 +195,7 @@ Notes:
 - If a pair is missing or unverified, switch back to `handle` mode until a UID rule is created
 - Keyword matching is case-insensitive; it checks comment text by default and runs no actions until enabled
 - Logging is off by default. Saved log entries stay in Tampermonkey storage and can be downloaded as a text file; browser download location is browser-controlled
+- Console timestamps support calendar (`iso`, `iso-date`, `iso-basic-date`), week (`iso-week-date`), and ordinal (`iso-ordinal-date`) dates. Custom formats combine `yyyy`, `MM`, `dd`, `DDD`, `ww`, `e`, `HH`, `mm`, `ss`, `SSS`, `X`, `XXX`, `Z`, `T`, and `W` for ISO basic or extended time and timezone forms.
 - If Tampermonkey rejects a settings, rule, pair, API-key, or log write, the previous saved value remains active and the UI asks you to retry
 - Default `verboseLevel` is `3`; V0/V1 omit diagnostic payloads, V2 keeps one field, V3 three, V4 six, and V5 ten. Nested API keys, tokens, URLs, accounts, comments, handles, and user identifiers are removed before console or saved-log output.
 - Default `fontSizeLevel` and `uiScaleLevel` are `3`; level `2` matches the previous visual size

@@ -7,7 +7,7 @@
 		constructor() {
 			this.KEY = 'app_settings_v1';
 			this._lastSaveError = null;
-			this.CONSOLE_TIME_FORMATS = ['iso', 'iso-date', 'iso-time', 'iso-basic'];
+			this.CONSOLE_TIME_FORMATS = ['iso', 'iso-date', 'iso-time', 'iso-basic', 'iso-basic-date', 'iso-week-date', 'iso-ordinal-date'];
 			this.THEME_MODES = ['light', 'dark', 'system', 'system-inverted', 'youtube', 'youtube-inverted', 'custom'];
 			this.THEME_DEFAULTS = {
 				background: '#f8f9fa', surface: '#ffffff', text: '#202124', muted: '#5f6368',
@@ -82,7 +82,7 @@
 		_isValidConsoleTimeFormat(value: any) {
 			const format = String(value || '').trim();
 			if (!format || format.length > 80) return false;
-			const parts = format.match(/yyyy|yy|MM|dd|HH|mm|ss|SSS|XXX|X|T|Z|[^A-Za-z]+/g);
+			const parts = format.match(/yyyy|yy|DDD|ww|e|MM|dd|HH|mm|ss|SSS|XXX|X|T|W|Z|[^A-Za-z]+/g);
 			return !!parts && parts.join('') === format;
 		}
 		_isValidTimeZone(value: any) {

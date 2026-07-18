@@ -298,6 +298,27 @@ test('logger redacts nested identifiers without leaking circular payloads', () =
 	assert.equal(Object.keys(JSON.parse(logger._formatDetail(fields))).length, 6);
 });
 
+test('console timestamp supports ISO calendar, week, ordinal, basic, and timezone tokens', () => {
+	const { api } = loadUserscript();
+	const settings = new api.AppSettingsStorage();
+	const logger = new api.Logger(settings);
+	const at = Date.UTC(2026, 0, 2, 3, 4, 5, 6);
+	settings.setLogging({ consoleTimestampEnabled: true, consoleTimeZone: 'offset:+09:00', consoleTimeFormat: 'iso-week-date' });
+	assert.equal(logger._formatConsoleTimestamp(settings.getLogging(), at), '2026-W01-5');
+	settings.setLogging({ consoleTimestampEnabled: true, consoleTimeZone: 'offset:+09:00', consoleTimeFormat: 'iso-ordinal-date' });
+	assert.equal(logger._formatConsoleTimestamp(settings.getLogging(), at), '2026-002');
+	settings.setLogging({ consoleTimestampEnabled: true, consoleTimeZone: 'offset:+09:00', consoleTimeFormat: 'yyyy-Www-eTHHmmssX' });
+	assert.equal(logger._formatConsoleTimestamp(settings.getLogging(), at), '2026-W01-5T120405+09');
+	settings.setLogging({ consoleTimestampEnabled: true, consoleTimeZone: 'UTC', consoleTimeFormat: 'yyyy-DDDTHH:mm:ss.SSSXXX' });
+	assert.equal(logger._formatConsoleTimestamp(settings.getLogging(), at), '2026-002T03:04:05.006Z');
+	settings.setLogging({ consoleTimestampEnabled: true, consoleTimeZone: 'Asia/Seoul', consoleTimeFormat: 'iso-time' });
+	assert.equal(logger._formatConsoleTimestamp(settings.getLogging(), at), '12:04:05.006+09:00');
+	settings.setLogging({ consoleTimestampEnabled: true, consoleTimeZone: 'system', consoleTimeFormat: 'iso-date' });
+	assert.match(logger._formatConsoleTimestamp(settings.getLogging(), at), /^2026-01-0[12]$/);
+	assert.equal(settings._isValidConsoleTimeFormat('yyyy-Www-eTHHmmssX'), true);
+	assert.equal(settings._isValidConsoleTimeFormat('yyyy-Woops'), false);
+});
+
 test('settings dialog saves validated console logging settings', () => {
 	const { api, document } = loadUserscript();
 	const settings = new api.AppSettingsStorage();

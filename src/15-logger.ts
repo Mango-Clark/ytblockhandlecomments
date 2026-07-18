@@ -47,13 +47,22 @@ export class Logger {
 			HH: pad(valuesFromDate.hours), mm: pad(valuesFromDate.minutes), ss: pad(valuesFromDate.seconds), SSS: pad(valuesFromDate.milliseconds, 3),
 			X: offset ? offset[1] + offset[2] : offsetText(localOffset, false), XXX: offset ? `${offset[1]}${offset[2]}:00` : offsetText(localOffset), Z: offset ? `${offset[1]}${offset[2]}00` : offsetText(localOffset, false)
 		};
+		const calendarDate = new Date(Date.UTC(valuesFromDate.year, valuesFromDate.month - 1, valuesFromDate.day));
+		const yearStart = new Date(Date.UTC(valuesFromDate.year, 0, 1));
+		values.DDD = pad(Math.floor((calendarDate.getTime() - yearStart.getTime()) / 86400000) + 1, 3);
+		const isoDay = ((calendarDate.getUTCDay() + 6) % 7) + 1;
+		const weekDate = new Date(calendarDate);
+		weekDate.setUTCDate(weekDate.getUTCDate() + 4 - isoDay);
+		const weekYearStart = new Date(Date.UTC(weekDate.getUTCFullYear(), 0, 1));
+		values.ww = pad(Math.ceil((((weekDate.getTime() - weekYearStart.getTime()) / 86400000) + 1) / 7));
+		values.e = String(isoDay);
 		if (!offset && zone && zone !== 'system') {
 			try {
 				const parts = new Intl.DateTimeFormat('en-CA', { timeZone: zone, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', timeZoneName: 'longOffset', hourCycle: 'h23' }).formatToParts(date);
 				const tokenMap: Record<string, string> = { year: 'yyyy', month: 'MM', day: 'dd', hour: 'HH', minute: 'mm', second: 'ss' };
 				for (const part of parts) if (tokenMap[part.type]) values[tokenMap[part.type]] = part.value;
 				const zonePart = parts.find(part => part.type === 'timeZoneName')?.value?.replace('GMT', '') || 'Z';
-				values.XXX = zonePart === 'Z' ? 'Z' : zonePart;
+				values.XXX = ['Z', '+00:00', '+0000'].includes(zonePart) ? 'Z' : zonePart;
 				values.X = values.XXX.replace(':', '');
 				values.Z = values.X;
 				values.yy = values.yyyy.slice(-2);
@@ -64,7 +73,10 @@ export class Logger {
 		if (format === 'iso-date') return `${values.yyyy}-${values.MM}-${values.dd}`;
 		if (format === 'iso-time') return `${values.HH}:${values.mm}:${values.ss}.${values.SSS}${values.XXX}`;
 		if (format === 'iso-basic') return `${values.yyyy}${values.MM}${values.dd}T${values.HH}${values.mm}${values.ss}${values.X}`;
-		return format.replace(/yyyy|yy|MM|dd|HH|mm|ss|SSS|XXX|X|T|Z/g, (token: string) => token === 'T' ? 'T' : values[token]);
+		if (format === 'iso-basic-date') return `${values.yyyy}${values.MM}${values.dd}`;
+		if (format === 'iso-week-date') return `${values.yyyy}-W${values.ww}-${values.e}`;
+		if (format === 'iso-ordinal-date') return `${values.yyyy}-${values.DDD}`;
+		return format.replace(/yyyy|yy|DDD|ww|e|MM|dd|HH|mm|ss|SSS|XXX|X|T|W|Z/g, (token: string) => (token === 'T' || token === 'W') ? token : values[token]);
 	}
 	_formatConsolePrefix(config: any, at = Date.now()) {
 		const timestamp = this._formatConsoleTimestamp(config, at);

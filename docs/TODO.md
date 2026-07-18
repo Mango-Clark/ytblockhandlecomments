@@ -6,13 +6,6 @@
 
 ## P2 — Normal
 
-- [ ] (A) console 시간 형식의 ISO 8601 완료 조건 충족
-
-  - (0) `e7c9dedcfaa3a350b741455c7363c99ead5f77e3`
-  - (1) `src/03-app-settings-storage.ts:78-86`, `src/15-logger.ts:62-67`에서 현재 preset·token 외 누락된 ISO 8601 허용 형식을 식별하고 지원 범위를 명시.
-  - (2) 지원하기로 한 calendar·week·ordinal date, basic·extended time과 timezone 조합을 validation과 formatter에 동일 적용.
-  - (3) 유효·무효 경계, custom format, system·IANA·offset timezone regression test와 README·WIKI 설명을 동기화.
-
 - [ ] (B) console 시간 형식 기본 선택지 표시 추가
 
   - (0) `e7c9dedcfaa3a350b741455c7363c99ead5f77e3`
@@ -26,6 +19,12 @@
 ## Backlog
 
 ## Done
+
+- [x] (Y) console 시간 형식의 ISO 8601 완료 조건 충족
+
+  - (1) calendar·week·ordinal·basic date preset과 custom ISO token 지원 범위 명시.
+  - (2) `DDD`, `ww`, `e`, `W` validation·formatter 동기화; basic/extended time과 timezone token 조합 가능.
+  - (3) calendar/week/ordinal, custom basic, UTC/offset timezone, 유효·무효 token regression test와 README·WIKI 영문·한국어 동기화.
 
 - [x] (X) logger payload 개인정보 redaction을 중첩 구조와 사용자 식별자까지 확대
 
