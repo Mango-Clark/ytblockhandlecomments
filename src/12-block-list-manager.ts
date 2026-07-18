@@ -1241,6 +1241,8 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			let busy = false;
 			let apiTestBusy = false;
 			let searchQuery = '';
+			let searchRenderFrame: number | null = null;
+			let isComposingSearch = false;
 			const isBusy = () => busy;
 
 			const versionSection = document.createElement('section');
@@ -1945,8 +1947,17 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			});
 			searchInput.addEventListener('input', () => {
 				searchQuery = searchInput.value || '';
-				invalidateViewState({ clearRegex: true });
-				renderList();
+				if (isComposingSearch || searchRenderFrame != null) return;
+				searchRenderFrame = requestAnimationFrame(() => {
+					searchRenderFrame = null;
+					invalidateViewState({ clearRegex: true });
+					renderList();
+				});
+			});
+			searchInput.addEventListener('compositionstart', () => { isComposingSearch = true; });
+			searchInput.addEventListener('compositionend', () => {
+				isComposingSearch = false;
+				searchInput.dispatchEvent(new Event('input'));
 			});
 			typeSelect.addEventListener('change', () => {
 				invalidateViewState({ clearRegex: true });
