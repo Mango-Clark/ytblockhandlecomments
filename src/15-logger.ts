@@ -79,9 +79,11 @@ export class Logger {
 		const verboseLevel = this.settings.getVerboseLevel?.() ?? 3;
 		if (detail == null || verboseLevel < 2) return '';
 		if (typeof detail !== 'object') return String(detail);
-		const maxFields = verboseLevel === 2 ? 1 : verboseLevel === 3 ? 3 : Number.POSITIVE_INFINITY;
+		const maxFields = [0, 0, 1, 3, 6, 10][verboseLevel] || 0;
 		try {
-			const entries = Object.entries(detail as Record<string, unknown>).slice(0, maxFields);
+			const entries = Object.entries(detail as Record<string, unknown>)
+				.filter(([key]) => !/(api.?key|token|password|comment|url|account)/i.test(key))
+				.slice(0, maxFields);
 			return JSON.stringify(Object.fromEntries(entries));
 		} catch { return String(detail); }
 	}
