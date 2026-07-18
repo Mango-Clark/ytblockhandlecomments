@@ -179,6 +179,7 @@ Notes:
 - App settings key: `app_settings_v1`
 - API config key: `youtube_data_api_v3_config`
 - Legacy `blockedHandles` and `blockedHandles_v1` migrate only when a valid `blocked_v2` store is absent; later deletes and clears cannot restore legacy entries.
+- Cross-tab `blocked_v2` sync uses per-entry revisions and tombstones, so concurrent additions merge and add/delete/clear conflicts converge deterministically.
 - Default `dislikeMode` is `none`
 - Default `commentBlockMode` is `hide`
 - Default `blockMatchMode` is `handle`; `pair` requires UID Detection and matches stored `id` rules

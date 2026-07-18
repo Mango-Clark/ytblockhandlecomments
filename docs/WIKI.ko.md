@@ -168,6 +168,7 @@ API 설정:
 참고:
 
 - 유효한 `blocked_v2` 저장소가 없을 때만 레거시 `blockedHandles`, `blockedHandles_v1`를 자동 migration합니다. 이후 삭제·전체 초기화 뒤에는 legacy 항목을 복원하지 않습니다
+- 탭 간 `blocked_v2` 변경에는 선택적 항목별 revision, tombstone, clear revision을 저장합니다. 동시 추가는 병합하고 추가/삭제/전체 초기화 충돌은 높은 revision 기준으로 echo write 없이 수렴합니다.
 - 기본 `app_settings_v1.dislikeMode`는 `none`입니다
 - 기본 `app_settings_v1.commentBlockMode`는 `hide`입니다
 - 기본 `app_settings_v1.blockMatchMode`는 `handle`입니다

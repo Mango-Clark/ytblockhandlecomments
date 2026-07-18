@@ -185,6 +185,7 @@ Pair 메타 저장소:
 - 기본 `verboseLevel`은 `3`입니다. V0/V1은 진단 payload를 생략하고, V2는 일부 필드, V3은 세 필드, V4/V5는 전체 필드를 기록합니다
 - 기본 `fontSizeLevel`과 `uiScaleLevel`은 `3`이며, `2`는 이전 시각 크기와 같습니다
 - 유효한 `blocked_v2` 저장소가 없을 때만 레거시 규칙 키 `blockedHandles`, `blockedHandles_v1`를 자동 migration합니다. 이후 삭제·전체 초기화 뒤에는 legacy 항목을 복원하지 않습니다.
+- 탭 간 `blocked_v2` 동기화는 항목별 revision과 tombstone을 사용합니다. 동시 추가는 병합하고, 추가/삭제/전체 초기화 충돌은 결정론적으로 수렴합니다.
 - `v1.4.0`에서도 pair 메타데이터를 import/export에 포함하지 않습니다
 - API 키는 Tampermonkey 로컬 저장소에만 저장되며 스크립트 코드에 포함되지 않습니다
 

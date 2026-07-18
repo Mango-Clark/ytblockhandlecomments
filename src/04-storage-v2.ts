@@ -21,6 +21,10 @@ import {
 			this.KEY_LEGACY = 'blockedHandles';
 			this.KEY_V1 = 'blockedHandles_v1';
 			this.KEY_V2 = 'blocked_v2';
+			this._writerId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+			this._clock = 0;
+			this._entries = {};
+			this._clearRevision = null;
 			this._items = this._init();
 		}
 		_getGM(key: string, def: any) { try { return GM_getValue(key, def); } catch { return def; } }
@@ -46,6 +50,55 @@ import {
 		_hasValidV2() {
 			const v = this._getGM(this.KEY_V2, null);
 			return !!v && typeof v === 'object' && v.version === 2 && Array.isArray(v.items);
+		}
+		_itemKey(item: BlockItem) {
+			const caseSensitive = this.settings?.isHandleCaseSensitive?.() || false;
+			if (item.type === 'handle') return `h:${getHandleCompareKey(item.value, caseSensitive)}`;
+			if (item.type === 'id') return `i:${item.value}`;
+			return `r:${item.value}/${item.flags || ''}`;
+		}
+		_compareRevision(a: any, b: any) {
+			if (!a) return -1;
+			if (!b) return 1;
+			if (a.clock !== b.clock) return a.clock > b.clock ? 1 : -1;
+			return String(a.writer || '').localeCompare(String(b.writer || ''));
+		}
+		_nextRevision() { return { clock: Math.max(this._clock, Date.now()) + 1, writer: this._writerId }; }
+		_normalizeRevision(value: any, fallback = 0) {
+			return value && Number.isFinite(value.clock)
+				? { clock: Number(value.clock), writer: String(value.writer || '') }
+				: { clock: fallback, writer: '' };
+		}
+		_hydrateSync(raw: any, items: BlockItem[]) {
+			const sync = raw?.sync && typeof raw.sync === 'object' ? raw.sync : {};
+			this._clock = Math.max(this._clock, Number(sync.clock) || 0, Number(raw?.updatedAt) || 0);
+			this._clearRevision = sync.clear ? this._normalizeRevision(sync.clear) : null;
+			this._entries = {};
+			for (const [key, value] of Object.entries(sync.entries || {})) {
+				const entry: any = value;
+				this._entries[key] = { revision: this._normalizeRevision(entry?.revision), deleted: !!entry?.deleted, item: entry?.item };
+			}
+			for (const item of items) {
+				const key = this._itemKey(item);
+				if (!this._entries[key]) this._entries[key] = { revision: this._normalizeRevision(null, Number(raw?.updatedAt) || 0), deleted: false, item };
+				else this._entries[key].item = item;
+			}
+		}
+		_snapshot() {
+			return {
+				version: 2,
+				updatedAt: Date.now(),
+				items: this._items,
+				sync: { clock: this._clock, clear: this._clearRevision, entries: this._entries }
+			};
+		}
+		_rebuildItems() {
+			const values: BlockItem[] = [];
+			for (const entry of Object.values(this._entries) as any[]) {
+				if (entry.deleted || !entry.item || this._compareRevision(entry.revision, this._clearRevision) <= 0) continue;
+				values.push(entry.item);
+			}
+			this._items = this._normalizeItems(values);
 		}
 		_normalizeItems(items: any[]): BlockItem[] {
 			const normed: BlockItem[] = [];
@@ -79,11 +132,44 @@ import {
 		_saveV2(items: any[]): BlockItem[] {
 			const unique = this._normalizeItems(items);
 			if (this._arraysEqual(this._items, unique)) { this._items = unique; return unique; }
-			this._setGM(this.KEY_V2, { version: 2, updatedAt: Date.now(), items: unique });
-			this._items = unique; return unique;
+			const previous = new Map<string, BlockItem>((this._items || []).map((item: BlockItem) => [this._itemKey(item), item]));
+			const next = new Map<string, BlockItem>(unique.map(item => [this._itemKey(item), item]));
+			const revision = this._nextRevision();
+			this._clock = revision.clock;
+			if (!unique.length && previous.size) this._clearRevision = revision;
+			for (const [key, item] of next) {
+				if (!previous.has(key)) this._entries[key] = { revision, deleted: false, item };
+			}
+			for (const key of previous.keys()) {
+				if (!next.has(key) && unique.length) this._entries[key] = { revision, deleted: true, item: previous.get(key) };
+			}
+			this._items = unique;
+			this._setGM(this.KEY_V2, this._snapshot());
+			return unique;
 		}
 
 		setAllLocal(items: any[]) { this._items = this._normalizeItems(items); return this.all(); }
+		mergeRemote(raw: any) {
+			if (!raw || raw.version !== 2 || !Array.isArray(raw.items)) return false;
+			const localEntries = this._entries;
+			const localClear = this._clearRevision;
+			const localItems = this._items;
+			const remoteItems = this._normalizeItems(raw.items);
+			this._hydrateSync(raw, remoteItems);
+			const remoteEntries = this._entries;
+			const remoteClear = this._clearRevision;
+			this._entries = { ...remoteEntries };
+			this._clearRevision = this._compareRevision(localClear, remoteClear) > 0 ? localClear : remoteClear;
+			for (const [key, local] of Object.entries(localEntries) as any[]) {
+				const remote = this._entries[key];
+				if (!remote || this._compareRevision(local.revision, remote.revision) > 0) this._entries[key] = local;
+			}
+			this._clock = Math.max(this._clock, ...Object.values(this._entries).map((entry: any) => Number(entry.revision?.clock) || 0));
+			this._rebuildItems();
+			const changed = !this._arraysEqual(this._items, remoteItems) || this._compareRevision(localClear, remoteClear) > 0 || Object.keys(localEntries).some(key => !remoteEntries[key] || this._compareRevision(localEntries[key].revision, remoteEntries[key].revision) > 0);
+			if (changed) this._setGM(this.KEY_V2, this._snapshot());
+			return changed || !this._arraysEqual(localItems, this._items);
+		}
 
 		_arraysEqual(a: BlockItem[], b: BlockItem[]) {
 			if (a === b) return true;
@@ -96,7 +182,13 @@ import {
 			return true;
 		}
 		_init() {
-			if (this._hasValidV2()) return this._saveV2(this._loadV2());
+			if (this._hasValidV2()) {
+				const raw = this._getGM(this.KEY_V2, null);
+				const items = this._normalizeItems(this._loadV2());
+				this._hydrateSync(raw, items);
+				this._items = items;
+				return items;
+			}
 			return this._saveV2([...this._loadV1(), ...this._loadLegacy()]);
 		}
 		all(): BlockItem[] { return this._items.slice(); }

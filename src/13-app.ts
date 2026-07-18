@@ -458,7 +458,7 @@ import { Logger } from './15-logger.ts';
 				GM_addValueChangeListener('blocked_v2', (_k, _old, val, remote) => {
 					if (!remote) return;
 					if (val && val.version === 2 && Array.isArray(val.items)) {
-						this.storage.setAllLocal(val.items);
+						this.storage.mergeRemote(val);
 						this.refreshAfterStorageChange();
 						Toast.show(t('syncToast'));
 					}

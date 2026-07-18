@@ -169,6 +169,7 @@ API config:
 Notes:
 
 - Legacy `blockedHandles` and `blockedHandles_v1` migrate only when a valid `blocked_v2` store is absent; later deletes and clears never restore legacy entries
+- Cross-tab `blocked_v2` changes carry optional per-entry revisions, tombstones, and a clear revision. Concurrent additions merge; add/delete/clear conflicts use the highest revision and converge without echo writes.
 - Default `app_settings_v1.dislikeMode` is `none`
 - Default `app_settings_v1.commentBlockMode` is `hide`
 - Default `app_settings_v1.blockMatchMode` is `handle`

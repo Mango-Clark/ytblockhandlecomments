@@ -14,6 +14,12 @@
 
 ## Done
 
+- [x] (E) 여러 YouTube 탭 동시 차단 목록 변경 충돌 처리
+
+  - (1) 항목별 revision/tombstone과 clear revision을 `blocked_v2` optional sync metadata로 추가.
+  - (2) 동시 추가 병합; add/delete/clear 충돌은 revision 순서로 결정론적 수렴.
+  - (3) remote merge는 변경시에만 재저장; 동시 add, add/delete, clear 자동 test 검증.
+
 - [x] (D) v2 migration 뒤 legacy 차단 항목 복원 방지
 
   - (1) 유효한 `blocked_v2`가 있으면 `blockedHandles_v1`, `blockedHandles`를 다시 병합하지 않음.

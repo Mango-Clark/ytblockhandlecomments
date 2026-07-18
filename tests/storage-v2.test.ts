@@ -35,3 +35,39 @@ test('valid blocked_v2 never restores legacy entries on reload', () => {
 	restored.clear();
 	assert.equal(new api.StorageV2(settings).all().length, 0);
 });
+
+function snapshot(store: Map<string, unknown>) {
+	return store.get('blocked_v2');
+}
+
+test('concurrent block-list additions converge without dropping either entry', () => {
+	const left = createStorage({});
+	const right = createStorage({});
+	left.storage.addHandle('@alpha');
+	right.storage.addHandle('@beta');
+
+	right.storage.mergeRemote(snapshot(left.store));
+	left.storage.mergeRemote(snapshot(right.store));
+
+	assert.equal(Array.from(left.storage.all(), (item: any) => item.value).sort().join(','), '@alpha,@beta');
+	assert.equal(Array.from(right.storage.all(), (item: any) => item.value).sort().join(','), '@alpha,@beta');
+});
+
+test('concurrent add, delete, and clear operations converge deterministically', () => {
+	const initial = { blocked_v2: { version: 2, updatedAt: 1, items: [{ type: 'handle', value: '@base' }] } };
+	const left = createStorage(initial);
+	const right = createStorage(initial);
+	left.storage.remove({ type: 'handle', value: '@base' });
+	right.storage.addHandle('@new');
+	right.storage.mergeRemote(snapshot(left.store));
+	left.storage.mergeRemote(snapshot(right.store));
+	assert.equal(Array.from(left.storage.all(), (item: any) => item.value).sort().join(','), Array.from(right.storage.all(), (item: any) => item.value).sort().join(','));
+
+	const clearer = createStorage({ blocked_v2: snapshot(left.store) as any });
+	const adder = createStorage({ blocked_v2: snapshot(left.store) as any });
+	clearer.storage.clear();
+	adder.storage.addHandle('@after-clear');
+	adder.storage.mergeRemote(snapshot(clearer.store));
+	clearer.storage.mergeRemote(snapshot(adder.store));
+	assert.equal(Array.from(clearer.storage.all(), (item: any) => item.value).sort().join(','), Array.from(adder.storage.all(), (item: any) => item.value).sort().join(','));
+});
