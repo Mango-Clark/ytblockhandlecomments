@@ -4,13 +4,6 @@
 
 ## P1 — High
 
-- [ ] (D) 재사용 comment node의 attribute·text 변경을 identity 재검사로 연결
-
-  - (0) `e7c9dedcfaa3a350b741455c7363c99ead5f77e3`
-  - (1) `src/13-app.ts:466-475`에서 handle/channel attribute와 기존 text node 값만 바뀌는 경우도 `_syncNodeIdentity`가 다시 실행됨.
-  - (2) 관찰 범위와 attribute filter를 최소화하고 userscript 자체 class/style 변경으로 재귀 mutation이 발생하지 않음.
-  - (3) `href`, `data-channel-id`, `channel-id`, author/body character data 변경 regression test 검증.
-
 - [ ] (E) logger payload 개인정보 redaction을 중첩 구조와 사용자 식별자까지 확대
 
   - (0) `e7c9dedcfaa3a350b741455c7363c99ead5f77e3`
@@ -41,6 +34,12 @@
 ## Backlog
 
 ## Done
+
+- [x] (W) 재사용 comment node의 attribute·text 변경을 identity 재검사로 연결
+
+  - (1) `href`, `data-channel-id`, `channel-id`, author/body text mutation도 comment root incremental refresh.
+  - (2) attribute filter 최소화; userscript class/style 변경은 mutation 재귀 미발생.
+  - (3) 3개 attribute·character data target regression test 검증.
 
 - [x] (V) Shorts comment observer를 현재 활성 panel로 제한
 

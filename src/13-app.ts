@@ -457,6 +457,12 @@ import { Logger } from './15-logger.ts';
 			node.querySelectorAll?.(COMMENT_SELECTOR).forEach((commentNode: Element) => roots.add(commentNode));
 		}
 
+		_collectMutationTargetRoot(target: any, roots: Set<Element>) {
+			const element = target?.nodeType === 1 ? target : target?.parentElement || target?.parentNode;
+			const root = Extractor.getCommentRoot(element);
+			if (root) roots.add(root);
+		}
+
 		_handleCommentMutations(muts: MutationRecord[]) {
 			const roots = new Set<Element>();
 			const removedRoots = new Set<Element>();
@@ -465,6 +471,9 @@ import { Logger } from './15-logger.ts';
 					const targetRoot = Extractor.getCommentRoot(m.target);
 					if (targetRoot) roots.add(targetRoot);
 					for (const node of m.addedNodes) this._collectRefreshRoots(node, roots);
+				}
+				if (m.type === 'attributes' || m.type === 'characterData') {
+					this._collectMutationTargetRoot(m.target, roots);
 				}
 				for (const node of m.removedNodes || []) this._collectRefreshRoots(node, removedRoots);
 			}
@@ -482,7 +491,13 @@ import { Logger } from './15-logger.ts';
 				this.hider.resetObservation();
 				this._commentsHost = host;
 				this._commentObserver = new MutationObserver(muts => this._handleCommentMutations(muts));
-				this._commentObserver.observe(host, { childList: true, subtree: true });
+				this._commentObserver.observe(host, {
+					childList: true,
+					subtree: true,
+					attributes: true,
+					attributeFilter: ['href', 'data-channel-id', 'channel-id'],
+					characterData: true
+				});
 			}
 			this.hider.refreshScheduled(host);
 		}

@@ -170,6 +170,42 @@ test('Shorts panel observer processes sibling additions and removals incremental
 	assert.ok(removedRoots.includes(existing));
 });
 
+test('comment identity mutations refresh only their comment root', () => {
+	const { api, document } = loadUserscript();
+	const app = Object.create(api.App.prototype);
+	const host = document.createElement('div');
+	const comment = document.createElement('ytd-comment-renderer');
+	const author = document.createElement('a');
+	const body = document.createElement('div');
+	const text = document.createTextNode('before');
+	body.appendChild(text);
+	comment.append(author, body);
+	host.appendChild(comment);
+	document.body.appendChild(host);
+	let refreshed: any[] = [];
+	Object.assign(app, {
+		_hostObserver: null,
+		_commentObserver: null,
+		_commentsHost: null,
+		hider: {
+			resetObservation: () => {}, refreshScheduled: () => {}, noteMutationBatch: () => {}, unobserveNodes: () => {},
+			refreshNodes: (roots: Set<any>) => { refreshed = Array.from(roots); }
+		}
+	});
+	app._attachCommentsHost(host);
+	assert.deepEqual(Array.from(app._commentObserver.observeCalls[0].options.attributeFilter), ['href', 'data-channel-id', 'channel-id']);
+	for (const record of [
+		{ type: 'attributes', target: author, attributeName: 'href' },
+		{ type: 'attributes', target: author, attributeName: 'data-channel-id' },
+		{ type: 'attributes', target: author, attributeName: 'channel-id' },
+		{ type: 'characterData', target: text }
+	]) {
+		refreshed.length = 0;
+		app._commentObserver.trigger([record]);
+		assert.deepEqual(refreshed, [comment]);
+	}
+});
+
 test('page-data and history navigation events schedule page-key synchronization', () => {
 	const { api, context, document } = loadUserscript();
 	let schedules = 0;
