@@ -595,6 +595,46 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			logConsoleToggle.type = 'checkbox';
 			const logConsoleText = document.createElement('span');
 			logConsoleLabel.append(logConsoleToggle, logConsoleText);
+			const consolePrefixLabel = document.createElement('label');
+			const consolePrefixText = document.createElement('span');
+			const consolePrefixInput = document.createElement('input');
+			consolePrefixInput.dataset.setting = 'console-log-prefix';
+			consolePrefixInput.maxLength = 64;
+			consolePrefixLabel.append(consolePrefixText, consolePrefixInput);
+			const consoleTimestampLabel = document.createElement('label');
+			const consoleTimestampToggle = document.createElement('input');
+			consoleTimestampToggle.type = 'checkbox';
+			consoleTimestampToggle.dataset.setting = 'console-log-timestamp';
+			const consoleTimestampText = document.createElement('span');
+			consoleTimestampLabel.append(consoleTimestampToggle, consoleTimestampText);
+			const consoleFormatLabel = document.createElement('label');
+			const consoleFormatText = document.createElement('span');
+			const consoleFormatSelect = document.createElement('select');
+			consoleFormatSelect.dataset.setting = 'console-log-time-format';
+			['iso', 'iso-date', 'iso-time', 'iso-basic', 'custom'].forEach(value => {
+				const option = document.createElement('option');
+				option.value = value;
+				consoleFormatSelect.appendChild(option);
+			});
+			consoleFormatLabel.append(consoleFormatText, consoleFormatSelect);
+			const consoleFormatInput = document.createElement('input');
+			consoleFormatInput.dataset.setting = 'console-log-time-format-custom';
+			consoleFormatInput.maxLength = 80;
+			const consoleTimezoneLabel = document.createElement('label');
+			const consoleTimezoneText = document.createElement('span');
+			const consoleTimezoneSelect = document.createElement('select');
+			consoleTimezoneSelect.dataset.setting = 'console-log-timezone';
+			['system', 'userinput', ...Array.from({ length: 27 }, (_: unknown, index: number) => `offset:${index - 12 < 0 ? '-' : '+'}${String(Math.abs(index - 12)).padStart(2, '0')}:00`), 'Asia/Seoul', 'Asia/Tokyo', 'Europe/Berlin', 'America/New_York', 'America/Los_Angeles'].forEach(value => {
+				const option = document.createElement('option');
+				option.value = value;
+				consoleTimezoneSelect.appendChild(option);
+			});
+			consoleTimezoneLabel.append(consoleTimezoneText, consoleTimezoneSelect);
+			const consoleTimezoneInput = document.createElement('input');
+			consoleTimezoneInput.dataset.setting = 'console-log-timezone-custom';
+			consoleTimezoneInput.maxLength = 64;
+			const consoleLoggingStatus = document.createElement('p');
+			consoleLoggingStatus.className = 'tm-muted';
 			const logLevelLabel = document.createElement('label');
 			const logLevelText = document.createElement('span');
 			const logLevelSelect = document.createElement('select');
@@ -630,7 +670,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			const clearLogBtn = Object.assign(document.createElement('button'), { className: 'secondary' });
 			logActions.append(downloadLogBtn, clearLogBtn);
 			const logHelp = document.createElement('p');
-			loggingControls.append(logFileLabel, logConsoleLabel, logLevelLabel, logRetentionLabel, verboseLabel, verboseHelp, logActions, logHelp);
+			loggingControls.append(logFileLabel, logConsoleLabel, consolePrefixLabel, consoleTimestampLabel, consoleFormatLabel, consoleFormatInput, consoleTimezoneLabel, consoleTimezoneInput, consoleLoggingStatus, logLevelLabel, logRetentionLabel, verboseLabel, verboseHelp, logActions, logHelp);
 			loggingGroup.append(loggingTitle, loggingControls);
 
 			const displayGroup = document.createElement('li');
@@ -685,6 +725,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			markDefaultOption(blockModeSelect, 'hide');
 			markDefaultOption(logLevelSelect, 'warn');
 			markDefaultOption(logRetentionSelect, 500);
+			markDefaultOption(consoleTimezoneSelect, 'system');
 			markDefaultOption(verboseSelect, 3);
 			markDefaultOption(fontSizeSelect, 3);
 			markDefaultOption(uiScaleSelect, 3);
@@ -846,6 +887,15 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				logConsoleToggle.checked = !!logging.consoleEnabled;
 				logLevelSelect.value = logging.level;
 				logRetentionSelect.value = String(logging.retention);
+				consolePrefixInput.value = logging.consolePrefix;
+				consoleTimestampToggle.checked = !!logging.consoleTimestampEnabled;
+				consoleFormatSelect.value = ['iso', 'iso-date', 'iso-time', 'iso-basic'].includes(logging.consoleTimeFormat) ? logging.consoleTimeFormat : 'custom';
+				consoleFormatInput.value = consoleFormatSelect.value === 'custom' ? logging.consoleTimeFormat : '';
+				consoleFormatInput.hidden = consoleFormatSelect.value !== 'custom';
+				consoleTimezoneSelect.value = Array.from(consoleTimezoneSelect.options).some(option => option.value === logging.consoleTimeZone) ? logging.consoleTimeZone : 'userinput';
+				consoleTimezoneInput.value = consoleTimezoneSelect.value === 'userinput' ? logging.consoleTimeZoneInput || logging.consoleTimeZone : '';
+				consoleTimezoneInput.hidden = consoleTimezoneSelect.value !== 'userinput';
+				consoleLoggingStatus.textContent = '';
 				verboseSelect.value = String(this.app.settings.getVerboseLevel());
 				dislikeSelect.value = this.app.settings.getDislikeMode();
 				blockModeSelect.value = this.app.settings.getCommentBlockMode();
@@ -877,6 +927,16 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				loggingTitle.textContent = t('loggingTitle');
 				logFileText.textContent = t('loggingFileLabel');
 				logConsoleText.textContent = t('loggingConsoleLabel');
+				consolePrefixText.textContent = t('consolePrefixLabel') + ': ';
+				consoleTimestampText.textContent = t('consoleTimestampLabel');
+				consoleFormatText.textContent = t('consoleTimeFormatLabel') + ': ';
+				Array.from(consoleFormatSelect.options).forEach(option => { option.textContent = t(`consoleTimeFormat${option.value === 'iso' ? 'Iso' : option.value === 'iso-date' ? 'IsoDate' : option.value === 'iso-time' ? 'IsoTime' : option.value === 'iso-basic' ? 'IsoBasic' : 'Custom'}`); });
+				consoleFormatInput.placeholder = t('consoleTimeFormatPlaceholder');
+				consoleTimezoneText.textContent = t('consoleTimezoneLabel') + ': ';
+				Array.from(consoleTimezoneSelect.options).forEach(option => {
+					option.textContent = option.value === 'system' ? defaultOptionText(option, t('consoleTimezoneSystem')) : option.value === 'userinput' ? t('consoleTimezoneUserInput') : option.value.startsWith('offset:') ? `UTC${option.value.slice(7)}` : option.value === 'Asia/Seoul' ? 'Asia/Seoul (KST)' : option.value === 'Asia/Tokyo' ? 'Asia/Tokyo (JST)' : option.value === 'Europe/Berlin' ? 'Europe/Berlin (CET/CEST)' : option.value;
+				});
+				consoleTimezoneInput.placeholder = t('consoleTimezonePlaceholder');
 				logLevelText.textContent = t('loggingLevelLabel') + ': ';
 				logRetentionText.textContent = t('loggingRetentionLabel') + ': ';
 				verboseText.textContent = t('verboseLevelLabel') + ': ';
@@ -965,18 +1025,34 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				this.openBlockKeywordAutomation();
 			});
 			const saveLogging = () => {
-				this.app.settings.setLogging({
+				const saved = this.app.settings.setLogging({
 					fileEnabled: logFileToggle.checked,
 					consoleEnabled: logConsoleToggle.checked,
 					level: logLevelSelect.value,
-					retention: Number(logRetentionSelect.value)
+					retention: Number(logRetentionSelect.value),
+					consolePrefix: consolePrefixInput.value,
+					consoleTimestampEnabled: consoleTimestampToggle.checked,
+					consoleTimeFormat: consoleFormatSelect.value === 'custom' ? consoleFormatInput.value : consoleFormatSelect.value,
+					consoleTimeZone: consoleTimezoneSelect.value,
+					consoleTimeZoneInput: consoleTimezoneInput.value
 				});
+				if (!saved) {
+					const field = this.app.settings.getLoggingValidationError({ ...this.app.settings.getLogging(), consolePrefix: consolePrefixInput.value, consoleTimeFormat: consoleFormatSelect.value === 'custom' ? consoleFormatInput.value : consoleFormatSelect.value, consoleTimeZone: consoleTimezoneSelect.value, consoleTimeZoneInput: consoleTimezoneInput.value });
+					consoleLoggingStatus.textContent = t('consoleLoggingInvalid', field);
+					return;
+				}
 				renderAll();
 			};
 			logFileToggle.addEventListener('change', saveLogging);
 			logConsoleToggle.addEventListener('change', saveLogging);
 			logLevelSelect.addEventListener('change', saveLogging);
 			logRetentionSelect.addEventListener('change', saveLogging);
+			consolePrefixInput.addEventListener('change', saveLogging);
+			consoleTimestampToggle.addEventListener('change', saveLogging);
+			consoleFormatSelect.addEventListener('change', () => { consoleFormatInput.hidden = consoleFormatSelect.value !== 'custom'; saveLogging(); });
+			consoleFormatInput.addEventListener('change', saveLogging);
+			consoleTimezoneSelect.addEventListener('change', () => { consoleTimezoneInput.hidden = consoleTimezoneSelect.value !== 'userinput'; saveLogging(); });
+			consoleTimezoneInput.addEventListener('change', saveLogging);
 			verboseSelect.addEventListener('change', () => {
 				this.app.settings.setVerboseLevel(verboseSelect.value);
 				renderAll();

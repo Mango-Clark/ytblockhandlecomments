@@ -38,6 +38,7 @@ Source layout:
 - Configurable comment auto-dislike mode, defaulting to off: off, only when newly hidden, or always while hidden
 - Supports a unified block and keyword automation dialog for regex rules, keyword matching fields, and independent dislike, handle-block, and UID-pair actions
 - Supports independent local log retention and browser-console logging, with level and retention controls plus log-file download
+- Supports configurable console-log prefixes and optional timestamps with ISO/custom formats and timezone selection
 - Supports V0-V5 diagnostic-detail settings for log payloads, defaulting to balanced V3 output
 - Supports `handle`, `id`, and `regex` rules in `blocked_v2`
 - Supports selectable identity matching: `handle` rules by default or UID pair `id` rules; regex rules remain independent
@@ -140,7 +141,7 @@ App settings:
 	keywordRules: string[],
 	keywordFields: { commentText: boolean, handle: boolean, pinned: boolean },
 	keywordActions: { dislike: boolean, blockHandle: boolean, createPair: boolean },
-  logging: { fileEnabled: boolean, consoleEnabled: boolean, level: 'error' | 'warn' | 'info' | 'debug', retention: 100 | 500 | 1000 },
+  logging: { fileEnabled: boolean, consoleEnabled: boolean, level: 'error' | 'warn' | 'info' | 'debug', retention: 100 | 500 | 1000, consolePrefix: string, consoleTimestampEnabled: boolean, consoleTimeFormat: string, consoleTimeZone: string, consoleTimeZoneInput: string },
   verboseLevel: 0 | 1 | 2 | 3 | 4 | 5,
   dislikeMode: 'none' | 'new-hidden' | 'always',
   commentBlockMode: 'hide' | 'placeholder' | 'placeholder-reveal',

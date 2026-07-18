@@ -151,7 +151,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- None
+- Added configurable console-log prefixes, optional timestamps, ISO/custom time formats, and timezone selection.
 
 ### Changed
 

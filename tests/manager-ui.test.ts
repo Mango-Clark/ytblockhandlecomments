@@ -227,7 +227,7 @@ test('export dialog returns to the list and downloads each format', async () => 
 test('logging settings persist independently and retain the configured level', () => {
 	const { api, gmStore } = loadUserscript();
 	const settings = new api.AppSettingsStorage();
-	settings.setLogging({ fileEnabled: true, consoleEnabled: false, level: 'info', retention: 100 });
+	settings.setLogging({ fileEnabled: true, consoleEnabled: false, level: 'info', retention: 100, consolePrefix: '[TEST]', consoleTimestampEnabled: true, consoleTimeFormat: 'yy-MM-dd HH:mm:ss XXX', consoleTimeZone: 'offset:+09:00' });
 	settings.setVerboseLevel(2);
 	const logger = new api.Logger(settings);
 	logger.debug('ignored');
@@ -237,12 +237,38 @@ test('logging settings persist independently and retain the configured level', (
 	assert.equal(settings.getLogging().consoleEnabled, false);
 	assert.equal(settings.getLogging().level, 'info');
 	assert.equal(settings.getLogging().retention, 100);
+	assert.equal(settings.getLogging().consolePrefix, '[TEST]');
 	assert.equal(settings.getVerboseLevel(), 2);
 	assert.equal(logger._formatDetail({ first: true, second: false }), '{"first":true}');
+	assert.equal(logger._formatConsolePrefix(settings.getLogging(), Date.UTC(2026, 0, 2, 3, 4, 5)), '[TEST] 26-01-02 12:04:05 +09:00');
+	assert.equal(settings.setLogging({ consolePrefix: 'bad\nvalue' }), null);
+	assert.equal(settings.getLogging().consolePrefix, '[TEST]');
 	assert.equal((gmStore.get('yt_comment_blocker_logs_v1') as any[]).length, 1);
 	assert.equal((gmStore.get('yt_comment_blocker_logs_v1') as any[])[0].message, 'saved');
 	logger.clear();
 	assert.equal((gmStore.get('yt_comment_blocker_logs_v1') as any[]).length, 0);
+});
+
+test('settings dialog saves validated console logging settings', () => {
+	const { api, document } = loadUserscript();
+	const settings = new api.AppSettingsStorage();
+	const storage = new api.StorageV2(settings);
+	const pairStore = new api.PairMetaStorage(settings);
+	const apiConfig = new api.ApiConfigStorage();
+	const manager = new api.BlockListManager({ settings, storage, pairStore, apiConfig, pairService: new api.PairService(storage, pairStore, apiConfig, settings), getLastPairRunResult: () => null, refreshAfterStorageChange: () => {} });
+	manager.openSettings();
+	const input = document.querySelectorAll('input').find((item: any) => item.dataset.setting === 'console-log-prefix');
+	const format = document.querySelectorAll('select').find((item: any) => item.dataset.setting === 'console-log-time-format');
+	const zone = document.querySelectorAll('select').find((item: any) => item.dataset.setting === 'console-log-timezone');
+	input.value = '[CONSOLE]';
+	input.dispatchEvent({ type: 'change' });
+	format.value = 'iso-basic';
+	format.dispatchEvent({ type: 'change' });
+	zone.value = 'Asia/Seoul';
+	zone.dispatchEvent({ type: 'change' });
+	assert.equal(settings.getLogging().consolePrefix, '[CONSOLE]');
+	assert.equal(settings.getLogging().consoleTimeFormat, 'iso-basic');
+	assert.equal(settings.getLogging().consoleTimeZone, 'Asia/Seoul');
 });
 
 test('settings dialog updates comment block mode', () => {

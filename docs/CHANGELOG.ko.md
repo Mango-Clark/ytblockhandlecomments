@@ -151,7 +151,7 @@
 
 ### Added
 
-- 없음
+- console 로그 prefix, 선택적 시간 표시, ISO/직접 시간 형식, timezone 선택을 추가했습니다.
 
 ### Changed
 

@@ -129,7 +129,12 @@ App settings:
 		fileEnabled: boolean,
 		consoleEnabled: boolean,
 		level: 'error' | 'warn' | 'info' | 'debug',
-		retention: 100 | 500 | 1000
+		retention: 100 | 500 | 1000,
+		consolePrefix: string,
+		consoleTimestampEnabled: boolean,
+		consoleTimeFormat: string,
+		consoleTimeZone: string,
+		consoleTimeZoneInput: string
 	},
   dislikeMode: 'none' | 'new-hidden' | 'always',
   commentBlockMode: 'hide' | 'placeholder' | 'placeholder-reveal',
@@ -174,6 +179,7 @@ Notes:
 - YouTube-theme synchronization watches only native YouTube dark-state signals, not userscript theme classes
 - Logging is off by default. File logging retains entries in Tampermonkey storage until users download
   or clear them; the browser controls the downloaded file location
+- Console logging defaults to `[YTCB]` with timestamps off. Timestamps accept ISO extended, date, time, and basic presets, or `yyyy`, `yy`, `MM`, `dd`, `HH`, `mm`, `ss`, `SSS`, `X`, `XXX`, and `Z` tokens. Timezones support system, UTC offsets from `-12` to `+14`, listed IANA cities, and validated custom IANA or KST-style abbreviations.
 - `app_settings_v1.verboseLevel` defaults to `3`. V0/V1 omit diagnostic payloads, V2 records one
   field, V3 records three fields, and V4/V5 retain all available fields
 - Default `app_settings_v1.fontSizeLevel` and `app_settings_v1.uiScaleLevel` are `3`; level `2`

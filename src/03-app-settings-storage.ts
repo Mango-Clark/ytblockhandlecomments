@@ -6,6 +6,7 @@
 		[key: string]: any;
 		constructor() {
 			this.KEY = 'app_settings_v1';
+			this.CONSOLE_TIME_FORMATS = ['iso', 'iso-date', 'iso-time', 'iso-basic'];
 			this.THEME_MODES = ['light', 'dark', 'system', 'system-inverted', 'youtube', 'youtube-inverted', 'custom'];
 			this.THEME_DEFAULTS = {
 				background: '#f8f9fa', surface: '#ffffff', text: '#202124', muted: '#5f6368',
@@ -59,6 +60,42 @@
 			}
 			return keywords;
 		}
+		_normalizeConsolePrefix(value: any) {
+			const prefix = String(value ?? '[YTCB]').trim();
+			return prefix && prefix.length <= 64 && !this._hasControlCharacter(prefix) ? prefix : '[YTCB]';
+		}
+		_hasControlCharacter(value: string) {
+			return Array.from(value).some(character => {
+				const code = character.codePointAt(0) || 0;
+				return code < 32 || code === 127;
+			});
+		}
+		_normalizeConsoleTimeFormat(value: any) {
+			const format = String(value ?? 'iso').trim();
+			return this.CONSOLE_TIME_FORMATS.includes(format) || this._isValidConsoleTimeFormat(format) ? format : 'iso';
+		}
+		_isValidConsoleTimeFormat(value: any) {
+			const format = String(value || '').trim();
+			if (!format || format.length > 80) return false;
+			const parts = format.match(/yyyy|yy|MM|dd|HH|mm|ss|SSS|XXX|X|T|Z|[^A-Za-z]+/g);
+			return !!parts && parts.join('') === format;
+		}
+		_isValidTimeZone(value: any) {
+			const zone = String(value || '').trim();
+			if (!zone || zone.length > 64) return false;
+			if (/^offset:[+-](?:0\d|1[0-4]):00$/.test(zone)) return true;
+			const aliases: Record<string, string> = { KST: 'Asia/Seoul', JST: 'Asia/Tokyo', CET: 'Europe/Berlin', CEST: 'Europe/Berlin', EST: 'America/New_York', EDT: 'America/New_York', PST: 'America/Los_Angeles', PDT: 'America/Los_Angeles' };
+			try { Intl.DateTimeFormat('en-US', { timeZone: aliases[zone] || zone }); return true; } catch { return false; }
+		}
+		getLoggingValidationError(config: any) {
+			const prefix = String(config?.consolePrefix ?? '').trim();
+			if (!prefix || prefix.length > 64 || this._hasControlCharacter(prefix)) return 'prefix';
+			if (!this._isValidConsoleTimeFormat(config?.consoleTimeFormat) && !this.CONSOLE_TIME_FORMATS.includes(String(config?.consoleTimeFormat))) return 'format';
+			const zone = String(config?.consoleTimeZone ?? 'system');
+			if (zone === 'system') return null;
+			const target = zone === 'userinput' ? config?.consoleTimeZoneInput : zone;
+			return this._isValidTimeZone(target) ? null : 'timezone';
+		}
 		_normalizeState(raw: any) {
 			const src = raw && typeof raw === 'object' ? raw : {};
 			const pairUpdateUidCheck = !!src.pairUpdateUidCheck;
@@ -92,7 +129,12 @@
 					fileEnabled: !!logging.fileEnabled,
 					consoleEnabled: !!logging.consoleEnabled,
 					level: ['error', 'warn', 'info', 'debug'].includes(logging.level) ? logging.level : 'warn',
-					retention: [100, 500, 1000].includes(Number(logging.retention)) ? Number(logging.retention) : 500
+					retention: [100, 500, 1000].includes(Number(logging.retention)) ? Number(logging.retention) : 500,
+					consolePrefix: this._normalizeConsolePrefix(logging.consolePrefix),
+					consoleTimestampEnabled: !!logging.consoleTimestampEnabled,
+					consoleTimeFormat: this._normalizeConsoleTimeFormat(logging.consoleTimeFormat),
+					consoleTimeZone: this._isValidTimeZone(logging.consoleTimeZone) || ['system', 'userinput'].includes(logging.consoleTimeZone) ? logging.consoleTimeZone : 'system',
+					consoleTimeZoneInput: String(logging.consoleTimeZoneInput || '').trim().slice(0, 64)
 				},
 				verboseLevel: this._normalizeVerboseLevel(src.verboseLevel),
 				dislikeMode: ['none', 'new-hidden', 'always'].includes(src.dislikeMode) ? src.dislikeMode : 'none',
@@ -285,7 +327,9 @@
 			return { ...this._state.logging };
 		}
 		setLogging(config: any) {
-			return this._saveState({ ...this._state, logging: config });
+			const logging = { ...this.getLogging(), ...config };
+			if (this.getLoggingValidationError(logging)) return null;
+			return this._saveState({ ...this._state, logging });
 		}
 		getVerboseLevel() {
 			return this._normalizeVerboseLevel(this._state.verboseLevel);
