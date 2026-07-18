@@ -11,6 +11,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- None
+
+### Changed
+
+- None
+
+### Deprecated
+
+- None
+
+### Removed
+
+- None
+
+### Fixed
+
+- None
+
+### Security
+
+- None
+
+## [1.5.0] - 2026-07-18
+
+### Added
+
 - Marked default saved-setting choices in the Settings dialog with a muted `(Default)` label.
 - Added configurable cached handle-to-channel-ID lookup using the public YouTube channel page by default, with explicit API lookup, API fallback, intervals, and on-add resolution.
 
@@ -45,6 +71,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 
 - None
+
 
 ## [1.4.0] - 2026-07-12
 
