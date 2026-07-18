@@ -75,17 +75,39 @@ export class Logger {
 		const configuredLevel: LogLevel = ['error', 'warn', 'info', 'debug'].includes(config.level) ? config.level : 'warn';
 		return !!(config.fileEnabled || config.consoleEnabled) && LEVEL_WEIGHT[level] <= LEVEL_WEIGHT[configuredLevel];
 	}
+	_isSensitiveDetailKey(key: string) {
+		return /(api.?key|token|password|secret|authorization|cookie|url|account|comment|handle|channel.?id|uid|user(?:name|id)?|author|email)/i.test(key);
+	}
+	_redactDetail(value: unknown, maxFields: number, seen = new WeakSet<object>(), depth = 0, budget = { remaining: 100 }): unknown {
+		if (value == null || typeof value === 'boolean' || typeof value === 'number' || typeof value === 'string') return value;
+		if (typeof value === 'bigint') return String(value);
+		if (typeof value !== 'object' || depth >= 4 || budget.remaining <= 0) return '[Redacted]';
+		if (seen.has(value)) return '[Circular]';
+		seen.add(value);
+		try {
+			if (Array.isArray(value)) {
+				return value.slice(0, maxFields).map(item => {
+					budget.remaining -= 1;
+					return budget.remaining >= 0 ? this._redactDetail(item, maxFields, seen, depth + 1, budget) : '[Truncated]';
+				});
+			}
+			const result: Record<string, unknown> = {};
+			for (const [key, item] of Object.entries(value).slice(0, maxFields)) {
+				budget.remaining -= 1;
+				if (budget.remaining < 0) { result.truncated = '[Truncated]'; break; }
+				if (this._isSensitiveDetailKey(key)) continue;
+				result[key] = this._redactDetail(item, maxFields, seen, depth + 1, budget);
+			}
+			return result;
+		} catch { return '[Unserializable]'; }
+	}
 	_formatDetail(detail: unknown) {
 		const verboseLevel = this.settings.getVerboseLevel?.() ?? 3;
 		if (detail == null || verboseLevel < 2) return '';
 		if (typeof detail !== 'object') return String(detail);
 		const maxFields = [0, 0, 1, 3, 6, 10][verboseLevel] || 0;
-		try {
-			const entries = Object.entries(detail as Record<string, unknown>)
-				.filter(([key]) => !/(api.?key|token|password|comment|url|account)/i.test(key))
-				.slice(0, maxFields);
-			return JSON.stringify(Object.fromEntries(entries));
-		} catch { return String(detail); }
+		try { return JSON.stringify(this._redactDetail(detail, maxFields)); }
+		catch { return '"[Unserializable]"'; }
 	}
 	log(level: LogLevel, message: string, detail?: unknown) {
 		if (!this._shouldLog(level)) return;

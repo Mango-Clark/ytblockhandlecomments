@@ -274,6 +274,30 @@ test('logging settings persist independently and retain the configured level', (
 	assert.equal((gmStore.get('yt_comment_blocker_logs_v1') as any[]).length, 0);
 });
 
+test('logger redacts nested identifiers without leaking circular payloads', () => {
+	const { api } = loadUserscript();
+	const settings = new api.AppSettingsStorage();
+	settings.setVerboseLevel(5);
+	const logger = new api.Logger(settings);
+	const payload: any = {
+		handle: '@private', nested: { token: 'secret', account: { userId: 'person' }, safe: true },
+		items: [{ url: 'https://private.example', visible: 'ok' }]
+	};
+	payload.circular = payload;
+	const detail = logger._formatDetail(payload);
+	assert.equal(detail.includes('@private'), false);
+	assert.equal(detail.includes('secret'), false);
+	assert.equal(detail.includes('private.example'), false);
+	assert.equal(detail.includes('person'), false);
+	assert.match(detail, /"safe":true/);
+	assert.match(detail, /"visible":"ok"/);
+	assert.match(detail, /\[Circular\]/);
+
+	settings.setVerboseLevel(4);
+	const fields = Object.fromEntries(Array.from({ length: 8 }, (_: unknown, index: number): [string, number] => [`field${index}`, index]));
+	assert.equal(Object.keys(JSON.parse(logger._formatDetail(fields))).length, 6);
+});
+
 test('settings dialog saves validated console logging settings', () => {
 	const { api, document } = loadUserscript();
 	const settings = new api.AppSettingsStorage();

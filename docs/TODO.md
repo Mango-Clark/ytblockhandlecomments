@@ -4,14 +4,6 @@
 
 ## P1 — High
 
-- [ ] (E) logger payload 개인정보 redaction을 중첩 구조와 사용자 식별자까지 확대
-
-  - (0) `e7c9dedcfaa3a350b741455c7363c99ead5f77e3`
-  - (1) `src/15-logger.ts:78-88`에서 중첩 object·array의 API key, token, URL, account, comment와 handle 식별자를 console·저장 로그 전에 재귀적으로 제거.
-  - (2) circular·대형 payload에서도 redaction 실패로 원문이 fallback 출력되지 않고 깊이·크기 제한을 유지.
-  - (3) `src/13-app.ts:192`의 keyword 로그 등 실제 callsite에서 handle 원문이 남지 않는 regression test 검증.
-  - (4) README·WIKI의 V4/V5 설명을 실제 6/10 field 제한 및 redaction 정책과 영문·한국어 쌍으로 일치시킴.
-
 ## P2 — Normal
 
 - [ ] (A) console 시간 형식의 ISO 8601 완료 조건 충족
@@ -34,6 +26,13 @@
 ## Backlog
 
 ## Done
+
+- [x] (X) logger payload 개인정보 redaction을 중첩 구조와 사용자 식별자까지 확대
+
+  - (1) 중첩 object·array의 API key, token, URL, account, comment, handle, 사용자 식별자 제거.
+  - (2) circular·대형 payload는 원문 fallback 없이 깊이·field·전체 크기 제한 적용.
+  - (3) nested identifier·circular·V4 6 field regression test 검증.
+  - (4) README·WIKI 영문·한국어 V4/V5 6/10 field와 redaction 정책 동기화.
 
 - [x] (W) 재사용 comment node의 attribute·text 변경을 identity 재검사로 연결
 

@@ -196,7 +196,8 @@ API 설정:
 - Tampermonkey가 권한, 용량, 저장소 문제로 설정, 차단 목록, pair 메타데이터, API 키, 로그 쓰기를 거부하면 메모리 상태도 바꾸지 않습니다. 해당 작업은 성공 알림 대신 오류와 재시도 안내를 표시합니다.
 - console 로그 기본 prefix는 `[YTCB]`, 시간 표시는 꺼짐입니다. 시간은 ISO 확장/날짜/시간/기본 preset 또는 `yyyy`, `yy`, `MM`, `dd`, `HH`, `mm`, `ss`, `SSS`, `X`, `XXX`, `Z` 형식을 지원합니다. timezone은 system, `-12`~`+14` UTC offset, 목록 IANA 도시, 검증한 직접 IANA 또는 KST식 약어를 지원합니다.
 - `app_settings_v1.verboseLevel`의 기본값은 `3`입니다. V0/V1은 진단 payload를 생략하고,
-  V2는 한 필드, V3은 세 필드, V4/V5는 가능한 전체 필드를 기록합니다
+  V2는 한 필드, V3은 세 필드, V4는 여섯 필드, V5는 열 필드를 기록합니다. console과 저장 로그 전
+  중첩 API 키·token·URL·account·comment·handle·사용자 식별자를 제거하며, circular·대형 payload는 안전하게 자릅니다.
 - 기본 `app_settings_v1.fontSizeLevel`과 `app_settings_v1.uiScaleLevel`은 `3`이며, `2`는
   이전 시각 크기와 같습니다
 - pair 메타데이터와 API 설정은 import/export에 포함되지 않습니다
