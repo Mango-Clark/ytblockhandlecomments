@@ -24,6 +24,18 @@ import {
 	export class Dialog {
 		[key: string]: any;
 		static _instances = new Set<any>();
+		static _keyListenerAttached = false;
+		static _getTopInstance() { return Array.from(Dialog._instances).at(-1) || null; }
+		static _dispatchKeydown(event: KeyboardEvent) { Dialog._getTopInstance()?.onKey?.(event); }
+		static _syncKeyListener() {
+			if (Dialog._instances.size && !Dialog._keyListenerAttached) {
+				document.addEventListener('keydown', Dialog._dispatchKeydown);
+				Dialog._keyListenerAttached = true;
+			} else if (!Dialog._instances.size && Dialog._keyListenerAttached) {
+				document.removeEventListener('keydown', Dialog._dispatchKeydown);
+				Dialog._keyListenerAttached = false;
+			}
+		}
 		// Promise resolves with `value` passed to close()
 		static show({
 			title = '',
@@ -39,6 +51,7 @@ import {
 			onRefresh?: ((ctx: DialogRefreshContext) => void) | null;
 		}) {
 			return new Promise<any>(resolve => {
+				const returnFocus = document.activeElement as HTMLElement | null;
 				const backdrop = Object.assign(document.createElement('div'), { className: 'tm-backdrop' });
 				const dialog = Object.assign(document.createElement('div'), { className: 'tm-dialog' });
 				dialog.setAttribute('role', 'dialog');
@@ -76,8 +89,10 @@ import {
 				const close = (val: any) => {
 					try { if (onBeforeClose) val = onBeforeClose(val, dialog); } catch { }
 					if (val && typeof val === 'object' && val.ok === false) return;
-					backdrop.remove(); document.removeEventListener('keydown', onKey);
+					backdrop.remove();
 					Dialog._instances.delete(instance);
+					Dialog._syncKeyListener();
+					returnFocus?.focus?.();
 					resolve(val);
 				};
 
@@ -114,20 +129,23 @@ import {
 						else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
 					}
 				};
-				document.addEventListener('keydown', onKey);
-				backdrop.addEventListener('click', e => { if (e.target === backdrop) close(false); });
+				backdrop.addEventListener('click', e => {
+					if (Dialog._getTopInstance() === instance && e.target === backdrop) close(false);
+				});
 
 				instance = {
 					close,
+					onKey,
 					refresh: () => onRefresh?.(refreshContext)
 				};
 				Dialog._instances.add(instance);
+				Dialog._syncKeyListener();
 				if (onRefresh) onRefresh(refreshContext);
 				dialog.querySelector('button')?.focus();
 			});
 		}
 		static closeAll(value: any = false) {
-			for (const instance of Array.from(Dialog._instances)) {
+			for (const instance of Array.from(Dialog._instances).reverse()) {
 				try { instance.close?.(value); } catch { }
 			}
 		}

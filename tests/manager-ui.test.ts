@@ -81,6 +81,31 @@ test('dialog refresh reruns translated labels after language change', async () =
 	await body;
 });
 
+test('nested dialogs route keyboard input to the top dialog and restore focus', async () => {
+	const { api, document } = loadUserscript();
+	const opener = document.createElement('button');
+	document.body.appendChild(opener);
+	opener.focus();
+	const outer = api.Dialog.show({ title: 'Outer', buttons: [{ label: 'Confirm', value: 'outer', primary: true }] });
+	const outerButton = document.querySelector('.tm-dialog button');
+	const inner = api.Dialog.show({ title: 'Inner', buttons: [{ label: 'Confirm', value: 'inner', primary: true }] });
+	assert.equal(document._listeners.get('keydown').size, 1);
+
+	const escape: any = { type: 'keydown', key: 'Escape', preventDefault() { this.defaultPrevented = true; } };
+	document.dispatchEvent(escape);
+	assert.equal(escape.defaultPrevented, true);
+	assert.equal(document.querySelectorAll('.tm-dialog').length, 1);
+	assert.equal(document.activeElement, outerButton);
+	assert.equal(await inner, false);
+
+	const enter: any = { type: 'keydown', key: 'Enter', target: document, preventDefault() { this.defaultPrevented = true; } };
+	document.dispatchEvent(enter);
+	assert.equal(enter.defaultPrevented, true);
+	assert.equal(await outer, 'outer');
+	assert.equal(document.activeElement, opener);
+	assert.equal(document._listeners.get('keydown').size, 0);
+});
+
 test('i18n dictionaries provide Korean and English labels', () => {
 	const { api, setLang } = loadUserscript();
 

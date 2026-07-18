@@ -239,6 +239,7 @@ Notes:
 - Navigation resets transient comment observers and metadata caches so long YouTube sessions do not
   retain old comment DOM nodes
 - YouTube-theme detection watches only the root, the current `ytd-app`, and direct `ytd-app` replacement events
+- Nested dialogs keep Escape, Enter, Tab focus handling, and backdrop clicks on the top dialog only
 - Performance counters are exposed in the settings dialog and on `window.__ytCommentBlockerPerf`
 - Logging is limited to low-frequency app and pair/API events, never the per-comment matching hot path
 

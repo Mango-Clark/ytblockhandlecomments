@@ -14,6 +14,12 @@
 
 ## Done
 
+- [x] (N) 중첩 dialog keydown·focus 처리
+
+  - (1) document keydown listener 1개; top dialog만 Escape/Enter/Tab 처리.
+  - (2) backdrop close도 top dialog만 처리; close 뒤 opener focus 복원.
+  - (3) nested keyboard, listener count, focus restore regression test 검증.
+
 - [x] (M) YouTube theme observer 범위 축소
 
   - (1) `body subtree` discovery 제거; `ytd-app` 발견 뒤 discovery disconnect.
