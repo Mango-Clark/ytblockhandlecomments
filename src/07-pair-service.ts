@@ -376,6 +376,26 @@ import {
 			}
 		}
 		async resolveHandle(handle: string) {
+			const normalized = sanitizeHandle(handle);
+			if (!normalized) throw new Error(t('pairLookupNoUid'));
+			if (this.settings?.getHandleLookupMethod?.() !== 'api') {
+				try { return await this._resolveHandleFromPage(normalized); }
+				catch (error) {
+					if (!this.settings?.isHandleLookupFallbackApiEnabled?.() || !this.apiConfig.hasApiKey()) throw error;
+				}
+			}
+			return this._resolveHandleFromApi(normalized);
+		}
+		async _resolveHandleFromPage(handle: string) {
+			const response = await fetch(`https://www.youtube.com/${encodeURIComponent(handle)}`, { cache: 'no-store', referrerPolicy: 'no-referrer' });
+			if (!response.ok) throw new Error(`${t('pairLookupFailed')} (${response.status})`);
+			const html = await response.text();
+			const patterns = [/"externalId":"(UC[0-9A-Za-z_-]{10,})"/, /"channelId":"(UC[0-9A-Za-z_-]{10,})"/, /itemprop="channelId"\s+content="(UC[0-9A-Za-z_-]{10,})"/];
+			const uid = patterns.map(pattern => pattern.exec(html)?.[1]).find(isChannelId);
+			if (!uid) throw new Error(t('pairLookupNoUid'));
+			return { uid, source: 'youtube-channel-page' };
+		}
+		async _resolveHandleFromApi(handle: string) {
 			const apiKey = this.apiConfig.getApiKey();
 			if (!apiKey) throw new Error(t('apiKeyRequired'));
 

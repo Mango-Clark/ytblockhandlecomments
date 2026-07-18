@@ -111,6 +111,8 @@
 				blockMatchMode: ['handle', 'pair'].includes(src.blockMatchMode) ? src.blockMatchMode : 'handle',
 				pairUpdateUidCheck,
 				pairUpdateHandleLookup: pairUpdateUidCheck || pairUpdateHandleLookup ? pairUpdateHandleLookup : true,
+				handleLookupMethod: src.handleLookupMethod === 'api' ? 'api' : 'scraper',
+				handleLookupFallbackApi: !!src.handleLookupFallbackApi,
 				keywordAutomationEnabled: src.keywordAutomationEnabled !== false,
 				themeMode,
 				themeCustom: this._normalizeThemeCustom(src.themeCustom),
@@ -233,6 +235,8 @@
 				this._state.blockMatchMode === normalized.blockMatchMode &&
 				this._state.pairUpdateUidCheck === normalized.pairUpdateUidCheck &&
 				this._state.pairUpdateHandleLookup === normalized.pairUpdateHandleLookup &&
+				this._state.handleLookupMethod === normalized.handleLookupMethod &&
+				this._state.handleLookupFallbackApi === normalized.handleLookupFallbackApi &&
 				this._state.keywordAutomationEnabled === normalized.keywordAutomationEnabled &&
 				this._state.themeMode === normalized.themeMode &&
 				JSON.stringify(this._state.themeCustom) === JSON.stringify(normalized.themeCustom) &&
@@ -284,6 +288,10 @@
 		isPairUpdateHandleLookupEnabled() {
 			return this._state.pairUpdateHandleLookup !== false;
 		}
+		getHandleLookupMethod() { return this._state.handleLookupMethod || 'scraper'; }
+		setHandleLookupMethod(method: any) { return this._saveState({ ...this._state, handleLookupMethod: method === 'api' ? 'api' : 'scraper' }); }
+		isHandleLookupFallbackApiEnabled() { return !!this._state.handleLookupFallbackApi; }
+		setHandleLookupFallbackApiEnabled(enabled: any) { return this._saveState({ ...this._state, handleLookupFallbackApi: !!enabled }); }
 		setPairUpdateHandleLookupEnabled(enabled: any) {
 			return this._saveState({ ...this._state, pairUpdateHandleLookup: !!enabled });
 		}
