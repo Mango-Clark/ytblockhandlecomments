@@ -50,6 +50,8 @@ Supported page modes for comment hiding:
 
 Comment-host discovery observes only the matching watch or Shorts root. It batches host checks per frame and stops after 20 unsuccessful mutation batches; navigation or a new page key resets that retry budget.
 
+For Shorts, the observer attaches to the nearest non-comment panel around comment roots, never a single comment renderer. This keeps sibling comments and replies in scope as the panel updates.
+
 Out of scope:
 
 - Pair metadata import/export

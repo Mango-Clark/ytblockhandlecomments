@@ -341,6 +341,12 @@ import { Logger } from './15-logger.ts';
 			return current && !this._isBroadCommentsHost(current) ? current : null;
 		}
 
+		_findShortsCommentContainer(root: Element | null) {
+			let current = root?.parentElement || null;
+			while (current?.matches?.(COMMENT_SELECTOR)) current = current.parentElement;
+			return current && !this._isBroadCommentsHost(current) ? current : null;
+		}
+
 		_findShortsCommentsHost() {
 			const commentNodes = Array.from(document.querySelectorAll(COMMENT_SELECTOR))
 				.filter(node => node?.isConnected);
@@ -349,11 +355,10 @@ import { Logger } from './15-logger.ts';
 				.map(node => Extractor.getCommentRoot(node) || node)
 				.filter(node => node?.nodeType === 1);
 			if (!commentRoots.length) return null;
-			if (commentRoots.length === 1) {
-				const host = commentRoots[0];
-				return this._isBroadCommentsHost(host) ? null : host;
-			}
-			const sharedAncestor = this._findLowestSharedAncestor(commentRoots);
+			const containers = commentRoots.map(root => this._findShortsCommentContainer(root));
+			if (containers.some(container => !container)) return null;
+			if (containers.length === 1) return containers[0];
+			const sharedAncestor = this._findLowestSharedAncestor(containers as Element[]);
 			if (!sharedAncestor) return null;
 			return this._refineSharedCommentsHost(sharedAncestor, commentRoots);
 		}

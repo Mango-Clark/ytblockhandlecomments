@@ -71,3 +71,30 @@ test('comment host lookup never observes body and stops after bounded retries', 
 	assert.equal(app._hostObserver, null);
 	assert.equal(app._hostLookupAttempts, 21);
 });
+
+test('Shorts comment host uses the stable panel around single and added comments', () => {
+	const { api, document } = loadUserscript({ url: 'https://www.youtube.com/shorts/one' });
+	const app = Object.create(api.App.prototype);
+	const shorts = document.createElement('ytd-reel-video-renderer');
+	const panel = document.createElement('div');
+	const first = document.createElement('ytd-comment-renderer');
+	first.isConnected = true;
+	panel.appendChild(first);
+	shorts.appendChild(panel);
+	document.body.appendChild(shorts);
+
+	assert.equal(app._findShortsCommentsHost(), panel);
+
+	const sibling = document.createElement('ytd-comment-renderer');
+	sibling.isConnected = true;
+	panel.appendChild(sibling);
+	assert.equal(app._findShortsCommentsHost(), panel);
+
+	panel.removeChild(first);
+	first.isConnected = false;
+	assert.equal(app._findShortsCommentsHost(), panel);
+
+	panel.removeChild(sibling);
+	sibling.isConnected = false;
+	assert.equal(app._findShortsCommentsHost(), null);
+});

@@ -50,6 +50,8 @@
 
 댓글 host 탐색은 일치하는 watch 또는 Shorts root만 관찰합니다. frame당 host 확인을 묶고, 성공하지 못한 mutation batch 20회 뒤 중단합니다. navigation 또는 새 page key는 재시도 budget을 초기화합니다.
 
+Shorts에서는 단일 comment renderer가 아니라 comment root 주변의 가장 가까운 non-comment panel에 observer를 붙입니다. panel 갱신 뒤 형제 댓글·reply도 계속 관찰합니다.
+
 범위 밖 기능:
 
 - pair 메타데이터 import/export

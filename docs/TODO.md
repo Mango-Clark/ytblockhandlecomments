@@ -14,6 +14,12 @@
 
 ## Done
 
+- [x] (H) Shorts 댓글 host 안정 panel 관찰
+
+  - (1) 단일 comment root 대신 nearest non-comment container 선택.
+  - (2) sibling comment/reply와 재사용 panel의 증분 mutation은 panel observer로 처리.
+  - (3) single/sibling/remove Shorts panel·page key reset navigation regression test 검증.
+
 - [x] (G) 댓글 host 탐색 observer 범위·수명 축소
 
   - (1) `ytd-page-manager`, `ytd-app`, `document.body` fallback 제거.

@@ -38,6 +38,7 @@ quota 안내, 페이지 단위 regex 매칭 목록, 역할별 소스 파일, 압
 - 댓글 `⋯` 메뉴에 `Hide comments from this channel` 항목 추가
 - YouTube watch 페이지와 Shorts 페이지에서 댓글을 실시간으로 숨김
 - 댓글 host 탐색은 watch/Shorts root와 제한된 재시도만 사용해 피드 전체 mutation 관찰을 피함
+- Shorts는 안정적인 댓글 panel host를 사용해 이후 추가되는 댓글 thread도 계속 관찰
 - 차단 댓글 표시 방식 제공: 완전 차단, 회색 대체 문구, 클릭해서 보기
 - 댓글 자동 싫어요 모드 제공. 기본값은 안함이며, 새로 숨길 때만 또는 숨긴 상태에서 항상으로 변경 가능
 - 정규식 규칙, 키워드 검사 대상, 싫어요·handle 차단·UID pair 생성을 한 곳에서 설정하는 차단 및 키워드 자동 처리 창 지원
