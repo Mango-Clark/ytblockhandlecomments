@@ -90,8 +90,14 @@ export class Logger {
 		const config = this._getConfig();
 		const detailText = this._formatDetail(detail);
 		if (config.consoleEnabled) {
-			const fn = console[level] || console.log;
-			fn.call(console, this._formatConsolePrefix(config), message, detailText || undefined);
+			try {
+				const fn = console?.[level] || console?.log;
+				if (typeof fn === 'function') {
+					const args = [this._formatConsolePrefix(config), message];
+					if (detailText) args.push(detailText);
+					fn.call(console, ...args);
+				}
+			} catch { }
 		}
 		if (!config.fileEnabled) return;
 		const current = this._getGM(this.KEY, []);
