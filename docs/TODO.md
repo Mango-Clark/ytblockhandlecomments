@@ -4,13 +4,6 @@
 
 ## P1 — High
 
-- [ ] (C) Shorts comment observer를 현재 활성 panel로 제한
-
-  - (0) `e7c9dedcfaa3a350b741455c7363c99ead5f77e3`
-  - (1) `src/13-app.ts:383-396`의 전역 comment 수집을 현재 활성 `ytd-reel-video-renderer` 또는 열린 댓글 panel 범위로 제한.
-  - (2) 여러 Shorts renderer가 동시에 DOM에 연결돼도 `ytd-shorts` feed 전체를 host로 선택하지 않음.
-  - (3) 활성 Shorts 전환, inactive panel 잔존, sibling reply 추가·제거 fixture test에서 observer target과 증분 처리를 검증.
-
 - [ ] (D) 재사용 comment node의 attribute·text 변경을 identity 재검사로 연결
 
   - (0) `e7c9dedcfaa3a350b741455c7363c99ead5f77e3`
@@ -48,6 +41,12 @@
 ## Backlog
 
 ## Done
+
+- [x] (V) Shorts comment observer를 현재 활성 panel로 제한
+
+  - (1) comment 수집·host lookup은 active `ytd-reel-video-renderer` 또는 열린 댓글 panel 내부만 사용.
+  - (2) `ytd-shorts` feed 전체를 observer host로 사용하지 않음.
+  - (3) 활성 renderer 전환·inactive panel 잔존·sibling comment 추가·제거 regression test 검증.
 
 - [x] (U) channel ID 조회 갱신 주기를 verified pair에도 적용
 

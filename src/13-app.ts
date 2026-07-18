@@ -1,7 +1,6 @@
 import {
 	COMMENT_SELECTOR,
 	COMMENTS_HOST_SELECTOR,
-	SHORTS_ROOT_SELECTOR,
 	WATCH_ROOT_SELECTOR,
 	decodeMaybe,
 	findHandleItem,
@@ -309,8 +308,18 @@ import { Logger } from './15-logger.ts';
 
 		_getPageRoot(mode: string): Element | null {
 			if (mode === 'watch') return document.querySelector(WATCH_ROOT_SELECTOR);
-			if (mode === 'shorts') return document.querySelector(SHORTS_ROOT_SELECTOR);
+			if (mode === 'shorts') return this._getShortsActiveScope();
 			return null;
+		}
+
+		_getShortsActiveScope(): Element | null {
+			const activeRenderer = document.querySelector(
+				'ytd-reel-video-renderer[is-active], ytd-reel-video-renderer[aria-hidden="false"]'
+			);
+			if (activeRenderer) return activeRenderer;
+			return Array.from(document.querySelectorAll(
+				'ytd-engagement-panel-section-list-renderer[visibility="ENGAGEMENT_PANEL_VISIBILITY_EXPANDED"]'
+			)).find(panel => !!panel.querySelector(COMMENT_SELECTOR)) || null;
 		}
 
 		_findCommentsHost(mode: string): Element | null {
@@ -381,7 +390,9 @@ import { Logger } from './15-logger.ts';
 		}
 
 		_findShortsCommentsHost() {
-			const commentNodes = Array.from(document.querySelectorAll(COMMENT_SELECTOR))
+			const scope = this._getShortsActiveScope();
+			if (!scope) return null;
+			const commentNodes = Array.from(scope.querySelectorAll(COMMENT_SELECTOR))
 				.filter(node => node?.isConnected);
 			if (!commentNodes.length) return null;
 			const commentRoots = commentNodes

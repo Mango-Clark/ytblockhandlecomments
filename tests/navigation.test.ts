@@ -83,15 +83,18 @@ test('comment host lookup never observes body and stops after bounded retries', 
 	assert.equal(app._hostLookupAttempts, 21);
 });
 
-test('Shorts comment host uses the stable panel around single and added comments', () => {
+test('Shorts comment host uses only the active renderer panel', () => {
 	const { api, document } = loadUserscript({ url: 'https://www.youtube.com/shorts/one' });
 	const app = Object.create(api.App.prototype);
-	const shorts = document.createElement('ytd-reel-video-renderer');
+	const shorts = document.createElement('ytd-shorts');
+	const active = document.createElement('ytd-reel-video-renderer');
+	active.setAttribute('is-active', '');
 	const panel = document.createElement('div');
 	const first = document.createElement('ytd-comment-renderer');
 	first.isConnected = true;
 	panel.appendChild(first);
-	shorts.appendChild(panel);
+	active.appendChild(panel);
+	shorts.appendChild(active);
 	document.body.appendChild(shorts);
 
 	assert.equal(app._findShortsCommentsHost(), panel);
@@ -108,6 +111,63 @@ test('Shorts comment host uses the stable panel around single and added comments
 	panel.removeChild(sibling);
 	sibling.isConnected = false;
 	assert.equal(app._findShortsCommentsHost(), null);
+});
+
+test('Shorts host switches with active renderer without observing the feed', () => {
+	const { api, document } = loadUserscript({ url: 'https://www.youtube.com/shorts/one' });
+	const app = Object.create(api.App.prototype);
+	const feed = document.createElement('ytd-shorts');
+	const firstRenderer = document.createElement('ytd-reel-video-renderer');
+	const firstPanel = document.createElement('div');
+	const firstComment = document.createElement('ytd-comment-renderer');
+	firstComment.isConnected = true;
+	firstPanel.appendChild(firstComment);
+	firstRenderer.appendChild(firstPanel);
+	const secondRenderer = document.createElement('ytd-reel-video-renderer');
+	const secondPanel = document.createElement('div');
+	const secondComment = document.createElement('ytd-comment-renderer');
+	secondComment.isConnected = true;
+	secondPanel.appendChild(secondComment);
+	secondRenderer.appendChild(secondPanel);
+	firstRenderer.setAttribute('is-active', '');
+	feed.append(firstRenderer, secondRenderer);
+	document.body.appendChild(feed);
+
+	assert.equal(app._findShortsCommentsHost(), firstPanel);
+	assert.equal(app._getPageRoot('shorts'), firstRenderer);
+	firstRenderer.attributes.delete('is-active');
+	secondRenderer.setAttribute('is-active', '');
+	assert.equal(app._findShortsCommentsHost(), secondPanel);
+	assert.equal(app._getPageRoot('shorts'), secondRenderer);
+});
+
+test('Shorts panel observer processes sibling additions and removals incrementally', () => {
+	const { api, document } = loadUserscript({ url: 'https://www.youtube.com/shorts/one' });
+	const app = Object.create(api.App.prototype);
+	const panel = document.createElement('div');
+	const existing = document.createElement('ytd-comment-renderer');
+	panel.appendChild(existing);
+	document.body.appendChild(panel);
+	let refreshRoots: any[] = [];
+	let removedRoots: any[] = [];
+	Object.assign(app, {
+		_hostObserver: null,
+		_commentObserver: null,
+		_commentsHost: null,
+		hider: {
+			resetObservation: () => {},
+			refreshScheduled: () => {},
+			noteMutationBatch: () => {},
+			refreshNodes: (roots: Set<any>) => { refreshRoots = Array.from(roots); },
+			unobserveNodes: (roots: Set<any>) => { removedRoots = Array.from(roots); }
+		}
+	});
+	app._attachCommentsHost(panel);
+	assert.equal(app._commentObserver.observeCalls[0].target, panel);
+	const sibling = document.createElement('ytd-comment-renderer');
+	app._commentObserver.trigger([{ target: panel, addedNodes: [sibling], removedNodes: [existing] }]);
+	assert.ok(refreshRoots.includes(sibling));
+	assert.ok(removedRoots.includes(existing));
 });
 
 test('page-data and history navigation events schedule page-key synchronization', () => {
