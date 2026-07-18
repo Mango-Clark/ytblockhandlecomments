@@ -31,47 +31,68 @@ Source layout:
 
 ## Features
 
-- Right-click a comment author handle to block or unblock it without overriding other YouTube handle links
-- Adds `Hide comments from this channel` to the comment `⋯` menu
-- Hides matching comments in real time on YouTube watch pages and Shorts pages
-- Limits comment-host discovery to watch/Shorts roots with bounded retries, avoiding feed-wide mutation observation
-- Uses a stable Shorts comment-panel host so added comment threads remain observed
-- Detects YouTube SPA navigation from page-data and history updates without resetting unchanged page keys
-- Configurable blocked-comment display: hide completely, show a gray placeholder, or click to reveal
-- Configurable comment auto-dislike mode, defaulting to off: off, only when newly hidden, or always while hidden
-- Re-applies keyword and auto-dislike actions when YouTube reuses a comment DOM node for a new author or body
-- Supports a unified block and keyword automation dialog for regex rules, keyword matching fields, and independent dislike, handle-block, and UID-pair actions
-- Supports independent local log retention and browser-console logging, with level and retention controls plus log-file download
-- Supports configurable console-log prefixes and optional timestamps with calendar, week, ordinal, basic, and custom ISO formats plus timezone selection
-- Supports privacy-redacted V0-V5 diagnostic-detail settings for log payloads, defaulting to balanced V3 output
-- Supports `handle`, `id`, and `regex` rules in `blocked_v2`
-- Supports selectable identity matching: `handle` rules by default or UID pair `id` rules; regex rules remain independent
-- Applies regex length, flag, target, and heuristic safety checks before storing or matching rules
-- Supports optional channel-ID detection with handle-to-channel-ID metadata in `pair_meta_v1`
-- Extracts comment channel IDs from channel links and stable channel-ID attributes; pair-mode misses increment a diagnostic counter
-- Resolves handles from their public YouTube channel page by default, with cached results and optional YouTube Data API v3 lookup/fallback
-- Supports case-sensitive handle matching
-- Supports a separate settings dialog with API, UID, regex auto-add, display sizing, and debug counters
-- Uses a category-list settings layout with task-grouped controls, descriptions, and automatic saves
-- Groups settings controls by matching, comment display, keyword automation, logging, display size, and maintenance
-- Marks default saved-setting choices with a muted `(Default)` label
-- Supports resetting app display and matching settings after a confirmation prompt
-- Supports five-level text and UI scale settings; level 2 matches the previous size and level 3 is the default
-- Supports light, dark, system, inverted system, YouTube, inverted YouTube, and custom themes for userscript UI only
-- Keeps YouTube-theme synchronization limited to native YouTube dark-state signals
-- Adds in-dialog navigation buttons between settings and the block list
-- Can auto-save handles first hidden by regex so later checks use handle matching
-- Supports block-list search, type filters, tag filters, row selection, and bulk actions
-- Shows the current userscript version in the manager dialog
-- Shows regex rows with matched-handle counts and one-click matching-handle selection
-- Reuses cached regex match results so matching-handle selection no longer rebuilds the full list
-- Pages expanded regex match lists in the manager so very large match sets do not render at once
-- Shows handle-level pair results after create/update runs
-- Supports filtering/sorting pair results and copying/exporting failed handles
-- Lets the block-list export dialog return to the list or download the current rules as JSON or plain text
-- Shows loading bars while API key tests or pair create/update actions are waiting on the network
-- Shows structured quota guidance after repeated API-key quota failures
-- Refreshes manager UI, dialogs, banner text, and menu labels after language changes
+### Core blocking
+
+- Block or unblock a comment author by right-clicking its handle.
+- Leave other YouTube handle links untouched.
+- Add `Hide comments from this channel` to the comment `⋯` menu.
+- Hide matching comments in real time on watch pages and Shorts.
+- Store `handle`, `id`, and `regex` rules in `blocked_v2`.
+- Choose `handle` matching or UID-pair `id` matching; regex rules remain independent.
+- Match handles case-sensitively when enabled.
+
+### Comment automation
+
+- Choose hidden comments, gray placeholders, or click-to-reveal placeholders.
+- Configure comment auto-dislike: off, newly hidden only, or always while hidden.
+- Re-apply keyword and auto-dislike actions when YouTube reuses comment DOM nodes.
+- Configure regex rules, keyword fields, dislike, handle-block, and UID-pair actions in one dialog.
+- Apply regex length, flag, target, and heuristic safety checks before storing or matching.
+- Auto-save handles first hidden by regex for later handle matching.
+
+### Settings and themes
+
+- Use a separate settings dialog for API, UID, regex auto-add, display sizing, and debug counters.
+- Organize settings by matching, comment display, keyword automation, logging, display size, and maintenance.
+- Save settings automatically and mark default choices with `(Default)`.
+- Reset display and matching settings after confirmation.
+- Adjust text and UI scale across five levels; level 2 matches the previous size and level 3 is default.
+- Choose light, dark, system, inverted system, YouTube, inverted YouTube, or custom userscript UI themes.
+- Keep YouTube-theme synchronization limited to native YouTube dark-state signals.
+
+### Block-list management
+
+- Search and filter the block list by rule type or handle tag.
+- Select rows and run bulk actions.
+- Show the current userscript version in the manager.
+- Show regex matched-handle counts and select matching handles with one click.
+- Cache regex results and paginate expanded match lists for large result sets.
+- Return from export to the list or download displayed rules as JSON or plain text.
+
+### Channel pairing
+
+- Detect optional channel IDs and store handle-to-channel-ID metadata in `pair_meta_v1`.
+- Extract comment channel IDs from links and stable channel-ID attributes.
+- Resolve handles from public channel pages by default, with cached YouTube Data API v3 lookup/fallback.
+- Create or update UID pairs and show handle-level results.
+- Filter or sort pair results and copy/export failed handles.
+- Show loading bars during API-key tests and pair actions.
+- Show structured quota guidance after repeated API-key quota failures.
+
+### Logging and diagnostics
+
+- Keep local log retention and browser-console logging independent.
+- Configure log level, retention, prefix, timestamps, formats, and timezone.
+- Configure privacy-redacted V0-V5 diagnostic detail; V3 is the default.
+- Count missed channel IDs in pair mode with diagnostic counters.
+
+### Navigation and performance
+
+- Limit comment-host discovery to watch/Shorts roots with bounded retries.
+- Keep added Shorts comment threads observed through a stable comment-panel host.
+- Detect SPA navigation from page data and history without resetting unchanged page keys.
+- Add navigation buttons between settings and the block list.
+- Refresh manager UI, dialogs, banner text, and menu labels after language changes.
 
 ## Usage
 

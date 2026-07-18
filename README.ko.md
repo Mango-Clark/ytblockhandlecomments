@@ -34,51 +34,68 @@ quota 안내, 페이지 단위 regex 매칭 목록, 역할별 소스 파일, 압
 
 ## 주요 기능
 
-- 댓글 작성자 handle만 우클릭해 차단 또는 해제하며, 다른 YouTube handle 링크 동작은 가로채지 않음
-- 댓글 `⋯` 메뉴에 `Hide comments from this channel` 항목 추가
-- YouTube watch 페이지와 Shorts 페이지에서 댓글을 실시간으로 숨김
-- 댓글 host 탐색은 watch/Shorts root와 제한된 재시도만 사용해 피드 전체 mutation 관찰을 피함
-- Shorts는 안정적인 댓글 panel host를 사용해 이후 추가되는 댓글 thread도 계속 관찰
-- page-data/history 갱신으로 YouTube SPA 이동을 감지하며, page key가 같으면 상태를 초기화하지 않음
-- 차단 댓글 표시 방식 제공: 완전 차단, 회색 대체 문구, 클릭해서 보기
-- 댓글 자동 싫어요 모드 제공. 기본값은 안함이며, 새로 숨길 때만 또는 숨긴 상태에서 항상으로 변경 가능
-- YouTube가 comment DOM node를 새 작성자·본문에 재사용하면 keyword/자동 싫어요 동작을 다시 적용
-- 정규식 규칙, 키워드 검사 대상, 싫어요·handle 차단·UID pair 생성을 한 곳에서 설정하는 차단 및 키워드 자동 처리 창 지원
-- 로컬 로그 보관과 브라우저 console 로그를 독립적으로 켜고 끌 수 있으며, 로그 수준/보관 수 설정과 로그 파일 다운로드 지원
-- console 로그 prefix, 선택적 시간 표시, calendar·week·ordinal·basic·직접 ISO 시간 형식, timezone 선택 지원
-- 개인정보를 제거하는 로그 payload 진단 상세도를 V0-V5로 설정할 수 있고 기본값은 균형 잡힌 V3
-- `blocked_v2`에 `handle`, `id`, `regex` 규칙 저장
-- 신원 차단 방식을 기본 `handle` 규칙 또는 UID pair `id` 규칙으로 선택하고, regex 규칙은 두 방식 모두에서 적용
-- regex 규칙 저장/매칭 전에 길이, flag, 대상 길이, 휴리스틱 safety 검사를 적용
-- 관리자 대화상자에 선택적 channel ID 감지 토글 추가
-- channel link와 안정적인 channel-ID attribute에서 댓글 channel ID를 추출하며, pair mode 미검출은 진단 counter를 증가
-- 기본 YouTube 공개 채널 페이지 조회, 결과 cache, 선택적 YouTube Data API v3 조회/fallback 지원
-- `pair_meta_v1`에 handle↔channel ID pair 메타데이터 저장
-- `Create Pair`, `Update Pair` 액션 제공
-- handle별 상태 배지 제공: `handle-only`, `paired`, `stale`, `mismatch`, `unverified`
-- 관리자 대화상자에 로컬 `Handle Case Sensitive` 설정 추가
-- API, UID, regex 자동 추가, 표시 크기, debug counter를 다루는 별도 설정 창 추가
-- 작업별 카테고리 목록, 설명, 자동 저장 안내를 포함한 설정 창 레이아웃 적용
-- 설정 창의 기능을 매칭, 댓글 표시, 키워드 자동 처리, 로그, 표시 크기, 유지보수 그룹으로 구분
-- 저장 설정의 기본 선택지에 회색 `(기본)` 표시
-- 확인 팝업 이후 앱 표시/매칭 설정 초기화 지원
-- 글자 크기와 UI 크기를 5단계로 조절 가능. 2단계는 기존 크기이며 기본값은 3단계
-- userscript UI 전용 라이트, 다크, 기기설정, 기기설정(반대), yt설정, yt설정(inverted), 커스텀 테마 지원
-- YouTube 테마 동기화는 YouTube 자체 다크 상태 신호만 구독
-- 설정 창과 차단 목록 사이를 오가는 버튼 추가
-- regex로 처음 숨긴 handle을 자동으로 저장해 이후에는 handle 매칭으로 확인 가능
-- 차단 목록에 row 체크박스, 필터 기준 전체 선택, 선택 개수 표시 추가
-- 차단 목록에 `all|handle|id|regex` 타입 필터와 handle 태그 필터 추가
-- 관리자 대화상자에 현재 userscript 버전 표시
-- 선택 항목 삭제, 선택 handle 대상 pair 생성/갱신 bulk 액션 추가
-- regex 매칭 결과 캐시로 `matching handle 선택` 시 전체 목록 재생성을 피함
-- 펼친 regex 매칭 목록은 페이지 단위로 표시해 큰 목록을 한 번에 렌더링하지 않음
-- 최근 pair 실행 결과를 필터/정렬하고 실패 handle을 복사/내보내기 가능
-- 차단 목록 내보내기 창에서 목록으로 돌아가거나 현재 규칙을 JSON/텍스트 파일로 다운로드 가능
-- API 키 테스트와 pair 생성/갱신이 네트워크 응답을 기다리는 동안 loading bar 표시
-- API 키 테스트에서 quota 실패가 반복되면 구조화된 안내 표시
-- stale 또는 mismatch pair가 있으면 watch 페이지에 검토 배너 표시
-- import/export는 차단 규칙만 다루고, pair 메타데이터는 로컬 전용으로 유지
+### 핵심 차단
+
+- 댓글 작성자 handle 우클릭으로 차단·해제.
+- 다른 YouTube handle 링크 동작은 가로채지 않음.
+- 댓글 `⋯` 메뉴에 `Hide comments from this channel` 추가.
+- watch 페이지와 Shorts에서 일치 댓글 실시간 숨김.
+- `blocked_v2`에 `handle`, `id`, `regex` 규칙 저장.
+- `handle` 매칭 또는 UID pair `id` 매칭 선택. regex 규칙은 독립 적용.
+- 설정 시 handle 대소문자 구분 매칭.
+
+### 댓글 자동 처리
+
+- 숨김, 회색 대체 문구, 클릭해 보기 표시 방식 선택.
+- 댓글 자동 싫어요를 안 함, 새로 숨길 때만, 숨긴 동안 항상으로 설정.
+- YouTube가 comment DOM node를 재사용해도 keyword·자동 싫어요 재적용.
+- regex, keyword 대상, 싫어요·handle 차단·UID pair 동작을 한 창에서 설정.
+- 저장·매칭 전 regex 길이, flag, 대상, 휴리스틱 safety 검사.
+- regex로 처음 숨긴 handle 자동 저장. 이후 handle 매칭 사용.
+
+### 설정·테마
+
+- API, UID, regex 자동 추가, 표시 크기, debug counter용 별도 설정 창.
+- 매칭, 댓글 표시, 키워드 자동 처리, 로그, 표시 크기, 유지보수별 그룹화.
+- 설정 자동 저장. 기본 선택지에 `(기본)` 표시.
+- 확인 후 표시·매칭 설정 초기화.
+- 글자·UI 크기 5단계 조절. 2단계는 이전 크기, 3단계는 기본값.
+- userscript UI 테마: 라이트, 다크, 기기설정, 기기설정(반대), yt설정, yt설정(inverted), 커스텀.
+- YouTube 테마 동기화는 자체 다크 상태 신호만 사용.
+
+### 차단 목록 관리
+
+- 차단 목록 검색·타입 필터·handle 태그 필터.
+- row 선택 및 bulk 액션.
+- 관리자 대화상자에 현재 userscript 버전 표시.
+- regex 매칭 handle 수 표시 및 한 번에 선택.
+- regex 결과 cache 사용. 큰 매칭 목록은 페이지 단위 표시.
+- 내보내기 창에서 목록 복귀 또는 표시 규칙 JSON·텍스트 다운로드.
+
+### Channel pairing
+
+- 선택적 channel ID 감지. handle↔channel ID 메타데이터를 `pair_meta_v1`에 저장.
+- channel link·안정적인 channel-ID attribute에서 댓글 channel ID 추출.
+- 기본 공개 채널 페이지 조회. cache와 선택적 YouTube Data API v3 조회/fallback 지원.
+- `Create Pair`, `Update Pair` 실행. handle별 결과 표시.
+- pair 결과 필터·정렬. 실패 handle 복사·내보내기.
+- API 키 테스트·pair 작업 중 loading bar 표시.
+- API 키 quota 실패 반복 시 구조화된 안내 표시.
+
+### 로그·진단
+
+- 로컬 로그 보관·브라우저 console 로그 독립 설정.
+- 로그 수준·보관 수·prefix·시간·형식·timezone 설정.
+- 개인정보 제거 V0-V5 진단 상세도 설정. 기본값 V3.
+- pair mode channel ID 미검출을 진단 counter로 집계.
+
+### 탐색·성능
+
+- watch/Shorts root에서만 제한적으로 comment host 탐색·재시도.
+- 안정적인 Shorts 댓글 panel host로 추가 thread 계속 관찰.
+- page-data/history로 SPA 이동 감지. 동일 page key 상태 유지.
+- 설정 창·차단 목록 간 이동 버튼.
+- 언어 변경 시 관리자 UI·dialog·배너·메뉴 label 갱신.
 
 ---
 

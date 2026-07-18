@@ -35,7 +35,7 @@ Substantial child rule/shared workflow change: update relevant parent with conci
 
 ## Docs
 
-- Docs language/pairing/structure/changelog: see `docs/AGENTS.md`.
+- Docs language/pairing/structure/changelog/todo: see `docs/AGENTS.md`.
 
 ## Git
 
