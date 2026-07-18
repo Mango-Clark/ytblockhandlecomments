@@ -738,6 +738,8 @@ test('settings options mark their default values', () => {
 		['block-match-mode', 'handle'],
 		['dislike-mode', 'none'],
 		['comment-block-mode', 'hide'],
+		['console-log-time-format', 'iso'],
+		['handle-lookup-interval', '600'],
 		['verbose-level', '3'],
 		['font-size-level', '3'],
 		['ui-scale-level', '3'],

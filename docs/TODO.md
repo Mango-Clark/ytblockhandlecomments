@@ -6,12 +6,6 @@
 
 ## P2 — Normal
 
-- [ ] (B) console 시간 형식 기본 선택지 표시 추가
-
-  - (0) `e7c9dedcfaa3a350b741455c7363c99ead5f77e3`
-  - (1) `src/12-block-list-manager.ts:723-732`에서 기본 `iso` option에 `(Default)` 또는 `(기본)`과 `tm-default-option` style 적용.
-  - (2) 설정 화면의 모든 select 기본값을 열거하는 test에 console time format과 동적 channel ID 조회 주기를 포함.
-
 ## P3 — Low
 
 ## Blocked
@@ -19,6 +13,11 @@
 ## Backlog
 
 ## Done
+
+- [x] (Z) console 시간 형식 기본 선택지 표시 추가
+
+  - (1) 기본 `iso` option에 `tm-default-option`과 현지화한 기본값 label 적용.
+  - (2) console time format·동적 channel ID 조회 주기를 포함해 모든 select 기본값 regression test 검증.
 
 - [x] (Y) console 시간 형식의 ISO 8601 완료 조건 충족
 
