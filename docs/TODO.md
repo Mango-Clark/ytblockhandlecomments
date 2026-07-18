@@ -14,6 +14,19 @@
 
 ## Done
 
+- [x] (S) Logger payload·console 안정화
+
+  - (1) warn/info/debug event 분류, console output guard, no-undefined argument 적용.
+  - (2) verbose level별 1/3/6/10 field limit과 sensitive key redaction 적용.
+
+- [x] (R) Block-list search frame batch
+
+  - (1) search input은 rAF batch; IME composition 중 render 지연.
+
+- [x] (Q) Selector lifecycle diagnostics
+
+  - (1) page/host/extraction counter와 recent reason을 privacy-limited perf metrics에 기록.
+
 - [x] (O) API·pair async busy 복구
 
   - (1) API/pair await 경로에 error toast와 `finally` busy reset 추가.
