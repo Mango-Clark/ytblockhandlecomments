@@ -4,13 +4,6 @@
 
 ## P1 — High
 
-- [ ] (B) channel ID 조회 갱신 주기를 verified pair에도 적용
-
-  - (0) `e7c9dedcfaa3a350b741455c7363c99ead5f77e3`
-  - (1) `src/07-pair-service.ts:133-140`에서 설정한 주기가 만료되면 `paired` 상태라도 handle을 다시 조회.
-  - (2) `always`는 모든 명시적 전체 update에서 재조회하고, scraper `10m`·API `1w`·custom 값은 각각 `verifiedAt` 기준으로 동작.
-  - (3) 주기 미만 skip, 주기 만료 refresh, `always`, selected-handle force refresh regression test 검증.
-
 - [ ] (C) Shorts comment observer를 현재 활성 panel로 제한
 
   - (0) `e7c9dedcfaa3a350b741455c7363c99ead5f77e3`
@@ -55,6 +48,12 @@
 ## Backlog
 
 ## Done
+
+- [x] (U) channel ID 조회 갱신 주기를 verified pair에도 적용
+
+  - (1) verified pair도 `verifiedAt` 기준 설정 주기 만료 시 handle 재조회.
+  - (2) `always`는 명시적 전체 update마다 재조회; selected-handle update는 계속 force refresh.
+  - (3) fresh skip·만료 refresh·`always`·selected force refresh regression test 검증.
 
 - [x] (T) 최초 `blocked_v2` migration 저장 실패 시 생성자 중단 방지
 

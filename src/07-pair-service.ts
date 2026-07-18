@@ -135,7 +135,7 @@ import {
 			const intervalSeconds = this.settings?.getHandleLookupIntervalSeconds?.() ?? 600;
 			if (existing?.verifiedAt && intervalSeconds > 0 && Date.now() - existing.verifiedAt < intervalSeconds * 1000) return false;
 			const status = this.getHandleStatus(handle).code;
-			if (status === 'paired') return false;
+			if (status === 'paired') return true;
 			if (status === 'handle-only') return includeMissing;
 			return status === 'stale' || status === 'mismatch' || status === 'unverified';
 		}

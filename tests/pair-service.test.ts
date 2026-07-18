@@ -65,6 +65,49 @@ test('selected-handle pair update still forces refresh', async () => {
 	assert.equal(stats.refreshed, 1);
 });
 
+test('pair update refreshes verified pairs after the configured interval', async () => {
+	const { storage, pairStore, service } = createService();
+	storage.addHandle('@alpha');
+	storage.addId('UC1234567890');
+	pairStore.upsertPair({
+		handle: '@alpha',
+		uid: 'UC1234567890',
+		verifiedAt: Date.now() - (11 * 60 * 1000),
+		status: 'verified',
+		source: 'youtube-channel-page'
+	});
+	let resolveCalls = 0;
+	service.resolveHandle = async () => {
+		resolveCalls += 1;
+		return { uid: 'UC1234567890', source: 'youtube-channel-page' };
+	};
+
+	const stats = await service.updatePairs({ includeMissing: true });
+
+	assert.equal(resolveCalls, 1);
+	assert.equal(stats.refreshed, 1);
+});
+
+test('always interval refreshes verified pairs during each full update', async () => {
+	const { storage, pairStore, service } = createService();
+	storage.addHandle('@alpha');
+	storage.addId('UC1234567890');
+	pairStore.upsertPair({
+		handle: '@alpha', uid: 'UC1234567890', verifiedAt: Date.now(), status: 'verified', source: 'youtube-channel-page'
+	});
+	service.settings.setHandleLookupInterval('always');
+	let resolveCalls = 0;
+	service.resolveHandle = async () => {
+		resolveCalls += 1;
+		return { uid: 'UC1234567890', source: 'youtube-channel-page' };
+	};
+
+	await service.updatePairs({ includeMissing: true });
+	await service.updatePairs({ includeMissing: true });
+
+	assert.equal(resolveCalls, 2);
+});
+
 test('UID-only pair updates verify the stored UID without handle lookup', async () => {
 	const { storage, pairStore, service } = createService();
 	storage.addHandle('@alpha');
