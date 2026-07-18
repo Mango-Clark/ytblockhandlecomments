@@ -59,6 +59,21 @@ export const buildFreshUnreleased = (file: string): string => {
 	return `## [Unreleased]\n\n${sections}`;
 };
 
+export const removeCompletedTodoItems = (text: string): string => {
+	const lines = text.split(/\r?\n/);
+	const kept: string[] = [];
+	for (let index = 0; index < lines.length; index += 1) {
+		if (!/^\s*-\s*\[x\]\s+/i.test(lines[index])) {
+			kept.push(lines[index]);
+			continue;
+		}
+		index += 1;
+		while (index < lines.length && (/^\s*$/.test(lines[index]) || /^\s+/.test(lines[index]))) index += 1;
+		index -= 1;
+	}
+	return kept.join('\n');
+};
+
 const isEmptyChangelogLine = (line: string): boolean => /^\s*-\s+(?:None|없음)\s*$/.test(line);
 
 const cleanReleaseBody = (body: string): string => CHANGELOG_SECTIONS.reduce((current, section) => {
@@ -135,10 +150,7 @@ const files: VersionFile[] = [
 	{
 		path: 'docs/TODO.md',
 		writeOnly: true,
-		replace: (text: string) => text
-			.split(/\r?\n/)
-			.filter(line => !/^\s*-\s*\[x\]\s+/i.test(line))
-			.join('\n')
+		replace: removeCompletedTodoItems
 	}
 ];
 
