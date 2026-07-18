@@ -38,6 +38,7 @@
 사용자 진입점:
 
 - 댓글 작성자 handle 우클릭
+- 채널, 검색, 영상 설명, 댓글 본문의 handle 링크는 YouTube 기본 context menu를 유지
 - 댓글 `⋯` 메뉴 주입 항목
 - Tampermonkey 메뉴의 `Manage block list`
 - watch 페이지 pair 검토 배너

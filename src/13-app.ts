@@ -201,6 +201,7 @@ import { Logger } from './15-logger.ts';
 			document.addEventListener('contextmenu', (ev) => {
 				const el = ev.target?.closest?.('#author-text > span, #author-handle, a[href^="/@"]');
 				if (!el) return;
+				if (!el.closest?.(COMMENT_SELECTOR) || !el.closest?.('#author-text, #author-handle')) return;
 				let hText = el.textContent?.trim();
 				if (!hText?.startsWith?.('@')) {
 					const href = el.getAttribute?.('href');

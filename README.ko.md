@@ -34,7 +34,7 @@ quota 안내, 페이지 단위 regex 매칭 목록, 역할별 소스 파일, 압
 
 ## 주요 기능
 
-- 작성자 handle을 우클릭해 차단 또는 해제
+- 댓글 작성자 handle만 우클릭해 차단 또는 해제하며, 다른 YouTube handle 링크 동작은 가로채지 않음
 - 댓글 `⋯` 메뉴에 `Hide comments from this channel` 항목 추가
 - YouTube watch 페이지와 Shorts 페이지에서 댓글을 실시간으로 숨김
 - 차단 댓글 표시 방식 제공: 완전 차단, 회색 대체 문구, 클릭해서 보기

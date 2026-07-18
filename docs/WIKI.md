@@ -38,6 +38,7 @@ Supported local stores:
 User-facing entry points:
 
 - Right-click a comment author handle
+- Channel, search, video-description, and comment-body handle links retain YouTube's native context menu
 - Comment `⋯` menu injection
 - `Manage block list` Tampermonkey menu command
 - Watch-page pair review banner

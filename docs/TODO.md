@@ -14,6 +14,12 @@
 
 ## Done
 
+- [x] (F) 댓글 작성자 외 YouTube handle 우클릭 범위 제한
+
+  - (1) comment renderer 내부 `#author-text`, `#author-handle`만 contextmenu 처리.
+  - (2) 영상 정보·채널·검색·댓글 본문 handle 링크는 YouTube 기본 동작 유지.
+  - (3) 작성자 text/link 처리와 비작성자 `/@...` link 회귀 test 검증.
+
 - [x] (E) 여러 YouTube 탭 동시 차단 목록 변경 충돌 처리
 
   - (1) 항목별 revision/tombstone과 clear revision을 `blocked_v2` optional sync metadata로 추가.

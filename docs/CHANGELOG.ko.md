@@ -30,6 +30,7 @@
 
 - migration된 v2 규칙 삭제 또는 전체 초기화 뒤 legacy 차단 항목이 다시 나타나지 않도록 수정했습니다.
 - 탭 간 동시 차단 목록 쓰기에서 추가 항목이 유실되지 않도록 하고, 추가·삭제·전체 초기화 충돌이 결정론적으로 수렴하도록 수정했습니다.
+- handle context menu 가로채기를 댓글 작성자로 제한해, 다른 handle 링크는 YouTube 기본 context menu를 유지하도록 수정했습니다.
 
 ### Security
 

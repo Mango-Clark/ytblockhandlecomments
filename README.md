@@ -31,7 +31,7 @@ Source layout:
 
 ## Features
 
-- Right-click an author handle to block or unblock it
+- Right-click a comment author handle to block or unblock it without overriding other YouTube handle links
 - Adds `Hide comments from this channel` to the comment `⋯` menu
 - Hides matching comments in real time on YouTube watch pages and Shorts pages
 - Configurable blocked-comment display: hide completely, show a gray placeholder, or click to reveal
