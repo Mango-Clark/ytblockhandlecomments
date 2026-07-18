@@ -28,6 +28,7 @@
 
 ### Fixed
 
+- 기존 debug metrics에 개인정보를 제외한 page, comments host, extraction 진단을 추가했습니다.
 - 예상하지 못한 async 오류 뒤 API·pair control을 복구하고, 겹친 pair 요청을 하나의 실행으로 합쳤습니다.
 - 중첩 dialog의 keyboard·backdrop 동작을 최상위 dialog에만 전달하고, 닫은 뒤 opener focus를 복원하도록 수정했습니다.
 - YouTube 테마 탐색을 직접 `ytd-app` lifecycle 변경으로 제한하고, YouTube 테마 외 모드에서는 theme observer를 비활성화했습니다.

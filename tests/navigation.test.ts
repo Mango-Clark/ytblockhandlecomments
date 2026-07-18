@@ -49,6 +49,17 @@ test('unsupported pages disconnect comment observers', () => {
 	assert.equal(commentDisconnects, 1);
 });
 
+test('page diagnostics record only mode and selector reason', () => {
+	const { api } = loadUserscript();
+	const app = Object.create(api.App.prototype);
+	app.hider = { _metrics: {} };
+	app.logger = { debug: () => {} };
+	app._getPageMode = () => 'watch';
+	app._recordDiagnostic('comments-host-missing');
+	assert.equal(app.hider._metrics.diagnosticCounts['comments-host-missing'], 1);
+	assert.equal(app.hider._metrics.lastDiagnostic, 'watch:comments-host-missing');
+});
+
 test('comment host lookup never observes body and stops after bounded retries', () => {
 	const { api, document } = loadUserscript();
 	const app = Object.create(api.App.prototype);

@@ -41,6 +41,8 @@ import { Extractor } from './09-extractor.ts';
 				incrementalRefreshes: 0,
 				scannedNodes: 0,
 				missingChannelIds: 0,
+				missingHandles: 0,
+				lastDiagnostic: '',
 				autoAddedRegexHandles: 0,
 				lastDurationMs: 0,
 				totalDurationMs: 0
@@ -139,6 +141,7 @@ import { Extractor } from './09-extractor.ts';
 				handle: Extractor.getHandle(node)
 			};
 			this._metaCache.set(node, meta);
+			if (!meta.handle) this._metrics.missingHandles += 1;
 			return meta;
 		}
 		_syncNodeIdentity(node: Element) {

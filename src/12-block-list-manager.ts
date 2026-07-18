@@ -888,6 +888,9 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 					['fullRefreshes', metrics.fullRefreshes || 0],
 					['incrementalRefreshes', metrics.incrementalRefreshes || 0],
 					['scannedNodes', metrics.scannedNodes || 0],
+					['missingChannelIds', metrics.missingChannelIds || 0],
+					['missingHandles', metrics.missingHandles || 0],
+					['lastDiagnostic', metrics.lastDiagnostic || '-'],
 					['autoAddedRegexHandles', metrics.autoAddedRegexHandles || 0],
 					['lastDurationMs', metrics.lastDurationMs || 0],
 					['totalDurationMs', metrics.totalDurationMs || 0]

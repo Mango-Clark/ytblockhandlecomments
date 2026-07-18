@@ -319,6 +319,15 @@ import { Logger } from './15-logger.ts';
 			return null;
 		}
 
+		_recordDiagnostic(reason: string, mode = this._getPageMode()) {
+			const metrics = this.hider?._metrics;
+			if (!metrics) return;
+			metrics.diagnosticCounts ||= {};
+			metrics.diagnosticCounts[reason] = (metrics.diagnosticCounts[reason] || 0) + 1;
+			metrics.lastDiagnostic = `${mode}:${reason}`;
+			this.logger?.debug?.('Selector diagnostic', { mode, reason });
+		}
+
 		_getAncestorChain(node: Element | null | undefined): Element[] {
 			const chain: Element[] = [];
 			let current = node;
@@ -402,7 +411,7 @@ import { Logger } from './15-logger.ts';
 
 		_watchForCommentsHost(mode: string, root: Element | null) {
 			if (this._hostObserver || mode === 'unsupported') return;
-			if (!root) return;
+			if (!root) { this._recordDiagnostic('page-root-missing', mode); return; }
 			let hostLookupPending = false;
 			let observer: MutationObserver | null = null;
 			observer = new MutationObserver(() => {
@@ -412,6 +421,7 @@ import { Logger } from './15-logger.ts';
 					hostLookupPending = false;
 					if (this._hostObserver !== observer) return;
 					if (++this._hostLookupAttempts > 20) {
+						this._recordDiagnostic('comments-host-timeout', mode);
 						this._disconnectHostObserver();
 						return;
 					}
@@ -475,6 +485,7 @@ import { Logger } from './15-logger.ts';
 				this.hider.resetTransientState();
 			}
 			if (mode === 'unsupported') {
+				this._recordDiagnostic('unsupported-page', mode);
 				this._disconnectHostObserver();
 				this._disconnectCommentObserver();
 				this._syncPairBanner();
@@ -483,6 +494,7 @@ import { Logger } from './15-logger.ts';
 			const host = this._findCommentsHost(mode);
 			if (host) this._attachCommentsHost(host);
 			else {
+				this._recordDiagnostic('comments-host-missing', mode);
 				this._disconnectCommentObserver();
 				this._watchForCommentsHost(mode, this._getPageRoot(mode));
 			}
