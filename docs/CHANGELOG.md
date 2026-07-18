@@ -2,10 +2,9 @@
 
 [English](CHANGELOG.md) | [한국어](CHANGELOG.ko.md)
 
-All notable changes to this project will be documented in this file.
+Notable project changes documented here.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
@@ -37,8 +36,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Marked default saved-setting choices in the Settings dialog with a muted `(Default)` label.
-- Added configurable cached handle-to-channel-ID lookup using the public YouTube channel page by default, with explicit API lookup, API fallback, intervals, and on-add resolution.
+- Marked default saved-setting choices in Settings dialog with muted `(Default)` label.
+- Configurable cached handle-to-channel-ID lookup using public YouTube channel page by default; explicit API lookup, API fallback, intervals, on-add resolution.
 
 ### Changed
 
@@ -54,19 +53,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Added privacy-limited page, comments-host, and extraction diagnostics to the existing debug metrics.
-- Restored API and pair controls after unexpected async errors, and merged overlapping pair requests into one active run.
-- Routed nested-dialog keyboard and backdrop actions to the top dialog only and restored opener focus after close.
-- Limited YouTube-theme discovery to direct `ytd-app` lifecycle changes and disabled theme observers outside YouTube theme modes.
-- Preserved existing settings, rules, pair metadata, API keys, and logs when Tampermonkey rejects a write, with retry guidance instead of a success notice.
-- Prevented legacy block-list entries from reappearing after a migrated v2 rule is deleted or the list is cleared.
-- Prevented concurrent cross-tab block-list writes from losing additions; add, delete, and clear conflicts now converge deterministically.
-- Restricted handle context-menu interception to comment authors, preserving YouTube's context menu for other handle links.
-- Stopped comment-host discovery from falling back to broad page roots and bounded unsuccessful mutation retries.
-- Attached Shorts comment observation to a stable panel rather than a single comment renderer.
+- Added privacy-limited page, comments-host, extraction diagnostics to debug metrics.
+- Restored API/pair controls after async errors; merged overlapping pair requests into one active run.
+- Routed nested-dialog keyboard/backdrop actions to top dialog only; restored opener focus after close.
+- Limited YouTube-theme discovery to direct `ytd-app` lifecycle changes; disabled theme observers outside YouTube theme modes.
+- Preserved settings, rules, pair metadata, API keys, logs when Tampermonkey rejects write; showed retry guidance instead of success.
+- Prevented legacy block-list entries reappearing after migrated v2 rule deletion or list clear.
+- Prevented concurrent cross-tab block-list writes losing additions; add/delete/clear conflicts converge deterministically.
+- Restricted handle context-menu interception to comment authors; preserved YouTube context menu for other handle links.
+- Stopped comment-host discovery fallback to broad page roots; bounded failed mutation retries.
+- Attached Shorts comment observation to stable panel, not single comment renderer.
 - Added page-key-deduplicated YouTube SPA detection for page-data and History API updates.
 - Added fallback channel-ID extraction paths and pair-mode diagnostics for missing comment channel IDs.
-- Reapplied keyword and auto-dislike actions when YouTube reuses a comment DOM node for a new comment identity.
+- Reapplied keyword/auto-dislike actions when YouTube reuses comment DOM node for new identity.
 
 ### Security
 
@@ -76,7 +75,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Added release-script options to fast-forward and optionally push `master` after the required `origin/dev` push.
+- Release-script options to fast-forward and optionally push `master` after required `origin/dev` push.
 
 ### Changed
 
@@ -92,7 +91,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Prevented YouTube theme observers from reacting to userscript theme-class changes and repeatedly refreshing the page.
+- Prevented YouTube theme observers reacting to userscript theme-class changes and repeatedly refreshing page.
 
 ### Security
 
@@ -102,16 +101,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Added V0-V5 diagnostic-detail settings for log payloads.
-- Added JSON and plain-text file downloads plus a return action to the block-list export dialog.
-- Added per-option explanations to keyword automation settings.
-- Added a unified block and keyword automation dialog for regex rules and detailed keyword settings.
-- Added selectable system, YouTube, inverted, and custom userscript UI themes.
+- V0-V5 diagnostic-detail settings for log payloads.
+- JSON/plain-text downloads and return action in block-list export dialog.
+- Per-option explanations for keyword automation settings.
+- Unified block/keyword automation dialog for regex rules and detailed keyword settings.
+- Selectable system, YouTube, inverted, custom userscript UI themes.
 
 ### Changed
 
-- Added spacing before the settings matching group and highlighted settings reset actions as destructive.
-- Moved detailed keyword settings out of Settings, leaving a master enable/disable control there.
+- Added spacing before settings matching group; highlighted reset actions as destructive.
+- Moved detailed keyword settings from Settings, leaving master enable/disable control.
 
 ### Deprecated
 
@@ -123,7 +122,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Restored idempotent comment `⋯` menu injection for reused and delayed YouTube popups.
+- Restored idempotent comment `⋯` menu injection for reused/delayed YouTube popups.
 
 ### Security
 
@@ -133,7 +132,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Added independent local log retention and browser-console logging settings with configurable level, retention, and text-file download.
+- Independent local log retention and browser-console logging settings with configurable level, retention, text-file download.
 
 ### Changed
 
@@ -159,14 +158,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Added selectable identity blocking with default `handle` rules or UID pair `id` rules.
-- Added independent pair-update checks for stored UID verification and handle re-resolution.
-- Added configurable keyword automation for comment text, author handles, and pinned labels.
+- Selectable identity blocking with default `handle` rules or UID pair `id` rules.
+- Independent pair-update checks for stored UID verification and handle re-resolution.
+- Configurable keyword automation for comment text, author handles, pinned labels.
 
 ### Changed
 
-- Pair creation continues to resolve `handle` to UID regardless of the update-check settings.
-- Keyword actions now deduplicate per comment and avoid duplicate block-list or pair requests.
+- Pair creation still resolves `handle` to UID regardless of update-check settings.
+- Keyword actions deduplicate per comment; avoid duplicate block-list/pair requests.
 
 ### Deprecated
 
@@ -188,11 +187,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Added configurable console-log prefixes, optional timestamps, ISO/custom time formats, and timezone selection.
+- Configurable console-log prefixes, optional timestamps, ISO/custom time formats, timezone selection.
 
 ### Changed
 
-- Updated the settings dialog to a category-list layout with grouped controls, descriptions, and an automatic-save note.
+- Settings dialog now category-list layout with grouped controls, descriptions, automatic-save note.
 
 ### Deprecated
 
@@ -214,9 +213,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Added loading bars while API key tests and pair create/update actions wait on API responses.
-- Added navigation buttons between the settings dialog and block list.
-- Added five-level text size and UI scale settings.
+- Loading bars while API key tests and pair create/update actions await API responses.
+- Navigation buttons between settings dialog and block list.
+- Five-level text size and UI scale settings.
 
 ### Changed
 
@@ -232,7 +231,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fixed the block-list dialog so its existing settings, API, and pair sections are appended to the dialog body.
+- Block-list dialog now appends existing settings, API, pair sections to dialog body.
 
 ### Security
 
@@ -246,12 +245,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Changed readable `src/` source slices from JavaScript files to TypeScript files while keeping the generated userscript output unchanged.
-- Changed test files from JavaScript to TypeScript while keeping the Node test runner workflow unchanged.
-- Changed build and version scripts from JavaScript to TypeScript while preserving existing npm commands.
-- Changed userscript builds to bundle explicit TypeScript modules with esbuild and keep generated output out of ESLint.
-- Added TypeScript project boundaries for source, script, and test files to prevent editor diagnostics from treating split userscript files as one strict module.
-- Added a project `typecheck` script that runs TypeScript checks for source, scripts, and tests.
+- Changed readable `src/` source slices from JavaScript to TypeScript; generated userscript unchanged.
+- Changed tests from JavaScript to TypeScript; Node test runner workflow unchanged.
+- Changed build/version scripts from JavaScript to TypeScript; existing npm commands preserved.
+- Userscript builds now bundle explicit TypeScript modules with esbuild; generated output excluded from ESLint.
+- Added TypeScript project boundaries for source, script, test files, preventing editor diagnostics treating split userscript files as one strict module.
+- Added project `typecheck` script running TypeScript checks for source, scripts, tests.
 
 ### Deprecated
 
@@ -273,12 +272,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Added a blocked-comment display mode setting with full hide, placeholder, and click-to-reveal options.
-- Added a confirmation-gated reset button for app display and matching settings.
+- Blocked-comment display modes: full hide, placeholder, click-to-reveal.
+- Confirmation-gated reset button for app display/matching settings.
 
 ### Changed
 
-- Grouped related settings dialog controls for clearer scanning.
+- Grouped related settings-dialog controls for easier scanning.
 
 ### Deprecated
 
@@ -290,7 +289,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fixed blocked top-level comment threads hiding or auto-disliking child replies.
+- Prevented blocked top-level comment threads hiding or auto-disliking child replies.
 
 ### Security
 
@@ -300,12 +299,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Added a three-mode auto-dislike setting for blocked comments: off, newly hidden only, or always while hidden.
+- Three-mode auto-dislike setting for blocked comments: off, newly hidden only, always while hidden.
 
 ### Changed
 
-- Changed the default auto-dislike mode to off.
-- Split Korean and English i18n dictionaries into separate source files.
+- Default auto-dislike mode now off.
+- Split Korean/English i18n dictionaries into separate source files.
 
 ### Deprecated
 
@@ -327,9 +326,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Added a separate settings dialog for API, UID detection, regex auto-add, and debug counters.
-- Added optional regex matched-handle auto-add so future comments from that channel use handle
-  matching before regex.
+- Separate settings dialog for API, UID detection, regex auto-add, debug counters.
+- Optional regex matched-handle auto-add; future channel comments use handle matching before regex.
 
 ### Changed
 
@@ -345,37 +343,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Shared UID deletion now keeps matching rules while other pairs still use the same UID.
-- Remote `blocked_v2` sync now normalizes and deduplicates items locally.
-- The watch-page pair review banner now stays hidden for the full stale interval after `Later` or
-  a recent pair check.
-- Invalid imports now stay open so validation failures are visible.
+- Shared UID deletion keeps matching rules while other pairs use same UID.
+- Remote `blocked_v2` sync normalizes/deduplicates items locally.
+- Watch-page pair review banner stays hidden for full stale interval after `Later` or recent pair check.
+- Invalid imports remain open, exposing validation failures.
 
 ### Security
 
-- API fetches now use `referrerPolicy: 'no-referrer'`.
-- Import text is capped before `JSON.parse` runs.
-- Pasted API keys are sanitized before storage.
+- API fetches use `referrerPolicy: 'no-referrer'`.
+- Import text capped before `JSON.parse`.
+- Pasted API keys sanitized before storage.
 
 ## [0.6.0] - 2026-05-20
 
 ### Added
 
-- Added a no-dependency `node:test` harness with a local DOM shim for userscript regression tests.
-- Added pair-run result filtering, sorting, and failed-handle copy/export helpers.
-- Added structured quota guidance after repeated YouTube Data API quota test failures.
-- Added role-based `src/` source files with a no-dependency build/check script for the root
-  userscript distribution file.
+- No-dependency `node:test` harness with local DOM shim for userscript regression tests.
+- Pair-run result filtering, sorting, failed-handle copy/export helpers.
+- Structured quota guidance after repeated YouTube Data API quota test failures.
+- Role-based `src/` files with no-dependency build/check script for root userscript distribution file.
 
 ### Changed
 
-- Covered manager search, dialog i18n refresh, pair result disclosure state, navigation observer
-  reset, pair update skip/force behavior, and regex safety/import literal round-trips with
-  automated tests.
-- Build now writes a compact root userscript while keeping readable source in `src/`.
-- Moved support documentation into `docs/` and updated internal links while keeping repository
-  landing pages in the root `README*.md`.
-- Expanded regex match lists now page results and update only the affected regex row.
+- Added automated tests for manager search, dialog i18n refresh, pair result disclosure state, navigation observer reset, pair update skip/force behavior, regex safety/import literal round-trips.
+- Build writes compact root userscript; readable source remains in `src/`.
+- Moved support docs to `docs/`; updated internal links; kept root `README*.md` landing pages.
+- Expanded regex match lists paginate results and update only affected regex row.
 
 ### Deprecated
 
@@ -401,8 +394,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- UID mismatch handling now replaces stale stored UID rules with the latest resolved UID instead
-  of leaving the old channel ID active.
+- UID mismatch handling replaces stale stored UID rules with latest resolved UID instead of retaining old channel ID.
 
 ### Deprecated
 
@@ -414,110 +406,95 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Plain-text regex import now accepts exported `/pattern/flags` literals and escaped slash
-  patterns.
+- Plain-text regex import accepts exported `/pattern/flags` literals and escaped slash patterns.
 
 ### Security
 
-- Added regex pattern, flag, target-length, and heuristic safety checks to reduce page freezes
-  from catastrophic user regexes during comment matching and manager scans.
+- Added regex pattern, flag, target-length, heuristic safety checks reducing page freezes from catastrophic user regexes during comment matching/manager scans.
 
 ## [0.5.0] - 2026-05-20
 
 ### Added
 
-- Manager dialog now shows the current userscript version.
+- Manager dialog shows current userscript version.
 
 ### Changed
 
-- Default `Update Pair` now skips fresh verified pairs until their stale interval expires, while
-  selected-handle bulk updates still force refreshes for explicit user requests.
+- Default `Update Pair` skips fresh verified pairs until stale interval expires; selected-handle bulk updates force refreshes for explicit requests.
 
 ### Fixed
 
-- Reset transient comment observers and metadata caches on video navigation so long YouTube
-  sessions do not retain detached comment DOM nodes.
+- Reset transient comment observers/metadata caches on video navigation so long YouTube sessions avoid retaining detached comment DOM nodes.
 
 ## [0.4.0] - 2026-04-12
 
 ### Added
 
 - New `app_settings_v1` storage for handle case-sensitivity settings
-- Block-list row checkboxes, visible-results select-all, and selected-count display
-- `all|handle|id|regex` type filtering and handle-tag filtering in the manager dialog
-- Bulk actions for deleting selected entries and creating/updating pairs for selected handles
+- Block-list row checkboxes, visible-results select-all, selected-count display
+- `all|handle|id|regex` type filtering and handle-tag filtering in manager dialog
+- Bulk actions: delete selected entries; create/update pairs for selected handles
 - Manager search with indexed substring lookup
-- Regex rows now expose matched-handle counts, inline expansion, and matching-handle selection
-- Detailed per-handle pair-run results in the manager and watch-page follow-up dialog
-- API key testing with stored diagnostic results in `youtube_data_api_v3_config`
-- Menu command refresh and dialog refresh hooks for live i18n updates
+- Regex rows expose matched-handle counts, inline expansion, matching-handle selection
+- Detailed per-handle pair-run results in manager and watch-page follow-up dialog
+- API key testing with stored diagnostics in `youtube_data_api_v3_config`
+- Menu command/dialog refresh hooks for live i18n updates
 - `GM_unregisterMenuCommand` userscript grant
 
 ### Changed
 
-- Handle rules now preserve stored casing and compare according to `handleCaseSensitive`
-- Pair metadata matching now follows the same handle comparison policy as block rules
-- The manager dialog now includes a dedicated handle case-sensitivity section and an expanded
-  list-maintenance toolbar
-- Cross-tab sync now refreshes local state when `app_settings_v1` and `lang` change
-- API config storage is now version 2 and keeps the latest key-test result
-- The watch-page pair banner can surface detailed pair-run results after updates
-- Refactored the manager dialog to reuse a shared per-render view state for visible and selected
-  rule calculations
-- Regex-row matching now uses dialog-session caching and computes full match arrays only on expand
-  or `Select matching handles`
-- Selection-only actions now update visible checkboxes, counters, and bulk-action state without
-  rebuilding the full rule list DOM
-- Expanded the comment-hiding page pipeline from `/watch` to both `/watch` and `/shorts/<id>`
-- Refactored page sync and comments-host discovery around an explicit page-mode helper
-- Kept pair-banner behavior watch-only while reusing the same comment matching and mutation path on
-  Shorts
+- Handle rules preserve stored casing; compare per `handleCaseSensitive`
+- Pair metadata matching follows same handle comparison policy as block rules
+- Manager dialog adds dedicated handle case-sensitivity section and expanded list-maintenance toolbar
+- Cross-tab sync refreshes local state when `app_settings_v1` and `lang` change
+- API config storage now version 2; retains latest key-test result
+- Watch-page pair banner can show detailed pair-run results after updates
+- Refactored manager dialog to share per-render view state for visible/selected rule calculations
+- Regex-row matching uses dialog-session cache; computes full match arrays only on expand or `Select matching handles`
+- Selection-only actions update visible checkboxes, counters, bulk-action state without rebuilding full rule-list DOM
+- Expanded comment-hiding pipeline from `/watch` to `/watch` and `/shorts/<id>`
+- Refactored page sync/comments-host discovery around explicit page-mode helper
+- Kept pair-banner watch-only; reused comment matching/mutation path on Shorts
 
 ### Fixed
 
-- Matched handles from comment DOM text and `/@...` links now preserve exact casing for
-  case-sensitive mode
-- Filtered tag views now show only matching handle entries instead of unrelated `id` or `regex`
-  rows
+- Comment DOM text and `/@...` links preserve exact handle casing for case-sensitive mode
+- Filtered tag views show only matching handle entries, excluding unrelated `id`/`regex` rows
 - Optional UID detection toggle backed by new `pair_meta_v1` storage
-- Handle↔UID pair creation and refresh actions in the manager dialog
-- Pair status badges and metadata display for blocked handles
-- Watch-page banner prompting pair review when stale or mismatch items exist
-- Cross-tab synchronization for pair metadata updates
-- Local-only YouTube Data API v3 API key storage in the manager dialog
-- Pair creation and update now use `channels.list` with the `forHandle` filter
-- Expanded the manager dialog with a UID section, pair summary cards, and pair timestamps
-- UID resolution now requires a user-supplied API key instead of scraping channel pages
-- `id` rule matching is now controlled by the UID detection toggle instead of always being active
-- Removing a handle rule now also removes its paired UID rule and pair metadata
-- Pair actions are disabled in the manager until an API key is saved
-- Documentation now describes the API-key-based UID flow and local-only key storage
-- Preserved handle-only blocking as a safe fallback when UID lookup fails or a pair cannot be verified
-- Reduced fragility from relying on YouTube channel-page HTML structure for UID lookup
-- Removed the main `Select matching handles` latency source by avoiding whole-list rerenders on
-  regex-row selection
-- Reduced repeated manager work from rebuilding search/selection state multiple times within the
-  same interaction cycle
-- Blocked comments and replies can now be hidden on supported Shorts pages instead of being skipped
-  by watch-only page gating
-- Storage-triggered refresh now targets the active attached comments host, allowing immediate
-  post-block hiding on Shorts when a host is already connected
+- Handle↔UID pair creation/refresh actions in manager dialog
+- Pair status badges and metadata for blocked handles
+- Watch-page banner prompts pair review for stale/mismatch items
+- Cross-tab pair-metadata synchronization
+- Local-only YouTube Data API v3 API key storage in manager dialog
+- Pair creation/update use `channels.list` with `forHandle` filter
+- Manager dialog gains UID section, pair summary cards, pair timestamps
+- UID resolution requires user API key instead of channel-page scraping
+- `id` rule matching controlled by UID detection toggle, not always active
+- Removing handle rule also removes paired UID rule and pair metadata
+- Pair actions disabled until API key saved
+- Docs describe API-key UID flow and local-only key storage
+- Preserved handle-only blocking fallback when UID lookup fails or pair cannot be verified
+- Reduced reliance on fragile YouTube channel-page HTML for UID lookup
+- Removed main `Select matching handles` latency by avoiding whole-list rerenders on regex-row selection
+- Reduced repeated manager work rebuilding search/selection state within same interaction cycle
+- Blocked comments/replies now hide on supported Shorts pages instead of watch-only skipping
+- Storage refresh targets active attached comments host, enabling immediate post-block hiding on Shorts
 
 ## [0.3.0] – 2026-04-07
 
 ### Added
 
-- Lightweight performance counters exposed at `window.__ytCommentBlockerPerf`
+- Lightweight performance counters at `window.__ytCommentBlockerPerf`
 
 ### Changed
 
-- Scoped comment observation to watch pages and the comments host instead of reacting to the full page
-- Switched comment refresh from broad subtree rescans to incremental processing of affected comment roots
-- Cached extracted comment handle/channel metadata per node and deduplicated `IntersectionObserver.observe()` registration
+- Scoped comment observation to watch pages/comments host instead of full page
+- Switched refresh from broad subtree rescans to incremental processing of affected comment roots
+- Cached comment handle/channel metadata per node; deduplicated `IntersectionObserver.observe()` registration
 
 ### Fixed
 
-- Reduced YouTube UI delay caused by global DOM observation and repeated comment rescans
+- Reduced YouTube UI delay from global DOM observation/repeated comment rescans
 
 ## [0.2.4] – 2025-08-17
 
@@ -533,86 +510,86 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Apply blocks/unblocks in real time without page refresh by re-evaluating existing comment nodes on refresh and removing the cache guard that prevented updates.
+- Apply blocks/unblocks live without refresh by re-evaluating comment nodes and removing update-blocking cache guard.
 
 ## [0.2.2] – 2025-08-15
 
 ### Changed
 
-- Docs: bump displayed version in README (EN/KO) to v0.2.2
+- Docs: bump README (EN/KO) version to v0.2.2
 - Docs: add one-click install raw URL and Userscript metadata section
-- Docs: clarify language toggle behavior for open UI elements
+- Docs: clarify language toggle behavior for open UI
 
 ## [0.2.1] – 2025-08-15
 
 ### Added
 
-- Inline regex input form in the block list dialog
-- “Build/Test Regex” button that opens regexr.com
-- Sticky, separated regex toolbar not affected by scrolling
+- Inline regex input in block-list dialog
+- “Build/Test Regex” button opening regexr.com
+- Sticky separated regex toolbar unaffected by scrolling
 
 ### Changed
 
-- Reduced button height in regex section for a tighter UI
-- Added bilingual link bars to README and changelogs
+- Reduced regex-section button height for tighter UI
+- Added bilingual link bars to README/changelogs
 - Updated userscript @namespace and @updateURL/@downloadURL to GitHub repo
 
 ## [0.2.0] – 2025-08-15
 
 ### Added
 
-- Channel ID blocking with ID-first matching (handle as fallback)
-- Regex-based blocking for handles with validation and import/export support
+- Channel ID blocking with ID-first matching, handle fallback
+- Regex handle blocking with validation/import/export
 - i18n (Korean/English) and accessibility improvements (ARIA roles, aria-live)
-- IntersectionObserver-based visibility processing and WeakSet node caching
-- Tampermonkey menu to toggle language
+- IntersectionObserver visibility processing and WeakSet node caching
+- Tampermonkey language-toggle menu
 
 ### Changed
 
 - Storage upgraded to v2 schema `{version:2, items:[{type:'id'|'handle'|'regex', ...}]}` with automatic migration
-- Switched from inline style hiding to class toggling for batched updates
+- Switched from inline hiding styles to class toggling for batched updates
 
 ### Fixed
 
-- Reduced redundant scans by scoping refresh and debouncing via rAF
+- Reduced redundant scans via scoped refresh and rAF debounce
 
 ## [0.1.5] – 2025-08-15
 
 ### Fixed
 
-- Optimized cross-tab synchronization: prevent echo writes on remote updates that caused cascading updates and exponential slowdowns with many tabs
+- Optimized cross-tab sync: prevent remote-update echo writes causing cascading updates/exponential slowdown across many tabs
 
 ### Changed
 
-- Storage avoids redundant writes when the handle list is unchanged
+- Storage avoids redundant writes when handle list unchanged
 
 ## [0.1.4] – 2025-08-14
 
 ### Changed
 
-- Block list dialog footer fixed so Import, Export, and Close buttons stay visible
+- Fixed block-list dialog footer so Import, Export, Close remain visible
 
 ## [0.1.3] – 2025-08-14
 
 ### Changed
 
-- Enlarged default dialog UI for better readability
+- Enlarged default dialog UI for readability
 
 ### Fixed
 
-- Expanded export list dialog width
-- Exported text now uses real line breaks between handles
+- Widened export-list dialog
+- Exported text uses real line breaks between handles
 
 ## [0.1.2] – 2025-08-08
 
 ### Added
 
-- Added `@updateURL` and `@downloadURL` metadata for the userscript
-- Documented storage versioning, delegated context menu events, cross-tab synchronization, and JSON import/export
+- Added `@updateURL` and `@downloadURL` userscript metadata
+- Documented storage versioning, delegated context-menu events, cross-tab sync, JSON import/export
 
 ### Changed
 
-- Rewrote README in English and provided Korean translation
+- Rewrote README in English; added Korean translation
 
 ## [0.1.1] – 2025-08-08
 
@@ -624,24 +601,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Refactored entire codebase to a class-based OOP structure
-- Separated automatic menu injection into the `MenuEnhancer` class
-- Provided export formats (JSON and line-by-line text) for the block list
-- Handled import via JSON schema and multiple formats
-- Introduced versioned storage key `blockedHandles_v1` and automatic migration from legacy `blockedHandles`
-- Added cross-tab synchronization with `GM_addValueChangeListener`
+- Refactored codebase to class-based OOP
+- Separated automatic menu injection into `MenuEnhancer` class
+- Added block-list export formats: JSON and line-by-line text
+- Added JSON-schema/multi-format import
+- Added versioned storage key `blockedHandles_v1` and automatic migration from legacy `blockedHandles`
+- Added cross-tab sync with `GM_addValueChangeListener`
 - Normalized handles to lowercase
-- Improved dialog with focus trap
-- Enhanced performance using MutationObserver and requestAnimationFrame-based debounce
+- Added dialog focus trap
+- Improved performance via MutationObserver and requestAnimationFrame debounce
 
 ### Changed
 
-- Switched from direct DOM binding to delegated event handling
-- Improved list UI to render dynamically
+- Switched direct DOM binding to delegated event handling
+- Improved list UI with dynamic rendering
 
 ### Deprecated
 
-- Kept the `blockedHandles` key but no longer used internally
+- Retained `blockedHandles` key; no longer used internally
 
 ### Fixed
 
@@ -649,17 +626,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
-- Reduced XSS risk by prioritizing text nodes in dialogs
+- Reduced XSS risk by prioritizing dialog text nodes
 
 ## [0.0.1] – 2025-07-06
 
 ### Added
 
-- Block or unblock comment authors by right-clicking their `@handle`
-- Introduced `MutationObserver` for real-time comment blocking
-- Block list UI with popup to review or unblock handles
+- Block/unblock comment authors by right-clicking their `@handle`
+- Added `MutationObserver` for live comment blocking
+- Block-list popup UI for review/unblock
 - Export/import block list as newline-separated text
 - Added two Tampermonkey menu commands:
   - 🔍 Manage block list
   - 🗑️ Clear block list
-- Custom toast notifications and simple dialog interface
+- Custom toast notifications and simple dialog UI

@@ -2,25 +2,21 @@
 
 [English](WIKI.md) | [한국어](WIKI.ko.md)
 
-This document describes the current implementation in more detail than
-[`README.md`](../README.md).
+Current implementation details beyond [`README.md`](../README.md).
 
 ## 1. Overview
 
-The userscript hides YouTube comments by channel identity on watch pages and Shorts pages.
+Userscript hides YouTube comments by channel identity on watch and Shorts pages.
 
 Source layout:
 
-- `src/` contains role-based source slices, with Korean and English i18n dictionaries split into
-  separate files.
-- `ytblockhandlecomments.js` remains the single Tampermonkey distribution file.
-- `npm run build` regenerates the root userscript from `src/`.
-- `npm run check:build` verifies the root userscript is in sync.
-- Chrome/Tampermonkey does not load `src/` files directly; it uses only the generated root
-  userscript.
-- The generated root userscript is compacted to reduce install/update payload size.
-- Commits that change source behavior should include both the changed `src/` files and the rebuilt
-  `ytblockhandlecomments.js`.
+- `src/`: role-based source slices; separate Korean/English i18n dictionaries.
+- `ytblockhandlecomments.js`: single Tampermonkey distribution file.
+- `npm run build`: regenerate root userscript from `src/`.
+- `npm run check:build`: verify root userscript sync.
+- Chrome/Tampermonkey loads only generated root userscript, not `src/`.
+- Generated userscript compacted for smaller install/update payload.
+- Behavior-changing commits include changed `src/` files + rebuilt `ytblockhandlecomments.js`.
 
 Supported rule types in `blocked_v2`:
 
@@ -37,27 +33,27 @@ Supported local stores:
 
 User-facing entry points:
 
-- Right-click a comment author handle
-- Channel, search, video-description, and comment-body handle links retain YouTube's native context menu
+- Right-click comment author handle
+- Channel, search, video-description, and comment-body handle links keep YouTube native context menu
 - Comment `⋯` menu injection
 - `Manage block list` Tampermonkey menu command
 - Watch-page pair review banner
 
-Supported page modes for comment hiding:
+Supported comment-hiding page modes:
 
 - `watch`
 - `shorts`
 
-Comment-host discovery observes only the matching watch or Shorts root. It batches host checks per frame and stops after 20 unsuccessful mutation batches; navigation or a new page key resets that retry budget.
+Comment-host discovery observes matching watch/Shorts root only. Host checks batched per frame; stop after 20 failed mutation batches. Navigation/new page key resets budget.
 
-For Shorts, the observer attaches to the nearest non-comment panel around comment roots, never a single comment renderer. This keeps sibling comments and replies in scope as the panel updates.
+For Shorts, observer attaches to nearest non-comment panel around comment roots, never single comment renderer, keeping sibling comments/replies in scope during panel updates.
 
-Page synchronization responds to `yt-navigate-finish`, `yt-page-data-updated`, `popstate`, `history.pushState()`, and `history.replaceState()`. It resets transient observation state only when the derived page key changes.
+Page sync responds to `yt-navigate-finish`, `yt-page-data-updated`, `popstate`, `history.pushState()`, and `history.replaceState()`. Transient observation state resets only when derived page key changes.
 
 Out of scope:
 
 - Pair metadata import/export
-- Background polling for pair refresh
+- Background pair-refresh polling
 
 ## 2. Metadata And Runtime
 
@@ -67,20 +63,13 @@ Out of scope:
   `GM_registerMenuCommand`, `GM_unregisterMenuCommand`
 - Runtime starts at `document-idle`
 
-Comment matching remains intentionally scoped to watch-page and Shorts comments. Matching comments
-can be hidden completely, replaced with a gray placeholder, or replaced with a click-to-reveal
-placeholder. Auto dislike defaults to off and is configurable as off, only when a comment is newly
-hidden, or always while a blocked comment is hidden; already pressed dislike buttons are not
-toggled.
+Comment matching intentionally limited to watch/Shorts comments. Matches can be fully hidden, replaced by gray placeholder, or click-to-reveal placeholder. Auto dislike defaults off; modes: off, newly hidden only, or always while hidden. Already pressed dislike buttons never toggle.
 
-Comment automation state uses a derived channel ID, handle, body, and pinned-label identity. When a reused comment element changes identity, cached metadata and one-time keyword, dislike, and blocked-display state are invalidated for the new comment.
+Comment automation identity derives channel ID, handle, body, and pinned label. Reused element identity changes invalidate cached metadata and one-time keyword, dislike, and blocked-display state.
 
-Keyword automation can inspect comment text, author handles, and pinned labels. It is
-case-insensitive and runs only the selected actions: dislike, add the author handle to the block
-list, or create a UID pair after adding the handle.
+Keyword automation checks comment text, author handles, and pinned labels. Case-insensitive; runs selected actions only: dislike, block author handle, or create UID pair after adding handle.
 
-Logging can independently retain local entries for download and write to the browser console.
-It records only low-frequency app, API-test, and pair-operation events.
+Logging independently supports local download entries and browser console. Records only low-frequency app, API-test, and pair-operation events.
 
 ## 3. Storage Model
 
@@ -177,64 +166,50 @@ API config:
 
 Notes:
 
-- Legacy `blockedHandles` and `blockedHandles_v1` migrate only when a valid `blocked_v2` store is absent; later deletes and clears never restore legacy entries
-- Cross-tab `blocked_v2` changes carry optional per-entry revisions, tombstones, and a clear revision. Concurrent additions merge; add/delete/clear conflicts use the highest revision and converge without echo writes.
-- Default `app_settings_v1.dislikeMode` is `none`
-- Default `app_settings_v1.commentBlockMode` is `hide`
-- Default `app_settings_v1.blockMatchMode` is `handle`
-- At least one of `app_settings_v1.pairUpdateUidCheck` and `pairUpdateHandleLookup` stays enabled;
-  handle lookup is the default
-- `handleLookupMethod` defaults to `scraper`; `api` is opt-in. `handleLookupFallbackApi` defaults to
-  `false`, and `handleLookupOnAdd` defaults to `true`.
-- Keyword automation is enabled by default to preserve existing behavior. It can be disabled without deleting
-  its case-insensitive rules, fields, or actions; matching defaults to comment text and has no enabled action
-  by default
-- `app_settings_v1.themeMode` defaults to `system`. System and YouTube modes follow their respective current
-  dark setting, while the inverted modes use its opposite. Custom colors are six-digit hex values and are
-  validated before saving
-- Theme styles apply only to the userscript's dialogs, panels, lists, and notices; they never style YouTube UI
-- YouTube-theme synchronization watches only native YouTube dark-state signals, not userscript theme classes
-- Theme discovery stops after finding `ytd-app`; while YouTube mode is active, direct body child changes are checked only for `ytd-app` replacement, so comment and feed mutations do not trigger app rediscovery
-- Logging is off by default. File logging retains entries in Tampermonkey storage until users download
-  or clear them; the browser controls the downloaded file location
-- If Tampermonkey rejects a settings, block-list, pair-metadata, API-key, or log write because of permissions, quota, or storage failure, the in-memory state remains unchanged. The affected action shows an error instead of a success notice so users can correct the problem and retry.
-- Console logging defaults to `[YTCB]` with timestamps off. Presets support extended and basic calendar dates, week dates, ordinal dates, and time. Custom ISO formats combine `yyyy`, `yy`, `MM`, `dd`, `DDD`, `ww`, `e`, `HH`, `mm`, `ss`, `SSS`, `X`, `XXX`, `Z`, `T`, and `W`, so basic or extended time may be combined with timezone tokens. Timezones support system, UTC offsets from `-12` to `+14`, listed IANA cities, and validated custom IANA or KST-style abbreviations.
-- `app_settings_v1.verboseLevel` defaults to `3`. V0/V1 omit diagnostic payloads, V2 records one
-  field, V3 records three fields, V4 six fields, and V5 ten fields. Before console or saved-log output,
-  nested API keys, tokens, URLs, accounts, comments, handles, and user identifiers are removed; circular
-  and oversized payloads are safely truncated.
-- Default `app_settings_v1.fontSizeLevel` and `app_settings_v1.uiScaleLevel` are `3`; level `2`
-  matches the previous visual size
-- Pair metadata and API config are excluded from import/export
+- Legacy `blockedHandles` and `blockedHandles_v1` migrate only if valid `blocked_v2` absent; later delete/clear never restores legacy entries
+- Cross-tab `blocked_v2` changes carry optional entry revisions, tombstones, and clear revision. Concurrent additions merge; highest revision resolves add/delete/clear conflicts without echo writes.
+- Default `app_settings_v1.dislikeMode`: `none`
+- Default `app_settings_v1.commentBlockMode`: `hide`
+- Default `app_settings_v1.blockMatchMode`: `handle`
+- At least one of `app_settings_v1.pairUpdateUidCheck` and `pairUpdateHandleLookup` remains enabled; handle lookup default
+- `handleLookupMethod` defaults to `scraper`; `api` opt-in. `handleLookupFallbackApi` defaults to `false`; `handleLookupOnAdd` to `true`.
+- Keyword automation enabled by default for existing behavior. Disable without deleting case-insensitive rules, fields, or actions. Default matching: comment text; no default enabled action.
+- `app_settings_v1.themeMode` defaults to `system`. System/YouTube modes follow respective current dark setting; inverted modes use opposite. Custom colors require validated six-digit hex.
+- Theme styles affect userscript dialogs, panels, lists, notices only; never YouTube UI.
+- YouTube-theme sync watches native YouTube dark-state signals only, not userscript theme classes.
+- Theme discovery stops after finding `ytd-app`; in YouTube mode, direct body-child changes only check `ytd-app` replacement, avoiding rediscovery from comment/feed mutations.
+- Logging off by default. File logs remain in Tampermonkey storage until download/clear; browser controls download location.
+- Rejected settings, block-list, pair-metadata, API-key, or log writes leave in-memory state unchanged and show error, not success, enabling correction/retry.
+- Console logging defaults to `[YTCB]`, timestamps off. Presets: extended/basic calendar dates, week dates, ordinal dates, time. Custom ISO formats combine `yyyy`, `yy`, `MM`, `dd`, `DDD`, `ww`, `e`, `HH`, `mm`, `ss`, `SSS`, `X`, `XXX`, `Z`, `T`, and `W`; basic/extended time supports timezone tokens. Timezones: system, UTC offsets `-12`–`+14`, listed IANA cities, validated custom IANA or KST-style abbreviations.
+- `app_settings_v1.verboseLevel` defaults to `3`. V0/V1 omit diagnostic payloads; V2 records one field, V3 three, V4 six, V5 ten. Before console/saved-log output, nested API keys, tokens, URLs, accounts, comments, handles, and user IDs removed; circular/oversized payloads safely truncated.
+- Default `app_settings_v1.fontSizeLevel` and `app_settings_v1.uiScaleLevel`: `3`; level `2` matches previous size.
+- Pair metadata and API config excluded from import/export.
 
 ## 4. Matching Model
 
 Identity matching:
 
-- `app_settings_v1.blockMatchMode` chooses the active identity rule type
-- `handle` is the default and matches stored `handle` rules
-- `pair` matches stored `id` rules after UID Detection is enabled
-- Regex rules are tested against extracted handle text only
-- Regex rules are rejected when they exceed safety limits for pattern length, flags, target length,
-  or known high-risk backtracking shapes
+- `app_settings_v1.blockMatchMode` selects active identity rule type
+- `handle` default; matches stored `handle` rules
+- `pair` matches stored `id` rules after UID Detection enabled
+- Regex tests extracted handle text only
+- Regex rejected when exceeding pattern-length, flags, target-length, or known high-risk backtracking-shape limits
 
 Case sensitivity:
 
 - Controlled by `app_settings_v1.handleCaseSensitive`
-- `false`: lowercase normalized comparison
+- `false`: lowercase-normalized comparison
 - `true`: exact handle comparison
-- Older lowercase-only handles may need re-saving for strict exact matching
+- Older lowercase-only handles may require re-saving for strict matching
 
 Optional UID behavior:
 
-- Controlled by both `app_settings_v1.blockMatchMode` and `pair_meta_v1.enableUidDetection`
-- `id` rules are active only in `pair` mode while UID detection is enabled
-- Turning UID detection off keeps stored `id` rules and pair metadata
-- Runtime UID matching compares stored `id` rules to channel IDs already present in the comment DOM;
-  it does not call the YouTube Data API
-- Optional regex auto-add stores a regex-matched handle as a `handle` rule, so subsequent comments
-  from the same channel are checked by handle before regex
-- Channel IDs are read from `/channel/UC...` links first, then `data-channel-id` and `channel-id` attributes. In pair mode, a comment with a handle but no channel ID increments `window.__ytCommentBlockerPerf.missingChannelIds`.
+- Controlled by `app_settings_v1.blockMatchMode` + `pair_meta_v1.enableUidDetection`
+- `id` rules active only in `pair` mode with UID detection enabled
+- Disabling UID detection preserves stored `id` rules and pair metadata
+- Runtime UID matching compares stored `id` rules with channel IDs already in comment DOM; no YouTube Data API call
+- Optional regex auto-add stores matched handle as `handle`, enabling handle check before regex on later comments
+- Channel IDs read first from `/channel/UC...` links, then `data-channel-id` and `channel-id` attributes. In pair mode, handle without channel ID increments `window.__ytCommentBlockerPerf.missingChannelIds`.
 
 Per-comment matching order:
 
@@ -243,157 +218,143 @@ Per-comment matching order:
 
 Keyword automation:
 
-- Reads only the configured comment text, author handle, and/or pinned-label fields
-- Uses case-insensitive substring matching against up to 50 saved keywords
+- Reads configured comment text, author handle, and/or pinned-label fields only
+- Case-insensitive substring match against up to 50 keywords
 - Runs each selected action once per comment DOM node
-- `Create channel-ID pair` also adds the author handle first; the default page lookup does not need an API key
+- `Create channel-ID pair` first adds author handle; default page lookup needs no API key
 
 ## 5. Pair And API Flow
 
 Channel ID lookup:
 
-1. Default: fetch `https://www.youtube.com/@<url-encoded-handle>` from the userscript's YouTube origin.
-2. Parse `externalId`, `channelId`, then `itemprop="channelId"` from the public channel HTML.
-3. The page parser is undocumented and can break when YouTube changes HTML. HTTP and no-channel-ID failures keep prior pair data and provide retry/API-fallback guidance.
+1. Default: fetch `https://www.youtube.com/@<url-encoded-handle>` from userscript YouTube origin.
+2. Parse `externalId`, `channelId`, then `itemprop="channelId"` from public channel HTML.
+3. Undocumented parser may break with YouTube HTML changes. HTTP/no-channel-ID failures preserve pair data and show retry/API-fallback guidance.
 4. Explicit API mode calls `GET https://www.googleapis.com/youtube/v3/channels` with `part=id`, `forHandle=@handle`, and `key=<apiKey>`.
 
 Stored UID verification:
 
-1. Call the same endpoint with `part=id` and `id=<stored UID>`
-2. Keep the pair verified when the stored channel ID still resolves
-3. Optionally run the independent handle re-resolution check to detect a replacement UID
+1. Call same endpoint with `part=id` and `id=<stored UID>`
+2. Keep pair verified while stored channel ID resolves
+3. Optionally independently re-resolve handle to detect replacement UID
 
 API-key test:
 
-1. Use the saved API key
-2. Call the same API family with `part=id&id=UC_x5XG1OV2P6uZZ5FSM9Ttw`
-3. Store the latest result in `lastTestResult`
-4. Show categorized diagnostics in the manager
+1. Use saved API key
+2. Call same API family with `part=id&id=UC_x5XG1OV2P6uZZ5FSM9Ttw`
+3. Save latest result in `lastTestResult`
+4. Show categorized manager diagnostics
 
 Fallback behavior:
 
-- Handle mode still works when channel-ID lookup fails; pair mode needs an existing verified `id` rule
-- Failed pairs stay `unverified` or `stale`
-- Existing pair data is not silently removed on lookup failure
-- When a pair update resolves a different UID, the stored pair and `id` rule are replaced with the
-  latest UID so stale IDs no longer keep matching the old channel
-- API fallback is off by default. When enabled with a saved API key, it runs only after page lookup fails;
-  when disabled, no API request is made.
+- Handle mode works after channel-ID lookup failure; pair mode requires existing verified `id` rule
+- Failed pairs remain `unverified` or `stale`
+- Lookup failure never silently removes pair data
+- Different resolved UID replaces stored pair and `id` rule, preventing stale ID matching
+- API fallback defaults off. When enabled with saved key, runs only after page lookup failure; when disabled, makes no API request.
 
 API minimization:
 
-- `Create Pair` looks up only missing or unverified handle pairs
-- Pair results are cached in pair metadata and per-page memory. Default refresh is 10 minutes for page
-  lookup and one week for API lookup; selected-handle `Update Pair` forces a refresh.
+- `Create Pair` looks up missing/unverified handle pairs only
+- Pair results cached in metadata and per-page memory. Default refresh: 10 minutes for page lookup, one week for API lookup; selected-handle `Update Pair` forces refresh.
 - Intervals: every handle update, 1m, 5m, 10m, 1h, 12h, 1d, 1w, 1M, or validated custom seconds.
-- New handles resolve immediately by default; this can be disabled in Settings.
-- Pair update settings can independently verify the stored UID and re-resolve the handle; at least
-  one check is always enabled
-- Selected-handle bulk `Update Pair` is treated as an explicit user request and refreshes selected
-  handles even if their pair is still fresh
-- Watch-page pair review prompts are suppressed for the same stale interval after `Later` or a
-  recent pair check
+- New handles resolve immediately by default; Settings can disable.
+- Pair update independently supports stored UID verification and handle re-resolution; at least one always enabled.
+- Selected-handle bulk `Update Pair` explicitly refreshes selected handles even when fresh.
+- Watch-page pair review prompts suppressed for same stale interval after `Later` or recent pair check.
 
 ## 6. Manager Dialog
 
 Sections:
 
-- Script info section with the current userscript version
-- Matching, API key, UID pair, and navigation controls
-- Regex add section
-- Rule list section
+- Script info with current userscript version
+- Matching, API key, UID pair, navigation controls
+- Regex add
+- Rule list
 
 Rule-list tools:
 
-- Search by case-insensitive substring on display labels
+- Case-insensitive substring search on display labels
 - Type filters: `all`, `handle`, `id`, `regex`
 - Handle-tag filters: `handle-only`, `paired`, `stale`, `mismatch`, `unverified`
-- Row selection, visible-results select-all, bulk actions
-- Counter shown as `selected / visible / total`
+- Row selection, visible select-all, bulk actions
+- Counter: `selected / visible / total`
 
 Regex rows:
 
 - Show matched blocked-handle count
 - Support `Select matching handles`
 - Expand inline handle list
-- Show first 20 matches by default, with paged `Show more`
-- Cache count-only results for collapsed rows and full match arrays only on expand/select
-- Update visible selection UI and regex expand/collapse state without rebuilding the full list for
-  row-only actions
+- First 20 matches default; paged `Show more`
+- Cache counts for collapsed rows; full arrays only on expand/select
+- Row-only actions update visible selection and expand/collapse state without full-list rebuild
 
 Pair results:
 
-- Pair runs return summary counts plus per-handle outcomes
+- Pair runs return summary counts + per-handle outcomes
 - Manager shows `Last Pair Run`
-- Pair run details support outcome filtering, run-order/outcome/handle sorting, and failed-handle
-  copy/export
-- Watch-page banner updates can open a detail dialog
+- Details support outcome filtering, run-order/outcome/handle sorting, failed-handle copy/export
+- Watch-page banner updates can open details
 
 Removal behavior:
 
-- Removing a `handle` rule also removes paired UID rule and pair metadata
+- Removing `handle` also removes paired UID rule and metadata
 - `Clear block list` clears rules and pair metadata
 
 ## 7. Dialogs, Menus, And Live i18n
 
 Settings dialog:
 
-- Uses a category-list layout inspired by `GM_setting`: each task group has a title, controls, and short help text
-- Nested dialogs route Escape, Enter, Tab, and backdrop actions to the top dialog only; closing restores focus to the element that opened it
-- API tests and pair actions use `finally` cleanup for loading controls. Concurrent manual and keyword pair requests share the active run rather than reporting a successful-looking busy skip
-- Debug metrics include page mode, comments-host and extraction failure counters, and the latest selector reason; they never include comment text, URLs, API keys, or account data
-- Shows an introductory note that changes are saved automatically
-- Groups controls into matching, comment display, keyword automation, logging, display size, and maintenance sections
-- Marks each saved-setting default choice with a muted `(Default)` label
+- Category-list layout inspired by `GM_setting`: task groups have title, controls, brief help
+- Nested dialogs route Escape, Enter, Tab, and backdrop actions to top dialog only; close restores opener focus
+- API tests/pair actions use `finally` cleanup. Concurrent manual/keyword pair requests share active run instead of success-like busy skip.
+- Debug metrics include page mode, comments-host/extraction failure counters, latest selector reason; exclude comment text, URLs, API keys, account data
+- Intro note: changes auto-save
+- Groups: matching, comment display, keyword automation, logging, display size, maintenance
+- Default choices marked with muted `(Default)`
 - Handle case sensitivity
-- Identity block method: `handle` rules or UID pair `id` rules
+- Identity method: `handle` rules or UID pair `id` rules
 - Regex matched-handle auto-add
 - Auto-dislike mode
-- A master keyword-automation toggle, with its regex rule editor and keyword rules, match inputs, and per-match
-  actions moved to the block and keyword automation dialog
-- Theme mode control with light, dark, system, inverted system, YouTube, inverted YouTube, and custom choices
-- Custom theme editor for background, surface, text, muted text, border, primary, and destructive colors with
-  default restoration and input validation
-- Independent saved-log and browser-console toggles, log level, retention count, download, and clear controls
+- Master keyword-automation toggle; regex editor, keyword rules, inputs, actions in block/keyword automation dialog
+- Theme modes: light, dark, system, inverted system, YouTube, inverted YouTube, custom
+- Custom theme colors: background, surface, text, muted text, border, primary, destructive; default restore + validation
+- Independent saved-log/browser-console toggles, level, retention, download, clear
 - Blocked-comment display mode
-- Five-level text and UI scale controls; level 2 matches the previous size and level 3 is the default
-- Button to open the block list from settings, with a matching button back to settings in the block list
-- Navigation buttons between the block list, settings, and the block and keyword automation dialog
-- Red destructive reset button and confirmation action for app display and matching settings
+- Five-level text/UI scale; level 2 previous size, level 3 default
+- Settings-to-block-list and block-list-to-settings buttons
+- Navigation among block list, settings, block/keyword automation dialog
+- Red destructive reset + confirmation for display/matching settings
 - YouTube Data API v3 key/test controls
-- UID detection, pair summary, and pair actions
-- Pair update checks for stored UID verification and handle re-resolution
-- Loading bars while API key tests and pair actions are waiting for API responses
+- UID detection, pair summary/actions
+- Pair checks: stored UID verification + handle re-resolution
+- Loading bars during API key tests/pair actions
 - Debug counters from `window.__ytCommentBlockerPerf`
 
 Security:
 
-- `Dialog.show()` no longer inserts raw HTML
-- String bodies render as plain text
+- `Dialog.show()` never inserts raw HTML
+- String bodies render plain text
 
 Live i18n:
 
-- Menu commands are unregistered and re-registered after language changes
-- Open dialogs can refresh labels in place through dialog refresh hooks
-- The pair banner also rerenders in place
+- Menu commands unregister/re-register after language change
+- Open dialogs refresh labels in place via refresh hooks
+- Pair banner rerenders in place
 
 Menu injection:
 
-- The `⋯` menu no longer uses an always-on global popup observer
-- A short-lived observer starts from the clicked comment's `ytd-menu-renderer`, so button-wrapper
-  changes do not prevent handle discovery
-- Reused popups and menus inserted after the popup both receive one handle-specific item
-- The injected item uses a `CB` marker, refreshes to an unhide action for blocked handles, and
-  disconnects its observer after popup handling, timeout, or navigation
+- `⋯` menu has no always-on global popup observer
+- Short-lived observer starts from clicked comment's `ytd-menu-renderer`; wrapper changes cannot block handle discovery
+- Reused popups and later-inserted menus each receive one handle-specific item
+- Item uses `CB` marker, changes to unhide for blocked handles, disconnects after handling, timeout, or navigation
 
 Comment observation:
 
-- `watch` still uses the existing `ytd-comments#comments, ytd-comments` host lookup
-- `shorts` uses comment-node-driven host discovery and only promotes a shared container when it is
-  narrower than broad page containers such as `body`, `html`, or `ytd-app`
-- Page-key changes reset transient `IntersectionObserver` registrations and comment metadata
-  caches so reused YouTube comments hosts do not retain detached comment nodes across many videos
-- Pair banner gating remains watch-only
+- `watch` uses existing `ytd-comments#comments, ytd-comments` host lookup
+- `shorts` uses comment-node-driven discovery; promotes shared container only when narrower than `body`, `html`, or `ytd-app`
+- Page-key changes reset transient `IntersectionObserver` registrations and metadata caches, preventing reused hosts retaining detached nodes across videos
+- Pair banner remains watch-only
 
 ## 8. Cross-Tab Sync
 
@@ -405,11 +366,11 @@ Remote Tampermonkey changes refresh local state for:
 - `app_settings_v1`
 - `lang`
 
-On refresh, lookup caches, open UI, and the watch-page banner are updated.
+Refresh updates lookup caches, open UI, and watch-page banner.
 
 ## 9. Import And Export
 
-Supported import/export targets `blocked_v2` only.
+Import/export supports `blocked_v2` only.
 
 Supported plain-text entries:
 
@@ -418,10 +379,9 @@ Supported plain-text entries:
 - `/regex/`
 - `/regex/flags`
 
-Regex literals escape `/` as `\/` on export and accept the escaped form on import.
+Regex export escapes `/` as `\/`; import accepts escaped form.
 
-The export dialog can return to the block list or download the same rule-only data as
-`youtube-comment-blocker-export.json` or `youtube-comment-blocker-export.txt`.
+Export dialog returns to block list or downloads same rule-only data as `youtube-comment-blocker-export.json` or `youtube-comment-blocker-export.txt`.
 
 Supported JSON shapes:
 
@@ -432,24 +392,20 @@ Supported JSON shapes:
 
 If comments are not hiding:
 
-1. Confirm you are on a watch page or Shorts page.
-2. Confirm the rule exists in the manager.
-3. If expecting UID matching, confirm `UID Detection` is on.
-4. Confirm the API key is saved.
-5. If the pair is missing or `unverified`, run `Create Pair` or `Update Pair`.
+1. Confirm watch or Shorts page.
+2. Confirm rule exists in manager.
+3. For UID matching, confirm `UID Detection` on.
+4. Confirm API key saved.
+5. If pair missing or `unverified`, run `Create Pair` or `Update Pair`.
 
 If pair maintenance fails:
 
 1. Run `Test API Key`.
-2. Check the saved `lastTestResult` category and message.
-3. Review `Last Pair Run` for handle-level failures or mismatches.
+2. Check saved `lastTestResult` category/message.
+3. Review `Last Pair Run` for handle failures/mismatches.
 
-If API-key tests repeatedly report `quota`, the manager tracks consecutive quota failures and
-shows guidance with an estimated 24-hour reset window from the latest quota failure.
+Repeated `quota` API-key tests increment consecutive failures and show estimated 24-hour reset guidance from latest failure.
 
 ## 11. Remaining Work
 
-After `v1.5.0`, the large manager, security, i18n, regex-selection performance, Shorts
-comment-hiding, long-session memory cleanup, pair-update minimization, visible-version, settings
-dialog, regex auto-add, and manager polish TODO items are considered implemented. Future work
-should focus on incremental improvements rather than baseline feature completion.
+After `v1.5.0`, large manager, security, i18n, regex-selection performance, Shorts comment hiding, long-session memory cleanup, pair-update minimization, visible-version, settings dialog, regex auto-add, and manager-polish TODOs complete. Future work: incremental improvements, not baseline feature completion.

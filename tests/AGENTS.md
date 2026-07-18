@@ -1,8 +1,7 @@
 # Test Rules
 
-- Implementation-rule changes update root and this child `AGENTS.md` together; test detail stays here.
-
-- Tests: deterministic; independent of network, browser profile, wall-clock timing.
+- Implementation-rule changes: update root + child `AGENTS.md` together; test details stay here.
+- Tests deterministic; network, browser profile, wall-clock independent.
 - Prefer existing fake DOM/userscript helpers.
 - Cover success + repeated/idempotent storage, navigation, menu, UI behavior.
-- Behavior change: focused test first, then full suite.
+- Behavior changes: focused test first, then full suite.
