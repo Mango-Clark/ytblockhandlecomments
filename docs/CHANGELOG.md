@@ -28,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- None
+- Prevented legacy block-list entries from reappearing after a migrated v2 rule is deleted or the list is cleared.
 
 ### Security
 

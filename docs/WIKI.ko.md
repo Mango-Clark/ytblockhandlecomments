@@ -167,7 +167,7 @@ API 설정:
 
 참고:
 
-- 레거시 `blockedHandles`, `blockedHandles_v1`는 계속 자동 마이그레이션됩니다
+- 유효한 `blocked_v2` 저장소가 없을 때만 레거시 `blockedHandles`, `blockedHandles_v1`를 자동 migration합니다. 이후 삭제·전체 초기화 뒤에는 legacy 항목을 복원하지 않습니다
 - 기본 `app_settings_v1.dislikeMode`는 `none`입니다
 - 기본 `app_settings_v1.commentBlockMode`는 `hide`입니다
 - 기본 `app_settings_v1.blockMatchMode`는 `handle`입니다

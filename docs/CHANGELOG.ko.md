@@ -28,7 +28,7 @@
 
 ### Fixed
 
-- 없음
+- migration된 v2 규칙 삭제 또는 전체 초기화 뒤 legacy 차단 항목이 다시 나타나지 않도록 수정했습니다.
 
 ### Security
 

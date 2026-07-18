@@ -178,6 +178,7 @@ Notes:
 - Pair metadata key: `pair_meta_v1`
 - App settings key: `app_settings_v1`
 - API config key: `youtube_data_api_v3_config`
+- Legacy `blockedHandles` and `blockedHandles_v1` migrate only when a valid `blocked_v2` store is absent; later deletes and clears cannot restore legacy entries.
 - Default `dislikeMode` is `none`
 - Default `commentBlockMode` is `hide`
 - Default `blockMatchMode` is `handle`; `pair` requires UID Detection and matches stored `id` rules

@@ -168,7 +168,7 @@ API config:
 
 Notes:
 
-- Legacy `blockedHandles` and `blockedHandles_v1` still migrate automatically
+- Legacy `blockedHandles` and `blockedHandles_v1` migrate only when a valid `blocked_v2` store is absent; later deletes and clears never restore legacy entries
 - Default `app_settings_v1.dislikeMode` is `none`
 - Default `app_settings_v1.commentBlockMode` is `hide`
 - Default `app_settings_v1.blockMatchMode` is `handle`

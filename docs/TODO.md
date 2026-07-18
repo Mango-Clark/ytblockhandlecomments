@@ -14,6 +14,12 @@
 
 ## Done
 
+- [x] (D) v2 migration 뒤 legacy 차단 항목 복원 방지
+
+  - (1) 유효한 `blocked_v2`가 있으면 `blockedHandles_v1`, `blockedHandles`를 다시 병합하지 않음.
+  - (2) 최초 legacy migration 후 삭제·전체 초기화·재로드에서도 legacy 항목 미복원.
+  - (3) legacy-only 최초 실행, valid v2 재실행, 개별 삭제, 전체 초기화 자동 test 검증.
+
 - [x] (C) YouTube handle → channel ID(UCID) 조회 방식을 설정 가능하게 구현
 
   - (1) 내부·문서 신규 표기는 YouTube 공식 용어 `channel ID` 또는 `UCID` 우선 사용.

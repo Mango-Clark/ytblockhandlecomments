@@ -43,6 +43,10 @@ import {
 			if (!v || typeof v !== 'object' || v.version !== 2 || !Array.isArray(v.items)) return [];
 			return v.items.filter((it: any) => it && typeof it.value === 'string' && ['id', 'handle', 'regex'].includes(it.type));
 		}
+		_hasValidV2() {
+			const v = this._getGM(this.KEY_V2, null);
+			return !!v && typeof v === 'object' && v.version === 2 && Array.isArray(v.items);
+		}
 		_normalizeItems(items: any[]): BlockItem[] {
 			const normed: BlockItem[] = [];
 			const caseSensitive = this.settings?.isHandleCaseSensitive?.() || false;
@@ -92,8 +96,8 @@ import {
 			return true;
 		}
 		_init() {
-			const merged = [...this._loadV2(), ...this._loadV1(), ...this._loadLegacy()];
-			return this._saveV2(merged);
+			if (this._hasValidV2()) return this._saveV2(this._loadV2());
+			return this._saveV2([...this._loadV1(), ...this._loadLegacy()]);
 		}
 		all(): BlockItem[] { return this._items.slice(); }
 		setAll(items: any[]) { return this._saveV2(items); }
