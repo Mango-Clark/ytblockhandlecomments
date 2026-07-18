@@ -67,6 +67,7 @@ Substantial child rule/shared workflow change: update relevant parent with conci
 - For UI/UX changes, update every affected entry point and related screen together; preserve responsive behavior, accessibility, loading, empty, error, and disabled states.
 - Do not create parallel controls or alternate interaction patterns when an existing project pattern covers the same action.
 - Verify the complete user flow across adjacent screens before marking the TODO item done; record only verified work in `Done`.
+- TODO code-scope items must state the expected Conventional Commit type/scope basis.
 
 ## Reliability
 
