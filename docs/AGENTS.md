@@ -37,6 +37,8 @@
 - Use `- [ ]` for open work and `- [x]` only for completed work in `Done`.
 - One concise, actionable task per top-level item; nested bullets only for acceptance details.
 - When a TODO item has code scope, record the baseline commit hash used when the TODO was written.
+- Every top-level TODO item must place that hash in an indented `(0)` detail directly below its title, formatted as a backticked full commit hash.
+- Use the current `HEAD` hash when creating or revising TODO items; update each affected `(0)` detail when the baseline changes.
 - Prefix top-level items with per-section IDs in order: `(A)`, `(B)`, ..., then `(AA)`, `(AB)`, `(AC)`, ... , `(BA)`, ...; restart IDs in each priority/status section, so different sections may reuse the same ID.
 - Prefix nested acceptance details with numeric IDs in order: `(1)`, `(2)`, `(3)`, ...; restart numbering under each top-level item.
 - Do not add assignees or deadlines.
