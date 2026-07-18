@@ -33,6 +33,7 @@
 - handle context menu 가로채기를 댓글 작성자로 제한해, 다른 handle 링크는 YouTube 기본 context menu를 유지하도록 수정했습니다.
 - comment host 탐색의 넓은 page root fallback을 제거하고, 성공하지 못한 mutation 재시도를 제한했습니다.
 - Shorts 댓글 관찰을 단일 comment renderer 대신 안정적인 panel에 연결했습니다.
+- page-data와 History API 갱신용 page-key 중복 제거 YouTube SPA 감지를 추가했습니다.
 
 ### Security
 

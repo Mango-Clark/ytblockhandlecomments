@@ -98,3 +98,17 @@ test('Shorts comment host uses the stable panel around single and added comments
 	sibling.isConnected = false;
 	assert.equal(app._findShortsCommentsHost(), null);
 });
+
+test('page-data and history navigation events schedule page-key synchronization', () => {
+	const { api, context, document } = loadUserscript();
+	let schedules = 0;
+	const app = Object.create(api.App.prototype);
+	app._schedulePageSync = () => { schedules += 1; };
+	app._bindNavigationEvents();
+
+	document.dispatchEvent({ type: 'yt-page-data-updated' });
+	context.history.pushState({}, '', '/watch?v=other');
+	context.history.replaceState({}, '', '/shorts/next');
+
+	assert.equal(schedules, 3);
+});

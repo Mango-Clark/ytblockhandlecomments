@@ -14,6 +14,12 @@
 
 ## Done
 
+- [x] (I) YouTube SPA page key 보조 감지
+
+  - (1) `yt-page-data-updated`, `pushState`, `replaceState`를 page sync 경로에 추가.
+  - (2) page key unchanged 시 observer/listener 재등록·transient reset 없음.
+  - (3) page-data/history navigation scheduling과 page key 변경 regression test 검증.
+
 - [x] (H) Shorts 댓글 host 안정 panel 관찰
 
   - (1) 단일 comment root 대신 nearest non-comment container 선택.

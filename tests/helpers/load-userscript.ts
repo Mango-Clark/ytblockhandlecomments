@@ -59,6 +59,7 @@ export function loadUserscript(options: LoadOptions = {}) {
 	const gmStore = new Map(Object.entries(options.gmStore || {}));
 	const hook: TestContext = { skipBootstrap: true };
 	const location = new URL(options.url || 'https://www.youtube.com/watch?v=video-a');
+	const windowListeners = new Map<string, Set<(event: any) => void>>();
 	let perfNow = 0;
 
 	const context: TestContext = {
@@ -83,6 +84,14 @@ export function loadUserscript(options: LoadOptions = {}) {
 			return 1;
 		},
 		cancelAnimationFrame: () => {},
+		addEventListener: (type: string, listener: (event: any) => void) => {
+			if (!windowListeners.has(type)) windowListeners.set(type, new Set());
+			windowListeners.get(type)?.add(listener);
+		},
+		dispatchEvent: (event: any) => {
+			for (const listener of windowListeners.get(event?.type) || []) listener(event);
+		},
+		history: { pushState: () => {}, replaceState: () => {} },
 		setTimeout,
 		clearTimeout,
 		fetch: async () => {

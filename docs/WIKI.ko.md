@@ -52,6 +52,8 @@
 
 Shorts에서는 단일 comment renderer가 아니라 comment root 주변의 가장 가까운 non-comment panel에 observer를 붙입니다. panel 갱신 뒤 형제 댓글·reply도 계속 관찰합니다.
 
+page 동기화는 `yt-navigate-finish`, `yt-page-data-updated`, `popstate`, `history.pushState()`, `history.replaceState()`에 반응합니다. 파생 page key가 바뀐 경우에만 임시 관찰 상태를 초기화합니다.
+
 범위 밖 기능:
 
 - pair 메타데이터 import/export

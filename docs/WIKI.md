@@ -52,6 +52,8 @@ Comment-host discovery observes only the matching watch or Shorts root. It batch
 
 For Shorts, the observer attaches to the nearest non-comment panel around comment roots, never a single comment renderer. This keeps sibling comments and replies in scope as the panel updates.
 
+Page synchronization responds to `yt-navigate-finish`, `yt-page-data-updated`, `popstate`, `history.pushState()`, and `history.replaceState()`. It resets transient observation state only when the derived page key changes.
+
 Out of scope:
 
 - Pair metadata import/export

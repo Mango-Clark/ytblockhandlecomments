@@ -250,9 +250,26 @@ import { Logger } from './15-logger.ts';
 			const onNavigate = () => this._schedulePageSync();
 			window.addEventListener('yt-navigate-finish', onNavigate, true);
 			window.addEventListener('popstate', onNavigate, true);
+			document.addEventListener('yt-page-data-updated', onNavigate, true);
+			this._patchHistoryNavigation(onNavigate);
 			document.addEventListener('visibilitychange', () => {
 				if (!document.hidden) this._schedulePageSync();
 			});
+		}
+
+		_patchHistoryNavigation(onNavigate: () => void) {
+			const history = window.history as any;
+			if (!history || history.__ytBlockNavigationPatched) return;
+			for (const method of ['pushState', 'replaceState']) {
+				const original = history[method];
+				if (typeof original !== 'function') continue;
+				history[method] = (...args: any[]) => {
+					const result = original.apply(history, args);
+					onNavigate();
+					return result;
+				};
+			}
+			history.__ytBlockNavigationPatched = true;
 		}
 
 		_schedulePageSync() {
