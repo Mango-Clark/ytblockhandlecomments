@@ -155,7 +155,7 @@ import { Logger } from './15-logger.ts';
 			const result = await this.pairService.testApiKey();
 			this.apiConfig.setLastTestResult(result);
 			this.refreshAfterStorageChange();
-			this.logger.info('API key test completed', { category: result.category, ok: result.ok });
+			this.logger[result.ok ? 'info' : 'warn']('API key test completed', { category: result.category, ok: result.ok });
 			return result;
 		}
 
@@ -167,7 +167,7 @@ import { Logger } from './15-logger.ts';
 					: (handles ? await this.pairService.updatePairsForHandles(handles) : await this.pairService.updatePairs({ includeMissing: true }));
 				this._lastPairRunResult = stats;
 				this.refreshAfterStorageChange();
-				this.logger.info('Pair operation completed', { mode, created: stats.created, refreshed: stats.refreshed, failed: stats.failed });
+				this.logger[stats.failed ? 'warn' : 'info']('Pair operation completed', { mode, created: stats.created, refreshed: stats.refreshed, failed: stats.failed });
 				return stats;
 			};
 			this._pairRunPromise = run().finally(() => { this._pairRunPromise = null; });
