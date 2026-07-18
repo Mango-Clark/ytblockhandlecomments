@@ -113,6 +113,9 @@
 				pairUpdateHandleLookup: pairUpdateUidCheck || pairUpdateHandleLookup ? pairUpdateHandleLookup : true,
 				handleLookupMethod: src.handleLookupMethod === 'api' ? 'api' : 'scraper',
 				handleLookupFallbackApi: !!src.handleLookupFallbackApi,
+				handleLookupInterval: ['always', '60', '300', '600', '3600', '43200', '86400', '604800', '2592000', 'custom'].includes(String(src.handleLookupInterval)) ? String(src.handleLookupInterval) : '',
+				handleLookupCustomSeconds: Number.isInteger(Number(src.handleLookupCustomSeconds)) && Number(src.handleLookupCustomSeconds) >= 1 ? Number(src.handleLookupCustomSeconds) : 600,
+				handleLookupOnAdd: src.handleLookupOnAdd !== false,
 				keywordAutomationEnabled: src.keywordAutomationEnabled !== false,
 				themeMode,
 				themeCustom: this._normalizeThemeCustom(src.themeCustom),
@@ -237,6 +240,9 @@
 				this._state.pairUpdateHandleLookup === normalized.pairUpdateHandleLookup &&
 				this._state.handleLookupMethod === normalized.handleLookupMethod &&
 				this._state.handleLookupFallbackApi === normalized.handleLookupFallbackApi &&
+				this._state.handleLookupInterval === normalized.handleLookupInterval &&
+				this._state.handleLookupCustomSeconds === normalized.handleLookupCustomSeconds &&
+				this._state.handleLookupOnAdd === normalized.handleLookupOnAdd &&
 				this._state.keywordAutomationEnabled === normalized.keywordAutomationEnabled &&
 				this._state.themeMode === normalized.themeMode &&
 				JSON.stringify(this._state.themeCustom) === JSON.stringify(normalized.themeCustom) &&
@@ -290,8 +296,18 @@
 		}
 		getHandleLookupMethod() { return this._state.handleLookupMethod || 'scraper'; }
 		setHandleLookupMethod(method: any) { return this._saveState({ ...this._state, handleLookupMethod: method === 'api' ? 'api' : 'scraper' }); }
-		isHandleLookupFallbackApiEnabled() { return !!this._state.handleLookupFallbackApi; }
-		setHandleLookupFallbackApiEnabled(enabled: any) { return this._saveState({ ...this._state, handleLookupFallbackApi: !!enabled }); }
+			isHandleLookupFallbackApiEnabled() { return !!this._state.handleLookupFallbackApi; }
+			setHandleLookupFallbackApiEnabled(enabled: any) { return this._saveState({ ...this._state, handleLookupFallbackApi: !!enabled }); }
+			getHandleLookupIntervalSeconds() {
+				const value = this._state.handleLookupInterval || (this.getHandleLookupMethod() === 'api' ? '604800' : '600');
+				if (value === 'always') return 0;
+				return value === 'custom' ? this._state.handleLookupCustomSeconds : Number(value);
+			}
+			setHandleLookupInterval(value: any, customSeconds: any = this._state.handleLookupCustomSeconds) {
+				return this._saveState({ ...this._state, handleLookupInterval: value, handleLookupCustomSeconds: customSeconds });
+			}
+			isHandleLookupOnAddEnabled() { return this._state.handleLookupOnAdd !== false; }
+			setHandleLookupOnAddEnabled(enabled: any) { return this._saveState({ ...this._state, handleLookupOnAdd: !!enabled }); }
 		setPairUpdateHandleLookupEnabled(enabled: any) {
 			return this._saveState({ ...this._state, pairUpdateHandleLookup: !!enabled });
 		}

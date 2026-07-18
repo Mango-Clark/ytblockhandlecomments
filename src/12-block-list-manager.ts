@@ -779,6 +779,21 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			const uidText = document.createElement('span');
 			toggleLabel.append(uidToggle, uidText);
 			const toggleHelp = document.createElement('p');
+			const handleLookupTitle = document.createElement('h4');
+			const handleLookupMethodLabel = document.createElement('label');
+			const handleLookupMethodText = document.createElement('span');
+			const handleLookupMethodSelect = document.createElement('select');
+			['scraper', 'api'].forEach(value => { const option = document.createElement('option'); option.value = value; handleLookupMethodSelect.appendChild(option); });
+			handleLookupMethodLabel.append(handleLookupMethodText, handleLookupMethodSelect);
+			const handleLookupIntervalLabel = document.createElement('label');
+			const handleLookupIntervalText = document.createElement('span');
+			const handleLookupIntervalSelect = document.createElement('select');
+			['always', '60', '300', '600', '3600', '43200', '86400', '604800', '2592000', 'custom'].forEach(value => { const option = document.createElement('option'); option.value = value; option.textContent = value; handleLookupIntervalSelect.appendChild(option); });
+			handleLookupIntervalLabel.append(handleLookupIntervalText, handleLookupIntervalSelect);
+			const handleLookupCustomInput = document.createElement('input'); handleLookupCustomInput.type = 'number'; handleLookupCustomInput.min = '1';
+			const handleLookupOnAddLabel = document.createElement('label'); const handleLookupOnAddToggle = document.createElement('input'); handleLookupOnAddToggle.type = 'checkbox'; const handleLookupOnAddText = document.createElement('span'); handleLookupOnAddLabel.append(handleLookupOnAddToggle, handleLookupOnAddText);
+			const handleLookupFallbackLabel = document.createElement('label'); const handleLookupFallbackToggle = document.createElement('input'); handleLookupFallbackToggle.type = 'checkbox'; const handleLookupFallbackText = document.createElement('span'); handleLookupFallbackLabel.append(handleLookupFallbackToggle, handleLookupFallbackText);
+			const handleLookupHelp = document.createElement('p');
 			const pairUpdateTitle = document.createElement('h4');
 			const pairUpdateUidLabel = document.createElement('label');
 			const pairUpdateUidToggle = document.createElement('input');
@@ -808,6 +823,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				pairTitle,
 				toggleLabel,
 				toggleHelp,
+				handleLookupTitle, handleLookupMethodLabel, handleLookupIntervalLabel, handleLookupCustomInput, handleLookupOnAddLabel, handleLookupFallbackLabel, handleLookupHelp,
 				pairUpdateTitle,
 				pairUpdateUidLabel,
 				pairUpdateHandleLabel,
@@ -905,6 +921,13 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				uidToggle.checked = this.app.pairStore.isUidDetectionEnabled();
 				pairUpdateUidToggle.checked = this.app.settings.isPairUpdateUidCheckEnabled();
 				pairUpdateHandleToggle.checked = this.app.settings.isPairUpdateHandleLookupEnabled();
+				handleLookupMethodSelect.value = this.app.settings.getHandleLookupMethod();
+				const interval = this.app.settings._state.handleLookupInterval || (handleLookupMethodSelect.value === 'api' ? '604800' : '600');
+				handleLookupIntervalSelect.value = interval;
+				handleLookupCustomInput.value = String(this.app.settings._state.handleLookupCustomSeconds || 600);
+				handleLookupCustomInput.hidden = interval !== 'custom';
+				handleLookupOnAddToggle.checked = this.app.settings.isHandleLookupOnAddEnabled();
+				handleLookupFallbackToggle.checked = this.app.settings.isHandleLookupFallbackApiEnabled();
 				apiProgress.hidden = !apiTestBusy;
 				pairProgress.hidden = !pairBusy;
 				renderApiStatus();
@@ -995,6 +1018,11 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				pairUpdateUidText.textContent = t('pairUpdateUidCheckLabel');
 				pairUpdateHandleText.textContent = t('pairUpdateHandleLookupLabel');
 				pairUpdateHelp.textContent = t('pairUpdatePolicyHelp');
+				handleLookupTitle.textContent = t('handleLookupTitle');
+				handleLookupMethodText.textContent = t('handleLookupMethodLabel') + ': ';
+				handleLookupMethodSelect.options[0].textContent = t('handleLookupMethodScraper'); handleLookupMethodSelect.options[1].textContent = t('handleLookupMethodApi');
+				handleLookupIntervalText.textContent = t('handleLookupIntervalLabel') + ': ';
+				handleLookupOnAddText.textContent = t('handleLookupOnAddLabel'); handleLookupFallbackText.textContent = t('handleLookupFallbackLabel'); handleLookupCustomInput.placeholder = t('handleLookupCustomLabel'); handleLookupHelp.textContent = t('handleLookupHelp');
 				createBtn.textContent = pairBusy ? t('pairWorking') : t('pairCreate');
 				updateBtn.textContent = pairBusy ? t('pairWorking') : t('pairUpdate');
 				debugTitle.textContent = t('debugTitle');
@@ -1131,6 +1159,11 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				this.app.refreshAfterStorageChange();
 				renderAll();
 			});
+			handleLookupMethodSelect.addEventListener('change', () => { this.app.settings.setHandleLookupMethod(handleLookupMethodSelect.value); renderAll(); });
+			handleLookupIntervalSelect.addEventListener('change', () => { handleLookupCustomInput.hidden = handleLookupIntervalSelect.value !== 'custom'; this.app.settings.setHandleLookupInterval(handleLookupIntervalSelect.value, handleLookupCustomInput.value); renderAll(); });
+			handleLookupCustomInput.addEventListener('change', () => { if (Number(handleLookupCustomInput.value) < 1) { Toast.show(t('handleLookupInvalidInterval')); return; } this.app.settings.setHandleLookupInterval('custom', handleLookupCustomInput.value); renderAll(); });
+			handleLookupOnAddToggle.addEventListener('change', () => { this.app.settings.setHandleLookupOnAddEnabled(handleLookupOnAddToggle.checked); renderAll(); });
+			handleLookupFallbackToggle.addEventListener('change', () => { this.app.settings.setHandleLookupFallbackApiEnabled(handleLookupFallbackToggle.checked); renderAll(); });
 			saveApiBtn.addEventListener('click', () => {
 				this.app.apiConfig.setApiKey(apiInput.value);
 				this.app.refreshAfterStorageChange();

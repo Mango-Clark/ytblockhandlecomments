@@ -130,6 +130,9 @@ import {
 			return this._processHandles(filtered);
 		}
 		_shouldRefreshHandle(handle: any, { includeMissing = true } = {}) {
+			const existing = this.pairStore.getPair(handle);
+			const intervalSeconds = this.settings?.getHandleLookupIntervalSeconds?.() ?? 600;
+			if (existing?.verifiedAt && intervalSeconds > 0 && Date.now() - existing.verifiedAt < intervalSeconds * 1000) return false;
 			const status = this.getHandleStatus(handle).code;
 			if (status === 'paired') return false;
 			if (status === 'handle-only') return includeMissing;
