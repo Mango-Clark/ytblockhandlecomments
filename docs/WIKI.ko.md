@@ -224,6 +224,7 @@ API 설정:
   비교하며 YouTube Data API를 호출하지 않습니다
 - regex 자동 추가를 켜면 regex로 매칭된 handle을 `handle` 규칙으로 저장해, 같은
   채널의 다음 댓글은 regex 전에 handle 기준으로 확인합니다
+- channel ID는 먼저 `/channel/UC...` link, 다음 `data-channel-id`, `channel-id` attribute에서 읽습니다. pair mode에서 handle은 있지만 channel ID가 없으면 `window.__ytCommentBlockerPerf.missingChannelIds` counter를 증가합니다.
 
 댓글별 매칭 순서:
 

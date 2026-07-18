@@ -47,6 +47,7 @@ Source layout:
 - Supports selectable identity matching: `handle` rules by default or UID pair `id` rules; regex rules remain independent
 - Applies regex length, flag, target, and heuristic safety checks before storing or matching rules
 - Supports optional channel-ID detection with handle-to-channel-ID metadata in `pair_meta_v1`
+- Extracts comment channel IDs from channel links and stable channel-ID attributes; pair-mode misses increment a diagnostic counter
 - Resolves handles from their public YouTube channel page by default, with cached results and optional YouTube Data API v3 lookup/fallback
 - Supports case-sensitive handle matching
 - Supports a separate settings dialog with API, UID, regex auto-add, display sizing, and debug counters

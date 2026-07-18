@@ -34,6 +34,7 @@
 - comment host 탐색의 넓은 page root fallback을 제거하고, 성공하지 못한 mutation 재시도를 제한했습니다.
 - Shorts 댓글 관찰을 단일 comment renderer 대신 안정적인 panel에 연결했습니다.
 - page-data와 History API 갱신용 page-key 중복 제거 YouTube SPA 감지를 추가했습니다.
+- fallback channel ID 추출 경로와 pair mode 댓글 channel ID 미검출 진단을 추가했습니다.
 
 ### Security
 

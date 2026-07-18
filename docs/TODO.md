@@ -14,6 +14,12 @@
 
 ## Done
 
+- [x] (J) pair mode channel ID 추출 fallback·진단
+
+  - (1) `/channel/UC...`, `data-channel-id`, `channel-id` 우선순위 추출.
+  - (2) pair mode handle 존재/channel ID 없음 `missingChannelIds` counter 기록.
+  - (3) link·attribute fallback과 missing diagnostics fixture test 검증.
+
 - [x] (I) YouTube SPA page key 보조 감지
 
   - (1) `yt-page-data-updated`, `pushState`, `replaceState`를 page sync 경로에 추가.

@@ -1,5 +1,6 @@
 import {
 	decodeMaybe,
+	isChannelId,
 	sanitizeHandle
 } from './02-utils-i18n.ts';
 
@@ -29,10 +30,14 @@ import {
 
 		static getChannelId(root: Element | null | undefined): string | null {
 			if (!root) return null;
-			const a = root.querySelector('a[href*="/channel/UC"]');
-			const href = a?.getAttribute?.('href') || '';
-			const m = /\/channel\/(UC[0-9A-Za-z_-]+)/.exec(href);
-			if (m) return m[1];
+			const link = root.querySelector('a[href*="/channel/UC"]');
+			const href = link?.getAttribute?.('href') || '';
+			const match = /\/channel\/(UC[0-9A-Za-z_-]+)/.exec(href);
+			if (match && isChannelId(match[1])) return match[1];
+			for (const selector of ['[data-channel-id]', '[channel-id]']) {
+				const value = root.querySelector(selector)?.getAttribute?.(selector === '[data-channel-id]' ? 'data-channel-id' : 'channel-id');
+				if (isChannelId(value)) return value || null;
+			}
 			return null;
 		}
 

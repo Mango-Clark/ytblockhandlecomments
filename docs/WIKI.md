@@ -228,6 +228,7 @@ Optional UID behavior:
   it does not call the YouTube Data API
 - Optional regex auto-add stores a regex-matched handle as a `handle` rule, so subsequent comments
   from the same channel are checked by handle before regex
+- Channel IDs are read from `/channel/UC...` links first, then `data-channel-id` and `channel-id` attributes. In pair mode, a comment with a handle but no channel ID increments `window.__ytCommentBlockerPerf.missingChannelIds`.
 
 Per-comment matching order:
 

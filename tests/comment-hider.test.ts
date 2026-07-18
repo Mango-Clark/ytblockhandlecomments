@@ -32,6 +32,34 @@ function createCommentThread(document: any) {
 	return { thread, top, reply };
 }
 
+test('channel ID extraction supports links and stable attribute fallbacks', () => {
+	const { api, document } = loadUserscript();
+	const settings = new api.AppSettingsStorage();
+	const storage = new api.StorageV2(settings);
+	const pairStore = new api.PairMetaStorage(settings);
+	const hider = new api.CommentHider(storage, pairStore, settings);
+	const linkComment = createBlockedComment(document, '@alpha', 'UC1234567890').comment;
+	assert.equal(hider._getMeta(linkComment).id, 'UC1234567890');
+
+	const attributeComment = createBlockedComment(document, '@beta').comment;
+	const author = attributeComment.querySelector('#author-text');
+	author.setAttribute('data-channel-id', 'UC0987654321');
+	assert.equal(hider._getMeta(attributeComment).id, 'UC0987654321');
+});
+
+test('pair-mode diagnostics count comments with a handle but no channel ID', () => {
+	const { api, document, context } = loadUserscript();
+	const settings = new api.AppSettingsStorage();
+	const storage = new api.StorageV2(settings);
+	const pairStore = new api.PairMetaStorage(settings);
+	settings.setBlockMatchMode('pair');
+	pairStore.setUidDetectionEnabled(true);
+	const hider = new api.CommentHider(storage, pairStore, settings);
+
+	hider.applyHide(createBlockedComment(document, '@missing').comment);
+	assert.equal(context.__ytCommentBlockerPerf.missingChannelIds, 1);
+});
+
 test('default dislike mode hides without auto dislike', () => {
 	const { api, document } = loadUserscript();
 	const settings = new api.AppSettingsStorage();

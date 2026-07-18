@@ -50,6 +50,7 @@ quota 안내, 페이지 단위 regex 매칭 목록, 역할별 소스 파일, 압
 - 신원 차단 방식을 기본 `handle` 규칙 또는 UID pair `id` 규칙으로 선택하고, regex 규칙은 두 방식 모두에서 적용
 - regex 규칙 저장/매칭 전에 길이, flag, 대상 길이, 휴리스틱 safety 검사를 적용
 - 관리자 대화상자에 선택적 channel ID 감지 토글 추가
+- channel link와 안정적인 channel-ID attribute에서 댓글 channel ID를 추출하며, pair mode 미검출은 진단 counter를 증가
 - 기본 YouTube 공개 채널 페이지 조회, 결과 cache, 선택적 YouTube Data API v3 조회/fallback 지원
 - `pair_meta_v1`에 handle↔channel ID pair 메타데이터 저장
 - `Create Pair`, `Update Pair` 액션 제공

@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Stopped comment-host discovery from falling back to broad page roots and bounded unsuccessful mutation retries.
 - Attached Shorts comment observation to a stable panel rather than a single comment renderer.
 - Added page-key-deduplicated YouTube SPA detection for page-data and History API updates.
+- Added fallback channel-ID extraction paths and pair-mode diagnostics for missing comment channel IDs.
 
 ### Security
 

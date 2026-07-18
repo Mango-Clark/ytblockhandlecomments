@@ -38,6 +38,7 @@ import { Extractor } from './09-extractor.ts';
 				fullRefreshes: 0,
 				incrementalRefreshes: 0,
 				scannedNodes: 0,
+				missingChannelIds: 0,
 				autoAddedRegexHandles: 0,
 				lastDurationMs: 0,
 				totalDurationMs: 0
@@ -135,6 +136,7 @@ import { Extractor } from './09-extractor.ts';
 				id: Extractor.getChannelId(node),
 				handle: Extractor.getHandle(node)
 			};
+			if (!meta.id && meta.handle && this.settings?.getBlockMatchMode?.() === 'pair') this._metrics.missingChannelIds += 1;
 			this._metaCache.set(node, meta);
 			return meta;
 		}
