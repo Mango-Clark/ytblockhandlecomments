@@ -331,6 +331,7 @@ Pair 결과:
 
 - `GM_setting`을 참고한 카테고리 목록 레이아웃을 사용해 각 작업 그룹에 제목, 컨트롤, 짧은 도움말을 표시합니다
 - 중첩 dialog의 Escape, Enter, Tab, backdrop 동작은 최상위 dialog에만 전달하며, 닫으면 열기 전 element로 focus를 복원합니다
+- API test와 pair 작업은 `finally`로 loading control을 복구합니다. 동시 수동·keyword pair 요청은 성공처럼 보이는 busy skip 대신 현재 실행을 공유합니다
 - 변경 사항이 자동 저장된다는 안내를 표시합니다
 - 컨트롤을 매칭, 댓글 표시, 키워드 자동 처리, 로그, 표시 크기, 유지보수 섹션으로 구분
 - 저장 설정의 기본 선택지에 회색 `(기본)` 표시

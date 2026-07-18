@@ -14,6 +14,12 @@
 
 ## Done
 
+- [x] (O) API·pair async busy 복구
+
+  - (1) API/pair await 경로에 error toast와 `finally` busy reset 추가.
+  - (2) banner pair action도 disabled/text restore.
+  - (3) concurrent pair request active Promise 공유 regression test 검증.
+
 - [x] (N) 중첩 dialog keydown·focus 처리
 
   - (1) document keydown listener 1개; top dialog만 Escape/Enter/Tab 처리.

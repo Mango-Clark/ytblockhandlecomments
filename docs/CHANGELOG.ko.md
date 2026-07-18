@@ -28,6 +28,7 @@
 
 ### Fixed
 
+- 예상하지 못한 async 오류 뒤 API·pair control을 복구하고, 겹친 pair 요청을 하나의 실행으로 합쳤습니다.
 - 중첩 dialog의 keyboard·backdrop 동작을 최상위 dialog에만 전달하고, 닫은 뒤 opener focus를 복원하도록 수정했습니다.
 - YouTube 테마 탐색을 직접 `ytd-app` lifecycle 변경으로 제한하고, YouTube 테마 외 모드에서는 theme observer를 비활성화했습니다.
 - Tampermonkey 쓰기 거부 시 기존 설정, 규칙, pair 메타데이터, API 키, 로그를 유지하고 성공 알림 대신 재시도 안내를 표시하도록 수정했습니다.

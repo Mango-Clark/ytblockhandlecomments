@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Restored API and pair controls after unexpected async errors, and merged overlapping pair requests into one active run.
 - Routed nested-dialog keyboard and backdrop actions to the top dialog only and restored opener focus after close.
 - Limited YouTube-theme discovery to direct `ytd-app` lifecycle changes and disabled theme observers outside YouTube theme modes.
 - Preserved existing settings, rules, pair metadata, API keys, and logs when Tampermonkey rejects a write, with retry guidance instead of a success notice.

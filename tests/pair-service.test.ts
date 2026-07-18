@@ -183,6 +183,26 @@ test('new handle lookup respects the on-add setting', async () => {
 	assert.equal(handled.length, 1);
 });
 
+test('manual pair requests share an in-flight run instead of reporting a busy skip', async () => {
+	const { api } = loadUserscript();
+	let resolveRun: (value: any) => void = () => {};
+	let calls = 0;
+	const stats = { created: 1, refreshed: 0, mismatches: 0, failed: 0, addedIds: 1, skipped: 0, items: [] };
+	const app = {
+		_pairRunPromise: null,
+		pairService: { createMissingPairs: () => { calls += 1; return new Promise(resolve => { resolveRun = resolve; }); } },
+		refreshAfterStorageChange: () => {},
+		logger: { info: () => {} }
+	};
+	const first = api.App.prototype.runPairUpdate.call(app, 'create');
+	const second = api.App.prototype.runPairUpdate.call(app, 'create');
+	assert.equal(first, second);
+	assert.equal(calls, 1);
+	resolveRun(stats);
+	assert.equal((await first).created, 1);
+	assert.equal(app._pairRunPromise, null);
+});
+
 test('api config tracks repeated quota failures for guidance', () => {
 	const { api } = loadUserscript();
 	const apiConfig = new api.ApiConfigStorage();

@@ -240,6 +240,7 @@ Pair 메타 저장소:
 - 차단 목록 내보내기는 pair 메타데이터나 API 설정을 포함하지 않고, 화면의 JSON 또는 텍스트 표현을 파일로 다운로드할 수 있습니다
 - YouTube 테마 감지는 root, 현재 `ytd-app`, 직접 `ytd-app` 교체 이벤트만 관찰합니다
 - 중첩 dialog의 Escape, Enter, Tab focus 처리와 backdrop click은 최상위 dialog에만 적용됩니다
+- API test와 pair 작업은 예상 밖 오류 뒤 control을 복구하며, 겹친 pair 요청은 하나의 실행을 공유합니다
 - 댓글 숨김은 의도적으로 watch 페이지와 Shorts 댓글 범위에 한정됩니다
 - pair 검토 배너는 의도적으로 watch 페이지에만 표시됩니다
 - 탐색 시 임시 댓글 observer와 메타데이터 캐시를 초기화해 긴 YouTube 세션에서 오래된

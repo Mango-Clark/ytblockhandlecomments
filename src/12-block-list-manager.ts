@@ -1191,10 +1191,12 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			testApiBtn.addEventListener('click', async () => {
 				apiTestBusy = true;
 				renderAll();
-				const result = await this.app.testApiKey();
-				apiTestBusy = false;
-				renderAll();
-				Toast.show(t('apiKeyTestResult', getApiTestCategoryLabel(result.category), result.message, result.httpStatus ? String(result.httpStatus) : ''), 3200);
+				try {
+					const result = await this.app.testApiKey();
+					Toast.show(t('apiKeyTestResult', getApiTestCategoryLabel(result.category), result.message, result.httpStatus ? String(result.httpStatus) : ''), 3200);
+				} catch (error) {
+					Toast.show(t('operationFailed', error instanceof Error ? error.message : String(error)), 3200);
+				} finally { apiTestBusy = false; renderAll(); }
 			});
 			clearApiBtn.addEventListener('click', () => {
 				this.app.apiConfig.clearApiKey();
@@ -1205,10 +1207,12 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			const runPair = async (mode: string) => {
 				pairBusy = true;
 				applyLanguage();
-				const stats = await this.app.runPairUpdate(mode);
-				pairBusy = false;
-				applyLanguage();
-				Toast.show(t('pairResult', stats), 3200);
+				try {
+					const stats = await this.app.runPairUpdate(mode);
+					Toast.show(t('pairResult', stats), 3200);
+				} catch (error) {
+					Toast.show(t('operationFailed', error instanceof Error ? error.message : String(error)), 3200);
+				} finally { pairBusy = false; applyLanguage(); }
 			};
 			createBtn.addEventListener('click', () => runPair('create'));
 			updateBtn.addEventListener('click', () => runPair('update'));
@@ -1981,10 +1985,12 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			testApiBtn.addEventListener('click', async () => {
 				apiTestBusy = true;
 				renderSummary();
-				const result = await this.app.testApiKey();
-				apiTestBusy = false;
-				renderSummary();
-				Toast.show(t('apiKeyTestResult', getApiTestCategoryLabel(result.category), result.message, result.httpStatus ? String(result.httpStatus) : ''), 3200);
+				try {
+					const result = await this.app.testApiKey();
+					Toast.show(t('apiKeyTestResult', getApiTestCategoryLabel(result.category), result.message, result.httpStatus ? String(result.httpStatus) : ''), 3200);
+				} catch (error) {
+					Toast.show(t('operationFailed', error instanceof Error ? error.message : String(error)), 3200);
+				} finally { apiTestBusy = false; renderSummary(); }
 			});
 			clearApiBtn.addEventListener('click', () => {
 				this.app.apiConfig.clearApiKey();
@@ -1994,17 +2000,21 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			});
 			createBtn.addEventListener('click', async () => {
 				setBusy(true);
-				const stats = await this.app.runPairUpdate('create');
-				setBusy(false);
-				Toast.show(t('pairResult', stats), 3200);
-				renderAll();
+				try {
+					const stats = await this.app.runPairUpdate('create');
+					Toast.show(t('pairResult', stats), 3200);
+				} catch (error) {
+					Toast.show(t('operationFailed', error instanceof Error ? error.message : String(error)), 3200);
+				} finally { setBusy(false); renderAll(); }
 			});
 			updateBtn.addEventListener('click', async () => {
 				setBusy(true);
-				const stats = await this.app.runPairUpdate('update');
-				setBusy(false);
-				Toast.show(t('pairResult', stats), 3200);
-				renderAll();
+				try {
+					const stats = await this.app.runPairUpdate('update');
+					Toast.show(t('pairResult', stats), 3200);
+				} catch (error) {
+					Toast.show(t('operationFailed', error instanceof Error ? error.message : String(error)), 3200);
+				} finally { setBusy(false); renderAll(); }
 			});
 			executeBtn.addEventListener('click', async () => {
 				const selectedItems = computeViewState().selectedItems;
@@ -2024,10 +2034,12 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 					return;
 				}
 				setBusy(true);
-				const stats = await this.app.runPairUpdate(bulkSelect.value, handles);
-				setBusy(false);
-				Toast.show(t('pairResult', stats), 3200);
-				renderAll();
+				try {
+					const stats = await this.app.runPairUpdate(bulkSelect.value, handles);
+					Toast.show(t('pairResult', stats), 3200);
+				} catch (error) {
+					Toast.show(t('operationFailed', error instanceof Error ? error.message : String(error)), 3200);
+				} finally { setBusy(false); renderAll(); }
 			});
 			openAutomationBtn.addEventListener('click', () => {
 				Dialog.closeAll('navigate');

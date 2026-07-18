@@ -338,6 +338,7 @@ Settings dialog:
 
 - Uses a category-list layout inspired by `GM_setting`: each task group has a title, controls, and short help text
 - Nested dialogs route Escape, Enter, Tab, and backdrop actions to the top dialog only; closing restores focus to the element that opened it
+- API tests and pair actions use `finally` cleanup for loading controls. Concurrent manual and keyword pair requests share the active run rather than reporting a successful-looking busy skip
 - Shows an introductory note that changes are saved automatically
 - Groups controls into matching, comment display, keyword automation, logging, display size, and maintenance sections
 - Marks each saved-setting default choice with a muted `(Default)` label

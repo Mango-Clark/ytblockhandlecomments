@@ -159,14 +159,19 @@ import { Logger } from './15-logger.ts';
 			return result;
 		}
 
-		async runPairUpdate(mode = 'update', handles: string[] | null = null) {
-			const stats = mode === 'create'
-				? (handles ? await this.pairService.createPairsForHandles(handles) : await this.pairService.createMissingPairs())
-				: (handles ? await this.pairService.updatePairsForHandles(handles) : await this.pairService.updatePairs({ includeMissing: true }));
-			this._lastPairRunResult = stats;
-			this.refreshAfterStorageChange();
-			this.logger.info('Pair operation completed', { mode, created: stats.created, refreshed: stats.refreshed, failed: stats.failed });
-			return stats;
+		runPairUpdate(mode = 'update', handles: string[] | null = null) {
+			if (this._pairRunPromise) return this._pairRunPromise;
+			const run = async () => {
+				const stats = mode === 'create'
+					? (handles ? await this.pairService.createPairsForHandles(handles) : await this.pairService.createMissingPairs())
+					: (handles ? await this.pairService.updatePairsForHandles(handles) : await this.pairService.updatePairs({ includeMissing: true }));
+				this._lastPairRunResult = stats;
+				this.refreshAfterStorageChange();
+				this.logger.info('Pair operation completed', { mode, created: stats.created, refreshed: stats.refreshed, failed: stats.failed });
+				return stats;
+			};
+			this._pairRunPromise = run().finally(() => { this._pairRunPromise = null; });
+			return this._pairRunPromise;
 		}
 
 		_scheduleKeywordRefresh() {
@@ -543,10 +548,18 @@ import { Logger } from './15-logger.ts';
 					updateBtn.disabled = true;
 					laterBtn.disabled = true;
 					updateBtn.textContent = t('pairWorking');
-					const stats = await this.runPairUpdate('update');
-					Toast.show(t('pairResult', stats), 3200);
-					this.showPairResultDialog(stats);
-					this._syncPairBanner();
+					try {
+						const stats = await this.runPairUpdate('update');
+						Toast.show(t('pairResult', stats), 3200);
+						this.showPairResultDialog(stats);
+					} catch (error) {
+						Toast.show(t('operationFailed', error instanceof Error ? error.message : String(error)), 3200);
+					} finally {
+						updateBtn.disabled = false;
+						laterBtn.disabled = false;
+						updateBtn.textContent = t('pairUpdate');
+						this._syncPairBanner();
+					}
 				});
 				laterBtn.addEventListener('click', () => {
 					this.pairService.dismissNotification();
