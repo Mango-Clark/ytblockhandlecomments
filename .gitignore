@@ -4,5 +4,7 @@ node_modules/
 package-lock.json
 eslint.config.*
 .*
+!.markdownlint.json
+!.markdownlintignore
 *.log
 skills-lock.json

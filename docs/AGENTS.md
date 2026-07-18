@@ -8,6 +8,7 @@
 - Keep paired structure, terminology, links, commands, dates, versions aligned.
 - Preserve code blocks, inline code, paths, commands, dates, versions exactly.
 - Keep paired section order identical.
+- Apply [DavidAnson/markdownlint](https://github.com/DavidAnson/markdownlint) rules.
 - Do not add extra locales unless the user asks.
 - Update the English document before its Korean pair.
 - Major category/shared workflow change: update parent `AGENTS.md` with concise summary.
@@ -33,6 +34,7 @@
 ## TODO
 
 - `TODO.md` is planning-only; do not auto-commit TODO-only changes.
+- Run `npm run lint:markdown` after every Markdown change, including `TODO.md`, changelogs, README/WIKI, and every `AGENTS.md` file.
 - Keep exactly these sections in this order: `P0 — Critical`, `P1 — High`, `P2 — Normal`, `P3 — Low`, `Blocked`, `Backlog`, and `Done`.
 - Use `- [ ]` for open work and `- [x]` only for completed work in `Done`.
 - One concise, actionable task per top-level item; nested bullets only for acceptance details.

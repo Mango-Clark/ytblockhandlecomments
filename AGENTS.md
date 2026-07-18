@@ -17,6 +17,7 @@ Substantial child rule/shared workflow change: update relevant parent with conci
 - Update `docs/WIKI.md` first, then `docs/WIKI.ko.md` when behavior/storage changes.
 - Update `docs/CHANGELOG.md` first, then `docs/CHANGELOG.ko.md`.
 - Apply [DavidAnson/markdownlint](https://github.com/DavidAnson/markdownlint) rules to every `*.md` change, including changelogs, README/WIKI, TODO, and `AGENTS.md` files.
+- Run `npm run lint:markdown` after every `*.md` change; keep `.markdownlint.json` and `.markdownlintignore` in sync with the project documentation rules.
 - Review every `*.md` when code changes.
 - Do not bump versions unless the user explicitly instructs a version bump.
 - Bump `VERSION` or package manifest only when explicitly instructed and shipping user-visible change.
