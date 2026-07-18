@@ -4,7 +4,49 @@
 
 ## P1 — High
 
+- [ ] (B) channel ID 조회 갱신 주기를 verified pair에도 적용
+
+  - (0) `e7c9dedcfaa3a350b741455c7363c99ead5f77e3`
+  - (1) `src/07-pair-service.ts:133-140`에서 설정한 주기가 만료되면 `paired` 상태라도 handle을 다시 조회.
+  - (2) `always`는 모든 명시적 전체 update에서 재조회하고, scraper `10m`·API `1w`·custom 값은 각각 `verifiedAt` 기준으로 동작.
+  - (3) 주기 미만 skip, 주기 만료 refresh, `always`, selected-handle force refresh regression test 검증.
+
+- [ ] (C) Shorts comment observer를 현재 활성 panel로 제한
+
+  - (0) `e7c9dedcfaa3a350b741455c7363c99ead5f77e3`
+  - (1) `src/13-app.ts:383-396`의 전역 comment 수집을 현재 활성 `ytd-reel-video-renderer` 또는 열린 댓글 panel 범위로 제한.
+  - (2) 여러 Shorts renderer가 동시에 DOM에 연결돼도 `ytd-shorts` feed 전체를 host로 선택하지 않음.
+  - (3) 활성 Shorts 전환, inactive panel 잔존, sibling reply 추가·제거 fixture test에서 observer target과 증분 처리를 검증.
+
+- [ ] (D) 재사용 comment node의 attribute·text 변경을 identity 재검사로 연결
+
+  - (0) `e7c9dedcfaa3a350b741455c7363c99ead5f77e3`
+  - (1) `src/13-app.ts:466-475`에서 handle/channel attribute와 기존 text node 값만 바뀌는 경우도 `_syncNodeIdentity`가 다시 실행됨.
+  - (2) 관찰 범위와 attribute filter를 최소화하고 userscript 자체 class/style 변경으로 재귀 mutation이 발생하지 않음.
+  - (3) `href`, `data-channel-id`, `channel-id`, author/body character data 변경 regression test 검증.
+
+- [ ] (E) logger payload 개인정보 redaction을 중첩 구조와 사용자 식별자까지 확대
+
+  - (0) `e7c9dedcfaa3a350b741455c7363c99ead5f77e3`
+  - (1) `src/15-logger.ts:78-88`에서 중첩 object·array의 API key, token, URL, account, comment와 handle 식별자를 console·저장 로그 전에 재귀적으로 제거.
+  - (2) circular·대형 payload에서도 redaction 실패로 원문이 fallback 출력되지 않고 깊이·크기 제한을 유지.
+  - (3) `src/13-app.ts:192`의 keyword 로그 등 실제 callsite에서 handle 원문이 남지 않는 regression test 검증.
+  - (4) README·WIKI의 V4/V5 설명을 실제 6/10 field 제한 및 redaction 정책과 영문·한국어 쌍으로 일치시킴.
+
 ## P2 — Normal
+
+- [ ] (A) console 시간 형식의 ISO 8601 완료 조건 충족
+
+  - (0) `e7c9dedcfaa3a350b741455c7363c99ead5f77e3`
+  - (1) `src/03-app-settings-storage.ts:78-86`, `src/15-logger.ts:62-67`에서 현재 preset·token 외 누락된 ISO 8601 허용 형식을 식별하고 지원 범위를 명시.
+  - (2) 지원하기로 한 calendar·week·ordinal date, basic·extended time과 timezone 조합을 validation과 formatter에 동일 적용.
+  - (3) 유효·무효 경계, custom format, system·IANA·offset timezone regression test와 README·WIKI 설명을 동기화.
+
+- [ ] (B) console 시간 형식 기본 선택지 표시 추가
+
+  - (0) `e7c9dedcfaa3a350b741455c7363c99ead5f77e3`
+  - (1) `src/12-block-list-manager.ts:723-732`에서 기본 `iso` option에 `(Default)` 또는 `(기본)`과 `tm-default-option` style 적용.
+  - (2) 설정 화면의 모든 select 기본값을 열거하는 test에 console time format과 동적 channel ID 조회 주기를 포함.
 
 ## P3 — Low
 
@@ -13,6 +55,12 @@
 ## Backlog
 
 ## Done
+
+- [x] (T) 최초 `blocked_v2` migration 저장 실패 시 생성자 중단 방지
+
+  - (1) 초기 `_items` 없는 `GM_setValue` 실패도 빈 목록으로 rollback.
+  - (2) legacy-only migration 실패 뒤 생성 계속, 다음 생성에서 migration 재시도.
+  - (3) 최초 실패·재시도 성공·기존 v2 저장 실패 regression test 검증.
 
 - [x] (S) Logger payload·console 안정화
 

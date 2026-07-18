@@ -137,7 +137,7 @@ import {
 		_saveV2(items: any[]): BlockItem[] {
 			const unique = this._normalizeItems(items);
 			if (this._arraysEqual(this._items, unique)) { this._items = unique; return unique; }
-			const previousItems = this._items;
+			const previousItems = Array.isArray(this._items) ? this._items : [];
 			const previousEntries = Object.fromEntries(Object.entries(this._entries).map(([key, entry]: [string, any]) => [key, {
 				...entry,
 				revision: entry.revision ? { ...entry.revision } : entry.revision,

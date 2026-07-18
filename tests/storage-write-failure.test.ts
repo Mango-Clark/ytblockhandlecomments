@@ -26,6 +26,33 @@ test('preserves the block list when Tampermonkey rejects a write', () => {
 	assert.ok(storage.getLastSaveError());
 });
 
+test('continues first block-list migration when Tampermonkey rejects a write', () => {
+	const { api } = loadUserscript({
+		gmStore: { blockedHandles: ['@legacy'] },
+		gmSetValue: () => { throw new Error('quota exceeded'); }
+	});
+	const storage = new api.StorageV2(new api.AppSettingsStorage());
+	assert.deepEqual(Array.from(storage.all()), []);
+	assert.ok(storage.getLastSaveError());
+});
+
+test('retries first block-list migration after a transient write failure', () => {
+	let failed = true;
+	const { api, gmStore } = loadUserscript({
+		gmStore: { blockedHandles: ['@legacy'] },
+		gmSetValue: (key, value) => {
+			if (failed) { failed = false; throw new Error('quota exceeded'); }
+			gmStore.set(key, value);
+		}
+	});
+	const settings = new api.AppSettingsStorage();
+	const failedMigration = new api.StorageV2(settings);
+	assert.deepEqual(Array.from(failedMigration.all()), []);
+	const retriedMigration = new api.StorageV2(settings);
+	assert.deepEqual(Array.from(retriedMigration.all(), (item: any) => item.value), ['@legacy']);
+	assert.equal((gmStore.get('blocked_v2') as any)?.items[0]?.value, '@legacy');
+});
+
 test('preserves pair metadata when Tampermonkey rejects a write', () => {
 	const { api } = loadWithWriteFailure();
 	const store = new api.PairMetaStorage(new api.AppSettingsStorage());
