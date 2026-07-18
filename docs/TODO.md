@@ -14,6 +14,12 @@
 
 ## Done
 
+- [x] (G) 댓글 host 탐색 observer 범위·수명 축소
+
+  - (1) `ytd-page-manager`, `ytd-app`, `document.body` fallback 제거.
+  - (2) host lookup은 watch/Shorts root만 관찰, 20 unsuccessful batch 뒤 중단; page key 변경 시 retry reset.
+  - (3) frame batch host lookup·root/cap regression test 검증.
+
 - [x] (F) 댓글 작성자 외 YouTube handle 우클릭 범위 제한
 
   - (1) comment renderer 내부 `#author-text`, `#author-handle`만 contextmenu 처리.

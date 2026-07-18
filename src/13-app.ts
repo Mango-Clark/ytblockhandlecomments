@@ -49,6 +49,7 @@ import { Logger } from './15-logger.ts';
 			this._hostObserver = null;
 			this._pageSyncPending = false;
 			this._pageKey = null;
+			this._hostLookupAttempts = 0;
 			this._pairBanner = null;
 			this._bindGlobalEvents();
 			this._bindNavigationEvents();
@@ -283,8 +284,8 @@ import { Logger } from './15-logger.ts';
 		}
 
 		_getPageRoot(mode: string): Element | null {
-			if (mode === 'watch') return document.querySelector(WATCH_ROOT_SELECTOR) || document.body;
-			if (mode === 'shorts') return document.querySelector(SHORTS_ROOT_SELECTOR) || document.body;
+			if (mode === 'watch') return document.querySelector(WATCH_ROOT_SELECTOR);
+			if (mode === 'shorts') return document.querySelector(SHORTS_ROOT_SELECTOR);
 			return null;
 		}
 
@@ -381,6 +382,10 @@ import { Logger } from './15-logger.ts';
 				requestAnimationFrame(() => {
 					hostLookupPending = false;
 					if (this._hostObserver !== observer) return;
+					if (++this._hostLookupAttempts > 20) {
+						this._disconnectHostObserver();
+						return;
+					}
 					const currentMode = this._getPageMode();
 					if (currentMode !== mode) {
 						this._disconnectHostObserver();
@@ -437,6 +442,7 @@ import { Logger } from './15-logger.ts';
 			const pageKey = this._getPageKey(mode);
 			if (this._pageKey !== pageKey) {
 				this._pageKey = pageKey;
+				this._hostLookupAttempts = 0;
 				this.hider.resetTransientState();
 			}
 			if (mode === 'unsupported') {

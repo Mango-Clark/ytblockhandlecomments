@@ -34,6 +34,7 @@ Source layout:
 - Right-click a comment author handle to block or unblock it without overriding other YouTube handle links
 - Adds `Hide comments from this channel` to the comment `⋯` menu
 - Hides matching comments in real time on YouTube watch pages and Shorts pages
+- Limits comment-host discovery to watch/Shorts roots with bounded retries, avoiding feed-wide mutation observation
 - Configurable blocked-comment display: hide completely, show a gray placeholder, or click to reveal
 - Configurable comment auto-dislike mode, defaulting to off: off, only when newly hidden, or always while hidden
 - Supports a unified block and keyword automation dialog for regex rules, keyword matching fields, and independent dislike, handle-block, and UID-pair actions

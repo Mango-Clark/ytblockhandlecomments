@@ -48,3 +48,26 @@ test('unsupported pages disconnect comment observers', () => {
 	assert.equal(hostDisconnects, 1);
 	assert.equal(commentDisconnects, 1);
 });
+
+test('comment host lookup never observes body and stops after bounded retries', () => {
+	const { api, document } = loadUserscript();
+	const app = Object.create(api.App.prototype);
+	Object.assign(app, {
+		_hostObserver: null,
+		_hostLookupAttempts: 0,
+		_getPageMode: () => 'watch',
+		_findCommentsHost: () => null,
+		_attachCommentsHost: () => {}
+	});
+
+	assert.equal(app._getPageRoot('watch'), null);
+	const root = document.createElement('ytd-watch-flexy');
+	document.body.appendChild(root);
+	assert.equal(app._getPageRoot('watch'), root);
+
+	app._watchForCommentsHost('watch', root);
+	assert.equal(app._hostObserver.observeCalls[0].target, root);
+	for (let index = 0; index < 21; index += 1) app._hostObserver?.trigger();
+	assert.equal(app._hostObserver, null);
+	assert.equal(app._hostLookupAttempts, 21);
+});

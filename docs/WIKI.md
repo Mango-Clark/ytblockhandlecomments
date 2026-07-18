@@ -48,6 +48,8 @@ Supported page modes for comment hiding:
 - `watch`
 - `shorts`
 
+Comment-host discovery observes only the matching watch or Shorts root. It batches host checks per frame and stops after 20 unsuccessful mutation batches; navigation or a new page key resets that retry budget.
+
 Out of scope:
 
 - Pair metadata import/export
