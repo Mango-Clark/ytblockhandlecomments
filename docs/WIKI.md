@@ -119,6 +119,11 @@ App settings:
 	blockMatchMode: 'handle' | 'pair',
 	pairUpdateUidCheck: boolean,
 	pairUpdateHandleLookup: boolean,
+	handleLookupMethod: 'scraper' | 'api',
+	handleLookupFallbackApi: boolean,
+	handleLookupInterval: 'always' | '60' | '300' | '600' | '3600' | '43200' | '86400' | '604800' | '2592000' | 'custom',
+	handleLookupCustomSeconds: number,
+	handleLookupOnAdd: boolean,
 	keywordAutomationEnabled: boolean,
 	themeMode: 'light' | 'dark' | 'system' | 'system-inverted' | 'youtube' | 'youtube-inverted' | 'custom',
 	themeCustom: { background: string, surface: string, text: string, muted: string, border: string, primary: string, danger: string },
@@ -169,6 +174,8 @@ Notes:
 - Default `app_settings_v1.blockMatchMode` is `handle`
 - At least one of `app_settings_v1.pairUpdateUidCheck` and `pairUpdateHandleLookup` stays enabled;
   handle lookup is the default
+- `handleLookupMethod` defaults to `scraper`; `api` is opt-in. `handleLookupFallbackApi` defaults to
+  `false`, and `handleLookupOnAdd` defaults to `true`.
 - Keyword automation is enabled by default to preserve existing behavior. It can be disabled without deleting
   its case-insensitive rules, fields, or actions; matching defaults to comment text and has no enabled action
   by default
@@ -224,16 +231,16 @@ Keyword automation:
 - Reads only the configured comment text, author handle, and/or pinned-label fields
 - Uses case-insensitive substring matching against up to 50 saved keywords
 - Runs each selected action once per comment DOM node
-- `Create UID pair` also adds the author handle first and runs only when an API key is saved
+- `Create channel-ID pair` also adds the author handle first; the default page lookup does not need an API key
 
 ## 5. Pair And API Flow
 
-UID lookup:
+Channel ID lookup:
 
-1. Read the saved API key from `youtube_data_api_v3_config`
-2. Call `GET https://www.googleapis.com/youtube/v3/channels`
-3. Send `part=id`, `forHandle=@handle`, `key=<apiKey>`
-4. Read `items[0].id`
+1. Default: fetch `https://www.youtube.com/@<url-encoded-handle>` from the userscript's YouTube origin.
+2. Parse `externalId`, `channelId`, then `itemprop="channelId"` from the public channel HTML.
+3. The page parser is undocumented and can break when YouTube changes HTML. HTTP and no-channel-ID failures keep prior pair data and provide retry/API-fallback guidance.
+4. Explicit API mode calls `GET https://www.googleapis.com/youtube/v3/channels` with `part=id`, `forHandle=@handle`, and `key=<apiKey>`.
 
 Stored UID verification:
 
@@ -250,16 +257,21 @@ API-key test:
 
 Fallback behavior:
 
-- Handle mode still works when UID lookup fails; pair mode needs an existing verified `id` rule
+- Handle mode still works when channel-ID lookup fails; pair mode needs an existing verified `id` rule
 - Failed pairs stay `unverified` or `stale`
 - Existing pair data is not silently removed on lookup failure
 - When a pair update resolves a different UID, the stored pair and `id` rule are replaced with the
   latest UID so stale IDs no longer keep matching the old channel
+- API fallback is off by default. When enabled with a saved API key, it runs only after page lookup fails;
+  when disabled, no API request is made.
 
 API minimization:
 
 - `Create Pair` looks up only missing or unverified handle pairs
-- Default `Update Pair` skips fresh verified pairs until the stale interval expires
+- Pair results are cached in pair metadata and per-page memory. Default refresh is 10 minutes for page
+  lookup and one week for API lookup; selected-handle `Update Pair` forces a refresh.
+- Intervals: every handle update, 1m, 5m, 10m, 1h, 12h, 1d, 1w, 1M, or validated custom seconds.
+- New handles resolve immediately by default; this can be disabled in Settings.
 - Pair update settings can independently verify the stored UID and re-resolve the handle; at least
   one check is always enabled
 - Selected-handle bulk `Update Pair` is treated as an explicit user request and refreshes selected

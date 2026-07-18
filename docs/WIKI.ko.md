@@ -118,6 +118,11 @@ Pair 메타데이터:
 	blockMatchMode: 'handle' | 'pair',
 	pairUpdateUidCheck: boolean,
 	pairUpdateHandleLookup: boolean,
+	handleLookupMethod: 'scraper' | 'api',
+	handleLookupFallbackApi: boolean,
+	handleLookupInterval: 'always' | '60' | '300' | '600' | '3600' | '43200' | '86400' | '604800' | '2592000' | 'custom',
+	handleLookupCustomSeconds: number,
+	handleLookupOnAdd: boolean,
 	keywordAutomationEnabled: boolean,
 	themeMode: 'light' | 'dark' | 'system' | 'system-inverted' | 'youtube' | 'youtube-inverted' | 'custom',
 	themeCustom: { background: string, surface: string, text: string, muted: string, border: string, primary: string, danger: string },
@@ -168,6 +173,7 @@ API 설정:
 - 기본 `app_settings_v1.blockMatchMode`는 `handle`입니다
 - `app_settings_v1.pairUpdateUidCheck`와 `pairUpdateHandleLookup` 중 하나는 항상 켜져 있고,
   기본값은 handle 다시 조회입니다
+- `handleLookupMethod` 기본값은 `scraper`이고 `api`는 명시적 선택입니다. `handleLookupFallbackApi` 기본값은 `false`, `handleLookupOnAdd` 기본값은 `true`입니다.
 - 기존 동작을 유지하도록 키워드 자동 처리는 기본으로 켜져 있습니다. 끄더라도 대소문자 구분 없는 규칙, 검사 대상,
   동작 설정은 지우지 않으며, 기본 검사 대상은 댓글 본문이고 동작은 기본으로 꺼져 있습니다
 - `app_settings_v1.themeMode` 기본값은 `system`입니다. 기기설정과 yt설정은 각각 현재 다크 설정을 따르고,
@@ -221,16 +227,16 @@ API 설정:
 - 설정에서 고른 댓글 본문, 작성자 handle, 고정 표시 문구만 읽습니다
 - 저장한 키워드 최대 50개를 대소문자 구분 없이 부분 일치로 검사합니다
 - 선택한 동작은 댓글 DOM 노드마다 한 번만 실행합니다
-- `UID pair 생성`은 먼저 작성자 handle을 추가하고 API 키가 저장됐을 때만 실행합니다
+- `channel ID pair 생성`은 먼저 작성자 handle을 추가합니다. 기본 페이지 조회에는 API 키가 필요 없습니다.
 
 ## 5. Pair 및 API 흐름
 
-UID 조회:
+channel ID 조회:
 
-1. `youtube_data_api_v3_config`에서 API 키를 읽습니다
-2. `GET https://www.googleapis.com/youtube/v3/channels`를 호출합니다
-3. `part=id`, `forHandle=@handle`, `key=<apiKey>`를 보냅니다
-4. `items[0].id`를 읽습니다
+1. 기본: userscript의 YouTube origin에서 `https://www.youtube.com/@<url-encoded-handle>`를 요청합니다.
+2. 공개 채널 HTML에서 `externalId`, `channelId`, `itemprop="channelId"` 순으로 읽습니다.
+3. 페이지 parser는 undocumented 방식이라 YouTube HTML 변경으로 실패할 수 있습니다. HTTP/channel ID 미검출 오류는 기존 pair 데이터를 유지하고 재시도/API fallback을 안내합니다.
+4. 명시적 API 방식은 `GET https://www.googleapis.com/youtube/v3/channels`에 `part=id`, `forHandle=@handle`, `key=<apiKey>`를 보냅니다.
 
 저장 UID 확인:
 
@@ -247,16 +253,19 @@ API 키 테스트:
 
 Fallback 동작:
 
-- UID 조회가 실패해도 handle 방식은 계속 동작하지만, pair 방식에는 verified `id` 규칙이 필요합니다
+- channel ID 조회가 실패해도 handle 방식은 계속 동작하지만, pair 방식에는 verified `id` 규칙이 필요합니다
 - 실패한 pair는 `unverified` 또는 `stale` 상태로 남습니다
 - 조회 실패만으로 기존 pair 데이터를 조용히 삭제하지 않습니다
 - pair update에서 다른 UID가 조회되면 저장된 pair와 `id` 규칙을 최신 UID로 교체해
   stale ID가 예전 채널에 계속 매칭되지 않도록 합니다
+- API fallback은 기본 off입니다. 저장 API 키와 함께 켜면 페이지 조회 실패 후에만 실행하며, off면 API 요청을 만들지 않습니다.
 
 API 호출 최소화:
 
 - `Create Pair`는 missing 또는 unverified handle pair만 조회합니다
-- 기본 `Update Pair`는 stale 주기가 지나기 전의 fresh verified pair를 건너뜁니다
+- pair 결과는 pair metadata와 페이지 메모리에 cache됩니다. 기본 갱신은 페이지 조회 10분, API 조회 1주이며, 선택 handle `Update Pair`는 강제 갱신합니다.
+- 주기 선택: handle 갱신마다, 1분, 5분, 10분, 1시간, 12시간, 1일, 1주, 1개월, 유효성 검사된 직접 초 입력.
+- 새 handle 추가 시 즉시 조회가 기본이며 Settings에서 끌 수 있습니다.
 - pair 갱신 설정에서 저장 UID 확인과 handle 재조회를 각각 선택할 수 있으며, 하나는 항상 켜져 있습니다
 - 선택 handle bulk `Update Pair`는 명시적 사용자 요청으로 보고, 선택한 handle은 fresh
   상태여도 다시 조회합니다

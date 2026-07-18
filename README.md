@@ -43,8 +43,8 @@ Source layout:
 - Supports `handle`, `id`, and `regex` rules in `blocked_v2`
 - Supports selectable identity matching: `handle` rules by default or UID pair `id` rules; regex rules remain independent
 - Applies regex length, flag, target, and heuristic safety checks before storing or matching rules
-- Supports optional UID detection with handle↔UID metadata in `pair_meta_v1`
-- Stores a local-only YouTube Data API v3 key and validates it before pair maintenance
+- Supports optional channel-ID detection with handle-to-channel-ID metadata in `pair_meta_v1`
+- Resolves handles from their public YouTube channel page by default, with cached results and optional YouTube Data API v3 lookup/fallback
 - Supports case-sensitive handle matching
 - Supports a separate settings dialog with API, UID, regex auto-add, display sizing, and debug counters
 - Uses a category-list settings layout with task-grouped controls, descriptions, and automatic saves
@@ -75,19 +75,20 @@ Source layout:
 3. Open a YouTube watch page or Shorts page.
 4. Right-click a comment author's handle, or use the comment `⋯` menu, to block/unblock.
 5. Open `Tampermonkey -> YouTube Comment Blocker -> Manage block list`.
-6. Save your YouTube Data API v3 key and optionally run `Test API Key`.
+6. Optionally save and test a YouTube Data API v3 key for API lookup or page-lookup fallback.
 7. Use search, filters, the block and keyword automation dialog, and bulk actions to maintain the list.
-8. Turn on `UID Detection`, choose `UID pair rules`, and run `Create Pair` / `Update Pair` when you want UID-backed matching.
+8. Turn on channel-ID detection, choose pair rules, and run `Create Pair` / `Update Pair` when you want channel-ID-backed matching.
 9. In Settings, enable or disable keyword automation, then use the block and keyword automation dialog to configure its rules and actions.
 
 Typical pair flow:
 
 1. Block one or more handles.
-2. Save and test your API key.
-3. Turn on `UID Detection`.
-4. Run `Create Pair` for missing handles.
-5. Choose whether `Update Pair` verifies stored UIDs, re-resolves handles, or both.
-6. Review `Last Pair Run` details or the watch-page banner when updates are needed.
+2. In Settings, keep the default YouTube channel-page lookup or explicitly choose API lookup.
+3. Optionally save and test an API key for API lookup or fallback.
+4. Turn on channel-ID detection.
+5. Run `Create Pair` for missing handles, or enable lookup when a handle is added.
+6. Choose the refresh interval and whether `Update Pair` verifies stored channel IDs, re-resolves handles, or both.
+7. Review `Last Pair Run` details or the watch-page banner when updates are needed.
 
 ## Storage
 
@@ -135,6 +136,11 @@ App settings:
 	blockMatchMode: 'handle' | 'pair',
 	pairUpdateUidCheck: boolean,
 	pairUpdateHandleLookup: boolean,
+	handleLookupMethod: 'scraper' | 'api',
+	handleLookupFallbackApi: boolean,
+	handleLookupInterval: 'always' | '60' | '300' | '600' | '3600' | '43200' | '86400' | '604800' | '2592000' | 'custom',
+	handleLookupCustomSeconds: number,
+	handleLookupOnAdd: boolean,
 	keywordAutomationEnabled: boolean,
 	themeMode: 'light' | 'dark' | 'system' | 'system-inverted' | 'youtube' | 'youtube-inverted' | 'custom',
 	themeCustom: { background: string, surface: string, text: string, muted: string, border: string, primary: string, danger: string },
@@ -175,6 +181,9 @@ Notes:
 - Default `dislikeMode` is `none`
 - Default `commentBlockMode` is `hide`
 - Default `blockMatchMode` is `handle`; `pair` requires UID Detection and matches stored `id` rules
+- Default channel-ID lookup fetches the same-origin public channel page at `https://www.youtube.com/@<handle>` and parses `externalId`, `channelId`, then `itemprop="channelId"`. This undocumented HTML path can change.
+- Lookup results are cached in pair metadata and in memory. The default refresh interval is 10 minutes for page lookup and one week for API lookup; an explicit selected-handle update bypasses the cache.
+- Page lookup failures keep existing data and tell users to retry or enable tested API fallback. API lookup requires the saved key and consumes one quota unit per request.
 - At least one pair update check stays enabled; the default re-resolves handles
 - If a pair is missing or unverified, switch back to `handle` mode until a UID rule is created
 - Keyword matching is case-insensitive; it checks comment text by default and runs no actions until enabled

@@ -12,6 +12,7 @@
 ### Added
 
 - 설정 dialog의 기본 저장 설정 선택지에 회색 `(기본)` 표시를 추가했습니다.
+- 공개 YouTube 채널 페이지 기본 handle→channel ID 조회, 결과 cache, 명시적 API 조회/API fallback, 갱신 주기, 새 handle 추가 시 조회 설정을 추가했습니다.
 
 ### Changed
 

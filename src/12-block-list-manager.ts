@@ -788,7 +788,8 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			const handleLookupIntervalLabel = document.createElement('label');
 			const handleLookupIntervalText = document.createElement('span');
 			const handleLookupIntervalSelect = document.createElement('select');
-			['always', '60', '300', '600', '3600', '43200', '86400', '604800', '2592000', 'custom'].forEach(value => { const option = document.createElement('option'); option.value = value; option.textContent = value; handleLookupIntervalSelect.appendChild(option); });
+			['always', '60', '300', '600', '3600', '43200', '86400', '604800', '2592000', 'custom'].forEach(value => { const option = document.createElement('option'); option.value = value; handleLookupIntervalSelect.appendChild(option); });
+			markDefaultOption(handleLookupMethodSelect, 'scraper');
 			handleLookupIntervalLabel.append(handleLookupIntervalText, handleLookupIntervalSelect);
 			const handleLookupCustomInput = document.createElement('input'); handleLookupCustomInput.type = 'number'; handleLookupCustomInput.min = '1';
 			const handleLookupOnAddLabel = document.createElement('label'); const handleLookupOnAddToggle = document.createElement('input'); handleLookupOnAddToggle.type = 'checkbox'; const handleLookupOnAddText = document.createElement('span'); handleLookupOnAddLabel.append(handleLookupOnAddToggle, handleLookupOnAddText);
@@ -924,6 +925,8 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				handleLookupMethodSelect.value = this.app.settings.getHandleLookupMethod();
 				const interval = this.app.settings._state.handleLookupInterval || (handleLookupMethodSelect.value === 'api' ? '604800' : '600');
 				handleLookupIntervalSelect.value = interval;
+				Array.from(handleLookupIntervalSelect.options).forEach(option => option.classList.remove('tm-default-option'));
+				markDefaultOption(handleLookupIntervalSelect, handleLookupMethodSelect.value === 'api' ? '604800' : '600');
 				handleLookupCustomInput.value = String(this.app.settings._state.handleLookupCustomSeconds || 600);
 				handleLookupCustomInput.hidden = interval !== 'custom';
 				handleLookupOnAddToggle.checked = this.app.settings.isHandleLookupOnAddEnabled();
@@ -1020,8 +1023,22 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				pairUpdateHelp.textContent = t('pairUpdatePolicyHelp');
 				handleLookupTitle.textContent = t('handleLookupTitle');
 				handleLookupMethodText.textContent = t('handleLookupMethodLabel') + ': ';
-				handleLookupMethodSelect.options[0].textContent = t('handleLookupMethodScraper'); handleLookupMethodSelect.options[1].textContent = t('handleLookupMethodApi');
+				handleLookupMethodSelect.options[0].textContent = defaultOptionText(handleLookupMethodSelect.options[0], t('handleLookupMethodScraper')); handleLookupMethodSelect.options[1].textContent = t('handleLookupMethodApi');
 				handleLookupIntervalText.textContent = t('handleLookupIntervalLabel') + ': ';
+				const korean = getLang() === 'ko';
+				const intervalLabels: Record<string, string> = {
+					always: korean ? 'handle 갱신마다' : 'By every handle update',
+					'60': korean ? '1분' : '1m',
+					'300': korean ? '5분' : '5m',
+					'600': korean ? '10분' : '10m',
+					'3600': korean ? '1시간' : '1h',
+					'43200': korean ? '12시간' : '12h',
+					'86400': korean ? '1일' : '1d',
+					'604800': korean ? '1주' : '7d',
+					'2592000': korean ? '1개월' : '1M',
+					custom: t('handleLookupCustomLabel')
+				};
+				Array.from(handleLookupIntervalSelect.options).forEach(option => { option.textContent = defaultOptionText(option, intervalLabels[option.value]); });
 				handleLookupOnAddText.textContent = t('handleLookupOnAddLabel'); handleLookupFallbackText.textContent = t('handleLookupFallbackLabel'); handleLookupCustomInput.placeholder = t('handleLookupCustomLabel'); handleLookupHelp.textContent = t('handleLookupHelp');
 				createBtn.textContent = pairBusy ? t('pairWorking') : t('pairCreate');
 				updateBtn.textContent = pairBusy ? t('pairWorking') : t('pairUpdate');

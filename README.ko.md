@@ -46,9 +46,9 @@ quota 안내, 페이지 단위 regex 매칭 목록, 역할별 소스 파일, 압
 - `blocked_v2`에 `handle`, `id`, `regex` 규칙 저장
 - 신원 차단 방식을 기본 `handle` 규칙 또는 UID pair `id` 규칙으로 선택하고, regex 규칙은 두 방식 모두에서 적용
 - regex 규칙 저장/매칭 전에 길이, flag, 대상 길이, 휴리스틱 safety 검사를 적용
-- 관리자 대화상자에 선택적 `UID Detection` 토글 추가
-- 관리자 대화상자에 로컬 전용 YouTube Data API 키 입력 섹션 추가
-- `pair_meta_v1`에 handle↔UID pair 메타데이터 저장
+- 관리자 대화상자에 선택적 channel ID 감지 토글 추가
+- 기본 YouTube 공개 채널 페이지 조회, 결과 cache, 선택적 YouTube Data API v3 조회/fallback 지원
+- `pair_meta_v1`에 handle↔channel ID pair 메타데이터 저장
 - `Create Pair`, `Update Pair` 액션 제공
 - handle별 상태 배지 제공: `handle-only`, `paired`, `stale`, `mismatch`, `unverified`
 - 관리자 대화상자에 로컬 `Handle Case Sensitive` 설정 추가
@@ -84,20 +84,20 @@ quota 안내, 페이지 단위 regex 매칭 목록, 역할별 소스 파일, 압
 3. YouTube watch 페이지 또는 Shorts 페이지를 엽니다.
 4. 댓글 작성자 handle을 우클릭해 차단 또는 해제합니다.
 5. `Tampermonkey -> YouTube Comment Blocker -> Manage block list`를 엽니다.
-6. Pair 기능을 쓰기 전에 YouTube Data API v3 API 키를 저장합니다.
+6. API 조회 또는 페이지 조회 fallback이 필요할 때만 YouTube Data API v3 API 키를 저장·테스트합니다.
 7. handle 대소문자 설정, 신원 차단 방식, UID 감지 토글, 로그 보관/console 출력, 차단 및 키워드 자동 처리, 목록 필터, 선택 항목 bulk 액션,
    import/export를 사용합니다.
 8. 설정에서 키워드 자동 처리를 켜거나 끄고, 차단 및 키워드 자동 처리 창에서 규칙과 동작을 설정합니다.
 
-일반적인 UID 흐름:
+일반적인 channel ID 흐름:
 
 1. 먼저 handle을 평소처럼 차단합니다.
 2. `Manage block list`를 엽니다.
-3. YouTube Data API v3 API 키를 저장합니다.
-4. `UID Detection`을 켭니다.
-5. pair가 없는 항목에 대해 `Create Pair`를 실행합니다.
-6. 필요하면 타입/태그 필터와 bulk action으로 일부 항목만 대상으로 작업합니다.
-7. `Update Pair`에서 저장 UID 확인, handle 다시 조회 또는 둘 다를 선택합니다.
+3. 설정에서 기본 YouTube 채널 페이지 조회를 유지하거나 API 조회를 명시적으로 선택합니다.
+4. API 조회/fallback이 필요하면 API 키를 저장·테스트합니다.
+5. channel ID 감지를 켭니다.
+6. pair 없는 항목에 `Create Pair`를 실행하거나 새 handle 추가 시 조회를 켭니다.
+7. 갱신 주기와 저장 channel ID 확인, handle 재조회 여부를 고릅니다.
 8. 이후 stale 또는 mismatch가 보이면 `Update Pair`를 실행합니다.
 
 ---
@@ -146,6 +146,11 @@ Pair 메타 저장소:
 	blockMatchMode: 'handle' | 'pair',
 	pairUpdateUidCheck: boolean,
 	pairUpdateHandleLookup: boolean,
+	handleLookupMethod: 'scraper' | 'api',
+	handleLookupFallbackApi: boolean,
+	handleLookupInterval: 'always' | '60' | '300' | '600' | '3600' | '43200' | '86400' | '604800' | '2592000' | 'custom',
+	handleLookupCustomSeconds: number,
+	handleLookupOnAdd: boolean,
 	keywordAutomationEnabled: boolean,
 	themeMode: 'light' | 'dark' | 'system' | 'system-inverted' | 'youtube' | 'youtube-inverted' | 'custom',
 	themeCustom: { background: string, surface: string, text: string, muted: string, border: string, primary: string, danger: string },
@@ -170,6 +175,9 @@ Pair 메타 저장소:
 - 기본 `dislikeMode`는 `none`입니다
 - 기본 `commentBlockMode`는 `hide`입니다
 - 기본 `blockMatchMode`는 `handle`이고, `pair`는 UID 감지가 켜진 동안 저장된 `id` 규칙을 사용합니다
+- 기본 channel ID 조회는 같은 origin의 공개 채널 페이지 `https://www.youtube.com/@<handle>`에서 `externalId`, `channelId`, `itemprop="channelId"` 순으로 읽습니다. undocumented HTML 방식이라 변경될 수 있습니다.
+- 조회 결과는 pair metadata와 메모리에 cache됩니다. 기본 갱신 주기는 페이지 조회 10분, API 조회 1주이며, 선택 handle 강제 갱신은 cache를 건너뜁니다.
+- 페이지 조회 실패는 기존 데이터를 유지하고 재시도 또는 테스트한 API fallback 사용을 안내합니다. API 조회는 저장한 키가 필요하고 요청당 quota 1 unit을 소비합니다.
 - pair 갱신 검사는 하나 이상 항상 켜져 있으며, 기본값은 handle 다시 조회입니다
 - pair가 없거나 unverified이면 UID 규칙을 만들 때까지 `handle` 방식으로 전환합니다
 - 키워드는 대소문자를 구분하지 않고 기본으로 댓글 본문을 검사하며, 동작은 직접 켜기 전까지 실행하지 않습니다

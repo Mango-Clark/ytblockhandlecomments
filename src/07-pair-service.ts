@@ -27,6 +27,7 @@ import {
 			this.apiConfig = apiConfig;
 			this.settings = settings;
 			this._busy = false;
+			this._handleLookupCache = new Map();
 		}
 		getBlockedHandles() {
 			return this.storage.all().filter((item: BlockItem) => item.type === 'handle').map((item: BlockItem) => item.value);
@@ -222,7 +223,7 @@ import {
 					}
 					if (lookupHandle) {
 						try {
-						const resolved = await this.resolveHandle(handle);
+						const resolved = await this.resolveHandle(handle, { force: update });
 						if (existing?.uid && existing.uid !== resolved.uid) {
 							this.pairStore.upsertPair({
 								...existing,
@@ -378,19 +379,32 @@ import {
 				};
 			}
 		}
-		async resolveHandle(handle: string) {
+		async resolveHandle(handle: string, { force = false } = {}) {
 			const normalized = sanitizeHandle(handle);
 			if (!normalized) throw new Error(t('pairLookupNoUid'));
+			const key = getHandleCompareKey(normalized, this.settings?.isHandleCaseSensitive?.() || false);
+			const cached = this._handleLookupCache.get(key);
+			const intervalSeconds = this.settings?.getHandleLookupIntervalSeconds?.() ?? 600;
+			if (!force && cached && intervalSeconds > 0 && Date.now() - cached.checkedAt < intervalSeconds * 1000) return cached.result;
+			let result;
 			if (this.settings?.getHandleLookupMethod?.() !== 'api') {
-				try { return await this._resolveHandleFromPage(normalized); }
+				try { result = await this._resolveHandleFromPage(normalized); }
 				catch (error) {
-					if (!this.settings?.isHandleLookupFallbackApiEnabled?.() || !this.apiConfig.hasApiKey()) throw error;
+					if (!this.settings?.isHandleLookupFallbackApiEnabled?.() || !this.apiConfig.hasApiKey()) {
+						const message = error instanceof Error ? error.message : String(error);
+						const guidance = getLang() === 'ko'
+							? '다시 시도하거나, 테스트한 API 키로 API fallback을 켜세요.'
+							: 'Retry, or enable API fallback with a tested API key.';
+						throw new Error(`${message} ${guidance}`, { cause: error });
+					}
 				}
 			}
-			return this._resolveHandleFromApi(normalized);
+			if (!result) result = await this._resolveHandleFromApi(normalized);
+			this._handleLookupCache.set(key, { checkedAt: Date.now(), result });
+			return result;
 		}
 		async _resolveHandleFromPage(handle: string) {
-			const response = await fetch(`https://www.youtube.com/${encodeURIComponent(handle)}`, { cache: 'no-store', referrerPolicy: 'no-referrer' });
+			const response = await fetch(`https://www.youtube.com/@${encodeURIComponent(handle.slice(1))}`, { cache: 'no-store', referrerPolicy: 'no-referrer' });
 			if (!response.ok) throw new Error(`${t('pairLookupFailed')} (${response.status})`);
 			const html = await response.text();
 			const patterns = [/"externalId":"(UC[0-9A-Za-z_-]{10,})"/, /"channelId":"(UC[0-9A-Za-z_-]{10,})"/, /itemprop="channelId"\s+content="(UC[0-9A-Za-z_-]{10,})"/];

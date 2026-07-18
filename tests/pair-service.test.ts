@@ -3,15 +3,17 @@ import assert from 'node:assert/strict';
 import { loadUserscript } from './helpers/load-userscript.ts';
 
 function createService() {
-	const { api } = loadUserscript();
+	const { api, context } = loadUserscript();
 	const settings = new api.AppSettingsStorage();
 	const storage = new api.StorageV2(settings);
 	const pairStore = new api.PairMetaStorage(settings);
 	const apiConfig = new api.ApiConfigStorage();
 	return {
 		api,
+		context,
 		storage,
 		pairStore,
+		apiConfig,
 		service: new api.PairService(storage, pairStore, apiConfig, settings)
 	};
 }
@@ -110,6 +112,75 @@ test('pair creation always resolves handle to UID', async () => {
 
 	assert.equal(handleCalls, 1);
 	assert.equal(stats.created, 1);
+});
+
+test('channel-page lookup normalizes and caches a handle result', async () => {
+	const { service, context } = createService();
+	let requests = 0;
+	context.fetch = async (url: string) => {
+		requests += 1;
+		assert.equal(url, 'https://www.youtube.com/@alpha%20beta');
+		return {
+			ok: true,
+			text: async () => '<script>{"externalId":"UC1234567890"}</script>'
+		};
+	};
+
+	const first = await service.resolveHandle('@alpha beta');
+	const second = await service.resolveHandle('@alpha beta');
+
+	assert.equal(first.uid, 'UC1234567890');
+	assert.equal(first.source, 'youtube-channel-page');
+	assert.equal(second.uid, first.uid);
+	assert.equal(second.source, first.source);
+	assert.equal(requests, 1);
+});
+
+test('channel-page lookup falls back to API only when explicitly enabled', async () => {
+	const { service, apiConfig, context } = createService();
+	apiConfig.setApiKey('test-key');
+	const requested: string[] = [];
+	context.fetch = async (url: string) => {
+		requested.push(url);
+		if (url.startsWith('https://www.youtube.com/')) return { ok: false, status: 404, text: async () => '' };
+		return { ok: true, json: async () => ({ items: [{ id: 'UC1234567890' }] }) };
+	};
+
+	let error = '';
+	try { await service.resolveHandle('@alpha'); } catch (reason) { error = reason instanceof Error ? reason.message : String(reason); }
+	assert.match(error, /다시 시도/);
+	assert.equal(requested.length, 1);
+
+	service.settings.setHandleLookupFallbackApiEnabled(true);
+	const result = await service.resolveHandle('@alpha');
+	assert.equal(result.source, 'youtube-data-api-v3');
+	assert.equal(requested.length, 3);
+});
+
+test('new handle lookup respects the on-add setting', async () => {
+	const { api } = loadUserscript();
+	const handled: string[][] = [];
+	const app = {
+		_keywordPairInFlight: new Set(),
+		_lastPairRunResult: null,
+		settings: { isHandleCaseSensitive: () => false, isHandleLookupOnAddEnabled: () => true },
+		pairStore: { getPair: () => null },
+		pairService: { createPairsForHandles: async (handles: string[]) => {
+		handled.push(handles);
+		return { created: 0, refreshed: 0, mismatches: 0, failed: 0, addedIds: 0, skipped: 0, items: [] };
+		} },
+		_scheduleKeywordRefresh: () => {}
+	};
+
+	api.App.prototype._resolveAddedHandle.call(app, '@alpha');
+	await Promise.resolve();
+	assert.equal(handled.length, 1);
+	assert.equal(handled[0][0], '@alpha');
+
+	app.settings.isHandleLookupOnAddEnabled = () => false;
+	api.App.prototype._resolveAddedHandle.call(app, '@beta');
+	await Promise.resolve();
+	assert.equal(handled.length, 1);
 });
 
 test('api config tracks repeated quota failures for guidance', () => {

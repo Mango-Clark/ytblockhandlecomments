@@ -68,8 +68,26 @@ import { Logger } from './15-logger.ts';
 
 		addHandleRule(handle: any) {
 			const ok = this.storage.addHandle(handle);
-			if (ok) this.refreshAfterStorageChange();
+			if (ok) {
+				this.refreshAfterStorageChange();
+				this._resolveAddedHandle(handle);
+			}
 			return ok;
+		}
+
+		_resolveAddedHandle(handle: any) {
+			const normalized = sanitizeHandle(handle);
+			if (!normalized || !this.settings.isHandleLookupOnAddEnabled() || this.pairStore.getPair(normalized)) return;
+			const key = this.settings.isHandleCaseSensitive() ? normalized : normalized.toLocaleLowerCase();
+			if (this._keywordPairInFlight.has(key)) return;
+			this._keywordPairInFlight.add(key);
+			void this.pairService.createPairsForHandles([normalized])
+				.then((stats: PairRunStats) => { this._lastPairRunResult = stats; })
+				.catch(() => { })
+				.finally(() => {
+					this._keywordPairInFlight.delete(key);
+					this._scheduleKeywordRefresh();
+				});
 		}
 
 		removeHandleRule(handle: any) {
@@ -164,8 +182,9 @@ import { Logger } from './15-logger.ts';
 				this.logger.info('Keyword action added a block rule', { handle, createPair: !!actions.createPair });
 				this.hider.rebuildLookup();
 				this._scheduleKeywordRefresh();
+				this._resolveAddedHandle(handle);
 			}
-			if (!actions.createPair || !this.apiConfig.hasApiKey() || this.pairStore.getPair(handle)) return;
+			if (!actions.createPair || this.pairStore.getPair(handle)) return;
 			const key = this.settings.isHandleCaseSensitive() ? handle : handle.toLocaleLowerCase();
 			if (this._keywordPairInFlight.has(key)) return;
 			this._keywordPairInFlight.add(key);
