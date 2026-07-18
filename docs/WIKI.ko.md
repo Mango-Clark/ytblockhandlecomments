@@ -72,6 +72,8 @@ page 동기화는 `yt-navigate-finish`, `yt-page-data-updated`, `popstate`, `his
 있습니다. 자동 싫어요는 기본값이 안함이며, 새로 숨길 때만 또는 차단 댓글이 숨겨진
 상태에서 항상으로 바꿀 수 있고 이미 눌린 싫어요 버튼은 다시 토글하지 않습니다.
 
+댓글 자동 처리는 channel ID, handle, 본문, 고정 문구로 만든 identity를 사용합니다. 재사용된 comment element의 identity가 바뀌면 새 댓글용 metadata와 1회 keyword, dislike, 차단 표시 상태를 무효화합니다.
+
 키워드 자동 처리는 댓글 본문, 작성자 handle, 고정 표시 문구를 검사합니다. 대소문자를
 구분하지 않으며, 싫어요, 작성자 handle 차단 목록 등록, handle 등록 뒤 UID pair 생성 중
 선택한 동작만 실행합니다.

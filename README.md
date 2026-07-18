@@ -39,6 +39,7 @@ Source layout:
 - Detects YouTube SPA navigation from page-data and history updates without resetting unchanged page keys
 - Configurable blocked-comment display: hide completely, show a gray placeholder, or click to reveal
 - Configurable comment auto-dislike mode, defaulting to off: off, only when newly hidden, or always while hidden
+- Re-applies keyword and auto-dislike actions when YouTube reuses a comment DOM node for a new author or body
 - Supports a unified block and keyword automation dialog for regex rules, keyword matching fields, and independent dislike, handle-block, and UID-pair actions
 - Supports independent local log retention and browser-console logging, with level and retention controls plus log-file download
 - Supports configurable console-log prefixes and optional timestamps with ISO/custom formats and timezone selection

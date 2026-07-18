@@ -28,6 +28,8 @@ import { Extractor } from './09-extractor.ts';
 			this._metaCache = new WeakMap();
 			this._autoDisliked = new WeakSet();
 			this._keywordHandled = new WeakSet();
+			this._nodeIdentities = new WeakMap();
+			this._blockIdentities = new WeakMap();
 			this._observed = new Set();
 			this._pending = false;
 			this._pendingRoot = null;
@@ -136,9 +138,22 @@ import { Extractor } from './09-extractor.ts';
 				id: Extractor.getChannelId(node),
 				handle: Extractor.getHandle(node)
 			};
-			if (!meta.id && meta.handle && this.settings?.getBlockMatchMode?.() === 'pair') this._metrics.missingChannelIds += 1;
 			this._metaCache.set(node, meta);
 			return meta;
+		}
+		_syncNodeIdentity(node: Element) {
+			const meta = { id: Extractor.getChannelId(node), handle: Extractor.getHandle(node) };
+			const content = node.querySelector?.('#content-text, #content-text > yt-attributed-string, ytd-expander #content')?.textContent?.trim() || '';
+			const pinned = node.querySelector?.('#pinned-comment-badge, ytd-pinned-comment-badge-renderer, [aria-label*="Pinned"], [aria-label*="pinned"], [aria-label*="고정"]')?.textContent?.trim() || '';
+			const identity = JSON.stringify([meta.id || '', meta.handle || '', content, pinned]);
+			if (this._nodeIdentities.get(node) === identity) return { identity, meta };
+			this._nodeIdentities.set(node, identity);
+			this._metaCache.set(node, meta);
+			this._autoDisliked.delete(node);
+			this._keywordHandled.delete(node);
+			this._blockIdentities.delete(node);
+			if (!meta.id && meta.handle && this.settings?.getBlockMatchMode?.() === 'pair') this._metrics.missingChannelIds += 1;
+			return { identity, meta };
 		}
 		invalidateNode(node: Element | null | undefined) {
 			if (!node) return;
@@ -237,11 +252,11 @@ import { Extractor } from './09-extractor.ts';
 		}
 		applyHide(node: Element | null | undefined) {
 			if (!node) return;
-			const meta = this._getMeta(node);
+			const { identity, meta } = this._syncNodeIdentity(node);
 			this._applyKeywordAutomation(node, meta);
 			const shouldHide = this._matches(node);
 			const dislikeMode = this.settings?.getDislikeMode?.() || 'none';
-			const alreadyBlocked = node.classList.contains('tm-hidden') || node.classList.contains('tm-block-placeholder-mode');
+			const alreadyBlocked = this._blockIdentities.get(node) === identity && (node.classList.contains('tm-hidden') || node.classList.contains('tm-block-placeholder-mode'));
 			if (
 				shouldHide &&
 				dislikeMode !== 'none' &&
@@ -250,6 +265,8 @@ import { Extractor } from './09-extractor.ts';
 				this._autoDislikeBeforeHide(node);
 			}
 			this._applyBlockMode(node, shouldHide);
+			if (shouldHide) this._blockIdentities.set(node, identity);
+			else this._blockIdentities.delete(node);
 		}
 		_connectIO() {
 			if (this._io) return this._io;
@@ -272,6 +289,8 @@ import { Extractor } from './09-extractor.ts';
 			this._metaCache = new WeakMap();
 			this._autoDisliked = new WeakSet();
 			this._keywordHandled = new WeakSet();
+			this._nodeIdentities = new WeakMap();
+			this._blockIdentities = new WeakMap();
 			this._pending = false;
 			this._pendingRoot = null;
 		}

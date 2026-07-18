@@ -14,6 +14,12 @@
 
 ## Done
 
+- [x] (K) 재사용 comment DOM node identity 처리
+
+  - (1) node identity는 channel ID, handle, 본문, pinned label 기반.
+  - (2) identity 변경 시 metadata·keyword·dislike·block 상태 무효화.
+  - (3) 하나의 node handle/body 변경 뒤 keyword/dislike 재실행 fixture test 검증.
+
 - [x] (J) pair mode channel ID 추출 fallback·진단
 
   - (1) `/channel/UC...`, `data-channel-id`, `channel-id` 우선순위 추출.

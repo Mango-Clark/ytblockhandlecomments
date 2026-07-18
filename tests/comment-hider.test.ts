@@ -328,6 +328,35 @@ test('keyword automation master toggle prevents keyword actions', () => {
 	assert.equal(clicks, 0);
 });
 
+test('reused comment nodes rerun keyword actions for a new comment identity', () => {
+	const { api, document } = loadUserscript();
+	const settings = new api.AppSettingsStorage();
+	const storage = new api.StorageV2(settings);
+	const pairStore = new api.PairMetaStorage(settings);
+	const matches: string[] = [];
+	const hider = new api.CommentHider(storage, pairStore, settings, (match: any) => matches.push(match.handle));
+	const { comment, dislike } = createBlockedComment(document, '@first');
+	const content = document.createElement('div');
+	content.id = 'content-text';
+	content.textContent = 'promo one';
+	comment.appendChild(content);
+	let clicks = 0;
+	dislike.addEventListener('click', () => { clicks += 1; });
+	settings.setKeywordAutomation({
+		keywords: ['promo'],
+		fields: { commentText: true, handle: false, pinned: false },
+		actions: { dislike: true, blockHandle: true, createPair: false }
+	});
+
+	hider.applyHide(comment);
+	comment.querySelector('#author-text > span').textContent = '@second';
+	content.textContent = 'promo two';
+	hider.applyHide(comment);
+
+	assert.equal(clicks, 2);
+	assert.equal(matches.join(','), '@first,@second');
+});
+
 test('keyword UID-pair action adds the handle and queues pair creation once', async () => {
 	const { api, document, context } = loadUserscript();
 	context.addEventListener = () => {};

@@ -73,6 +73,8 @@ placeholder. Auto dislike defaults to off and is configurable as off, only when 
 hidden, or always while a blocked comment is hidden; already pressed dislike buttons are not
 toggled.
 
+Comment automation state uses a derived channel ID, handle, body, and pinned-label identity. When a reused comment element changes identity, cached metadata and one-time keyword, dislike, and blocked-display state are invalidated for the new comment.
+
 Keyword automation can inspect comment text, author handles, and pinned labels. It is
 case-insensitive and runs only the selected actions: dislike, add the author handle to the block
 list, or create a UID pair after adding the handle.
