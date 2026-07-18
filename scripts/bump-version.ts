@@ -14,7 +14,7 @@ export type ReleaseOptions = {
 };
 
 export const parseReleaseOptions = (args: string[] = process.argv): ReleaseOptions => ({
-	fastForwardMaster: args.includes('--ff-master'),
+	fastForwardMaster: args.includes('--ff-master') || args.includes('--push-master'),
 	pushMaster: args.includes('--push-master')
 });
 
@@ -195,10 +195,6 @@ const main = () => {
 		console.error('Usage: npm run bump:version -- <MAJOR.MINOR.PATCH> [--check] [--ff-master] [--push-master]');
 		process.exit(1);
 	}
-	if (releaseOptions.pushMaster && !releaseOptions.fastForwardMaster) {
-		throw new Error('--push-master requires --ff-master.');
-	}
-
 	if (!check) {
 		const status = runGit(['status', '--porcelain'], 'pipe').trim();
 		if (status) throw new Error('Working tree must be clean before bumping version.');

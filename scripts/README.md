@@ -57,16 +57,16 @@ commit to `origin/dev`. It does not push the release tag.
 
 ### Master Promotion
 
-Use `--ff-master` to fast-forward local `master` to the completed `dev` release. Add
-`--push-master` to push that fast-forwarded branch to `origin/master`:
+Use `--ff-master` to fast-forward local `master` to the completed `dev` release. Use
+`--push-master` to fast-forward it and push the result to `origin/master`:
 
 ```powershell
-npm run bump:version -- 1.3.0 --ff-master --push-master
+npm run bump:version -- 1.3.0 --push-master
 ```
 
-`--push-master` requires `--ff-master`. Before changing release files, the script verifies that
-`master` is an ancestor of `dev`. If not, it aborts without merging or rebasing and prints the
-manual Git commands required to resolve the branch relationship.
+Before changing release files, the script verifies that `master` is an ancestor of `dev`. If not,
+it aborts without merging or rebasing and prints the manual Git commands required to resolve the
+branch relationship.
 
 ### Check Mode
 
@@ -104,8 +104,8 @@ On success, the script performs these operations in order:
 5. Stages the explicit version, documentation, TODO, and generated userscript files.
 6. Creates the release commit and `v<version>` tag.
 7. Pushes the release commit to `origin/dev`.
-8. With `--ff-master`, fast-forwards local `master` from `dev`; with `--push-master`, pushes it
-   to `origin/master`.
+8. With `--ff-master`, fast-forwards local `master` from `dev`; with `--push-master`, fast-forwards
+   and pushes it to `origin/master`.
 
 The command never pushes the release tag. Master promotion is opt-in and never merges or rebases.
 

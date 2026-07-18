@@ -14,6 +14,13 @@
 
 ## Done
 
+- [x] (AA) `--push-master`가 `--ff-master`를 자동 포함하도록 release option 단순화
+
+  - (0) `42d68bc3a9d43380a7bb2c80acf8009bbaaefac0`
+  - (1) `scripts/bump-version.ts:16-18`에서 `--push-master`만 전달해도 `fastForwardMaster`와 `pushMaster`가 모두 활성화됨.
+  - (2) `scripts/bump-version.ts:198-200`의 `--push-master requires --ff-master` 오류를 제거하고, 기존 master fast-forward 검증 후 push 순서는 유지.
+  - (3) `--push-master` 단독, `--ff-master` 단독, 두 option 동시 전달 parsing·release flow regression test 검증.
+
 - [x] (Z) console 시간 형식 기본 선택지 표시 추가
 
   - (1) 기본 `iso` option에 `tm-default-option`과 현지화한 기본값 label 적용.

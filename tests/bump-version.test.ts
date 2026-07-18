@@ -63,6 +63,14 @@ test('release options keep master promotion opt-in', () => {
 		fastForwardMaster: false,
 		pushMaster: false
 	});
+	assert.deepEqual(parseReleaseOptions(['node', 'script', '1.3.1', '--push-master']), {
+		fastForwardMaster: true,
+		pushMaster: true
+	});
+	assert.deepEqual(parseReleaseOptions(['node', 'script', '1.3.1', '--ff-master']), {
+		fastForwardMaster: true,
+		pushMaster: false
+	});
 	assert.deepEqual(parseReleaseOptions(['node', 'script', '1.3.1', '--ff-master', '--push-master']), {
 		fastForwardMaster: true,
 		pushMaster: true
