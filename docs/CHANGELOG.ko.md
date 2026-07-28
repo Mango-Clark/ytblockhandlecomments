@@ -15,6 +15,32 @@
 
 ### Changed
 
+- 없음
+
+### Deprecated
+
+- 없음
+
+### Removed
+
+- 없음
+
+### Fixed
+
+- 없음
+
+### Security
+
+- 없음
+
+## [1.5.1] - 2026-07-28
+
+### Added
+
+- 없음
+
+### Changed
+
 - 큰 차단 목록의 반복 상태 조회가 느려지지 않도록 pair 메타데이터를 handle 기준으로 색인.
 
 ### Deprecated
@@ -32,6 +58,7 @@
 ### Security
 
 - 개발 도구에서 패치된 `brace-expansion`, `js-yaml` 버전을 강제.
+
 
 ## [1.5.0] - 2026-07-18
 

@@ -1,10 +1,10 @@
-# 📌 YouTube Comment Blocker — v1.5.0
+# 📌 YouTube Comment Blocker — v1.5.1
 
 [English](README.md) | [한국어](README.ko.md)
 
 Full reference: [WIKI.md](docs/WIKI.md) | [WIKI.ko.md](docs/WIKI.ko.md)
 
-Tampermonkey userscript hiding YouTube comments by channel identity. `v1.5.0` retains `v0.6.x` safety, settings, pair-maintenance fixes; improves separate settings dialog, regex auto-add, debug counters, pair tools, quota guidance, paged regex matches, role-based sources, compact generated userscript.
+Tampermonkey userscript hiding YouTube comments by channel identity. `v1.5.1` retains `v0.6.x` safety, settings, pair-maintenance fixes; improves separate settings dialog, regex auto-add, debug counters, pair tools, quota guidance, paged regex matches, role-based sources, compact generated userscript.
 
 Quick install:
 
@@ -258,7 +258,7 @@ Notes:
 ## Userscript Metadata
 
 - `@name`: `YouTube Comment Blocker`
-- `@version`: `1.5.0`
+- `@version`: `1.5.1`
 - `@match`: `https://www.youtube.com/*`
 - `@grant`: `GM_getValue`, `GM_setValue`, `GM_addValueChangeListener`, `GM_registerMenuCommand`, `GM_unregisterMenuCommand`
 
