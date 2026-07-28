@@ -14,7 +14,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); projec
 
 ### Changed
 
-- None
+- Indexed pair metadata by handle to keep repeated status lookups responsive for large block lists.
 
 ### Deprecated
 

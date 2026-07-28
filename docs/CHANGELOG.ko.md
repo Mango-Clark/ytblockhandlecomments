@@ -15,7 +15,7 @@
 
 ### Changed
 
-- 없음
+- 큰 차단 목록의 반복 상태 조회가 느려지지 않도록 pair 메타데이터를 handle 기준으로 색인.
 
 ### Deprecated
 

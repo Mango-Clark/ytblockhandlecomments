@@ -18,6 +18,29 @@ function createService() {
 	};
 }
 
+test('pair lookup index stays synchronized with state changes', () => {
+	const { api } = loadUserscript();
+	const settings = new api.AppSettingsStorage();
+	const pairStore = new api.PairMetaStorage(settings);
+	pairStore.upsertPair({
+		handle: '@alpha', uid: 'UC1234567890', verifiedAt: Date.now(), status: 'verified', source: 'test'
+	});
+	assert.equal(pairStore.getPair('@ALPHA')?.uid, 'UC1234567890');
+
+	settings.setHandleCaseSensitive(true);
+	assert.equal(pairStore.getPair('@ALPHA'), null);
+	assert.equal(pairStore.getPair('@alpha')?.uid, 'UC1234567890');
+
+	pairStore.setAllLocal({
+		version: 1,
+		pairs: [{ handle: '@beta', uid: 'UC0987654321', verifiedAt: Date.now(), status: 'verified', source: 'test' }]
+	});
+	assert.equal(pairStore.getPair('@alpha'), null);
+	assert.equal(pairStore.getPair('@beta')?.uid, 'UC0987654321');
+	pairStore.removePair('@beta');
+	assert.equal(pairStore.getPair('@beta'), null);
+});
+
 test('default pair update skips fresh verified pairs', async () => {
 	const { storage, pairStore, service } = createService();
 	storage.addHandle('@alpha');

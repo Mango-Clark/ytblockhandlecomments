@@ -18,7 +18,10 @@ import {
 			this.settings = settings;
 			this.KEY = 'pair_meta_v1';
 			this._lastSaveError = null;
+			this._pairIndex = new Map();
+			this._pairIndexCaseSensitive = null;
 			this._state = this._init();
+			this._rebuildPairIndex();
 		}
 		_getGM(key: string, def: any) { try { return GM_getValue(key, def); } catch { return def; } }
 		_setGM(key: string, val: any) {
@@ -86,6 +89,18 @@ import {
 		_init() {
 			return this._normalizeState(this._getGM(this.KEY, null));
 		}
+		_rebuildPairIndex() {
+			const caseSensitive = this.settings?.isHandleCaseSensitive?.() || false;
+			this._pairIndex = new Map(this._state.pairs.map((pair: PairRecord) => [
+				getHandleCompareKey(pair.handle, caseSensitive),
+				pair
+			]));
+			this._pairIndexCaseSensitive = caseSensitive;
+		}
+		_setLocalState(state: any) {
+			this._state = state;
+			this._rebuildPairIndex();
+		}
 		_statesEqual(a: any, b: any) {
 			if (a === b) return true;
 			if (!a || !b) return false;
@@ -112,18 +127,18 @@ import {
 		_saveState(nextState: any) {
 			const normalized = this._normalizeState(nextState);
 			if (this._statesEqual(this._state, normalized)) {
-				this._state = normalized;
+				this._setLocalState(normalized);
 				return this.getState();
 			}
 			if (!this._setGM(this.KEY, normalized)) return this.getState();
-			this._state = normalized;
+			this._setLocalState(normalized);
 			return this.getState();
 		}
 		getState() {
 			return { ...this._state, pairs: this._state.pairs.map((pair: PairRecord) => ({ ...pair })) };
 		}
 		setAllLocal(state: any) {
-			this._state = this._normalizeState(state);
+			this._setLocalState(this._normalizeState(state));
 			return this.getState();
 		}
 		refreshStatuses() {
@@ -154,11 +169,11 @@ import {
 			return this._state.pairs.map((pair: PairRecord) => ({ ...pair }));
 		}
 		getPair(handle: any): PairRecord | null {
-			const normalized = getHandleCompareKey(handle, this.settings?.isHandleCaseSensitive?.() || false);
+			const caseSensitive = this.settings?.isHandleCaseSensitive?.() || false;
+			if (this._pairIndexCaseSensitive !== caseSensitive) this._rebuildPairIndex();
+			const normalized = getHandleCompareKey(handle, caseSensitive);
 			if (!normalized) return null;
-			return this._state.pairs.find((pair: PairRecord) =>
-				getHandleCompareKey(pair.handle, this.settings?.isHandleCaseSensitive?.() || false) === normalized
-			) || null;
+			return this._pairIndex.get(normalized) || null;
 		}
 		upsertPair(pair: any) {
 			const normalized = this._normalizePair(pair);
