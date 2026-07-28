@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { getMasterFastForwardInstructions, parseReleaseOptions, releaseChangelog, releaseFiles, releasePushCommands, removeCompletedTodoItems } from '../scripts/bump-version.ts';
+import { assertVersionNotDowngraded, compareVersions, getMasterFastForwardInstructions, parseReleaseOptions, releaseChangelog, releaseFiles, releasePushCommands, removeCompletedTodoItems } from '../scripts/bump-version.ts';
 
 const makeChangelog = (emptyEntry: string) => `# Changelog
 
@@ -93,4 +93,11 @@ test('release stages templates and generated files, then pushes tag', () => {
 		['push', 'origin', 'dev'],
 		['push', 'origin', 'v1.5.1']
 	]);
+});
+
+test('version downgrade needs explicit force option', () => {
+	assert.ok(compareVersions('1.5.1', '1.5.0') > 0);
+	assert.equal(compareVersions('1.5.0', '1.5.0'), 0);
+	assert.throws(() => assertVersionNotDowngraded('1.4.9', '1.5.0'), /Version downgrade blocked/);
+	assert.doesNotThrow(() => assertVersionNotDowngraded('1.4.9', '1.5.0', true));
 });

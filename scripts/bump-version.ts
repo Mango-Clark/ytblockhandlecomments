@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
-import { documentOutputs } from './build-userscript.ts';
+import { documentOutputs, readVersion } from './build-userscript.ts';
 
 const __dirname = path.dirname(path.resolve(process.argv[1] || 'scripts/bump-version.ts'));
 const root = path.resolve(__dirname, '..');
@@ -19,6 +19,21 @@ export const parseReleaseOptions = (args: string[] = process.argv): ReleaseOptio
 	pushMaster: args.includes('--push-master')
 });
 
+export const compareVersions = (left: string, right: string): number => {
+	const leftParts = left.split('.').map(Number);
+	const rightParts = right.split('.').map(Number);
+	for (let index = 0; index < leftParts.length; index += 1) {
+		if (leftParts[index] !== rightParts[index]) return leftParts[index] - rightParts[index];
+	}
+	return 0;
+};
+
+export const assertVersionNotDowngraded = (target: string, current: string, force = false): void => {
+	if (!force && compareVersions(target, current) < 0) {
+		throw new Error(`Version downgrade blocked: ${target} is lower than ${current}. Use --force-version to override.`);
+	}
+};
+
 type VersionFile = {
 	path: string;
 	writeOnly?: boolean;
@@ -28,6 +43,7 @@ type VersionFile = {
 const CHANGELOG_SECTIONS = ['Added', 'Changed', 'Deprecated', 'Removed', 'Fixed', 'Security'];
 const versionTag = version ? `v${version}` : '';
 const releaseOptions = parseReleaseOptions();
+const forceVersion = process.argv.includes('--force-version');
 export const releaseFiles = [
 	'VERSION',
 	'src/00-userscript-header.ts',
@@ -158,9 +174,10 @@ const fastForwardMaster = () => {
 
 const main = () => {
 	if (!version) {
-		console.error('Usage: npm run bump:version -- <MAJOR.MINOR.PATCH> [--check] [--ff-master] [--push-master]');
+		console.error('Usage: npm run bump:version -- <MAJOR.MINOR.PATCH> [--check] [--force-version] [--ff-master] [--push-master]');
 		process.exit(1);
 	}
+	assertVersionNotDowngraded(version, readVersion(), forceVersion);
 	if (!check) {
 		const status = runGit(['status', '--porcelain'], 'pipe').trim();
 		if (status) throw new Error('Working tree must be clean before bumping version.');

@@ -18,6 +18,7 @@ Run from repository root:
 npm run build
 npm run check:build
 npm run bump:version -- 1.2.1
+npm run bump:version -- 1.2.1 -- --check
 npm run typecheck
 ```
 
@@ -44,7 +45,7 @@ Pass exactly one semantic version in `MAJOR.MINOR.PATCH` format:
 npm run bump:version -- 1.3.0
 ```
 
-npm `--` forwards version argument to `scripts/bump-version.ts`. No leading `v`; use `1.3.0`, not `v1.3.0`.
+No leading `v`; use `1.3.0`, not `v1.3.0`. With an option after version, npm 12 requires a second `--` before that option so npm forwards it to `scripts/bump-version.ts`.
 
 Normal run checks out `dev`, changes release files, then pushes completed release commit and matching tag to `origin`.
 
@@ -53,7 +54,7 @@ Normal run checks out `dev`, changes release files, then pushes completed releas
 Use `--ff-master` to fast-forward local `master` to completed `dev` release. Use `--push-master` to fast-forward + push to `origin/master`:
 
 ```powershell
-npm run bump:version -- 1.3.0 --push-master
+npm run bump:version -- 1.3.0 -- --push-master
 ```
 
 Before file changes, script verifies `master` is ancestor of `dev`. Otherwise aborts without merge/rebase and prints manual Git commands to resolve branch relationship.
@@ -63,7 +64,7 @@ Before file changes, script verifies `master` is ancestor of `dev`. Otherwise ab
 Use `--check` to verify version references already updated without writing, building, committing, or tagging:
 
 ```powershell
-npm run bump:version -- 1.3.0 --check
+npm run bump:version -- 1.3.0 -- --check
 ```
 
 Success when no version update needed; error when managed files contain older version. Skips completed TODO removal, done only during real release bump.
@@ -74,7 +75,7 @@ Before normal run:
 
 1. Confirm clean worktree with `git status --short`.
 2. Confirm target tag absent with `git tag --list "v<version>"`.
-3. Confirm requested version is intended release.
+3. Confirm requested version is intended release; lower versions fail unless `--force-version` is passed.
 
 Script stops before file changes if worktree dirty or target tag exists. Missing expected version reference also stops run.
 
@@ -91,7 +92,7 @@ On success, script:
 7. Pushes release commit to `origin/dev` and tag to `origin`.
 8. With `--ff-master`, fast-forwards local `master` from `dev`; with `--push-master`, fast-forwards + pushes to `origin/master`.
 
-Command never pushes release tag. Master promotion opt-in; never merges or rebases.
+To intentionally allow a lower target version, pass `--force-version` after the second separator: `npm run bump:version -- 1.4.9 -- --force-version`. Master promotion remains opt-in; command never merges or rebases.
 
 Release commit:
 
@@ -113,4 +114,4 @@ git push origin v<MAJOR.MINOR.PATCH>
 - Keep scripts deterministic, rerunnable, worktree-safe.
 - Update focused tests when script behavior changes.
 - Run relevant tests, `npm run typecheck`, + `npm run check:build` after changes.
-- Do not commit generated output or local tool state unless explicitly required.
+- Commit generated userscript + documentation outputs with their source/template changes; never commit local tool state.
