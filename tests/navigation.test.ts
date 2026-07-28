@@ -219,3 +219,67 @@ test('page-data and history navigation events schedule page-key synchronization'
 
 	assert.equal(schedules, 3);
 });
+
+test('cross-tab listeners ignore local value changes', () => {
+	const { api, context } = loadUserscript();
+	const listeners = new Map<string, (...args: any[]) => void>();
+	context.GM_addValueChangeListener = (key: string, listener: (...args: any[]) => void) => {
+		listeners.set(key, listener);
+	};
+	let refreshes = 0;
+	const app = Object.assign(Object.create(api.App.prototype), {
+		storage: { mergeRemote: () => { throw new Error('unexpected block-list sync'); } },
+		pairStore: { setAllLocal: () => { throw new Error('unexpected pair sync'); } },
+		apiConfig: { setAllLocal: () => { throw new Error('unexpected API config sync'); } },
+		settings: { setAllLocal: () => { throw new Error('unexpected settings sync'); } },
+		refreshAfterStorageChange: () => { refreshes += 1; },
+		refreshLanguageUi: () => { throw new Error('unexpected language sync'); }
+	});
+
+	app._syncAcrossTabs();
+
+	assert.deepEqual(Array.from(listeners.keys()), [
+		'blocked_v2',
+		'pair_meta_v1',
+		'youtube_data_api_v3_config',
+		'app_settings_v1',
+		'lang'
+	]);
+	for (const [key, listener] of listeners) listener(key, null, {}, false);
+	assert.equal(refreshes, 0);
+});
+
+test('cross-tab listeners apply remote state before refreshing UI', () => {
+	const { api, context } = loadUserscript();
+	const listeners = new Map<string, (...args: any[]) => void>();
+	context.GM_addValueChangeListener = (key: string, listener: (...args: any[]) => void) => {
+		listeners.set(key, listener);
+	};
+	const calls: string[] = [];
+	const app = Object.assign(Object.create(api.App.prototype), {
+		storage: { mergeRemote: (value: any) => { calls.push(`blocked:${value.items[0].value}`); } },
+		pairStore: { setAllLocal: (value: any) => { calls.push(`pairs:${value.pairs[0].handle}`); } },
+		apiConfig: { setAllLocal: (value: any) => { calls.push(`api:${value.apiKey}`); } },
+		settings: { setAllLocal: (value: any) => { calls.push(`settings:${value.dislikeMode}`); } },
+		refreshAfterStorageChange: () => { calls.push('refresh'); },
+		refreshLanguageUi: () => { calls.push('language'); }
+	});
+
+	app._syncAcrossTabs();
+	listeners.get('blocked_v2')?.('', null, {
+		version: 2,
+		items: [{ type: 'handle', value: '@remote' }]
+	}, true);
+	listeners.get('pair_meta_v1')?.('', null, { pairs: [{ handle: '@remote' }] }, true);
+	listeners.get('youtube_data_api_v3_config')?.('', null, { apiKey: 'remote-key' }, true);
+	listeners.get('app_settings_v1')?.('', null, { dislikeMode: 'always' }, true);
+	listeners.get('lang')?.('', null, 'en', true);
+
+	assert.deepEqual(calls, [
+		'blocked:@remote', 'refresh',
+		'pairs:@remote', 'refresh',
+		'api:remote-key', 'refresh',
+		'settings:always', 'refresh',
+		'language'
+	]);
+});
