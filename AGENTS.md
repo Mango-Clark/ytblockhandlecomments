@@ -13,9 +13,9 @@ Substantial child/shared workflow change: add concise parent summary.
 - Implementation-rule change: update this file + all affected child `AGENTS.md` same patch.
 
 - Use `dev` unless user says otherwise.
-- Update `README.md` first, then `README.ko.md`.
-- Behavior/storage change: update `docs/WIKI.md` first, then `docs/WIKI.ko.md`.
-- Update `docs/CHANGELOG.md` first, then `docs/CHANGELOG.ko.md`.
+- Update `src/docs/README.md` first, then `src/docs/README.ko.md`; run build to generate root README files.
+- Behavior/storage change: update `src/docs/docs/WIKI.md` first, then Korean pair; run build.
+- Update `src/docs/docs/CHANGELOG.md` first, then Korean pair; run build.
 - Apply [DavidAnson/markdownlint](https://github.com/DavidAnson/markdownlint) rules to every changed `*.md`, including changelogs, README/WIKI, TODO, and `AGENTS.md` files.
 - After every `*.md` change, run `npm run lint:markdown`; sync `.markdownlint.json` and `.markdownlintignore` with project doc rules.
 - Review every `*.md` after code changes.
@@ -23,7 +23,7 @@ Substantial child/shared workflow change: add concise parent summary.
 - Bump `VERSION` or package manifest only when explicitly instructed + shipping user-visible change.
 - For mechanical version/docs references, use `npm run bump:version -- <MAJOR.MINOR.PATCH>`.
 - For version update, build, commit, and matching tag `vMAJOR.MINOR.PATCH`, run `npm run bump:version -- <MAJOR.MINOR.PATCH>`.
-- Check `docs/TODO.md`. Mark done items. On version bump, remove old done items.
+- Check `src/docs/docs/TODO.md`. Mark done items. On version bump, remove old done items.
 - Source/generated userscript/Tampermonkey rules: see `src/AGENTS.md`.
 - Run ESLint via project-local binary, e.g. `.\node_modules\.bin\eslint.cmd .` on Windows.
 - Never git-track local-only ESLint setup/install outputs unless requested.
@@ -47,7 +47,7 @@ Substantial child/shared workflow change: add concise parent summary.
 - Clear branch names: `feature/<slug>`, `fix/<slug>`, `docs/<slug>`.
 - Release tags: `vMAJOR.MINOR.PATCH`, e.g. `v0.6.0`.
 - Keep release tag naming consistent; never mix `0.6.0` and `v0.6.0`.
-- `docs/TODO.md`-only changes exempt from git push requirement.
+- `src/docs/docs/TODO.md`-only changes exempt from git push requirement.
 - Validate with `git status` and `git diff --stat`.
 
 ## Changelog

@@ -24,8 +24,14 @@ declare module 'node:child_process' {
 }
 
 declare module 'node:fs' {
+	type DirectoryEntry = {
+		name: string;
+		isDirectory(): boolean;
+	};
 	const fs: {
+		existsSync(path: string): boolean;
 		readFileSync(path: string, encoding: string): string;
+		readdirSync(path: string, options: { withFileTypes: true }): DirectoryEntry[];
 		writeFileSync(path: string, data: string, encoding: string): void;
 	};
 	export default fs;
@@ -35,6 +41,7 @@ declare module 'node:path' {
 	const path: {
 		dirname(value: string): string;
 		join(...parts: string[]): string;
+		relative(from: string, to: string): string;
 		resolve(...parts: string[]): string;
 	};
 	export default path;

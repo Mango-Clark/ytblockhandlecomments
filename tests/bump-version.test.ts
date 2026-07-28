@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { getMasterFastForwardInstructions, parseReleaseOptions, releaseChangelog, removeCompletedTodoItems } from '../scripts/bump-version.ts';
+import { getMasterFastForwardInstructions, parseReleaseOptions, releaseChangelog, releaseFiles, releasePushCommands, removeCompletedTodoItems } from '../scripts/bump-version.ts';
 
 const makeChangelog = (emptyEntry: string) => `# Changelog
 
@@ -83,4 +83,14 @@ test('completed TODO items remove their indented acceptance details', () => {
 	const result = removeCompletedTodoItems(`## Done\n\n- [x] Finished item\n\n  - (1) Acceptance detail\n  - (2) Another detail\n\n- [ ] Open item\n\n  - Keep this detail\n`);
 
 	assert.equal(result, `## Done\n\n- [ ] Open item\n\n  - Keep this detail\n`);
+});
+
+test('release stages templates and generated files, then pushes tag', () => {
+	assert.ok(releaseFiles.includes('VERSION'));
+	assert.ok(releaseFiles.includes('src/docs/docs/CHANGELOG.md'));
+	assert.ok(releaseFiles.includes('docs/CHANGELOG.md'));
+	assert.deepEqual(releasePushCommands('v1.5.1'), [
+		['push', 'origin', 'dev'],
+		['push', 'origin', 'v1.5.1']
+	]);
 });

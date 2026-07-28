@@ -5,6 +5,7 @@
 - Preserve userscript compatibility + storage/API contracts.
 - User-facing text: align English/Korean translations.
 - Edit `src/`; run `npm run build`; verify root `ytblockhandlecomments.js` with `npm run check:build`.
+- Documentation templates live in `src/docs/`; edit them, never generated root README or `docs/*.md` files.
 - Tampermonkey loads generated root `ytblockhandlecomments.js`; commit with changed `src/` files.
 - Behavior change: update tests; inspect async, cross-tab, repeated-navigation behavior.
 - UI/UX change: before implementation, add/update TODO with affected view + verification criteria.

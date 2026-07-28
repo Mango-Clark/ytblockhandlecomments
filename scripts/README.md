@@ -6,8 +6,8 @@ Run all commands from repository root. Scripts use installed project tools + cur
 
 ## Files
 
-- `build-userscript.ts`: bundles `src/14-bootstrap.ts`; writes root `ytblockhandlecomments.js` userscript.
-- `bump-version.ts`: updates version references + changelogs, removes completed TODO items, builds userscript, commits release, creates matching `vMAJOR.MINOR.PATCH` tag.
+- `build-userscript.ts`: reads `VERSION`, bundles `src/14-bootstrap.ts`, and generates userscript + Markdown outputs from `src/docs/` templates.
+- `bump-version.ts`: updates `VERSION`, release templates, builds generated files, commits release, creates + pushes matching `vMAJOR.MINOR.PATCH` tag.
 - `tsconfig.json`: TypeScript config for scripts.
 
 ## Commands
@@ -21,18 +21,18 @@ npm run bump:version -- 1.2.1
 npm run typecheck
 ```
 
-`npm run build` writes generated userscript. `npm run check:build` builds in memory; fails when `ytblockhandlecomments.js` outdated. `npm run typecheck` checks main source + script/test TypeScript configs.
+`npm run build` writes generated userscript + Markdown files. `npm run check:build` builds in memory; fails when any generated output is outdated. `npm run typecheck` checks main source + script/test TypeScript configs.
 
 ## Build Workflow
 
-`build-userscript.ts` uses `src/14-bootstrap.ts` as bundle entry. Generated file goes to repository root because Tampermonkey loads `ytblockhandlecomments.js`, not individual `src/` files.
+`build-userscript.ts` reads the one-line `VERSION` file. It uses `src/14-bootstrap.ts` as bundle entry and replaces `{{version}}` in userscript source + `src/docs/` Markdown templates. `src/docs/README*.md` generates root README files; `src/docs/docs/*.md` generates matching `docs/*.md` files. `docs/AGENTS.md` remains direct-managed.
 
 After source changes:
 
 1. Run `npm run build`.
 2. Run `npm run check:build` to verify generated file sync.
 3. Run relevant tests + `npm run typecheck`.
-4. Commit source + generated userscript changes together.
+4. Commit source templates + generated userscript/document changes together.
 
 ## Release Bump
 
@@ -46,7 +46,7 @@ npm run bump:version -- 1.3.0
 
 npm `--` forwards version argument to `scripts/bump-version.ts`. No leading `v`; use `1.3.0`, not `v1.3.0`.
 
-Normal run checks out `dev`, changes release files, then pushes completed release commit to `origin/dev`. Release tag not pushed.
+Normal run checks out `dev`, changes release files, then pushes completed release commit and matching tag to `origin`.
 
 ### Master Promotion
 
@@ -82,13 +82,13 @@ Script stops before file changes if worktree dirty or target tag exists. Missing
 
 On success, script:
 
-1. Updates source version constants + README/WIKI version references.
-2. Moves current changelog `Unreleased` entries into new release section; creates fresh empty `Unreleased` section.
-3. Removes completed entries from `docs/TODO.md`.
-4. Builds `ytblockhandlecomments.js`.
-5. Stages explicit version, documentation, TODO, + generated userscript files.
+1. Updates `VERSION`.
+2. Moves current `src/docs/docs/CHANGELOG*.md` `Unreleased` entries into new release section; creates fresh empty `Unreleased` section.
+3. Removes completed entries from `src/docs/docs/TODO.md`.
+4. Builds userscript + generated Markdown files.
+5. Stages explicit version, templates, generated documentation, TODO, + userscript files.
 6. Creates release commit + `v<version>` tag.
-7. Pushes release commit to `origin/dev`.
+7. Pushes release commit to `origin/dev` and tag to `origin`.
 8. With `--ff-master`, fast-forwards local `master` from `dev`; with `--push-master`, fast-forwards + pushes to `origin/master`.
 
 Command never pushes release tag. Master promotion opt-in; never merges or rebases.

@@ -1,5 +1,7 @@
 # Docs Rules
 
+Generated user docs: root `README*.md` + `docs/*.md` come from matching `src/docs/` templates via `npm run build`. Edit templates only; `docs/AGENTS.md` stays direct-managed.
+
 - Implementation-rule changes: update root + affected child `AGENTS.md` together.
 
 ## Common
@@ -15,18 +17,18 @@
 
 ## README
 
-- Update `README.md` before `README.ko.md`.
+- Update `src/docs/README.md` before `src/docs/README.ko.md`, then run build.
 - Feature descriptions match implementation; never claim incomplete workflows.
 
 ## WIKI
 
-- Update `WIKI.md` before `WIKI.ko.md` for behavior/storage changes.
+- Update `src/docs/docs/WIKI.md` before Korean pair for behavior/storage changes, then run build.
 - Document user behavior, storage effects, config constraints.
 - Exclude reference-only implementation details from README.
 
 ## Changelog
 
-- Update `CHANGELOG.md` before `CHANGELOG.ko.md`.
+- Update `src/docs/docs/CHANGELOG.md` before Korean pair, then run build.
 - Use Keep a Changelog sections: `Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, and `Security`.
 - Keep `Unreleased` top; use `YYYY-MM-DD` dates.
 - Record user-visible changes; omit routine formatting/internal-only edits.

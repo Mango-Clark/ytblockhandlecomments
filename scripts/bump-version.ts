@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
+import { documentOutputs } from './build-userscript.ts';
 
 const __dirname = path.dirname(path.resolve(process.argv[1] || 'scripts/bump-version.ts'));
 const root = path.resolve(__dirname, '..');
@@ -18,7 +19,6 @@ export const parseReleaseOptions = (args: string[] = process.argv): ReleaseOptio
 	pushMaster: args.includes('--push-master')
 });
 
-type Replacement = [RegExp, string, string];
 type VersionFile = {
 	path: string;
 	writeOnly?: boolean;
@@ -28,28 +28,19 @@ type VersionFile = {
 const CHANGELOG_SECTIONS = ['Added', 'Changed', 'Deprecated', 'Removed', 'Fixed', 'Security'];
 const versionTag = version ? `v${version}` : '';
 const releaseOptions = parseReleaseOptions();
-const versionFiles = [
+export const releaseFiles = [
+	'VERSION',
 	'src/00-userscript-header.ts',
 	'src/02-utils-i18n.ts',
-	'README.md',
-	'README.ko.md',
-	'docs/WIKI.md',
-	'docs/WIKI.ko.md',
-	'docs/CHANGELOG.md',
-	'docs/CHANGELOG.ko.md',
-	'docs/TODO.md',
+	...documentOutputs.map(file => `src/docs/${file}`),
+	...documentOutputs,
 	'ytblockhandlecomments.js'
 ];
 
-const replaceRequired = (text: string, pattern: RegExp, replacement: string, label: string): string => {
-	if (!pattern.test(text)) throw new Error(`Missing version target: ${label}`);
-	return text.replace(pattern, replacement);
-};
-
-const replaceAllRequired = (text: string, replacements: Replacement[], file: string): string => replacements.reduce(
-	(current, [pattern, replacement, label]) => replaceRequired(current, pattern, replacement, `${file} ${label}`),
-	text
-);
+export const releasePushCommands = (tag: string): string[][] => [
+	['push', 'origin', 'dev'],
+	['push', 'origin', tag]
+];
 
 export const buildFreshUnreleased = (file: string): string => {
 	const emptyEntry = file.endsWith('.ko.md') ? '없음' : 'None';
@@ -99,56 +90,19 @@ export const releaseChangelog = (text: string, file: string, releaseVersion = ve
 
 const files: VersionFile[] = [
 	{
-		path: 'src/00-userscript-header.ts',
-		replace: (text) => replaceRequired(text, /(\/\/ @version\s+)\d+\.\d+\.\d+/, `$1${version}`, '@version')
+		path: 'VERSION',
+		replace: () => `${version}\n`
 	},
 	{
-		path: 'src/02-utils-i18n.ts',
-		replace: (text) => replaceRequired(text, /(FALLBACK_SCRIPT_VERSION = ')\d+\.\d+\.\d+(')/, `$1${version}$2`, 'FALLBACK_SCRIPT_VERSION')
+		path: 'src/docs/docs/CHANGELOG.md',
+		replace: (text) => releaseChangelog(text, 'src/docs/docs/CHANGELOG.md')
 	},
 	{
-		path: 'README.md',
-		replace: (text) => replaceAllRequired(text, [
-			[/(# .+ \u2014 )v\d+\.\d+\.\d+/, `$1v${version}`, 'title'],
-			[/(`)v\d+\.\d+\.\d+(` keeps)/, `$1v${version}$2`, 'intro'],
-			[/(`@version`: `)\d+\.\d+\.\d+(`)/, `$1${version}$2`, '@version']
-		], 'README.md')
+		path: 'src/docs/docs/CHANGELOG.ko.md',
+		replace: (text) => releaseChangelog(text, 'src/docs/docs/CHANGELOG.ko.md')
 	},
 	{
-		path: 'README.ko.md',
-		replace: (text) => replaceAllRequired(text, [
-			[/(# .+ \u2014 )v\d+\.\d+\.\d+/, `$1v${version}`, 'title'],
-			[/(`)v\d+\.\d+\.\d+(`은)/, `$1v${version}$2`, 'intro'],
-			[/(`)v\d+\.\d+\.\d+(`에서도)/, `$1v${version}$2`, 'import-export note'],
-			[/(`@version`: `)\d+\.\d+\.\d+(`)/, `$1${version}$2`, '@version']
-		], 'README.ko.md')
-	},
-	{
-		path: 'docs/WIKI.md',
-		replace: (text) => replaceAllRequired(text, [
-			[/(# .+ \u2014 )v\d+\.\d+\.\d+/, `$1v${version}`, 'title'],
-			[/(`@version`: `)\d+\.\d+\.\d+(`)/, `$1${version}$2`, '@version'],
-			[/(After `)v\d+\.\d+\.\d+(`)/, `$1v${version}$2`, 'post-version note']
-		], 'docs/WIKI.md')
-	},
-	{
-		path: 'docs/WIKI.ko.md',
-		replace: (text) => replaceAllRequired(text, [
-			[/(# .+ \u2014 )v\d+\.\d+\.\d+/, `$1v${version}`, 'title'],
-			[/(`@version`: `)\d+\.\d+\.\d+(`)/, `$1${version}$2`, '@version'],
-			[/(`)v\d+\.\d+\.\d+(` 이후에는)/, `$1v${version}$2`, 'post-version note']
-		], 'docs/WIKI.ko.md')
-	},
-	{
-		path: 'docs/CHANGELOG.md',
-		replace: (text) => releaseChangelog(text, 'docs/CHANGELOG.md')
-	},
-	{
-		path: 'docs/CHANGELOG.ko.md',
-		replace: (text) => releaseChangelog(text, 'docs/CHANGELOG.ko.md')
-	},
-	{
-		path: 'docs/TODO.md',
+		path: 'src/docs/docs/TODO.md',
 		writeOnly: true,
 		replace: removeCompletedTodoItems
 	}
@@ -244,12 +198,12 @@ const main = () => {
 			cwd: root,
 			stdio: 'inherit'
 		});
-		runGit(['add', ...versionFiles]);
+		runGit(['add', ...releaseFiles]);
 		runGit(['commit', '-m', `chore: bump version to ${version}`]);
 		runGit(['tag', versionTag]);
-		runGit(['push', 'origin', 'dev']);
+		for (const command of releasePushCommands(versionTag)) runGit(command);
 		fastForwardMaster();
-		console.log(`Bumped ${version}, committed, tagged ${versionTag}, and pushed origin/dev.`);
+		console.log(`Bumped ${version}, committed, tagged ${versionTag}, and pushed origin/dev + tag.`);
 	}
 };
 
