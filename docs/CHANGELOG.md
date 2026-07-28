@@ -30,7 +30,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); projec
 
 ### Security
 
-- None
+- Forced patched `brace-expansion` and `js-yaml` versions in development tooling.
 
 ## [1.5.0] - 2026-07-18
 
