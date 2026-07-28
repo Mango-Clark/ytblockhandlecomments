@@ -27,6 +27,7 @@ import {
 			this.apiConfig = apiConfig;
 			this.settings = settings;
 			this._busy = false;
+			this._idlePromise = null;
 			this._handleLookupCache = new Map();
 		}
 		getBlockedHandles() {
@@ -172,20 +173,10 @@ import {
 			return this._processHandles(handles || [], { update: true });
 		}
 		async _processHandles(handles: any[], { update = false } = {}): Promise<PairRunStats> {
-			if (this._busy) return {
-				created: 0,
-				refreshed: 0,
-				mismatches: 0,
-				failed: 0,
-				addedIds: 0,
-				skipped: handles.length,
-				items: (handles || []).map(handle => ({
-					handle: sanitizeHandle(handle) || String(handle || ''),
-					outcome: 'skipped',
-					message: 'busy'
-				}))
-			};
+			while (this._busy) await this._idlePromise;
 			this._busy = true;
+			let resolveIdle: () => void = () => {};
+			this._idlePromise = new Promise<void>(resolve => { resolveIdle = resolve; });
 			const stats: PairRunStats = {
 				created: 0,
 				refreshed: 0,
@@ -319,6 +310,8 @@ import {
 				}
 			} finally {
 				this._busy = false;
+				this._idlePromise = null;
+				resolveIdle();
 				this.pairStore.setLastPairCheckAt(Date.now());
 				this.pairStore.refreshStatuses();
 			}

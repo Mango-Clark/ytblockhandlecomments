@@ -307,7 +307,7 @@ Pair 결과:
 
 - `GM_setting` 참고 카테고리 목록 레이아웃. 작업 그룹별 제목/컨트롤/짧은 도움말.
 - 중첩 dialog의 Escape/Enter/Tab/backdrop은 최상위 dialog만 처리. 닫을 때 이전 element로 focus 복원.
-- API test/pair 작업은 `finally`로 loading control 복구. 동시 수동·keyword pair 요청은 busy skip 대신 현재 실행 공유.
+- API test/pair 작업은 `finally`로 loading control 복구. 동시 수동 요청은 현재 실행을 공유하고, 자동 요청은 건너뛰지 않고 실행 종료까지 대기.
 - debug metrics: page mode, comments host·extraction failure counter, 최근 selector reason. 댓글 본문/URL/API 키/계정 정보 제외.
 - 변경 자동 저장 안내.
 - 컨트롤 구분: 매칭, 댓글 표시, 키워드 자동 처리, 로그, 표시 크기, 유지보수.

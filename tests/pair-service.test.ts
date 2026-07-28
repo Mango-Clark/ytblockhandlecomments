@@ -246,6 +246,33 @@ test('manual pair requests share an in-flight run instead of reporting a busy sk
 	assert.equal(app._pairRunPromise, null);
 });
 
+test('automatic pair requests wait for an in-flight pair run', async () => {
+	const { storage, pairStore, service } = createService();
+	storage.addHandle('@alpha');
+	storage.addHandle('@beta');
+	let releaseFirst: () => void = () => {};
+	let resolveCalls = 0;
+	service.resolveHandle = async (handle: string) => {
+		resolveCalls += 1;
+		if (handle === '@alpha') await new Promise<void>(resolve => { releaseFirst = resolve; });
+		return {
+			uid: handle === '@alpha' ? 'UC1234567890' : 'UC0987654321',
+			source: 'youtube-channel-page'
+		};
+	};
+
+	const first = service.createPairsForHandles(['@alpha']);
+	const second = service.createPairsForHandles(['@beta']);
+	await Promise.resolve();
+	assert.equal(resolveCalls, 1);
+	releaseFirst();
+
+	assert.equal((await first).created, 1);
+	assert.equal((await second).created, 1);
+	assert.equal(resolveCalls, 2);
+	assert.equal(pairStore.getPair('@beta')?.uid, 'UC0987654321');
+});
+
 test('api config tracks repeated quota failures for guidance', () => {
 	const { api } = loadUserscript();
 	const apiConfig = new api.ApiConfigStorage();

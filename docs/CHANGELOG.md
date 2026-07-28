@@ -26,7 +26,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); projec
 
 ### Fixed
 
-- None
+- Prevented automatic UID-pair creation from being skipped when another pair operation is running.
 
 ### Security
 

@@ -27,7 +27,7 @@
 
 ### Fixed
 
-- 없음
+- 다른 pair 작업 실행 중 자동 UID pair 생성 요청이 건너뛰어지는 문제 수정.
 
 ### Security
 

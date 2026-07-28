@@ -307,7 +307,7 @@ Settings dialog:
 
 - Category-list layout inspired by `GM_setting`: task groups have title, controls, brief help
 - Nested dialogs route Escape, Enter, Tab, and backdrop actions to top dialog only; close restores opener focus
-- API tests/pair actions use `finally` cleanup. Concurrent manual/keyword pair requests share active run instead of success-like busy skip.
+- API tests/pair actions use `finally` cleanup. Concurrent manual requests share the active run; automatic requests wait for it instead of being skipped.
 - Debug metrics include page mode, comments-host/extraction failure counters, latest selector reason; exclude comment text, URLs, API keys, account data
 - Intro note: changes auto-save
 - Groups: matching, comment display, keyword automation, logging, display size, maintenance
