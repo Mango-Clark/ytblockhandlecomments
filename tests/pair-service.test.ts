@@ -296,6 +296,28 @@ test('automatic pair requests wait for an in-flight pair run', async () => {
 	assert.equal(pairStore.getPair('@beta')?.uid, 'UC0987654321');
 });
 
+test('bulk pair lookup limits concurrency and preserves handle order', async () => {
+	const { storage, service } = createService();
+	const handles = Array.from({ length: 12 }, (_: unknown, index: number) => `@handle${index}`);
+	for (const handle of handles) storage.addHandle(handle);
+	let active = 0;
+	let maxActive = 0;
+	service.resolveHandle = async (handle: string) => {
+		const index = handles.indexOf(handle);
+		active += 1;
+		maxActive = Math.max(maxActive, active);
+		await new Promise(resolve => setTimeout(resolve, handles.length - index));
+		active -= 1;
+		return { uid: `UC${String(index).padStart(10, '0')}`, source: 'youtube-data-api-v3' };
+	};
+
+	const stats = await service.createPairsForHandles(handles);
+
+	assert.equal(maxActive, 8);
+	assert.equal(stats.items.map((item: { handle: string }) => item.handle).join(','), handles.join(','));
+	assert.equal(stats.created, handles.length);
+});
+
 test('api config tracks repeated quota failures for guidance', () => {
 	const { api } = loadUserscript();
 	const apiConfig = new api.ApiConfigStorage();

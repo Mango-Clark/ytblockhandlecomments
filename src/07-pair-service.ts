@@ -16,6 +16,8 @@ import {
 	type StorageLike
 } from './02-utils-i18n.ts';
 
+const PAIR_LOOKUP_CONCURRENCY = 8;
+
 	/* ----------------------------------------------------------
 	 * 6. Pair resolution and policy
 	 * ---------------------------------------------------------- */
@@ -188,15 +190,23 @@ import {
 			};
 			const uniqueHandles: string[] = [];
 			const seen = new Set<string>();
+			const caseSensitive = this.settings?.isHandleCaseSensitive?.() || false;
 			for (const handle of handles || []) {
-				const key = getHandleCompareKey(handle, this.settings?.isHandleCaseSensitive?.() || false);
+				const key = getHandleCompareKey(handle, caseSensitive);
 				const value = sanitizeHandle(handle);
 				if (!key || !value || seen.has(key)) continue;
 				seen.add(key);
 				uniqueHandles.push(value);
 			}
 			try {
-				for (const handle of uniqueHandles) {
+				let nextHandleIndex = 0;
+				const itemOrder = new Map(uniqueHandles.map((handle, index) => [
+					getHandleCompareKey(handle, caseSensitive),
+					index
+				]));
+				const processNextHandle = async () => {
+					while (nextHandleIndex < uniqueHandles.length) {
+						const handle = uniqueHandles[nextHandleIndex++];
 					const existing = this.pairStore.getPair(handle);
 					const checkStoredUid = update && !!existing?.uid && !!this.settings?.isPairUpdateUidCheckEnabled?.();
 					const lookupHandle = !update || !existing?.uid || this.settings?.isPairUpdateHandleLookupEnabled?.() !== false;
@@ -307,7 +317,16 @@ import {
 						resolvedUid: existing?.lastResolvedUid || undefined,
 						message
 					});
-				}
+					}
+				};
+				await Promise.all(Array.from(
+					{ length: Math.min(PAIR_LOOKUP_CONCURRENCY, uniqueHandles.length) },
+					() => processNextHandle()
+				));
+				stats.items.sort((a, b) => {
+					return (itemOrder.get(getHandleCompareKey(a.handle, caseSensitive)) ?? Number.MAX_SAFE_INTEGER)
+						- (itemOrder.get(getHandleCompareKey(b.handle, caseSensitive)) ?? Number.MAX_SAFE_INTEGER);
+				});
 			} finally {
 				this._busy = false;
 				this._idlePromise = null;

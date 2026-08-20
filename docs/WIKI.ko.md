@@ -261,6 +261,7 @@ API 호출 최소화:
 - 새 handle 추가 즉시 조회가 기본. Settings에서 비활성화 가능.
 - pair 갱신에서 저장 UID 확인/handle 재조회 각각 선택. 하나는 항상 켬.
 - 선택 handle bulk `Update Pair`는 명시적 사용자 요청. fresh여도 재조회.
+- bulk pair 실행은 handle 조회를 최대 8개까지 동시에 처리하고 결과 목록의 입력 순서를 유지.
 - watch pair 검토 알림은 `나중에` 선택 또는 최근 pair 검사 후 같은 stale 주기 동안 숨김.
 
 ## 6. 관리자 대화상자

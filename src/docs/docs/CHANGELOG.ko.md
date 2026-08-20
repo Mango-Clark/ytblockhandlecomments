@@ -15,7 +15,7 @@
 
 ### Changed
 
-- 없음
+- bulk handle→channel ID pair 조회를 제한된 동시 요청으로 처리하고 결과 순서를 유지.
 
 ### Deprecated
 
@@ -58,7 +58,6 @@
 ### Security
 
 - 개발 도구에서 패치된 `brace-expansion`, `js-yaml` 버전을 강제.
-
 
 ## [1.5.0] - 2026-07-18
 

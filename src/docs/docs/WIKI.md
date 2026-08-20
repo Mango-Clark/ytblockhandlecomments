@@ -261,6 +261,7 @@ API minimization:
 - New handles resolve immediately by default; Settings can disable.
 - Pair update independently supports stored UID verification and handle re-resolution; at least one always enabled.
 - Selected-handle bulk `Update Pair` explicitly refreshes selected handles even when fresh.
+- Bulk pair runs process up to eight handle lookups concurrently while preserving input order in the result list.
 - Watch-page pair review prompts suppressed for same stale interval after `Later` or recent pair check.
 
 ## 6. Manager Dialog
