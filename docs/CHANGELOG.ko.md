@@ -15,6 +15,32 @@
 
 ### Changed
 
+- 없음
+
+### Deprecated
+
+- 없음
+
+### Removed
+
+- 없음
+
+### Fixed
+
+- 없음
+
+### Security
+
+- 없음
+
+## [1.5.2] - 2026-08-20
+
+### Added
+
+- 없음
+
+### Changed
+
 - bulk handle→channel ID pair 조회를 제한된 동시 요청으로 처리하고 결과 순서를 유지.
 
 ### Deprecated
@@ -32,6 +58,7 @@
 ### Security
 
 - 없음
+
 
 ## [1.5.1] - 2026-07-28
 

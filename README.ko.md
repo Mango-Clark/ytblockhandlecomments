@@ -1,11 +1,11 @@
-# 📌 YouTube Comment Blocker — v1.5.1
+# 📌 YouTube Comment Blocker — v1.5.2
 
 [English](README.md) | [한국어](README.ko.md)
 
 상세: [WIKI.md](docs/WIKI.md) | [WIKI.ko.md](docs/WIKI.ko.md)
 
 채널 식별자 기반 YouTube 댓글 숨김 Tampermonkey 스크립트.
-기본 handle 차단. `v1.5.1`: `v0.6.x` 안전성·설정·pair 유지보수 수정 유지 + 별도 설정 창 개선, regex 자동 추가, debug counter, pair 결과 도구, quota 안내, 페이지별 regex 매칭 목록, 역할별 소스, 압축 userscript 추가.
+기본 handle 차단. `v1.5.2`: `v0.6.x` 안전성·설정·pair 유지보수 수정 유지 + 별도 설정 창 개선, regex 자동 추가, debug counter, pair 결과 도구, quota 안내, 페이지별 regex 매칭 목록, 역할별 소스, 압축 userscript 추가.
 
 빠른 설치: raw URL을 Tampermonkey로 열어 설치·업데이트
 
@@ -206,7 +206,7 @@ Pair 메타 저장소:
 - 기본 `fontSizeLevel`·`uiScaleLevel`: `3`; `2`는 이전 크기.
 - 유효한 `blocked_v2` 없을 때만 레거시 `blockedHandles`, `blockedHandles_v1` 자동 migration. 이후 삭제·전체 초기화 뒤 legacy 복원 안 함.
 - 탭 간 `blocked_v2` 동기화는 항목별 revision·tombstone 사용. 동시 추가 병합, 추가/삭제/전체 초기화 충돌 결정론적 수렴.
-- `v1.5.1`도 pair 메타데이터를 import/export에서 제외.
+- `v1.5.2`도 pair 메타데이터를 import/export에서 제외.
 - API 키는 Tampermonkey 로컬 저장소에만 저장, 스크립트 코드 제외.
 
 ---
@@ -258,7 +258,7 @@ Pair 메타 저장소:
 ## 사용자 스크립트 메타데이터
 
 - `@name`: `YouTube Comment Blocker`
-- `@version`: `1.5.1`
+- `@version`: `1.5.2`
 - `@match`: `https://www.youtube.com/*`
 - `@grant`: `GM_getValue`, `GM_setValue`, `GM_addValueChangeListener`, `GM_registerMenuCommand`, `GM_unregisterMenuCommand`
 
