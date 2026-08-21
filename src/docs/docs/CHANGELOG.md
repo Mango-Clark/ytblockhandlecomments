@@ -26,7 +26,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); projec
 
 ### Fixed
 
-- None
+- Prevented the userscript from running inside YouTube `/embed*` player frames on external sites.
 
 ### Security
 
@@ -57,7 +57,6 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); projec
 ### Security
 
 - None
-
 
 ## [1.5.1] - 2026-07-28
 

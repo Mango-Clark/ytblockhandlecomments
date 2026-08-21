@@ -44,6 +44,8 @@ Supported comment-hiding page modes:
 - `watch`
 - `shorts`
 
+YouTube `/embed*` player documents are excluded by userscript metadata, so external embedded players do not start the script.
+
 Comment-host discovery observes matching watch/Shorts root only. Host checks batched per frame; stop after 20 failed mutation batches. Navigation/new page key resets budget.
 
 For Shorts, observer attaches to nearest non-comment panel around comment roots, never single comment renderer, keeping sibling comments/replies in scope during panel updates.

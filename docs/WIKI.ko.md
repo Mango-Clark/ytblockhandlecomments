@@ -44,6 +44,8 @@ watch/Shorts 페이지 YouTube 댓글을 채널 식별자로 숨기는 사용자
 - `watch`
 - `shorts`
 
+YouTube `/embed*` player 문서는 userscript metadata에서 제외하므로 외부 embedded player에서 스크립트를 시작하지 않음.
+
 일치하는 watch/Shorts root만 관찰. frame당 host 확인 묶음. 실패 mutation batch 20회 후 중단. navigation/새 page key에서 재시도 budget 초기화.
 
 Shorts는 comment root 주변 가장 가까운 non-comment panel 관찰. panel 갱신 후 형제 댓글·reply도 계속 관찰.

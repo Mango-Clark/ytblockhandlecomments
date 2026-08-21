@@ -16,5 +16,7 @@ test('build generates userscript and all document outputs', async () => {
 	assert.ok(outputPaths.some(file => file.endsWith('/ytblockhandlecomments.js')));
 	for (const output of documentOutputs) assert.ok(outputPaths.some(file => file.endsWith(`/${output}`)));
 	for (const file of files) assert.doesNotMatch(file.content, /\{\{version\}\}/);
-	assert.match(files.find(file => file.path.endsWith('ytblockhandlecomments.js'))?.content || '', versionPattern);
+	const userscript = files.find(file => file.path.endsWith('ytblockhandlecomments.js'))?.content || '';
+	assert.match(userscript, versionPattern);
+	assert.match(userscript, /^\/\/ @exclude\s+https:\/\/www\.youtube\.com\/embed\*$/m);
 });

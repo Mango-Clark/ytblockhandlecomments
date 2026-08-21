@@ -27,7 +27,7 @@
 
 ### Fixed
 
-- 없음
+- 외부 사이트의 YouTube `/embed*` player frame에서 userscript가 실행되지 않도록 수정.
 
 ### Security
 
@@ -58,7 +58,6 @@
 ### Security
 
 - 없음
-
 
 ## [1.5.1] - 2026-07-28
 

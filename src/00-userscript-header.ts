@@ -8,6 +8,7 @@
 // @downloadURL  https://raw.githubusercontent.com/Mango-Clark/ytblockhandlecomments/refs/heads/master/ytblockhandlecomments.js
 // @author       Mango_Clark
 // @match        https://www.youtube.com/*
+// @exclude      https://www.youtube.com/embed*
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_addValueChangeListener
