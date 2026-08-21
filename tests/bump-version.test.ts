@@ -46,6 +46,7 @@ test('releaseChangelog resets English Unreleased sections without duplicates', (
 	assert.doesNotMatch(unreleased, /Added feature/);
 	assert.doesNotMatch(unreleased, /- None\n- None/);
 	assert.match(result, /## \[0.2.0\] - 2026-06-24\n\n### Added\n\n- Added feature\n\n### Changed/);
+	assert.doesNotMatch(result, /\n\n\n## \[0.1.0\]/);
 });
 
 test('releaseChangelog resets Korean Unreleased sections with Korean empty text', () => {

@@ -100,7 +100,7 @@ export const releaseChangelog = (text: string, file: string, releaseVersion = ve
 	if (!match) throw new Error(`Missing Unreleased section: ${file}`);
 	const unreleasedBody = cleanReleaseBody(match[1].trimEnd());
 	const freshUnreleased = buildFreshUnreleased(file);
-	const releaseSection = `## [${version}] - ${releaseDate}\n${unreleasedBody}\n\n`;
+	const releaseSection = `## [${version}] - ${releaseDate}\n${unreleasedBody}\n`;
 	return text.slice(0, match.index) + freshUnreleased + '\n\n' + releaseSection + text.slice(match.index + match[0].length);
 };
 
