@@ -274,6 +274,7 @@ import type { I18nBundle } from '../02-utils-i18n.ts';
 			searchLabel: '검색',
 			searchPlaceholder: 'handle, id, regex 검색',
 			searchNoMatches: '검색 결과가 없습니다.',
+			resetFilters: '필터 초기화',
 			tagFilterLabel: '태그',
 			selectVisible: '현재 목록 전체 선택',
 			selectedCount: (n) => `선택 ${n}개`,

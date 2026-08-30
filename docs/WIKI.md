@@ -281,6 +281,8 @@ Rule-list tools:
 - Case-insensitive substring search on display labels
 - Type filters: `all`, `handle`, `id`, `regex`
 - Handle-tag filters: `handle-only`, `paired`, `stale`, `mismatch`, `unverified`
+- Same-page restoration of search, filters, valid selections, and scroll position after visiting adjacent manager dialogs
+- One-click filter reset that preserves the current selection
 - Row selection, visible select-all, bulk actions
 - Counter: `selected / visible / total`
 

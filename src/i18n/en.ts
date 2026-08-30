@@ -274,6 +274,7 @@ import type { I18nBundle } from '../02-utils-i18n.ts';
 			searchLabel: 'Search',
 			searchPlaceholder: 'Search handle, id, regex',
 			searchNoMatches: 'No search results.',
+			resetFilters: 'Reset filters',
 			tagFilterLabel: 'Tags',
 			selectVisible: 'Select all visible',
 			selectedCount: (n) => `Selected ${n}`,

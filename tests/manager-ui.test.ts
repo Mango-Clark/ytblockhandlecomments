@@ -110,8 +110,10 @@ test('i18n dictionaries provide Korean and English labels', () => {
 	const { api, setLang } = loadUserscript();
 
 	assert.equal(api.t('close'), '닫기');
+	assert.equal(api.t('resetFilters'), '필터 초기화');
 	setLang('en');
 	assert.equal(api.t('close'), 'Close');
+	assert.equal(api.t('resetFilters'), 'Reset filters');
 });
 
 test('settings dialog updates auto-dislike mode', () => {
@@ -691,6 +693,66 @@ test('settings and block list dialogs can open each other', () => {
 	openSettingsButton.click();
 	assert.equal(document.querySelectorAll('.tm-dialog').length, 1);
 	assert.ok(document.querySelectorAll('.tm-dialog').some((dialog: any) => dialog.textContent.includes('표시 크기')));
+});
+
+test('block list restores view state, resets filters, and prunes stale selections', () => {
+	const { api, document } = loadUserscript();
+	const settings = new api.AppSettingsStorage();
+	const storage = new api.StorageV2(settings);
+	const pairStore = new api.PairMetaStorage(settings);
+	const apiConfig = new api.ApiConfigStorage();
+	const manager = new api.BlockListManager({
+		settings,
+		storage,
+		pairStore,
+		apiConfig,
+		pairService: new api.PairService(storage, pairStore, apiConfig, settings),
+		getLastPairRunResult: () => null,
+		refreshAfterStorageChange: () => {}
+	});
+	storage.setAll([
+		{ type: 'handle', value: '@alpha' },
+		{ type: 'regex', value: '^@promo', flags: 'i' }
+	]);
+
+	manager.openList();
+	let search = document.querySelector('[data-manager-filter="search"]');
+	let type = document.querySelector('[data-manager-filter="type"]');
+	let handleOnly = document.querySelector('[data-manager-tag="handle-only"]');
+	search.value = 'alpha';
+	search.dispatchEvent({ type: 'input' });
+	type.value = 'handle';
+	type.dispatchEvent({ type: 'change' });
+	handleOnly.checked = true;
+	handleOnly.dispatchEvent({ type: 'change' });
+	document.querySelector('.tm-item-check').checked = true;
+	document.querySelector('.tm-item-check').dispatchEvent({ type: 'change' });
+	document.querySelector('.tm-content').scrollTop = 180;
+
+	const openSettings = document.querySelectorAll('button').find((button: any) => button.textContent === '설정 열기');
+	openSettings.click();
+	const openList = document.querySelectorAll('button').find((button: any) => button.textContent === '차단 목록 열기');
+	openList.click();
+	search = document.querySelector('[data-manager-filter="search"]');
+	type = document.querySelector('[data-manager-filter="type"]');
+	handleOnly = document.querySelector('[data-manager-tag="handle-only"]');
+	assert.equal(search.value, 'alpha');
+	assert.equal(type.value, 'handle');
+	assert.equal(handleOnly.checked, true);
+	assert.equal(document.querySelector('.tm-item-check').checked, true);
+	assert.equal(document.querySelector('.tm-content').scrollTop, 180);
+
+	const resetFilters = document.querySelectorAll('button').find((button: any) => button.textContent === '필터 초기화');
+	resetFilters.click();
+	assert.equal(search.value, '');
+	assert.equal(type.value, 'all');
+	assert.equal(handleOnly.checked, false);
+	assert.equal(document.querySelector('.tm-item-check').checked, true);
+
+	storage.remove({ type: 'handle', value: '@alpha' });
+	api.Dialog.closeAll('navigate');
+	manager.openList();
+	assert.equal(manager._listViewState.selection.length, 0);
 });
 
 test('settings dialog uses grouped task list layout', () => {

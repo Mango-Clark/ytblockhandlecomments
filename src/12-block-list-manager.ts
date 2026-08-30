@@ -31,6 +31,13 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 		[key: string]: any;
 		constructor(app: AppLike) {
 			this.app = app;
+			this._listViewState = {
+				searchQuery: '',
+				typeFilter: 'all',
+				tagFilters: [],
+				selection: [],
+				scrollTop: 0
+			};
 		}
 		_makeBadge(code: string) {
 			const badge = document.createElement('span');
@@ -1236,14 +1243,18 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 		}
 		openList() {
 			this.app.pairStore.refreshStatuses();
+			const savedViewState = this._listViewState || {};
+			const validTypeFilters = new Set(['all', 'handle', 'id', 'regex']);
+			const validTagFilters = new Set(['handle-only', 'paired', 'stale', 'mismatch', 'unverified']);
 			const wrap = document.createElement('div');
-			const selection = new Set();
-			const tagFilters = new Set();
+			const selection = new Set<string>(Array.isArray(savedViewState.selection) ? savedViewState.selection : []);
+			const tagFilters = new Set<string>((Array.isArray(savedViewState.tagFilters) ? savedViewState.tagFilters : [])
+				.filter((code: string) => validTagFilters.has(code)));
 			const expandedRegexKeys = new Set();
 			const showAllRegexKeys = new Map();
 			let busy = false;
 			let apiTestBusy = false;
-			let searchQuery = '';
+			let searchQuery = String(savedViewState.searchQuery || '');
 			let searchRenderFrame: number | null = null;
 			let isComposingSearch = false;
 			const isBusy = () => busy;
@@ -1386,9 +1397,12 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			const searchLabel = document.createElement('label');
 			const searchInput = document.createElement('input');
 			searchInput.type = 'search';
+			searchInput.dataset.managerFilter = 'search';
+			searchInput.value = searchQuery;
 			const searchNote = document.createElement('div');
 			searchNote.className = 'tm-search-note';
 			const typeSelect = document.createElement('select');
+			typeSelect.dataset.managerFilter = 'type';
 			[
 				['all', ''],
 				['handle', ''],
@@ -1400,7 +1414,9 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				option.textContent = label;
 				typeSelect.appendChild(option);
 			});
-			topRight.append(searchLabel, searchInput, typeLabel, typeSelect);
+			typeSelect.value = validTypeFilters.has(savedViewState.typeFilter) ? savedViewState.typeFilter : 'all';
+			const resetFiltersBtn = Object.assign(document.createElement('button'), { className: 'secondary' });
+			topRight.append(searchLabel, searchInput, typeLabel, typeSelect, resetFiltersBtn);
 			topToolbarRow.append(topLeft, topRight);
 			const middleToolbarRow = document.createElement('div');
 			middleToolbarRow.className = 'tm-toolbar-row';
@@ -1438,9 +1454,12 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				const label = document.createElement('label');
 				const input = document.createElement('input');
 				input.type = 'checkbox';
+				input.dataset.managerTag = code;
+				input.checked = tagFilters.has(code);
 				input.addEventListener('change', () => {
 					if (input.checked) tagFilters.add(code);
 					else tagFilters.delete(code);
+					persistViewState();
 					invalidateViewState({ clearRegex: true });
 					renderList();
 				});
@@ -1485,6 +1504,15 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			let baseViewStateCache: BlockListBaseViewState | null = null;
 			let viewStateCache: BlockListViewState | null = null;
 			let selectionVersion = 0;
+			const persistViewState = (scrollTop = this._listViewState?.scrollTop || 0) => {
+				this._listViewState = {
+					searchQuery,
+					typeFilter: typeSelect.value || 'all',
+					tagFilters: Array.from(tagFilters),
+					selection: Array.from(selection),
+					scrollTop: Math.max(0, Number(scrollTop) || 0)
+				};
+			};
 			const getCurrentItems = () => this.app.storage.all();
 			const getStatusCode = (item: BlockItem, blockedIds: Set<string> | null = null) => item.type === 'handle'
 				? this.app.pairService.getHandleStatus(item.value, blockedIds).code
@@ -1492,6 +1520,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			const markSelectionChanged = () => {
 				selectionVersion += 1;
 				viewStateCache = null;
+				persistViewState();
 			};
 			const setSelectionValue = (key: string | null, selected: boolean) => {
 				if (!key) return false;
@@ -1913,6 +1942,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				masterText.textContent = t('selectVisible');
 				searchLabel.textContent = t('searchLabel');
 				searchInput.placeholder = t('searchPlaceholder');
+				resetFiltersBtn.textContent = t('resetFilters');
 				typeLabel.textContent = t('typeFilterLabel');
 				typeSelect.options[0].textContent = t('typeAll');
 				typeSelect.options[1].textContent = t('typeHandle');
@@ -1950,6 +1980,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			});
 			searchInput.addEventListener('input', () => {
 				searchQuery = searchInput.value || '';
+				persistViewState();
 				if (isComposingSearch || searchRenderFrame != null) return;
 				searchRenderFrame = requestAnimationFrame(() => {
 					searchRenderFrame = null;
@@ -1963,6 +1994,17 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				searchInput.dispatchEvent(new Event('input'));
 			});
 			typeSelect.addEventListener('change', () => {
+				persistViewState();
+				invalidateViewState({ clearRegex: true });
+				renderList();
+			});
+			resetFiltersBtn.addEventListener('click', () => {
+				searchQuery = '';
+				searchInput.value = '';
+				typeSelect.value = 'all';
+				tagFilters.clear();
+				tagInputs.forEach(({ input }) => { input.checked = false; });
+				persistViewState();
 				invalidateViewState({ clearRegex: true });
 				renderList();
 			});
@@ -2064,7 +2106,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			});
 
 			applyLanguage();
-			Dialog.show({
+			const dialogResult = Dialog.show({
 				title: t('manageTitle', this.app.storage.all().length),
 				body: wrap,
 				buttons: [
@@ -2078,8 +2120,15 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 					ctx.buttons[1].textContent = t('export');
 					ctx.buttons[2].textContent = t('close');
 					applyLanguage();
+				},
+				onBeforeClose: (value, dialog) => {
+					persistViewState(dialog.querySelector('.tm-content')?.scrollTop || 0);
+					return value;
 				}
-			}).then(v => {
+			});
+			const content = wrap.parentElement;
+			if (content) content.scrollTop = Math.max(0, Number(savedViewState.scrollTop) || 0);
+			dialogResult.then(v => {
 				if (v === 'import') this.importList();
 				else if (v === 'export') this.exportList();
 			});

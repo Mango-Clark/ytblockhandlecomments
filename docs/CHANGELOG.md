@@ -14,7 +14,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); projec
 
 ### Changed
 
-- None
+- Preserved block-list search, filters, valid selections, and scroll position across adjacent manager dialogs, with a one-click filter reset.
 
 ### Deprecated
 

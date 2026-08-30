@@ -281,6 +281,8 @@ API 호출 최소화:
 - display label 기준 case-insensitive substring 검색
 - 타입 필터: `all`, `handle`, `id`, `regex`
 - handle 태그 필터: `handle-only`, `paired`, `stale`, `mismatch`, `unverified`
+- 같은 페이지에서 인접 관리자 창 방문 후 검색·필터·유효한 선택·스크롤 위치 복원
+- 현재 선택을 유지하는 원클릭 필터 초기화
 - row 선택, 보이는 결과 전체 선택, bulk action
 - `selected / visible / total` 카운터
 
