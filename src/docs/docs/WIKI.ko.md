@@ -199,7 +199,7 @@ API 설정:
 - YouTube 테마 동기화는 YouTube 자체 다크 상태 신호만 관찰.
 - 테마 탐색은 `ytd-app` 발견 시 중단. YouTube 모드에서 body 직계 child 변경 중 `ytd-app` 교체만 확인. 댓글/피드 mutation은 app 재탐색 안 함.
 - 로그 기본 꺼짐. 파일 로그는 삭제 전까지 Tampermonkey 저장소에 보관. 다운로드 시간은 UTC ISO 형식이며 위치는 브라우저 설정 따름.
-- 기존 배열 로그는 다음 쓰기 때 메모리에서 version 2로 migration. 같은 turn의 항목은 한 번에 쓰고 상태/다운로드는 대기 항목을 즉시 반영.
+- 기존 배열 로그는 고정 길이 deterministic ID를 받은 뒤 다음 쓰기 때 메모리에서 version 2로 migration하여 긴 항목의 reload·탭 간 병합 중복을 방지. 같은 turn의 항목은 한 번에 쓰고 상태/다운로드는 대기 항목을 즉시 반영.
 - 탭 간 로그 추가는 항목 revision으로 병합. 삭제 revision이 오래된 원격 항목 복원을 막고 보관 수 감소는 즉시 trim.
 - Tampermonkey가 권한/용량/저장소 문제로 설정, 차단 목록, pair 메타데이터, API 키, 로그 쓰기 거부 시 메모리 상태도 유지. 성공 알림 대신 오류/재시도 안내.
 - console 로그 기본 prefix `[YTCB]`; 시간 표시 꺼짐. preset은 확장·basic calendar date, week date, ordinal date, time 지원. 직접 ISO 형식은 `yyyy`, `yy`, `MM`, `dd`, `DDD`, `ww`, `e`, `HH`, `mm`, `ss`, `SSS`, `X`, `XXX`, `Z`, `T`, `W` 조합. basic/extended time과 timezone token 동시 사용 가능. timezone: system, `-12`~`+14` UTC offset, 목록 IANA 도시, 검증된 직접 IANA/KST식 약어.

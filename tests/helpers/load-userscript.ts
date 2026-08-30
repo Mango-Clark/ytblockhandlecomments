@@ -13,6 +13,7 @@ type TestContext = {
 	[key: string]: any;
 };
 type AnimationFrameCallback = (time: number) => void;
+type GMValueChangeListener = (key: string, oldValue: unknown, newValue: unknown, remote: boolean) => void;
 
 class FakeMutationObserver {
 	[key: string]: any;
@@ -61,6 +62,7 @@ export function loadUserscript(options: LoadOptions = {}) {
 	const hook: TestContext = { skipBootstrap: true };
 	const location = new URL(options.url || 'https://www.youtube.com/watch?v=video-a');
 	const windowListeners = new Map<string, Set<(event: any) => void>>();
+	const gmValueListeners = new Map<string, GMValueChangeListener[]>();
 	let perfNow = 0;
 
 	const context: TestContext = {
@@ -101,7 +103,12 @@ export function loadUserscript(options: LoadOptions = {}) {
 		GM_info: { script: { version: '0.5.1-test' } },
 		GM_getValue: (key: string, fallback: unknown) => (gmStore.has(key) ? gmStore.get(key) : fallback),
 		GM_setValue: (key: string, value: unknown) => options.gmSetValue ? options.gmSetValue(key, value) : gmStore.set(key, value),
-		GM_addValueChangeListener: () => 0,
+		GM_addValueChangeListener: (key: string, listener: GMValueChangeListener) => {
+			const listeners = gmValueListeners.get(key) || [];
+			listeners.push(listener);
+			gmValueListeners.set(key, listeners);
+			return listeners.length;
+		},
 		GM_registerMenuCommand: () => 1,
 		GM_unregisterMenuCommand: () => {},
 		__YT_BLOCK_TEST_HOOK__: hook
@@ -119,6 +126,11 @@ export function loadUserscript(options: LoadOptions = {}) {
 		context,
 		document,
 		gmStore,
+		dispatchGMValueChange: (key: string, value: unknown, listenerIndex?: number) => {
+			const listeners = gmValueListeners.get(key) || [];
+			const selected = listenerIndex == null ? listeners : listeners.slice(listenerIndex, listenerIndex + 1);
+			for (const listener of selected) listener(key, gmStore.get(key), value, true);
+		},
 		setLang: (lang: string) => context.GM_setValue('lang', lang),
 		setLocation: (href: string) => {
 			const next = new URL(href);

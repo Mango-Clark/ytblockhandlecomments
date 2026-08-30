@@ -421,36 +421,72 @@ test('console timestamp supports ISO calendar, week, ordinal, basic, and timezon
 	assert.equal(settings._isValidConsoleTimeFormat('yyyy-Woops'), false);
 });
 
-test('logger batches writes, trims immediately, and merges remote additions after legacy migration', () => {
+test('logger batches writes, trims immediately, and keeps legacy IDs stable after reload', () => {
 	let writes = 0;
 	let stored: any = null;
-	const { api } = loadUserscript({
+	const legacyMessage = `legacy-${'x'.repeat(700)}`;
+	const { api, gmStore, dispatchGMValueChange } = loadUserscript({
 		gmStore: {
-			yt_comment_blocker_logs_v1: [{ at: 1, level: 'warn', message: 'legacy' }]
+			yt_comment_blocker_logs_v1: [{ at: 1, level: 'warn', message: legacyMessage }]
 		},
 		gmSetValue: (_key, value) => { writes += 1; stored = value; }
 	});
 	const config = { fileEnabled: true, consoleEnabled: false, level: 'info', retention: 500 };
 	const settings = { getLogging: () => config, getVerboseLevel: () => 3 };
 	const left = new api.Logger(settings);
-	const right = new api.Logger(settings);
+	const stale = new api.Logger(settings);
+	assert.equal(left._state.entries[0].id, stale._state.entries[0].id);
+	assert.ok(left._state.entries[0].id.length < 160);
 	left.info('left');
 	left.info('left-2');
 	assert.equal(left.getEntries().length, 3);
 	assert.equal(writes, 1);
 	assert.equal(stored.version, 2);
-	right.info('right');
-	right.getEntries();
-	const rightState = right._state;
-	left._mergeRemote(rightState);
-	assert.deepEqual(Array.from(left.getEntries(), (entry: any) => entry.message).sort(), ['left', 'left-2', 'legacy', 'right']);
-	left.clear();
-	left._mergeRemote(rightState);
-	assert.equal(left.getEntries().length, 0);
+	gmStore.set('yt_comment_blocker_logs_v1', stored);
+	const reloaded = new api.Logger(settings);
+	dispatchGMValueChange('yt_comment_blocker_logs_v1', stale._state, 2);
+	assert.equal(reloaded._state.entries.filter((entry: any) => entry.revision.writer === 'legacy').length, 1);
 
 	for (let index = 0; index < 105; index += 1) left.info(`entry-${index}`);
 	assert.equal(left.trimToRetention(100), true);
 	assert.equal(left.getEntries().length, 100);
+});
+
+test('logger storage listeners converge two writers and preserve clear ordering', () => {
+	const { api, dispatchGMValueChange } = loadUserscript();
+	const config = { fileEnabled: true, consoleEnabled: false, level: 'info', retention: 500 };
+	const settings = { getLogging: () => config, getVerboseLevel: () => 3 };
+	const left = new api.Logger(settings);
+	const right = new api.Logger(settings);
+	const cloneState = (logger: any) => JSON.parse(JSON.stringify(logger._state));
+
+	left.info('left');
+	left.getEntries();
+	const leftOnly = cloneState(left);
+	right.info('right');
+	right.getEntries();
+	const rightOnly = cloneState(right);
+	dispatchGMValueChange('yt_comment_blocker_logs_v1', rightOnly, 0);
+	left.getEntries();
+	dispatchGMValueChange('yt_comment_blocker_logs_v1', leftOnly, 1);
+	right.getEntries();
+	dispatchGMValueChange('yt_comment_blocker_logs_v1', cloneState(right), 0);
+	dispatchGMValueChange('yt_comment_blocker_logs_v1', cloneState(left), 1);
+	left.getEntries();
+	right.getEntries();
+	assert.equal(left._serializeState(), right._serializeState());
+	assert.deepEqual(Array.from(left.getEntries(), (entry: any) => entry.message).sort(), ['left', 'right']);
+
+	const staleAdditions = cloneState(right);
+	left.clear();
+	const clearState = cloneState(left);
+	dispatchGMValueChange('yt_comment_blocker_logs_v1', clearState, 1);
+	dispatchGMValueChange('yt_comment_blocker_logs_v1', staleAdditions, 0);
+	dispatchGMValueChange('yt_comment_blocker_logs_v1', cloneState(right), 0);
+	left.getEntries();
+	right.getEntries();
+	assert.equal(left._serializeState(), right._serializeState());
+	assert.equal(left.getEntries().length, 0);
 });
 
 test('settings dialog saves validated console logging settings', () => {

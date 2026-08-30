@@ -60,6 +60,17 @@ export class Logger {
 		const writer = String(value?.writer || '').slice(0, 64);
 		return Number.isSafeInteger(counter) && counter >= 0 && writer ? { counter, writer } : { ...fallback };
 	}
+	_makeLegacyId(index: number, at: number, level: LogLevel, message: string, detail: string) {
+		const source = `${index}\u001f${at}\u001f${level}\u001f${message}\u001f${detail}`;
+		let left = 0x811c9dc5;
+		let right = 0x9e3779b9;
+		for (let offset = 0; offset < source.length; offset += 1) {
+			const code = source.charCodeAt(offset);
+			left = Math.imul(left ^ code, 0x01000193);
+			right = Math.imul(right ^ code, 0x85ebca6b);
+		}
+		return `legacy-${index}-${(left >>> 0).toString(36)}-${(right >>> 0).toString(36)}`;
+	}
 	_normalizeEntry(value: any, index: number, legacy = false): StoredLogEntry | null {
 		if (!value || typeof value !== 'object') return null;
 		const level = String(value.level) as LogLevel;
@@ -72,11 +83,11 @@ export class Logger {
 			? { counter: index + 1, writer: 'legacy' }
 			: this._normalizeRevision(value.revision);
 		if (!revision.writer) return null;
+		const detail = value.detail == null ? '' : String(value.detail).slice(0, 2048);
 		const id = legacy
-			? `legacy-${index}-${at}-${level}-${message}`
+			? this._makeLegacyId(index, at, level, message, detail)
 			: String(value.id || '').slice(0, 160);
 		if (!id) return null;
-		const detail = value.detail == null ? '' : String(value.detail).slice(0, 2048);
 		return { id, revision, at, level, message, ...(detail ? { detail } : {}) };
 	}
 	_normalizeState(raw: any): StoredLogState {

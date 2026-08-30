@@ -28,6 +28,7 @@
 
 ### Fixed
 
+- 기존 로그 ID를 고정 길이로 안정화하여 긴 migration 항목이 reload·탭 간 병합 후 중복되지 않도록 수정.
 - 실시간 로그 갱신을 로그 상태 컨트롤로 제한하여 관련 없는 dialog와 저장 전 설정 입력값이 다시 렌더링되지 않도록 수정.
 - 달력 경계의 ISO week-year와 IANA 시간대 ordinal/week timestamp 계산 수정.
 

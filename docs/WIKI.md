@@ -199,7 +199,7 @@ Notes:
 - YouTube-theme sync watches native YouTube dark-state signals only, not userscript theme classes.
 - Theme discovery stops after finding `ytd-app`; in YouTube mode, direct body-child changes only check `ytd-app` replacement, avoiding rediscovery from comment/feed mutations.
 - Logging off by default. File logs remain in Tampermonkey storage until clear; downloads use UTC ISO timestamps and the browser controls their location.
-- Legacy array logs migrate in memory to version 2 on the next write. Same-turn entries batch into one write; status/download still flush pending entries immediately.
+- Legacy array logs receive bounded deterministic IDs and migrate in memory to version 2 on the next write, preventing long entries from duplicating after reload or cross-tab merge. Same-turn entries batch into one write; status/download still flush pending entries immediately.
 - Cross-tab log additions merge by entry revision. Clear carries its own revision so stale remote entries do not return; retention reductions trim immediately.
 - Rejected settings, block-list, pair-metadata, API-key, or log writes leave in-memory state unchanged and show error, not success, enabling correction/retry.
 - Console logging defaults to `[YTCB]`, timestamps off. Presets: extended/basic calendar dates, week dates, ordinal dates, time. Custom ISO formats combine `yyyy`, `yy`, `MM`, `dd`, `DDD`, `ww`, `e`, `HH`, `mm`, `ss`, `SSS`, `X`, `XXX`, `Z`, `T`, and `W`; basic/extended time supports timezone tokens. Timezones: system, UTC offsets `-12`–`+14`, listed IANA cities, validated custom IANA or KST-style abbreviations.

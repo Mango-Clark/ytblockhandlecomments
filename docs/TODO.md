@@ -45,3 +45,10 @@
   - (1) Redact recognizable JWT, Google API key, and credential-shaped string values under generic fields.
   - (2) Keep ordinary diagnostic strings while continuing to omit fields whose names identify sensitive data.
   - (3) Describe field-name and value-shape redaction accurately in the English and Korean documentation.
+
+- [x] (E) Stabilize legacy log migration across storage listeners
+
+  - (0) `7510f825f47e7c346126aacbdae2051c896a9261`
+  - (1) Generate bounded deterministic IDs before legacy entries are written as version 2 state.
+  - (2) Prevent long legacy messages from becoming duplicate entries after reload and stale-state merge.
+  - (3) Verify real listener ordering, two-writer convergence, and stale additions after clear.
