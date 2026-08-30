@@ -27,6 +27,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); projec
 
 ### Fixed
 
+- Limited live log updates to logging status controls so unrelated dialogs and unsaved settings input are not refreshed.
 - Corrected ISO week-year and IANA-timezone ordinal/week timestamp calculations at calendar boundaries.
 
 ### Security

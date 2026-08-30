@@ -17,6 +17,7 @@ export class Logger {
 		this._lastSaveError = null;
 		this._writer = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 		this._writeScheduled = false;
+		this._changeListeners = new Set<() => void>();
 		this._state = this._normalizeState(this._getGM(this.KEY, []));
 		this._persistedState = this._state;
 		this._counter = this._getMaxCounter(this._state);
@@ -34,6 +35,15 @@ export class Logger {
 		catch (error) { this._lastSaveError = error; return false; }
 	}
 	getLastSaveError() { return this._lastSaveError; }
+	subscribe(listener: () => void) {
+		this._changeListeners.add(listener);
+		return () => this._changeListeners.delete(listener);
+	}
+	_notifyChange() {
+		for (const listener of this._changeListeners) {
+			try { listener(); } catch { }
+		}
+	}
 	_getConfig() { return this.settings.getLogging?.() || {}; }
 	_compareRevision(left: LogRevision, right: LogRevision) {
 		return left.counter - right.counter || left.writer.localeCompare(right.writer);
@@ -129,7 +139,7 @@ export class Logger {
 		});
 		if (this._serializeState(merged) === this._serializeState(this._state)) return false;
 		this._state = merged;
-		this.onChange?.();
+		this._notifyChange();
 		this._scheduleWrite();
 		return true;
 	}
@@ -265,7 +275,7 @@ export class Logger {
 			...(detailText ? { detail: detailText.slice(0, 2048) } : {})
 		};
 		this._state = this._limitState({ ...this._state, entries: [...this._state.entries, entry] }, config.retention);
-		this.onChange?.();
+		this._notifyChange();
 		this._scheduleWrite();
 	}
 	error(message: string, detail?: unknown) { this.log('error', message, detail); }
@@ -281,14 +291,14 @@ export class Logger {
 		if (next.entries.length === this._state.entries.length) return true;
 		this._state = next;
 		const saved = this._writeState();
-		if (saved) this.onChange?.();
+		if (saved) this._notifyChange();
 		return saved;
 	}
 	clear() {
 		this._writeScheduled = false;
 		this._state = { version: 2, clearRevision: this._nextRevision(), entries: [] };
 		const saved = this._writeState();
-		if (saved) this.onChange?.();
+		if (saved) this._notifyChange();
 		return saved;
 	}
 	getStatus() {

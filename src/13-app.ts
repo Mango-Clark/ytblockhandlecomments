@@ -41,7 +41,6 @@ import { Logger } from './15-logger.ts';
 			this.hider = new CommentHider(this.storage, this.pairStore, this.settings, (match: any) => this._handleKeywordMatch(match));
 			this.menu = new MenuEnhancer(this);
 			this.manager = new BlockListManager(this);
-			this.logger.onChange = () => Dialog.refreshAll();
 			this._menuCommandIds = [];
 			this._lastPairRunResult = null;
 			this._commentsHost = null;

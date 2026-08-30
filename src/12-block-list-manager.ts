@@ -928,6 +928,17 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				];
 				debugList.replaceChildren(...lines.map(([label, value]) => this._createMetaLine(t('debugMetric', label, value))));
 			};
+			const renderLoggingState = () => {
+				const logging = this.app.settings.getLogging();
+				consolePreview.textContent = this.app.logger?.getConsolePreview?.() || '';
+				const logState = this.app.logger?.getStatus?.() || { count: 0, last: null };
+				logStatus.textContent = logState.last
+					? t('loggingStatus', logState.count, logging.retention, formatDateTime(logState.last.at), String(logState.last.level).toUpperCase())
+					: t('loggingStatusEmpty', logging.retention);
+				testLogBtn.disabled = !this.app.logger || (!logging.fileEnabled && !logging.consoleEnabled);
+				downloadLogBtn.disabled = !logState.count;
+				clearLogBtn.disabled = !logState.count;
+			};
 			const renderAll = () => {
 				caseToggle.checked = this.app.settings.isHandleCaseSensitive();
 				autoToggle.checked = this.app.settings.isAutoAddRegexHandlesEnabled();
@@ -947,14 +958,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				consoleTimezoneInput.value = consoleTimezoneSelect.value === 'userinput' ? logging.consoleTimeZoneInput || logging.consoleTimeZone : '';
 				consoleTimezoneInput.hidden = consoleTimezoneSelect.value !== 'userinput';
 				consoleLoggingStatus.textContent = '';
-				consolePreview.textContent = this.app.logger?.getConsolePreview?.() || '';
-				const logState = this.app.logger?.getStatus?.() || { count: 0, last: null };
-				logStatus.textContent = logState.last
-					? t('loggingStatus', logState.count, logging.retention, formatDateTime(logState.last.at), String(logState.last.level).toUpperCase())
-					: t('loggingStatusEmpty', logging.retention);
-				testLogBtn.disabled = !this.app.logger || (!logging.fileEnabled && !logging.consoleEnabled);
-				downloadLogBtn.disabled = !logState.count;
-				clearLogBtn.disabled = !logState.count;
+				renderLoggingState();
 				verboseSelect.value = String(this.app.settings.getVerboseLevel());
 				dislikeSelect.value = this.app.settings.getDislikeMode();
 				blockModeSelect.value = this.app.settings.getCommentBlockMode();
@@ -1156,7 +1160,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			});
 			testLogBtn.addEventListener('click', () => {
 				if (!this.app.logger.testOutput()) { Toast.show(t('loggingTestDisabled')); return; }
-				renderAll();
+				renderLoggingState();
 				Toast.show(t('loggingTestWritten'));
 			});
 			downloadLogBtn.addEventListener('click', () => {
@@ -1179,7 +1183,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				});
 				if (!confirmed) return;
 				Toast.show(this.app.logger.clear() ? t('loggingCleared') : t('storageSaveFailed'));
-				renderAll();
+				renderLoggingState();
 			});
 			dislikeSelect.addEventListener('change', () => {
 				this.app.settings.setDislikeMode(dislikeSelect.value);
@@ -1293,7 +1297,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			createBtn.addEventListener('click', () => runPair('create'));
 			updateBtn.addEventListener('click', () => runPair('update'));
 			applyLanguage();
-			Dialog.show({
+			const settingsDialog = Dialog.show({
 				title: t('settingsTitle'),
 				body,
 				buttons: [{ label: t('close'), value: false, primary: true }],
@@ -1303,6 +1307,8 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 					applyLanguage();
 				}
 			});
+			const unsubscribeLogging = this.app.logger?.subscribe?.(renderLoggingState) || (() => {});
+			settingsDialog.then(() => unsubscribeLogging());
 		}
 		openList() {
 			this.app.pairStore.refreshStatuses();

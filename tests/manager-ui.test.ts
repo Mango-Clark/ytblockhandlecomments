@@ -210,6 +210,50 @@ test('logging settings show grouped status, preview, and test output controls', 
 	assert.equal(document.querySelectorAll('button').find((button: any) => button.textContent === '로그 파일 다운로드').disabled, true);
 });
 
+test('live log updates preserve draft settings and do not refresh unrelated dialogs', async () => {
+	const { api, document } = loadUserscript();
+	const settings = new api.AppSettingsStorage();
+	settings.setLogging({ fileEnabled: true, consoleEnabled: false, level: 'info' });
+	const logger = new api.Logger(settings);
+	const storage = new api.StorageV2(settings);
+	const pairStore = new api.PairMetaStorage(settings);
+	const apiConfig = new api.ApiConfigStorage();
+	const manager = new api.BlockListManager({
+		settings,
+		storage,
+		pairStore,
+		apiConfig,
+		logger,
+		pairService: new api.PairService(storage, pairStore, apiConfig, settings),
+		getLastPairRunResult: () => null,
+		refreshAfterStorageChange: () => {}
+	});
+
+	manager.openSettings();
+	const prefixInput = document.querySelectorAll('input').find((item: any) => item.dataset.setting === 'console-log-prefix');
+	const apiInput = document.querySelectorAll('input').find((item: any) => item.type === 'password');
+	prefixInput.value = '[UNSAVED]';
+	apiInput.value = 'unsaved-api-key';
+	let unrelatedRefreshes = 0;
+	api.Dialog.show({
+		title: 'Unrelated',
+		body: 'Unrelated',
+		buttons: [{ label: 'Close', value: false }],
+		onRefresh: () => { unrelatedRefreshes += 1; }
+	});
+
+	logger.info('live update');
+	assert.equal(prefixInput.value, '[UNSAVED]');
+	assert.equal(apiInput.value, 'unsaved-api-key');
+	assert.match(document.querySelector('.tm-settings-panel').textContent, /1\/500개 저장/);
+	assert.equal(unrelatedRefreshes, 1);
+	assert.equal(logger._changeListeners.size, 1);
+
+	api.Dialog.closeAll();
+	await Promise.resolve();
+	assert.equal(logger._changeListeners.size, 0);
+});
+
 test('comment menu item is idempotent and refreshes its blocked state', () => {
 	const { api, context, document } = loadUserscript();
 	context.addEventListener = () => {};
