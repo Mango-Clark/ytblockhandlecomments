@@ -38,3 +38,10 @@
   - (1) Preserve unsaved settings input while new local or remote logs arrive.
   - (2) Refresh only saved-log status, console preview, and logging action availability.
   - (3) Unsubscribe when the settings dialog closes and avoid refreshing unrelated dialogs.
+
+- [x] (D) Align diagnostic credential redaction with documentation
+
+  - (0) `10aee389949c4457d031bd9e1117df5d235d0753`
+  - (1) Redact recognizable JWT, Google API key, and credential-shaped string values under generic fields.
+  - (2) Keep ordinary diagnostic strings while continuing to omit fields whose names identify sensitive data.
+  - (3) Describe field-name and value-shape redaction accurately in the English and Korean documentation.

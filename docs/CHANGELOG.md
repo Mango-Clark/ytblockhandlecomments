@@ -32,7 +32,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); projec
 
 ### Security
 
-- Redacted sensitive string values in diagnostic payloads in addition to sensitive object keys.
+- Omitted sensitive diagnostic fields and redacted recognizable credential or identifier values, including JWTs and API-key-shaped strings.
 
 ## [1.5.3] - 2026-08-21
 

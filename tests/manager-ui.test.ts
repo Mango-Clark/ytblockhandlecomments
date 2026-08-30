@@ -381,6 +381,11 @@ test('logger redacts nested identifiers without leaking circular payloads', () =
 	assert.equal(detail.includes('private.example'), false);
 	assert.equal(detail.includes('person'), false);
 	assert.equal(logger._formatDetail({ value: '@private' }).includes('@private'), false);
+	assert.equal(logger._formatDetail({ value: 'AIzaSyA1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6' }).includes('AIza'), false);
+	assert.equal(logger._formatDetail({ value: 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJwcml2YXRlIn0.signature123' }).includes('eyJ'), false);
+	assert.equal(logger._formatDetail({ value: 'aB3dEfGhIjKlMnOpQrStUvWxYz012345' }).includes('aB3d'), false);
+	assert.equal(logger._formatDetail({ value: 'ordinary diagnostic text' }), '{"value":"ordinary diagnostic text"}');
+	assert.equal(logger._formatDetail({ comment: 'ordinary diagnostic text' }), '{}');
 	assert.match(detail, /"safe":true/);
 	assert.match(detail, /"visible":"ok"/);
 	assert.match(detail, /\[Circular\]/);

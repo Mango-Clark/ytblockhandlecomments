@@ -203,7 +203,7 @@ API 설정:
 - 탭 간 로그 추가는 항목 revision으로 병합. 삭제 revision이 오래된 원격 항목 복원을 막고 보관 수 감소는 즉시 trim.
 - Tampermonkey가 권한/용량/저장소 문제로 설정, 차단 목록, pair 메타데이터, API 키, 로그 쓰기 거부 시 메모리 상태도 유지. 성공 알림 대신 오류/재시도 안내.
 - console 로그 기본 prefix `[YTCB]`; 시간 표시 꺼짐. preset은 확장·basic calendar date, week date, ordinal date, time 지원. 직접 ISO 형식은 `yyyy`, `yy`, `MM`, `dd`, `DDD`, `ww`, `e`, `HH`, `mm`, `ss`, `SSS`, `X`, `XXX`, `Z`, `T`, `W` 조합. basic/extended time과 timezone token 동시 사용 가능. timezone: system, `-12`~`+14` UTC offset, 목록 IANA 도시, 검증된 직접 IANA/KST식 약어.
-- `app_settings_v1.verboseLevel` 기본 `3`. V0/V1 진단 payload 생략; V2 1필드, V3 3필드, V4 6필드, V5 10필드. 이벤트 수가 아닌 payload 범위만 변경. 콘솔/저장 전 중첩 API 키와 token·URL·account·comment·handle·사용자 식별자 같은 민감 문자열 값을 제거하고 circular/대형 payload를 안전 절단.
+- `app_settings_v1.verboseLevel` 기본 `3`. V0/V1 진단 payload 생략; V2 1필드, V3 3필드, V4 6필드, V5 10필드. 이벤트 수가 아닌 payload 범위만 변경. 콘솔/저장 전 API 키·token·account·comment·handle·사용자 식별자를 나타내는 필드는 생략. Bearer token, JWT, Google 또는 혼합 문자 API 키, URL, handle, channel ID, email처럼 식별 가능한 자격 증명·식별자 값은 제거하고 circular/대형 payload를 안전 절단.
 - 기본 `app_settings_v1.fontSizeLevel`/`app_settings_v1.uiScaleLevel`: `3`; `2`는 이전 시각 크기.
 - pair 메타데이터/API 설정은 import/export 제외.
 

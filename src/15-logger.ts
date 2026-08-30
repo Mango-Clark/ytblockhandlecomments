@@ -216,7 +216,11 @@ export class Logger {
 		return /(api.?key|token|password|secret|authorization|cookie|url|account|comment|handle|channel.?id|uid|user(?:name|id)?|author|email)/i.test(key);
 	}
 	_isSensitiveDetailValue(value: string) {
-		return /(?:https?:\/\/|@[\p{L}\p{N}_.-]+|\bUC[A-Za-z0-9_-]{20,}\b|\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b|\bBearer\s+\S+)/iu.test(value);
+		if (/(?:https?:\/\/|@[\p{L}\p{N}_.-]+|\bUC[A-Za-z0-9_-]{20,}\b|\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b|\bBearer\s+\S+)/iu.test(value)) return true;
+		if (/\beyJ[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]{5,}\b/.test(value)) return true;
+		if (/\bAIza[A-Za-z0-9_-]{35}\b/.test(value)) return true;
+		return (value.match(/[A-Za-z0-9_-]{32,160}/g) || []).some(candidate =>
+			/[a-z]/.test(candidate) && /[A-Z]/.test(candidate) && /\d/.test(candidate));
 	}
 	_redactDetail(value: unknown, maxFields: number, seen = new WeakSet<object>(), depth = 0, budget = { remaining: 100 }): unknown {
 		if (typeof value === 'string') return this._isSensitiveDetailValue(value) ? '[Redacted]' : value;
