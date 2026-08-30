@@ -149,7 +149,9 @@ Pair 메타 저장소:
     uid: string,
     verifiedAt: number | null,
     status: 'verified' | 'stale' | 'mismatch' | 'unverified',
-    source: string
+    source: string,
+    lastResolvedUid?: string | null,
+    lastError?: string | null
   }>
 }
 ```
@@ -181,6 +183,24 @@ Pair 메타 저장소:
   commentBlockMode: 'hide' | 'placeholder' | 'placeholder-reveal',
   fontSizeLevel: 1 | 2 | 3 | 4 | 5,
   uiScaleLevel: 1 | 2 | 3 | 4 | 5
+}
+```
+
+API 설정 저장소:
+
+```ts
+{
+  version: 2,
+  apiKey: string,
+  quotaFailureCount: number,
+  lastQuotaFailureAt: number | null,
+  lastTestResult: {
+    checkedAt: number,
+    ok: boolean,
+    category: 'ok' | 'invalid' | 'quota' | 'forbidden' | 'network' | 'unknown',
+    httpStatus: number | null,
+    message: string
+  } | null
 }
 ```
 
@@ -227,14 +247,14 @@ Pair 메타 저장소:
 - 기존 handle은 소문자 저장 가능. exact 보장은 재저장·신규 항목부터.
 - UID 매칭은 `UID Detection` 토글.
 - `pair` + UID 감지 모두 활성일 때만 `id` 매칭.
-- pair 생성·handle 재조회는 YouTube Data API v3 `channels.list`의 `forHandle` 사용.
+- pair 생성·handle 재조회는 선택한 조회 방식을 사용. 기본은 공개 YouTube 채널 페이지이며, API 조회 선택 시 YouTube Data API v3 `channels.list`의 `forHandle` 사용.
 - 선택적 저장 UID 확인은 같은 API의 저장 channel ID 조회.
 - pair 데이터가 있으면 UID 매칭은 로컬. API 호출은 pair 작업 중만.
 - regex 자동 추가 시 일치 handle을 `handle`로 저장, 이후 regex 없이 handle 확인.
 - `Update Pair`는 stale 주기 전 verified pair 건너뜀. 선택 handle bulk update는 강제 조회.
 - watch pair 검토 배너는 `나중에` 또는 최근 검사 후 stale 주기 동안 숨김.
 - pair update에서 UID 변경 시 오래된 `id` 교체, stale UID의 예전 채널 매칭 방지.
-- pair 생성·갱신에는 관리자 대화상자에 저장한 사용자 API 키 필요.
+- API 조회 또는 페이지 조회 실패 후 API fallback을 사용할 때만 관리자 대화상자에 저장한 API 키 필요.
 - bulk pair 액션은 선택된 `handle`만.
 - regex 선택은 보이는 checkbox·counter만 즉시 갱신; 전체 목록 재생성 안 함.
 - regex 펼침/접힘·매칭 페이지 이동은 해당 행만 갱신.
@@ -260,6 +280,7 @@ Pair 메타 저장소:
 - `@name`: `YouTube Comment Blocker`
 - `@version`: `{{version}}`
 - `@match`: `https://www.youtube.com/*`
+- `@exclude`: `https://www.youtube.com/embed*`
 - `@grant`: `GM_getValue`, `GM_setValue`, `GM_addValueChangeListener`, `GM_registerMenuCommand`, `GM_unregisterMenuCommand`
 
 ---

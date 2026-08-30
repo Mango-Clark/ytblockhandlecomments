@@ -185,6 +185,8 @@ API config:
 {
   version: 2,
   apiKey: string,
+  quotaFailureCount: number,
+  lastQuotaFailureAt: number | null,
   lastTestResult: {
     checkedAt: number,
     ok: boolean,
@@ -230,7 +232,7 @@ Notes:
 ## Notes
 
 - `handle` default identity method; `pair` matches `id` rules only with `UID Detection` enabled.
-- Pair creation/handle re-checks use YouTube Data API v3 `channels.list` with `forHandle` filter.
+- Pair creation/handle re-checks use the selected lookup method: the public YouTube channel page by default, or YouTube Data API v3 `channels.list` with `forHandle` when API lookup is selected.
 - Optional stored-UID verification uses `channels.list` with saved channel ID.
 - UID matching local after pair data exists; API calls only during pair actions.
 - `Update Pair` skips fresh verified pairs until stale; selected-handle bulk updates force lookup.
@@ -260,6 +262,7 @@ Notes:
 - `@name`: `YouTube Comment Blocker`
 - `@version`: `1.5.3`
 - `@match`: `https://www.youtube.com/*`
+- `@exclude`: `https://www.youtube.com/embed*`
 - `@grant`: `GM_getValue`, `GM_setValue`, `GM_addValueChangeListener`, `GM_registerMenuCommand`, `GM_unregisterMenuCommand`
 
 ## Author

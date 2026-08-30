@@ -61,6 +61,7 @@ Out of scope:
 
 - `@version`: `1.5.3`
 - `@match`: `https://www.youtube.com/*`
+- `@exclude`: `https://www.youtube.com/embed*`
 - `@grant`: `GM_getValue`, `GM_setValue`, `GM_addValueChangeListener`,
   `GM_registerMenuCommand`, `GM_unregisterMenuCommand`
 - Runtime starts at `document-idle`
@@ -398,14 +399,14 @@ If comments are not hiding:
 1. Confirm watch or Shorts page.
 2. Confirm rule exists in manager.
 3. For UID matching, confirm `UID Detection` on.
-4. Confirm API key saved.
-5. If pair missing or `unverified`, run `Create Pair` or `Update Pair`.
+4. If pair missing or `unverified`, run `Create Pair` or `Update Pair`.
+5. If API lookup or fallback is enabled, confirm an API key is saved and tested.
 
 If pair maintenance fails:
 
-1. Run `Test API Key`.
-2. Check saved `lastTestResult` category/message.
-3. Review `Last Pair Run` for handle failures/mismatches.
+1. Review `Last Pair Run` for handle failures/mismatches.
+2. For page lookup, retry or enable API fallback with a saved, tested key.
+3. For API lookup or fallback, run `Test API Key` and check the saved `lastTestResult` category/message.
 
 Repeated `quota` API-key tests increment consecutive failures and show estimated 24-hour reset guidance from latest failure.
 

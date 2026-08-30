@@ -61,6 +61,7 @@ page 동기화: `yt-navigate-finish`, `yt-page-data-updated`, `popstate`, `histo
 
 - `@version`: `1.5.3`
 - `@match`: `https://www.youtube.com/*`
+- `@exclude`: `https://www.youtube.com/embed*`
 - `@grant`: `GM_getValue`, `GM_setValue`, `GM_addValueChangeListener`,
   `GM_registerMenuCommand`, `GM_unregisterMenuCommand`
 - 실행: `document-idle`
@@ -398,14 +399,14 @@ JSON 형태:
 1. watch/Shorts 페이지인지 확인.
 2. 관리자 규칙 확인.
 3. UID 매칭이면 `UID Detection` 확인.
-4. API 키 저장 확인.
-5. pair 없음/`unverified`면 `Create Pair` 또는 `Update Pair` 실행.
+4. pair 없음/`unverified`면 `Create Pair` 또는 `Update Pair` 실행.
+5. API 조회 또는 fallback을 켰다면 API 키 저장·테스트 확인.
 
 Pair 유지보수 실패 시:
 
-1. `Test API Key` 실행.
-2. 저장된 `lastTestResult` category/메시지 확인.
-3. `Last Pair Run`에서 handle별 실패/mismatch 확인.
+1. `Last Pair Run`에서 handle별 실패/mismatch 확인.
+2. 페이지 조회라면 재시도하거나 저장·테스트한 키로 API fallback 활성화.
+3. API 조회 또는 fallback이라면 `Test API Key`를 실행하고 저장된 `lastTestResult` category/메시지 확인.
 
 API 키 테스트가 반복 `quota` 보고 시 연속 quota 실패 횟수 추적. 마지막 quota 실패 시점 기준 24시간 reset window 안내.
 
