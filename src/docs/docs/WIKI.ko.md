@@ -167,6 +167,23 @@ API 설정:
 }
 ```
 
+저장 로그 상태(`yt_comment_blocker_logs_v1`):
+
+```ts
+{
+  version: 2,
+  clearRevision: { counter: number, writer: string },
+  entries: Array<{
+    id: string,
+    revision: { counter: number, writer: string },
+    at: number,
+    level: 'error' | 'warn' | 'info' | 'debug',
+    message: string,
+    detail?: string
+  }>
+}
+```
+
 참고:
 
 - 유효한 `blocked_v2` 없을 때만 레거시 `blockedHandles`, `blockedHandles_v1` 자동 migration. 이후 삭제/전체 초기화 시 legacy 복원 안 함.
@@ -181,10 +198,12 @@ API 설정:
 - 테마 스타일은 userscript dialog/패널/목록/알림에만 적용. YouTube UI 제외.
 - YouTube 테마 동기화는 YouTube 자체 다크 상태 신호만 관찰.
 - 테마 탐색은 `ytd-app` 발견 시 중단. YouTube 모드에서 body 직계 child 변경 중 `ytd-app` 교체만 확인. 댓글/피드 mutation은 app 재탐색 안 함.
-- 로그 기본 꺼짐. 파일 로그는 다운로드/삭제 전까지 Tampermonkey 저장소 보관. 다운로드 위치는 브라우저 설정 따름.
+- 로그 기본 꺼짐. 파일 로그는 삭제 전까지 Tampermonkey 저장소에 보관. 다운로드 시간은 UTC ISO 형식이며 위치는 브라우저 설정 따름.
+- 기존 배열 로그는 다음 쓰기 때 메모리에서 version 2로 migration. 같은 turn의 항목은 한 번에 쓰고 상태/다운로드는 대기 항목을 즉시 반영.
+- 탭 간 로그 추가는 항목 revision으로 병합. 삭제 revision이 오래된 원격 항목 복원을 막고 보관 수 감소는 즉시 trim.
 - Tampermonkey가 권한/용량/저장소 문제로 설정, 차단 목록, pair 메타데이터, API 키, 로그 쓰기 거부 시 메모리 상태도 유지. 성공 알림 대신 오류/재시도 안내.
 - console 로그 기본 prefix `[YTCB]`; 시간 표시 꺼짐. preset은 확장·basic calendar date, week date, ordinal date, time 지원. 직접 ISO 형식은 `yyyy`, `yy`, `MM`, `dd`, `DDD`, `ww`, `e`, `HH`, `mm`, `ss`, `SSS`, `X`, `XXX`, `Z`, `T`, `W` 조합. basic/extended time과 timezone token 동시 사용 가능. timezone: system, `-12`~`+14` UTC offset, 목록 IANA 도시, 검증된 직접 IANA/KST식 약어.
-- `app_settings_v1.verboseLevel` 기본 `3`. V0/V1 진단 payload 생략; V2 1필드, V3 3필드, V4 6필드, V5 10필드. console/저장 로그 전 중첩 API 키·token·URL·account·comment·handle·사용자 식별자 제거. circular/대형 payload 안전 절단.
+- `app_settings_v1.verboseLevel` 기본 `3`. V0/V1 진단 payload 생략; V2 1필드, V3 3필드, V4 6필드, V5 10필드. 이벤트 수가 아닌 payload 범위만 변경. 콘솔/저장 전 중첩 API 키와 token·URL·account·comment·handle·사용자 식별자 같은 민감 문자열 값을 제거하고 circular/대형 payload를 안전 절단.
 - 기본 `app_settings_v1.fontSizeLevel`/`app_settings_v1.uiScaleLevel`: `3`; `2`는 이전 시각 크기.
 - pair 메타데이터/API 설정은 import/export 제외.
 
@@ -325,7 +344,8 @@ Pair 결과:
 - 키워드 전체 토글. 정규식 편집기/키워드 규칙/검사 대상/일치 동작은 차단 및 키워드 자동 처리 창으로 이동.
 - 라이트, 다크, 기기설정, 기기설정(반대), yt설정, yt설정(inverted), 커스텀 테마.
 - 커스텀 테마 창: 배경, 표면, 텍스트, 보조 텍스트, 테두리, 주요 동작, 파괴적 동작 색상 편집; 기본값 복원/입력 검증.
-- 저장 로그/브라우저 console 로그 개별 토글, 로그 수준, 보관 수, 다운로드/삭제.
+- 출력 대상·기록 상세도·콘솔 표시 형식·저장 로그 관리 하위 그룹.
+- 저장 수/마지막 항목 상태, 콘솔 미리보기, 테스트 출력, 즉시 보관량 정리, 다운로드, 확인 후 삭제.
 - 차단 댓글 표시 mode.
 - 글자/UI 크기 5단계. 2단계는 기존 크기, 3단계 기본.
 - 설정→차단 목록, 차단 목록→설정 버튼.

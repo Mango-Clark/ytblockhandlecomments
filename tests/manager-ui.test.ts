@@ -111,9 +111,11 @@ test('i18n dictionaries provide Korean and English labels', () => {
 
 	assert.equal(api.t('close'), '닫기');
 	assert.equal(api.t('resetFilters'), '필터 초기화');
+	assert.equal(api.t('loggingOutputTitle'), '출력 대상');
 	setLang('en');
 	assert.equal(api.t('close'), 'Close');
 	assert.equal(api.t('resetFilters'), 'Reset filters');
+	assert.equal(api.t('loggingOutputTitle'), 'Output destinations');
 });
 
 test('settings dialog updates auto-dislike mode', () => {
@@ -164,6 +166,48 @@ test('settings dialog groups related controls', () => {
 	assert.equal(document.querySelectorAll('.tm-setting-group-matching').length, 1);
 	assert.match(document.querySelector('.tm-settings-panel').textContent, /키워드 매칭과 선택한 모든 동작을 한 번에 켜거나 끕니다/);
 	assert.match(document.querySelector('.tm-settings-panel').textContent, /차단 및 키워드 자동 처리 열기/);
+});
+
+test('logging settings show grouped status, preview, and test output controls', async () => {
+	const { api, document } = loadUserscript();
+	const settings = new api.AppSettingsStorage();
+	settings.setLogging({ fileEnabled: true, consoleEnabled: false, level: 'info' });
+	const logger = new api.Logger(settings);
+	logger.info('existing');
+	const storage = new api.StorageV2(settings);
+	const pairStore = new api.PairMetaStorage(settings);
+	const apiConfig = new api.ApiConfigStorage();
+	const manager = new api.BlockListManager({
+		settings,
+		storage,
+		pairStore,
+		apiConfig,
+		logger,
+		pairService: new api.PairService(storage, pairStore, apiConfig, settings),
+		getLastPairRunResult: () => null,
+		refreshAfterStorageChange: () => {}
+	});
+
+	manager.openSettings();
+	assert.deepEqual(
+		document.querySelectorAll('.tm-logging-subgroup h5').map((node: any) => node.textContent),
+		['출력 대상', '기록 상세도', '콘솔 표시 형식', '저장 로그 관리']
+	);
+	assert.match(document.querySelector('.tm-log-preview').textContent, /^\[YTCB\] Test log output$/);
+	assert.match(document.querySelector('.tm-settings-panel').textContent, /1\/500개 저장/);
+	const testButton = document.querySelectorAll('button').find((button: any) => button.textContent === '테스트 로그 출력');
+	assert.equal(testButton.disabled, false);
+	testButton.click();
+	assert.match(document.querySelector('.tm-settings-panel').textContent, /2\/500개 저장/);
+	const clearButton = document.querySelectorAll('button').find((button: any) => button.textContent === '저장 로그 지우기');
+	clearButton.click();
+	const dialogs = document.querySelectorAll('.tm-dialog');
+	const confirmButtons = dialogs.at(-1).querySelectorAll('button');
+	assert.ok(confirmButtons[1].className.includes('danger'));
+	confirmButtons[1].click();
+	await Promise.resolve();
+	assert.match(document.querySelector('.tm-settings-panel').textContent, /저장된 로그 없음/);
+	assert.equal(document.querySelectorAll('button').find((button: any) => button.textContent === '로그 파일 다운로드').disabled, true);
 });
 
 test('comment menu item is idempotent and refreshes its blocked state', () => {
@@ -270,10 +314,11 @@ test('logging settings persist independently and retain the configured level', (
 	assert.equal(logger._formatConsolePrefix(settings.getLogging(), Date.UTC(2026, 0, 2, 3, 4, 5)), '[TEST] 26-01-02 12:04:05 +09:00');
 	assert.equal(settings.setLogging({ consolePrefix: 'bad\nvalue' }), null);
 	assert.equal(settings.getLogging().consolePrefix, '[TEST]');
-	assert.equal((gmStore.get('yt_comment_blocker_logs_v1') as any[]).length, 1);
-	assert.equal((gmStore.get('yt_comment_blocker_logs_v1') as any[])[0].message, 'saved');
+	assert.equal(logger.getEntries().length, 1);
+	assert.equal((gmStore.get('yt_comment_blocker_logs_v1') as any).entries.length, 1);
+	assert.equal((gmStore.get('yt_comment_blocker_logs_v1') as any).entries[0].message, 'saved');
 	logger.clear();
-	assert.equal((gmStore.get('yt_comment_blocker_logs_v1') as any[]).length, 0);
+	assert.equal((gmStore.get('yt_comment_blocker_logs_v1') as any).entries.length, 0);
 });
 
 test('logger redacts nested identifiers without leaking circular payloads', () => {
@@ -291,6 +336,7 @@ test('logger redacts nested identifiers without leaking circular payloads', () =
 	assert.equal(detail.includes('secret'), false);
 	assert.equal(detail.includes('private.example'), false);
 	assert.equal(detail.includes('person'), false);
+	assert.equal(logger._formatDetail({ value: '@private' }).includes('@private'), false);
 	assert.match(detail, /"safe":true/);
 	assert.match(detail, /"visible":"ok"/);
 	assert.match(detail, /\[Circular\]/);
@@ -317,8 +363,45 @@ test('console timestamp supports ISO calendar, week, ordinal, basic, and timezon
 	assert.equal(logger._formatConsoleTimestamp(settings.getLogging(), at), '12:04:05.006+09:00');
 	settings.setLogging({ consoleTimestampEnabled: true, consoleTimeZone: 'system', consoleTimeFormat: 'iso-date' });
 	assert.match(logger._formatConsoleTimestamp(settings.getLogging(), at), /^2026-01-0[12]$/);
+	const boundary = Date.UTC(2020, 11, 31, 15, 30, 0, 0);
+	settings.setLogging({ consoleTimestampEnabled: true, consoleTimeZone: 'Asia/Seoul', consoleTimeFormat: 'iso-week-date' });
+	assert.equal(logger._formatConsoleTimestamp(settings.getLogging(), boundary), '2020-W53-5');
+	settings.setLogging({ consoleTimestampEnabled: true, consoleTimeZone: 'Asia/Seoul', consoleTimeFormat: 'iso-ordinal-date' });
+	assert.equal(logger._formatConsoleTimestamp(settings.getLogging(), boundary), '2021-001');
 	assert.equal(settings._isValidConsoleTimeFormat('yyyy-Www-eTHHmmssX'), true);
 	assert.equal(settings._isValidConsoleTimeFormat('yyyy-Woops'), false);
+});
+
+test('logger batches writes, trims immediately, and merges remote additions after legacy migration', () => {
+	let writes = 0;
+	let stored: any = null;
+	const { api } = loadUserscript({
+		gmStore: {
+			yt_comment_blocker_logs_v1: [{ at: 1, level: 'warn', message: 'legacy' }]
+		},
+		gmSetValue: (_key, value) => { writes += 1; stored = value; }
+	});
+	const config = { fileEnabled: true, consoleEnabled: false, level: 'info', retention: 500 };
+	const settings = { getLogging: () => config, getVerboseLevel: () => 3 };
+	const left = new api.Logger(settings);
+	const right = new api.Logger(settings);
+	left.info('left');
+	left.info('left-2');
+	assert.equal(left.getEntries().length, 3);
+	assert.equal(writes, 1);
+	assert.equal(stored.version, 2);
+	right.info('right');
+	right.getEntries();
+	const rightState = right._state;
+	left._mergeRemote(rightState);
+	assert.deepEqual(Array.from(left.getEntries(), (entry: any) => entry.message).sort(), ['left', 'left-2', 'legacy', 'right']);
+	left.clear();
+	left._mergeRemote(rightState);
+	assert.equal(left.getEntries().length, 0);
+
+	for (let index = 0; index < 105; index += 1) left.info(`entry-${index}`);
+	assert.equal(left.trimToRetention(100), true);
+	assert.equal(left.getEntries().length, 100);
 });
 
 test('settings dialog saves validated console logging settings', () => {

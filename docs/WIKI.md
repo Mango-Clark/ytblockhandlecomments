@@ -167,6 +167,23 @@ API config:
 }
 ```
 
+Saved-log state (`yt_comment_blocker_logs_v1`):
+
+```ts
+{
+  version: 2,
+  clearRevision: { counter: number, writer: string },
+  entries: Array<{
+    id: string,
+    revision: { counter: number, writer: string },
+    at: number,
+    level: 'error' | 'warn' | 'info' | 'debug',
+    message: string,
+    detail?: string
+  }>
+}
+```
+
 Notes:
 
 - Legacy `blockedHandles` and `blockedHandles_v1` migrate only if valid `blocked_v2` absent; later delete/clear never restores legacy entries
@@ -181,10 +198,12 @@ Notes:
 - Theme styles affect userscript dialogs, panels, lists, notices only; never YouTube UI.
 - YouTube-theme sync watches native YouTube dark-state signals only, not userscript theme classes.
 - Theme discovery stops after finding `ytd-app`; in YouTube mode, direct body-child changes only check `ytd-app` replacement, avoiding rediscovery from comment/feed mutations.
-- Logging off by default. File logs remain in Tampermonkey storage until download/clear; browser controls download location.
+- Logging off by default. File logs remain in Tampermonkey storage until clear; downloads use UTC ISO timestamps and the browser controls their location.
+- Legacy array logs migrate in memory to version 2 on the next write. Same-turn entries batch into one write; status/download still flush pending entries immediately.
+- Cross-tab log additions merge by entry revision. Clear carries its own revision so stale remote entries do not return; retention reductions trim immediately.
 - Rejected settings, block-list, pair-metadata, API-key, or log writes leave in-memory state unchanged and show error, not success, enabling correction/retry.
 - Console logging defaults to `[YTCB]`, timestamps off. Presets: extended/basic calendar dates, week dates, ordinal dates, time. Custom ISO formats combine `yyyy`, `yy`, `MM`, `dd`, `DDD`, `ww`, `e`, `HH`, `mm`, `ss`, `SSS`, `X`, `XXX`, `Z`, `T`, and `W`; basic/extended time supports timezone tokens. Timezones: system, UTC offsets `-12`–`+14`, listed IANA cities, validated custom IANA or KST-style abbreviations.
-- `app_settings_v1.verboseLevel` defaults to `3`. V0/V1 omit diagnostic payloads; V2 records one field, V3 three, V4 six, V5 ten. Before console/saved-log output, nested API keys, tokens, URLs, accounts, comments, handles, and user IDs removed; circular/oversized payloads safely truncated.
+- `app_settings_v1.verboseLevel` defaults to `3`. V0/V1 omit diagnostic payloads; V2 records one field, V3 three, V4 six, V5 ten. This changes payload breadth, not event count. Before console/saved-log output, nested API keys and sensitive string values such as tokens, URLs, accounts, comments, handles, and user IDs are removed; circular/oversized payloads are safely truncated.
 - Default `app_settings_v1.fontSizeLevel` and `app_settings_v1.uiScaleLevel`: `3`; level `2` matches previous size.
 - Pair metadata and API config excluded from import/export.
 
@@ -325,7 +344,8 @@ Settings dialog:
 - Master keyword-automation toggle; regex editor, keyword rules, inputs, actions in block/keyword automation dialog
 - Theme modes: light, dark, system, inverted system, YouTube, inverted YouTube, custom
 - Custom theme colors: background, surface, text, muted text, border, primary, destructive; default restore + validation
-- Independent saved-log/browser-console toggles, level, retention, download, clear
+- Logging subgroups for output destinations, recorded detail, console formatting, and saved-log management
+- Saved count/last-entry status, console preview, test output, immediate retention trim, download, and confirmed clear
 - Blocked-comment display mode
 - Five-level text/UI scale; level 2 previous size, level 3 default
 - Settings-to-block-list and block-list-to-settings buttons

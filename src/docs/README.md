@@ -79,7 +79,10 @@ Source layout:
 ### Logging and diagnostics
 
 - Independent local retention and browser-console logging.
-- Configure level, retention, prefix, timestamps, formats, timezone.
+- Grouped output, detail, console-formatting, and saved-log controls.
+- Current saved count, last entry, console preview, test output, download, and confirmed clear.
+- Configure level, retention, prefix, timestamps, formats, timezone; retention reductions trim immediately.
+- Concurrent cross-tab additions merge while explicit clear prevents stale entries returning.
 - Privacy-redacted V0-V5 diagnostics; V3 default.
 - Pair-mode missed-channel-ID diagnostic counters.
 

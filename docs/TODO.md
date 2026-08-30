@@ -21,3 +21,13 @@
   - (2) Prune selections for rules removed locally or by another tab.
   - (3) Add one control that resets all active filters without clearing the current selection.
   - (4) Verify navigation restoration, stale-selection pruning, filter reset, responsive layout, and English/Korean labels.
+
+- [x] (B) Improve logging correctness, controls, and storage reliability
+
+  - (0) `7fc5aca579c2c0c12e0b0506c8b78c86d3d081d3`
+  - (1) Correct ISO week-year and IANA timezone calendar-derived timestamp fields with boundary tests.
+  - (2) Group logging controls by output, detail, console formatting, and saved-log management while preserving responsive behavior.
+  - (3) Show saved entry count, last-entry state, console preview, and a test-output action; disable empty saved-log actions.
+  - (4) Align English/Korean explanations with V0/V1 behavior, supported timestamp tokens, recorded event scope, and UTC downloads.
+  - (5) Trim saved entries immediately when retention decreases and reduce repeated full-array writes without delaying visible logs.
+  - (6) Merge concurrent cross-tab log additions deterministically without reviving entries after an explicit clear.

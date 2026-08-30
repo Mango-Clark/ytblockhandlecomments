@@ -48,6 +48,10 @@
     .tm-setting-controls label{display:flex;align-items:center;gap:8px;font-weight:600;flex-wrap:wrap}
 			.tm-setting-controls option.tm-default-option{color:#5f6368}
     .tm-setting-controls p{margin:2px 0 0 0;font-size:12px;color:#5f6368}
+			.tm-logging-subgroup{border:1px solid #ececec;border-radius:10px;padding:10px 12px}
+			.tm-logging-subgroup h5{margin:0 0 8px;font-size:12px;color:#3c4043}
+			.tm-logging-subgroup-body{display:flex;flex-direction:column;gap:8px}
+			.tm-log-preview{padding:8px 10px;border:1px dashed #d0d7de;border-radius:8px;background:#f8f9fa;font-family:monospace;font-size:12px;overflow-wrap:anywhere}
     .tm-setting-group{border-top:1px solid #ececec;padding-top:12px;margin-top:12px}
     .tm-setting-group:first-of-type{border-top:none;padding-top:0;margin-top:0}
     .tm-setting-group h4{margin:0 0 8px 0;font-size:13px;color:#3c4043}
@@ -127,6 +131,9 @@
       .tm-settings-intro,.tm-settings-list > .tm-setting-group{border-color:#333}
       .tm-setting-group{border-color:#333}
       .tm-setting-group h4{color:#e8eaed}
+				.tm-logging-subgroup,.tm-log-preview{border-color:#444}
+				.tm-logging-subgroup h5{color:#e8eaed}
+				.tm-log-preview{background:#2a2a2a}
       .tm-summary-card{background:#2a2a2a}
       .tm-block-list li{border-color:#333}
       .tm-block-meta,.tm-toggle-row p,.tm-summary-card span,.tm-muted,.tm-inline-note,.tm-search-note{color:#c7c7c7}
@@ -155,6 +162,9 @@
 			.tm-theme-light .tm-dialog button.danger,.tm-theme-dark .tm-dialog button.danger,.tm-theme-custom .tm-dialog button.danger,.tm-theme-light .tm-block-list li button,.tm-theme-dark .tm-block-list li button,.tm-theme-custom .tm-block-list li button{background:var(--tm-theme-danger);color:#fff}
 			.tm-theme-light .tm-settings-intro,.tm-theme-dark .tm-settings-intro,.tm-theme-custom .tm-settings-intro,.tm-theme-light .tm-settings-list > .tm-setting-group,.tm-theme-dark .tm-settings-list > .tm-setting-group,.tm-theme-custom .tm-settings-list > .tm-setting-group,.tm-theme-light .tm-block-list li,.tm-theme-dark .tm-block-list li,.tm-theme-custom .tm-block-list li{border-color:var(--tm-theme-border)}
 			.tm-theme-light .tm-setting-group h4,.tm-theme-dark .tm-setting-group h4,.tm-theme-custom .tm-setting-group h4{color:var(--tm-theme-text)}
+			.tm-theme-light .tm-logging-subgroup,.tm-theme-dark .tm-logging-subgroup,.tm-theme-custom .tm-logging-subgroup,.tm-theme-light .tm-log-preview,.tm-theme-dark .tm-log-preview,.tm-theme-custom .tm-log-preview{border-color:var(--tm-theme-border)}
+			.tm-theme-light .tm-logging-subgroup h5,.tm-theme-dark .tm-logging-subgroup h5,.tm-theme-custom .tm-logging-subgroup h5{color:var(--tm-theme-text)}
+			.tm-theme-light .tm-log-preview,.tm-theme-dark .tm-log-preview,.tm-theme-custom .tm-log-preview{background:var(--tm-theme-background);color:var(--tm-theme-text)}
 			.tm-theme-light .tm-block-meta,.tm-theme-dark .tm-block-meta,.tm-theme-custom .tm-block-meta,.tm-theme-light .tm-toggle-row p,.tm-theme-dark .tm-toggle-row p,.tm-theme-custom .tm-toggle-row p,.tm-theme-light .tm-summary-card span,.tm-theme-dark .tm-summary-card span,.tm-theme-custom .tm-summary-card span,.tm-theme-light .tm-muted,.tm-theme-dark .tm-muted,.tm-theme-custom .tm-muted,.tm-theme-light .tm-inline-note,.tm-theme-dark .tm-inline-note,.tm-theme-custom .tm-inline-note,.tm-theme-light .tm-search-note,.tm-theme-dark .tm-search-note,.tm-theme-custom .tm-search-note,.tm-theme-light .tm-counter,.tm-theme-dark .tm-counter,.tm-theme-custom .tm-counter{color:var(--tm-theme-muted)}
 			.tm-theme-light .tm-summary-card,.tm-theme-dark .tm-summary-card,.tm-theme-custom .tm-summary-card,.tm-theme-light .tm-result-panel details,.tm-theme-dark .tm-result-panel details,.tm-theme-custom .tm-result-panel details,.tm-theme-light .tm-regex-match-list li,.tm-theme-dark .tm-regex-match-list li,.tm-theme-custom .tm-regex-match-list li{background:var(--tm-theme-background);border-color:var(--tm-theme-border)}
 			.tm-theme-light .tm-regex-bar input,.tm-theme-dark .tm-regex-bar input,.tm-theme-custom .tm-regex-bar input,.tm-theme-light .tm-section input,.tm-theme-dark .tm-section input,.tm-theme-custom .tm-section input,.tm-theme-light .tm-toolbar-group select,.tm-theme-dark .tm-toolbar-group select,.tm-theme-custom .tm-toolbar-group select,.tm-theme-light .tm-toolbar-group input[type="search"],.tm-theme-dark .tm-toolbar-group input[type="search"],.tm-theme-custom .tm-toolbar-group input[type="search"]{background:var(--tm-theme-surface);color:var(--tm-theme-text);border-color:var(--tm-theme-border)}

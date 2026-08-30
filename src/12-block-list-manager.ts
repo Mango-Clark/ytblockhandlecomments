@@ -592,6 +592,19 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			const loggingTitle = document.createElement('h4');
 			const loggingControls = document.createElement('div');
 			loggingControls.className = 'tm-setting-controls';
+			const makeLoggingSubgroup = () => {
+				const group = document.createElement('section');
+				group.className = 'tm-logging-subgroup';
+				const title = document.createElement('h5');
+				const body = document.createElement('div');
+				body.className = 'tm-logging-subgroup-body';
+				group.append(title, body);
+				return { group, title, body };
+			};
+			const loggingOutputGroup = makeLoggingSubgroup();
+			const loggingScopeGroup = makeLoggingSubgroup();
+			const loggingConsoleGroup = makeLoggingSubgroup();
+			const loggingSavedGroup = makeLoggingSubgroup();
 			const logFileLabel = document.createElement('label');
 			const logFileToggle = document.createElement('input');
 			logFileToggle.type = 'checkbox';
@@ -671,13 +684,22 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			});
 			verboseLabel.append(verboseText, verboseSelect);
 			const verboseHelp = document.createElement('p');
+			const consolePreview = document.createElement('div');
+			consolePreview.className = 'tm-log-preview';
+			const testLogBtn = Object.assign(document.createElement('button'), { className: 'secondary' });
+			const logStatus = document.createElement('p');
+			logStatus.className = 'tm-muted';
 			const logActions = document.createElement('div');
 			logActions.className = 'tm-inline-actions';
 			const downloadLogBtn = Object.assign(document.createElement('button'), { className: 'secondary' });
 			const clearLogBtn = Object.assign(document.createElement('button'), { className: 'secondary' });
-			logActions.append(downloadLogBtn, clearLogBtn);
+			logActions.append(testLogBtn, downloadLogBtn, clearLogBtn);
 			const logHelp = document.createElement('p');
-			loggingControls.append(logFileLabel, logConsoleLabel, consolePrefixLabel, consoleTimestampLabel, consoleFormatLabel, consoleFormatInput, consoleTimezoneLabel, consoleTimezoneInput, consoleLoggingStatus, logLevelLabel, logRetentionLabel, verboseLabel, verboseHelp, logActions, logHelp);
+			loggingOutputGroup.body.append(logFileLabel, logConsoleLabel);
+			loggingScopeGroup.body.append(logLevelLabel, verboseLabel, verboseHelp);
+			loggingConsoleGroup.body.append(consolePrefixLabel, consoleTimestampLabel, consoleFormatLabel, consoleFormatInput, consoleTimezoneLabel, consoleTimezoneInput, consoleLoggingStatus, consolePreview);
+			loggingSavedGroup.body.append(logRetentionLabel, logStatus, logActions);
+			loggingControls.append(loggingOutputGroup.group, loggingScopeGroup.group, loggingConsoleGroup.group, loggingSavedGroup.group, logHelp);
 			loggingGroup.append(loggingTitle, loggingControls);
 
 			const displayGroup = document.createElement('li');
@@ -925,6 +947,14 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				consoleTimezoneInput.value = consoleTimezoneSelect.value === 'userinput' ? logging.consoleTimeZoneInput || logging.consoleTimeZone : '';
 				consoleTimezoneInput.hidden = consoleTimezoneSelect.value !== 'userinput';
 				consoleLoggingStatus.textContent = '';
+				consolePreview.textContent = this.app.logger?.getConsolePreview?.() || '';
+				const logState = this.app.logger?.getStatus?.() || { count: 0, last: null };
+				logStatus.textContent = logState.last
+					? t('loggingStatus', logState.count, logging.retention, formatDateTime(logState.last.at), String(logState.last.level).toUpperCase())
+					: t('loggingStatusEmpty', logging.retention);
+				testLogBtn.disabled = !this.app.logger || (!logging.fileEnabled && !logging.consoleEnabled);
+				downloadLogBtn.disabled = !logState.count;
+				clearLogBtn.disabled = !logState.count;
 				verboseSelect.value = String(this.app.settings.getVerboseLevel());
 				dislikeSelect.value = this.app.settings.getDislikeMode();
 				blockModeSelect.value = this.app.settings.getCommentBlockMode();
@@ -963,6 +993,10 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				keywordEnabledHelp.textContent = t('keywordAutomationEnabledHelp');
 				openAutomationBtn.textContent = t('openBlockKeywordAutomation');
 				loggingTitle.textContent = t('loggingTitle');
+				loggingOutputGroup.title.textContent = t('loggingOutputTitle');
+				loggingScopeGroup.title.textContent = t('loggingScopeTitle');
+				loggingConsoleGroup.title.textContent = t('loggingConsoleTitle');
+				loggingSavedGroup.title.textContent = t('loggingSavedTitle');
 				logFileText.textContent = t('loggingFileLabel');
 				logConsoleText.textContent = t('loggingConsoleLabel');
 				consolePrefixText.textContent = t('consolePrefixLabel') + ': ';
@@ -983,6 +1017,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				Array.from(logRetentionSelect.options).forEach(option => { option.textContent = defaultOptionText(option, t('loggingRetentionValue', option.value)); });
 				Array.from(verboseSelect.options).forEach(option => { option.textContent = defaultOptionText(option, t('verboseLevelValue', option.value)); });
 				verboseHelp.textContent = t('verboseLevelHelp');
+				testLogBtn.textContent = t('loggingTest');
 				downloadLogBtn.textContent = t('loggingDownload');
 				clearLogBtn.textContent = t('loggingClear');
 				logHelp.textContent = t('loggingHelp');
@@ -1100,6 +1135,9 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 					consoleLoggingStatus.textContent = t('consoleLoggingInvalid', field);
 					return;
 				}
+				if (this.app.logger?.trimToRetention && !this.app.logger.trimToRetention(Number(logRetentionSelect.value))) {
+					Toast.show(t('storageSaveFailed'));
+				}
 				renderAll();
 			};
 			logFileToggle.addEventListener('change', saveLogging);
@@ -1116,8 +1154,33 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				this.app.settings.setVerboseLevel(verboseSelect.value);
 				renderAll();
 			});
-			downloadLogBtn.addEventListener('click', () => this.app.logger.download());
-			clearLogBtn.addEventListener('click', () => { Toast.show(this.app.logger.clear() ? t('loggingCleared') : t('storageSaveFailed')); });
+			testLogBtn.addEventListener('click', () => {
+				if (!this.app.logger.testOutput()) { Toast.show(t('loggingTestDisabled')); return; }
+				renderAll();
+				Toast.show(t('loggingTestWritten'));
+			});
+			downloadLogBtn.addEventListener('click', () => {
+				Toast.show(this.app.logger.download() ? t('loggingDownloadStarted') : t('loggingEmpty'));
+			});
+			clearLogBtn.addEventListener('click', async () => {
+				const confirmed = await Dialog.show({
+					title: t('loggingClear'),
+					body: t('loggingClearConfirm'),
+					buttons: [
+						{ label: t('close'), value: false },
+						{ label: t('loggingClear'), value: true, danger: true }
+					],
+					onRefresh: (ctx) => {
+						ctx.setTitle(t('loggingClear'));
+						ctx.setBody(t('loggingClearConfirm'));
+						ctx.buttons[0].textContent = t('close');
+						ctx.buttons[1].textContent = t('loggingClear');
+					}
+				});
+				if (!confirmed) return;
+				Toast.show(this.app.logger.clear() ? t('loggingCleared') : t('storageSaveFailed'));
+				renderAll();
+			});
 			dislikeSelect.addEventListener('change', () => {
 				this.app.settings.setDislikeMode(dislikeSelect.value);
 				this.app.refreshAfterStorageChange();

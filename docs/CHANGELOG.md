@@ -10,11 +10,12 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); projec
 
 ### Added
 
-- None
+- Added grouped logging controls with saved-entry status, console preview, test output, empty-state actions, and confirmed clear.
 
 ### Changed
 
 - Preserved block-list search, filters, valid selections, and scroll position across adjacent manager dialogs, with a one-click filter reset.
+- Batched same-turn saved-log writes, migrated legacy arrays to revisioned log state, merged concurrent cross-tab additions, and trimmed immediately after retention reductions.
 
 ### Deprecated
 
@@ -26,11 +27,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); projec
 
 ### Fixed
 
-- None
+- Corrected ISO week-year and IANA-timezone ordinal/week timestamp calculations at calendar boundaries.
 
 ### Security
 
-- None
+- Redacted sensitive string values in diagnostic payloads in addition to sensitive object keys.
 
 ## [1.5.3] - 2026-08-21
 
