@@ -452,6 +452,48 @@ test('logger batches writes, trims immediately, and keeps legacy IDs stable afte
 	assert.equal(left.getEntries().length, 100);
 });
 
+test('legacy log IDs converge across overlapping trimmed snapshots and old version 2 IDs', () => {
+	const { api } = loadUserscript();
+	const settings = { getLogging: () => ({ retention: 500 }), getVerboseLevel: () => 3 };
+	const logger = new api.Logger(settings);
+	const a = { at: 1, level: 'warn', message: 'A' };
+	const b = { at: 2, level: 'warn', message: 'B' };
+	const c = { at: 3, level: 'warn', message: 'C' };
+	logger._state = logger._normalizeState([a, b]);
+	logger._mergeRemote([b, c]);
+	assert.deepEqual(Array.from(logger.getEntries(), (entry: any) => entry.message).sort(), ['A', 'B', 'C']);
+
+	const oldVersionTwo = {
+		version: 2,
+		clearRevision: { counter: 0, writer: '' },
+		entries: [{ ...b, id: 'legacy-0-old-index-based-id', revision: { counter: 1, writer: 'legacy' } }]
+	};
+	logger._mergeRemote(oldVersionTwo);
+	assert.deepEqual(Array.from(logger.getEntries(), (entry: any) => entry.message).sort(), ['A', 'B', 'C']);
+});
+
+test('logging status rolls back after a batched save failure', async () => {
+	const { api, context, document } = loadUserscript();
+	const settings = new api.AppSettingsStorage();
+	settings.setLogging({ fileEnabled: true, consoleEnabled: false, level: 'info' });
+	const logger = new api.Logger(settings);
+	const storage = new api.StorageV2(settings);
+	const pairStore = new api.PairMetaStorage(settings);
+	const apiConfig = new api.ApiConfigStorage();
+	const manager = new api.BlockListManager({
+		settings, storage, pairStore, apiConfig, logger,
+		pairService: new api.PairService(storage, pairStore, apiConfig, settings),
+		getLastPairRunResult: () => null,
+		refreshAfterStorageChange: () => {}
+	});
+	manager.openSettings();
+	context.GM_setValue = () => { throw new Error('quota'); };
+	logger.info('will roll back');
+	assert.match(document.querySelector('.tm-settings-panel').textContent, /1\/500개 저장/);
+	await Promise.resolve();
+	assert.match(document.querySelector('.tm-settings-panel').textContent, /0\/500개 저장/);
+});
+
 test('logger storage listeners converge two writers and preserve clear ordering', () => {
 	const { api, dispatchGMValueChange } = loadUserscript();
 	const config = { fileEnabled: true, consoleEnabled: false, level: 'info', retention: 500 };

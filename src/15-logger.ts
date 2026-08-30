@@ -60,8 +60,8 @@ export class Logger {
 		const writer = String(value?.writer || '').slice(0, 64);
 		return Number.isSafeInteger(counter) && counter >= 0 && writer ? { counter, writer } : { ...fallback };
 	}
-	_makeLegacyId(index: number, at: number, level: LogLevel, message: string, detail: string) {
-		const source = `${index}\u001f${at}\u001f${level}\u001f${message}\u001f${detail}`;
+	_makeLegacyId(at: number, level: LogLevel, message: string, detail: string) {
+		const source = `${at}\u001f${level}\u001f${message}\u001f${detail}`;
 		let left = 0x811c9dc5;
 		let right = 0x9e3779b9;
 		for (let offset = 0; offset < source.length; offset += 1) {
@@ -69,7 +69,7 @@ export class Logger {
 			left = Math.imul(left ^ code, 0x01000193);
 			right = Math.imul(right ^ code, 0x85ebca6b);
 		}
-		return `legacy-${index}-${(left >>> 0).toString(36)}-${(right >>> 0).toString(36)}`;
+		return `legacy-${(left >>> 0).toString(36)}-${(right >>> 0).toString(36)}`;
 	}
 	_normalizeEntry(value: any, index: number, legacy = false): StoredLogEntry | null {
 		if (!value || typeof value !== 'object') return null;
@@ -85,7 +85,7 @@ export class Logger {
 		if (!revision.writer) return null;
 		const detail = value.detail == null ? '' : String(value.detail).slice(0, 2048);
 		const id = legacy
-			? this._makeLegacyId(index, at, level, message, detail)
+			? this._makeLegacyId(at, level, message, detail)
 			: String(value.id || '').slice(0, 160);
 		if (!id) return null;
 		return { id, revision, at, level, message, ...(detail ? { detail } : {}) };
@@ -95,9 +95,16 @@ export class Logger {
 		const source = legacy ? raw : Array.isArray(raw?.entries) ? raw.entries : [];
 		const clearRevision = legacy ? { ...EMPTY_REVISION } : this._normalizeRevision(raw?.clearRevision);
 		const byId = new Map<string, StoredLogEntry>();
+		const legacyOccurrences = new Map<string, number>();
 		source.forEach((value: any, index: number) => {
 			const entry = this._normalizeEntry(value, index, legacy);
 			if (!entry || this._compareRevision(entry.revision, clearRevision) <= 0) return;
+			if (entry.revision.writer === 'legacy') {
+				const baseId = this._makeLegacyId(entry.at, entry.level, entry.message, entry.detail || '');
+				const occurrence = (legacyOccurrences.get(baseId) || 0) + 1;
+				legacyOccurrences.set(baseId, occurrence);
+				entry.id = `${baseId}-${occurrence}`;
+			}
 			const previous = byId.get(entry.id);
 			if (!previous || this._compareRevision(entry.revision, previous.revision) > 0) byId.set(entry.id, entry);
 		});
@@ -119,7 +126,9 @@ export class Logger {
 			this._persistedState = this._state;
 			return true;
 		}
+		const optimistic = this._serializeState(this._state);
 		this._state = this._normalizeState(this._getGM(this.KEY, this._persistedState));
+		if (this._serializeState(this._state) !== optimistic) this._notifyChange();
 		return false;
 	}
 	_scheduleWrite() {

@@ -27,7 +27,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); projec
 
 ### Fixed
 
-- Stabilized bounded legacy log IDs to prevent long migrated entries from duplicating after reload or cross-tab merge.
+- Canonicalized bounded legacy log IDs by entry content to prevent duplicates across reloads, trimmed snapshots, and stale old-tab writes.
+- Restored live logging status after a failed batched storage write rolls back optimistic entries.
 - Limited live log updates to logging status controls so unrelated dialogs and unsaved settings input are not refreshed.
 - Corrected ISO week-year and IANA-timezone ordinal/week timestamp calculations at calendar boundaries.
 

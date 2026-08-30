@@ -201,6 +201,7 @@ API 설정:
 - 로그 기본 꺼짐. 파일 로그는 삭제 전까지 Tampermonkey 저장소에 보관. 다운로드 시간은 UTC ISO 형식이며 위치는 브라우저 설정 따름.
 - 기존 배열 로그는 고정 길이 deterministic ID를 받은 뒤 다음 쓰기 때 메모리에서 version 2로 migration하여 긴 항목의 reload·탭 간 병합 중복을 방지. 같은 turn의 항목은 한 번에 쓰고 상태/다운로드는 대기 항목을 즉시 반영.
 - 탭 간 로그 추가는 항목 revision으로 병합. 삭제 revision이 오래된 원격 항목 복원을 막고 보관 수 감소는 즉시 trim.
+- 실시간 로그 변경은 열린 설정 dialog의 저장 로그 상태·미리보기·동작 가능 여부만 갱신하며, 관련 없는 dialog와 저장 전 설정 입력값은 다시 렌더링하지 않음.
 - Tampermonkey가 권한/용량/저장소 문제로 설정, 차단 목록, pair 메타데이터, API 키, 로그 쓰기 거부 시 메모리 상태도 유지. 성공 알림 대신 오류/재시도 안내.
 - console 로그 기본 prefix `[YTCB]`; 시간 표시 꺼짐. preset은 확장·basic calendar date, week date, ordinal date, time 지원. 직접 ISO 형식은 `yyyy`, `yy`, `MM`, `dd`, `DDD`, `ww`, `e`, `HH`, `mm`, `ss`, `SSS`, `X`, `XXX`, `Z`, `T`, `W` 조합. basic/extended time과 timezone token 동시 사용 가능. timezone: system, `-12`~`+14` UTC offset, 목록 IANA 도시, 검증된 직접 IANA/KST식 약어.
 - `app_settings_v1.verboseLevel` 기본 `3`. V0/V1 진단 payload 생략; V2 1필드, V3 3필드, V4 6필드, V5 10필드. 이벤트 수가 아닌 payload 범위만 변경. 콘솔/저장 전 API 키·token·account·comment·handle·사용자 식별자를 나타내는 필드는 생략. Bearer token, JWT, Google 또는 혼합 문자 API 키, URL, handle, channel ID, email처럼 식별 가능한 자격 증명·식별자 값은 제거하고 circular/대형 payload를 안전 절단.

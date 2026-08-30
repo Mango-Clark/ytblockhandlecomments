@@ -4,6 +4,15 @@
 
 ## P1 — High
 
+- [ ] (A) Optimize the Tampermonkey runtime for high-load pages
+
+  - (0) `76d0d7447b5add855d090430aa1ebd5a5faf8875`
+  - (1) Batch comment mutations per animation frame and release pending observer, timer, and DOM references on navigation or close.
+  - (2) Defer offscreen comment work until intersection while preserving visible-comment updates and observer fallback behavior.
+  - (3) Cache hot-path matching configuration and reuse block-list data, search, pair-status, and regex computations.
+  - (4) Prevent duplicate bootstrap, styles, global listeners, and toast timers; bound long-lived lookup caches.
+  - (5) Verify deterministic operation counts with 1,000 rules and 500 comments while preserving all existing features.
+
 ## P2 — Normal
 
 ## P3 — Low
@@ -52,3 +61,22 @@
   - (1) Generate bounded deterministic IDs before legacy entries are written as version 2 state.
   - (2) Prevent long legacy messages from becoming duplicate entries after reload and stale-state merge.
   - (3) Verify real listener ordering, two-writer convergence, and stale additions after clear.
+
+- [x] (F) Canonicalize legacy log IDs across trimmed snapshots
+
+  - (0) `76d0d7447b5add855d090430aa1ebd5a5faf8875`
+  - (1) Remove absolute array positions from legacy content fingerprints.
+  - (2) Canonicalize legacy-writer entries already stored as version 2 and distinguish identical occurrences within a snapshot.
+  - (3) Verify overlapping legacy snapshots and stale old-tab writes converge without duplicate entries.
+
+- [x] (G) Notify logging status after asynchronous save rollback
+
+  - (0) `76d0d7447b5add855d090430aa1ebd5a5faf8875`
+  - (1) Notify active logging-status subscribers when a failed batched write restores persisted state.
+  - (2) Verify optimistic saved-entry status returns to the actual stored count after `GM_setValue` rejection.
+
+- [x] (H) Document scoped live logging status refresh
+
+  - (0) `76d0d7447b5add855d090430aa1ebd5a5faf8875`
+  - (1) Explain in the English WIKI that live log changes update only the logging status controls.
+  - (2) Add the matching Korean explanation and keep generated documentation synchronized.
