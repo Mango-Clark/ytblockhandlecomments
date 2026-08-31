@@ -51,8 +51,11 @@ import { Extractor } from './09-extractor.ts';
 			this.rebuildLookup();
 			try { window.__ytCommentBlockerPerf = this._metrics; } catch { }
 		}
+		_getSettingsRevision() {
+			return this.settings?._matcherRevision ?? this.settings?._revision;
+		}
 		rebuildLookup() {
-			this._settingsRevision = this.settings?._revision;
+			this._settingsRevision = this._getSettingsRevision();
 			this._idSet.clear(); this._handleSet.clear(); this._regexes = [];
 			const blockMatchMode = this.settings?.getBlockMatchMode?.() || 'handle';
 			this._blockMatchMode = blockMatchMode;
@@ -270,7 +273,7 @@ import { Extractor } from './09-extractor.ts';
 		}
 		applyHide(node: Element | null | undefined) {
 			if (!node) return;
-			if (this._settingsRevision !== this.settings?._revision) this.rebuildLookup();
+			if (this._settingsRevision !== this._getSettingsRevision()) this.rebuildLookup();
 			const { identity, meta } = this._syncNodeIdentity(node);
 			this._applyKeywordAutomation(node, meta);
 			const shouldHide = this._matches(node);

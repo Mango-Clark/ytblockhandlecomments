@@ -8,6 +8,7 @@
 			this.KEY = 'app_settings_v1';
 			this._lastSaveError = null;
 			this._revision = 0;
+			this._matcherRevision = 0;
 			this.CONSOLE_TIME_FORMATS = ['iso', 'iso-date', 'iso-time', 'iso-basic', 'iso-basic-date', 'iso-week-date', 'iso-ordinal-date'];
 			this.THEME_MODES = ['light', 'dark', 'system', 'system-inverted', 'youtube', 'youtube-inverted', 'custom'];
 			this.THEME_DEFAULTS = {
@@ -272,8 +273,23 @@
 		getState() {
 			return { ...this._state };
 		}
+		_getMatcherFingerprint(state: any) {
+			return JSON.stringify({
+				handleCaseSensitive: state.handleCaseSensitive,
+				autoAddRegexHandles: state.autoAddRegexHandles,
+				blockMatchMode: state.blockMatchMode,
+				keywordAutomationEnabled: state.keywordAutomationEnabled,
+				keywordRules: state.keywordRules,
+				keywordFields: state.keywordFields,
+				keywordActions: state.keywordActions,
+				dislikeMode: state.dislikeMode,
+				commentBlockMode: state.commentBlockMode
+			});
+		}
 		setAllLocal(state: any) {
-			this._state = this._normalizeState(state);
+			const normalized = this._normalizeState(state);
+			if (this._getMatcherFingerprint(this._state) !== this._getMatcherFingerprint(normalized)) this._matcherRevision += 1;
+			this._state = normalized;
 			this._revision += 1;
 			this._applyDisplaySettings();
 			this._applyThemeSettings();
@@ -311,6 +327,7 @@
 				return this.getState();
 			}
 			if (!this._setGM(this.KEY, normalized)) return this.getState();
+			if (this._getMatcherFingerprint(this._state) !== this._getMatcherFingerprint(normalized)) this._matcherRevision += 1;
 			this._state = normalized;
 			this._revision += 1;
 			this._applyDisplaySettings();

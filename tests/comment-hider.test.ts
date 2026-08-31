@@ -242,6 +242,26 @@ test('late intersection entries ignore unobserved comments', () => {
 	assert.equal(context.__ytCommentBlockerPerf.scannedNodes, 0);
 });
 
+test('display-only settings do not invalidate matcher configuration', () => {
+	const { api, document } = loadUserscript();
+	const settings = new api.AppSettingsStorage();
+	const storage = new api.StorageV2(settings);
+	const pairStore = new api.PairMetaStorage(settings);
+	const hider = new api.CommentHider(storage, pairStore, settings);
+	const { comment } = createBlockedComment(document);
+	const originalRebuild = hider.rebuildLookup.bind(hider);
+	let rebuilds = 0;
+	hider.rebuildLookup = () => { rebuilds += 1; return originalRebuild(); };
+
+	settings.setFontSizeLevel(4);
+	hider.applyHide(comment);
+	assert.equal(rebuilds, 0);
+
+	settings.setCommentBlockMode('placeholder');
+	hider.applyHide(comment);
+	assert.equal(rebuilds, 1);
+});
+
 test('placeholder mode replaces blocked comment without hiding node', () => {
 	const { api, document } = loadUserscript();
 	const settings = new api.AppSettingsStorage();
