@@ -378,6 +378,7 @@ Pair 결과:
 
 댓글 관찰:
 
+- userscript가 반복 평가되어도 stylesheet와 app은 한 번만 시작. 연속 알림은 하나의 toast live region을 재사용하고 대기 timer를 교체.
 - `watch`: 기존 `ytd-comments#comments, ytd-comments` host 탐색 유지.
 - `shorts`: comment node 중심 host 탐색. `body`, `html`, `ytd-app`보다 좁은 공통 container가 있을 때만 comment observer 연결.
 - page key 변경 시 임시 `IntersectionObserver` 등록/댓글 metadata cache 초기화. 재사용 comments host가 여러 영상의 분리 댓글 노드를 붙잡는 문제 방지.

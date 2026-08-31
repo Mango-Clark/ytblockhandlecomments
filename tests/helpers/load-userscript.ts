@@ -9,6 +9,7 @@ type LoadOptions = {
 	url?: string;
 	language?: string;
 	deferAnimationFrames?: boolean;
+	skipBootstrap?: boolean;
 };
 type TestContext = {
 	[key: string]: any;
@@ -64,7 +65,7 @@ class FakeIntersectionObserver {
 export function loadUserscript(options: LoadOptions = {}) {
 	const { document, Node, Element } = createDom();
 	const gmStore = new Map(Object.entries(options.gmStore || {}));
-	const hook: TestContext = { skipBootstrap: true };
+	const hook: TestContext = { skipBootstrap: options.skipBootstrap !== false };
 	const location = new URL(options.url || 'https://www.youtube.com/watch?v=video-a');
 	const windowListeners = new Map<string, Set<(event: any) => void>>();
 	const gmValueListeners = new Map<string, GMValueChangeListener[]>();
@@ -128,13 +129,16 @@ export function loadUserscript(options: LoadOptions = {}) {
 
 	const source = fs.readFileSync(path.resolve('ytblockhandlecomments.js'), 'utf8');
 	vm.createContext(context);
-	vm.runInContext(source, context, { filename: 'ytblockhandlecomments.js' });
+	const runUserscript = () => vm.runInContext(source, context, { filename: 'ytblockhandlecomments.js' });
+	runUserscript();
 
 	return {
 		api: hook,
 		context,
 		document,
 		gmStore,
+		rerunUserscript: runUserscript,
+		getPendingAnimationFrameCount: () => animationFrames.size,
 		flushAnimationFrames: () => {
 			const pending = Array.from(animationFrames.values());
 			animationFrames.clear();

@@ -3,6 +3,7 @@
 	 * 0. Global styles
 	 * ---------------------------------------------------------- */
 	export const style = document.createElement('style');
+	style.id = 'yt-comment-blocker-styles';
 	style.textContent = `
     :root{--tm-font-scale:1.08;--tm-ui-scale:1.08}
 			:root{--tm-theme-background:#f8f9fa;--tm-theme-surface:#fff;--tm-theme-text:#202124;--tm-theme-muted:#5f6368;--tm-theme-border:#d0d7de;--tm-theme-primary:#065fd4;--tm-theme-danger:#b3261e}
@@ -174,5 +175,5 @@
 			.tm-theme-light .tm-badge,.tm-theme-dark .tm-badge,.tm-theme-custom .tm-badge,.tm-theme-light .tm-result-list li,.tm-theme-dark .tm-result-list li,.tm-theme-custom .tm-result-list li{background:var(--tm-theme-background);color:var(--tm-theme-text);border-color:var(--tm-theme-border)}
 			.tm-theme-light .tm-banner .actions .secondary,.tm-theme-dark .tm-banner .actions .secondary,.tm-theme-custom .tm-banner .actions .secondary{background:var(--tm-theme-surface);color:var(--tm-theme-text);border-color:var(--tm-theme-border)}
   `;
-	document.head.appendChild(style);
+	if (!document.querySelector('#yt-comment-blocker-styles')) document.head.appendChild(style);
 

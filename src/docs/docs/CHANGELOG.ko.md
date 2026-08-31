@@ -15,6 +15,7 @@
 
 ### Changed
 
+- 하나의 toast live region을 재사용하고 userscript가 반복 주입되어도 stylesheet나 app runtime이 중복되지 않도록 개선.
 - handle 조회 cache를 최근 사용한 결과 256개로 제한하고 알림을 렌더링할 때 pair 요약을 재사용.
 - 필터만 바뀔 때 차단 목록 검색 index를 재사용하고 목록 행을 한 번의 DOM 작업으로 교체하여 대규모 규칙 관리를 부드럽게 개선.
 - 댓글 mutation을 animation frame마다 묶고 화면 밖 매칭은 viewport 진입까지 미루며 댓글별 hot path 밖에서 매칭 설정을 cache.

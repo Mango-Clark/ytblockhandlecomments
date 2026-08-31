@@ -2,6 +2,31 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { loadUserscript } from './helpers/load-userscript.ts';
 
+test('repeated userscript injection keeps one style and one pending boot', () => {
+	const { context, document, getPendingAnimationFrameCount, rerunUserscript } = loadUserscript({
+		deferAnimationFrames: true,
+		skipBootstrap: false
+	});
+
+	assert.equal(getPendingAnimationFrameCount(), 1);
+	assert.equal(document.querySelectorAll('#yt-comment-blocker-styles').length, 1);
+	rerunUserscript();
+
+	assert.equal(getPendingAnimationFrameCount(), 1);
+	assert.equal(document.querySelectorAll('#yt-comment-blocker-styles').length, 1);
+	assert.equal(context.__ytCommentBlockerBootStateV1, 'pending');
+});
+
+test('consecutive toasts reuse one live region', () => {
+	const { api, document } = loadUserscript();
+
+	api.Toast.show('first', 0);
+	api.Toast.show('second', 0);
+
+	assert.equal(document.querySelectorAll('.tm-toast').length, 1);
+	assert.equal(document.querySelector('.tm-toast').textContent, 'second');
+});
+
 test('page-key changes reset transient comment observation state', () => {
 	const { api } = loadUserscript();
 	let resetCalls = 0;

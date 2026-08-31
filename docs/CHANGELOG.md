@@ -14,6 +14,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); projec
 
 ### Changed
 
+- Reused a single toast live region and prevented repeated userscript injection from duplicating the stylesheet or application runtime.
 - Bounded the handle lookup cache to the 256 most recently used results and reused pair summaries during notification rendering.
 - Reused the block-list search index across filter-only updates and replaced list rows in one DOM operation for smoother management of large rule sets.
 - Batched comment mutations per animation frame, deferred offscreen matching until intersection, and cached matching configuration outside the per-comment hot path.

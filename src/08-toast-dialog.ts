@@ -9,15 +9,36 @@ import {
 	 * ---------------------------------------------------------- */
 	export class Toast {
 		[key: string]: any;
+		static _element: HTMLElement | null = null;
+		static _frame: number | null = null;
+		static _hideTimer: ReturnType<typeof setTimeout> | null = null;
+		static _removeTimer: ReturnType<typeof setTimeout> | null = null;
 		static show(msg: string, ms = 2000) {
-			const el = Object.assign(document.createElement('div'), { className: 'tm-toast' });
-			el.setAttribute('aria-live', 'polite');
+			if (Toast._frame !== null) cancelAnimationFrame(Toast._frame);
+			if (Toast._hideTimer !== null) clearTimeout(Toast._hideTimer);
+			if (Toast._removeTimer !== null) clearTimeout(Toast._removeTimer);
+			let el = Toast._element;
+			if (!el?.parentNode) {
+				el = Object.assign(document.createElement('div'), { className: 'tm-toast' });
+				el.setAttribute('aria-live', 'polite');
+				document.body.appendChild(el);
+				Toast._element = el;
+			}
 			el.textContent = msg;
-			document.body.appendChild(el);
-			requestAnimationFrame(() => {
+			el.style.opacity = '0';
+			Toast._frame = requestAnimationFrame(() => {
+				Toast._frame = null;
 				el.style.opacity = '1';
 			});
-			setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 200); }, ms);
+			Toast._hideTimer = setTimeout(() => {
+				Toast._hideTimer = null;
+				el.style.opacity = '0';
+				Toast._removeTimer = setTimeout(() => {
+					Toast._removeTimer = null;
+					el.remove();
+					if (Toast._element === el) Toast._element = null;
+				}, 200);
+			}, ms);
 		}
 	}
 

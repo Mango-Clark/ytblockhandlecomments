@@ -16,7 +16,7 @@ import { ApiConfigStorage } from './06-api-config-storage.ts';
 import { PairService } from './07-pair-service.ts';
 import { CommentHider } from './10-comment-hider.ts';
 import { MenuEnhancer } from './11-menu-enhancer.ts';
-import { Dialog } from './08-toast-dialog.ts';
+import { Dialog, Toast } from './08-toast-dialog.ts';
 import { BlockListManager } from './12-block-list-manager.ts';
 import { App } from './13-app.ts';
 import { Logger } from './15-logger.ts';
@@ -36,6 +36,7 @@ const TEST_HOOK = typeof window === 'object' ? window.__YT_BLOCK_TEST_HOOK__ || 
 			CommentHider,
 			MenuEnhancer,
 			Dialog,
+			Toast,
 			BlockListManager,
 			App,
 			Logger,
@@ -49,7 +50,16 @@ const TEST_HOOK = typeof window === 'object' ? window.__YT_BLOCK_TEST_HOOK__ || 
 			getScriptVersion
 		});
 	}
-	if (!TEST_HOOK?.skipBootstrap) {
+	const BOOT_STATE_KEY = '__ytCommentBlockerBootStateV1';
+	const bootWindow = window as any;
+	if (!TEST_HOOK?.skipBootstrap && !bootWindow[BOOT_STATE_KEY]) {
+		bootWindow[BOOT_STATE_KEY] = 'pending';
 		// Defer a tick to allow YT initial paint, then start
-		requestAnimationFrame(() => new App());
+		requestAnimationFrame(() => {
+			try { bootWindow[BOOT_STATE_KEY] = new App(); }
+			catch (error) {
+				delete bootWindow[BOOT_STATE_KEY];
+				throw error;
+			}
+		});
 	}
