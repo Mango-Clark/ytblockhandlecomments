@@ -965,6 +965,37 @@ test('block list restores view state, resets filters, and prunes stale selection
 	assert.equal(manager._listViewState.selection.length, 0);
 });
 
+test('large block-list searches reuse the item search index', () => {
+	const { api, context, document, flushAnimationFrames } = loadUserscript({ deferAnimationFrames: true });
+	const settings = new api.AppSettingsStorage();
+	const storage = new api.StorageV2(settings);
+	storage.setAll(Array.from({ length: 1000 }, (_: unknown, index: number) => ({
+		type: 'handle',
+		value: `@user${index}`
+	})));
+	const pairStore = new api.PairMetaStorage(settings);
+	const apiConfig = new api.ApiConfigStorage();
+	const manager = new api.BlockListManager({
+		settings,
+		storage,
+		pairStore,
+		apiConfig,
+		pairService: new api.PairService(storage, pairStore, apiConfig, settings),
+		getLastPairRunResult: () => null,
+		refreshAfterStorageChange: () => {}
+	});
+
+	manager.openList();
+	const initialBuilds = context.__ytCommentBlockerPerf.managerIndexBuilds;
+	const search = document.querySelector('[data-manager-filter="search"]');
+	search.value = 'user99';
+	search.dispatchEvent({ type: 'input' });
+	flushAnimationFrames();
+
+	assert.equal(context.__ytCommentBlockerPerf.managerIndexBuilds, initialBuilds);
+	assert.equal(document.querySelector('.tm-block-list').children.length, 11);
+});
+
 test('settings dialog uses grouped task list layout', () => {
 	const { api, document } = loadUserscript();
 	const settings = new api.AppSettingsStorage();

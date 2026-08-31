@@ -14,6 +14,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); projec
 
 ### Changed
 
+- Reused the block-list search index across filter-only updates and replaced list rows in one DOM operation for smoother management of large rule sets.
 - Batched comment mutations per animation frame, deferred offscreen matching until intersection, and cached matching configuration outside the per-comment hot path.
 - Preserved block-list search, filters, valid selections, and scroll position across adjacent manager dialogs, with a one-click filter reset.
 - Batched same-turn saved-log writes, migrated legacy arrays to revisioned log state, merged concurrent cross-tab additions, and trimmed immediately after retention reductions.

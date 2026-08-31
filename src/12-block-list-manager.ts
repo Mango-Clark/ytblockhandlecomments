@@ -1529,7 +1529,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 					if (input.checked) tagFilters.add(code);
 					else tagFilters.delete(code);
 					persistViewState();
-					invalidateViewState({ clearRegex: true });
+					invalidateViewState();
 					renderList();
 				});
 				const text = document.createElement('span');
@@ -1570,6 +1570,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 
 			const regexMatchCache = new Map<string, RegexMatchCacheEntry>();
 			const rowRefs = new Map<string, { checkbox: HTMLInputElement }>();
+			let searchIndexCache: { itemsRevision: string; index: ReturnType<typeof buildManagerSearchIndex> } | null = null;
 			let baseViewStateCache: BlockListBaseViewState | null = null;
 			let viewStateCache: BlockListViewState | null = null;
 			let selectionVersion = 0;
@@ -1644,12 +1645,18 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			};
 			const buildBaseViewState = (): BlockListBaseViewState => {
 				const allItems = getCurrentItems();
+				const itemsRevision = getItemsRevision(allItems);
 				const blockedIds = this.app.pairService.getBlockedIdSet(allItems);
 				const keyedItems: Map<string, BlockItem> = new Map(allItems
 					.map((item: BlockItem): [string | null, BlockItem] => [getItemKey(item), item])
 					.filter((entry: [string | null, BlockItem]): entry is [string, BlockItem] => !!entry[0]));
 				const handleItems = allItems.filter((item: BlockItem) => item.type === 'handle');
-				const searchIndex = buildManagerSearchIndex(allItems);
+				if (!searchIndexCache || searchIndexCache.itemsRevision !== itemsRevision) {
+					searchIndexCache = { itemsRevision, index: buildManagerSearchIndex(allItems) };
+					const metrics = window.__ytCommentBlockerPerf ||= {};
+					metrics.managerIndexBuilds = (metrics.managerIndexBuilds || 0) + 1;
+				}
+				const searchIndex = searchIndexCache.index;
 				const searched = searchManagerIndex(searchIndex, searchQuery);
 				const typeValue = typeSelect.value || 'all';
 				const visibleItems = searched.filter((item: BlockItem) => {
@@ -1661,14 +1668,14 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				const visibleKeys = visibleItems.map(getItemKey).filter(isNonNull);
 				return {
 					signature: [
-						getItemsRevision(allItems),
+						itemsRevision,
 						getPairRevision(handleItems, blockedIds),
 						String(this.app.settings.isHandleCaseSensitive()),
 						(typeSelect.value || 'all'),
 						String(searchQuery || '').trim().toLowerCase(),
 						Array.from(tagFilters).sort().join(',')
 					].join('|'),
-					itemsRevision: getItemsRevision(allItems),
+					itemsRevision,
 					allItems,
 					keyedItems,
 					handleItems,
@@ -1819,17 +1826,17 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			const renderList = (viewState = computeViewState()) => {
 				listTitle.textContent = t('manageTitle', viewState.allItems.length);
 				rowRefs.clear();
-				list.replaceChildren();
 				if (!viewState.allItems.length || !viewState.visibleItems.length) {
 					const li = document.createElement('li');
 					li.className = 'tm-list-empty';
 					li.textContent = viewState.allItems.length
 						? (searchQuery ? t('searchNoMatches') : t('noFilteredEntries'))
 						: t('noEntries');
-					list.appendChild(li);
+					list.replaceChildren(li);
 					syncActionState(viewState);
 					return;
 				}
+				const rows: HTMLLIElement[] = [];
 				for (const item of viewState.visibleItems) {
 					const itemKey = getItemKey(item);
 					if (!itemKey) continue;
@@ -1976,8 +1983,9 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 					left.append(label, badges);
 					if (meta.childNodes.length) left.appendChild(meta);
 					li.append(checkbox, left, removeBtn);
-					list.appendChild(li);
+					rows.push(li);
 				}
+				list.replaceChildren(...rows);
 				syncActionState(viewState);
 			};
 			const renderAll = () => {
@@ -2053,7 +2061,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				if (isComposingSearch || searchRenderFrame != null) return;
 				searchRenderFrame = requestAnimationFrame(() => {
 					searchRenderFrame = null;
-					invalidateViewState({ clearRegex: true });
+					invalidateViewState();
 					renderList();
 				});
 			});
@@ -2064,7 +2072,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			});
 			typeSelect.addEventListener('change', () => {
 				persistViewState();
-				invalidateViewState({ clearRegex: true });
+				invalidateViewState();
 				renderList();
 			});
 			resetFiltersBtn.addEventListener('click', () => {
@@ -2074,7 +2082,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				tagFilters.clear();
 				tagInputs.forEach(({ input }) => { input.checked = false; });
 				persistViewState();
-				invalidateViewState({ clearRegex: true });
+				invalidateViewState();
 				renderList();
 			});
 			bulkSelect.addEventListener('change', () => syncActionState());
@@ -2191,6 +2199,10 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 					applyLanguage();
 				},
 				onBeforeClose: (value, dialog) => {
+					if (searchRenderFrame !== null) {
+						cancelAnimationFrame(searchRenderFrame);
+						searchRenderFrame = null;
+					}
 					persistViewState(dialog.querySelector('.tm-content')?.scrollTop || 0);
 					return value;
 				}
