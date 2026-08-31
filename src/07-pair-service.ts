@@ -17,6 +17,7 @@ import {
 } from './02-utils-i18n.ts';
 
 const PAIR_LOOKUP_CONCURRENCY = 8;
+const PAIR_LOOKUP_CACHE_LIMIT = 256;
 
 	/* ----------------------------------------------------------
 	 * 6. Pair resolution and policy
@@ -85,9 +86,8 @@ const PAIR_LOOKUP_CONCURRENCY = 8;
 			summary.pairNeeded = summary.handleOnly + summary.unverified;
 			return summary;
 		}
-		shouldNotify() {
+		shouldNotify(summary = this.getSummary()) {
 			if (!this.pairStore.isUidDetectionEnabled()) return false;
-			const summary = this.getSummary();
 			if (!summary.stale && !summary.mismatch) return false;
 			const lastCheckAt = this.pairStore.getLastPairCheckAt();
 			if (lastCheckAt && (Date.now() - lastCheckAt) < PAIR_NOTICE_COOLDOWN_MS) return false;
@@ -397,7 +397,12 @@ const PAIR_LOOKUP_CONCURRENCY = 8;
 			const key = getHandleCompareKey(normalized, this.settings?.isHandleCaseSensitive?.() || false);
 			const cached = this._handleLookupCache.get(key);
 			const intervalSeconds = this.settings?.getHandleLookupIntervalSeconds?.() ?? 600;
-			if (!force && cached && intervalSeconds > 0 && Date.now() - cached.checkedAt < intervalSeconds * 1000) return cached.result;
+			if (!force && cached && intervalSeconds > 0 && Date.now() - cached.checkedAt < intervalSeconds * 1000) {
+				this._handleLookupCache.delete(key);
+				this._handleLookupCache.set(key, cached);
+				return cached.result;
+			}
+			if (cached) this._handleLookupCache.delete(key);
 			let result;
 			if (this.settings?.getHandleLookupMethod?.() !== 'api') {
 				try { result = await this._resolveHandleFromPage(normalized); }
@@ -413,6 +418,11 @@ const PAIR_LOOKUP_CONCURRENCY = 8;
 			}
 			if (!result) result = await this._resolveHandleFromApi(normalized);
 			this._handleLookupCache.set(key, { checkedAt: Date.now(), result });
+			while (this._handleLookupCache.size > PAIR_LOOKUP_CACHE_LIMIT) {
+				const oldestKey = this._handleLookupCache.keys().next().value;
+				if (oldestKey == null) break;
+				this._handleLookupCache.delete(oldestKey);
+			}
 			return result;
 		}
 		async _resolveHandleFromPage(handle: string) {

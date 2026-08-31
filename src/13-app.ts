@@ -580,12 +580,17 @@ import { Logger } from './15-logger.ts';
 		}
 
 		_syncPairBanner() {
-			if (this._getPageMode() !== 'watch' || !this.pairService.shouldNotify()) {
+			if (this._getPageMode() !== 'watch') {
 				this._pairBanner?.remove();
 				this._pairBanner = null;
 				return;
 			}
 			const summary = this.pairService.getSummary();
+			if (!this.pairService.shouldNotify(summary)) {
+				this._pairBanner?.remove();
+				this._pairBanner = null;
+				return;
+			}
 			if (!this._pairBanner) {
 				const banner = document.createElement('div');
 				banner.className = 'tm-banner';

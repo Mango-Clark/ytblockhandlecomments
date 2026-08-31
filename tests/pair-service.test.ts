@@ -202,6 +202,19 @@ test('channel-page lookup normalizes and caches a handle result', async () => {
 	assert.equal(requests, 1);
 });
 
+test('handle lookup cache retains only the most recent results', async () => {
+	const { service } = createService();
+	service._resolveHandleFromPage = async () => ({ uid: 'UC1234567890', source: 'test' });
+
+	for (let index = 0; index < 300; index += 1) {
+		await service.resolveHandle(`@user${index}`, { force: true });
+	}
+
+	assert.equal(service._handleLookupCache.size, 256);
+	assert.equal(service._handleLookupCache.has('@user0'), false);
+	assert.equal(service._handleLookupCache.has('@user299'), true);
+});
+
 test('channel-page lookup falls back to API only when explicitly enabled', async () => {
 	const { service, apiConfig, context } = createService();
 	apiConfig.setApiKey('test-key');
@@ -365,6 +378,14 @@ test('pair notice stays dismissed for the stale interval', () => {
 
 	pairStore.dismissNotification(now - (8 * dayMs));
 	assert.equal(service.shouldNotify(), true);
+});
+
+test('pair notice accepts a precomputed summary', () => {
+	const { pairStore, service } = createService();
+	pairStore.setUidDetectionEnabled(true);
+	service.getSummary = () => { throw new Error('summary recomputed'); };
+
+	assert.equal(service.shouldNotify({ stale: 1, mismatch: 0 }), true);
 });
 
 test('pair notice waits after a recent pair check', () => {
