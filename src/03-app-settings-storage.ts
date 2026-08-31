@@ -7,6 +7,7 @@
 		constructor() {
 			this.KEY = 'app_settings_v1';
 			this._lastSaveError = null;
+			this._revision = 0;
 			this.CONSOLE_TIME_FORMATS = ['iso', 'iso-date', 'iso-time', 'iso-basic', 'iso-basic-date', 'iso-week-date', 'iso-ordinal-date'];
 			this.THEME_MODES = ['light', 'dark', 'system', 'system-inverted', 'youtube', 'youtube-inverted', 'custom'];
 			this.THEME_DEFAULTS = {
@@ -273,6 +274,7 @@
 		}
 		setAllLocal(state: any) {
 			this._state = this._normalizeState(state);
+			this._revision += 1;
 			this._applyDisplaySettings();
 			this._applyThemeSettings();
 			return this.getState();
@@ -310,6 +312,7 @@
 			}
 			if (!this._setGM(this.KEY, normalized)) return this.getState();
 			this._state = normalized;
+			this._revision += 1;
 			this._applyDisplaySettings();
 			this._applyThemeSettings();
 			return this.getState();

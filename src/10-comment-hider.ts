@@ -31,6 +31,7 @@ import { Extractor } from './09-extractor.ts';
 			this._nodeIdentities = new WeakMap();
 			this._blockIdentities = new WeakMap();
 			this._observed = new Set();
+			this._visible = new WeakSet();
 			this._pending = false;
 			this._pendingRoot = null;
 			this._pendingFrame = null;
@@ -51,11 +52,24 @@ import { Extractor } from './09-extractor.ts';
 			try { window.__ytCommentBlockerPerf = this._metrics; } catch { }
 		}
 		rebuildLookup() {
+			this._settingsRevision = this.settings?._revision;
 			this._idSet.clear(); this._handleSet.clear(); this._regexes = [];
 			const blockMatchMode = this.settings?.getBlockMatchMode?.() || 'handle';
+			this._blockMatchMode = blockMatchMode;
 			const useUidDetection = blockMatchMode === 'pair' && this.pairStore.isUidDetectionEnabled();
 			const useHandleMatching = blockMatchMode === 'handle';
 			const caseSensitive = this.settings?.isHandleCaseSensitive?.() || false;
+			this._caseSensitive = caseSensitive;
+			this._autoAddRegexHandlesEnabled = !!this.settings?.isAutoAddRegexHandlesEnabled?.();
+			this._dislikeMode = this.settings?.getDislikeMode?.() || 'none';
+			this._commentBlockMode = this.settings?.getCommentBlockMode?.() || 'hide';
+			const keywordConfig = this.settings?.getKeywordAutomation?.() || {};
+			this._keywordConfig = {
+				enabled: this.settings?.isKeywordAutomationEnabled?.() !== false,
+				keywords: (keywordConfig.keywords || []).map((keyword: any) => ({ raw: keyword, normalized: String(keyword).toLocaleLowerCase() })),
+				fields: keywordConfig.fields || {},
+				actions: keywordConfig.actions || {}
+			};
 			for (const it of this.storage.all()) {
 				if (it.type === 'id') {
 					if (useUidDetection) this._idSet.add(it.value);
@@ -72,7 +86,7 @@ import { Extractor } from './09-extractor.ts';
 			}
 		}
 		_autoAddRegexHandle(handle: string | null, handleKey: string | null) {
-			if (!this.settings?.isAutoAddRegexHandlesEnabled?.() || !handle || !handleKey) return;
+			if (!this._autoAddRegexHandlesEnabled || !handle || !handleKey) return;
 			if (this._handleSet.has(handleKey)) return;
 			if (this.storage.addHandle(handle)) {
 				this._handleSet.add(handleKey);
@@ -80,9 +94,9 @@ import { Extractor } from './09-extractor.ts';
 			}
 		}
 		_getKeywordMatch(node: Element, meta: any) {
-			const config = this.settings?.getKeywordAutomation?.();
-			if (this.settings?.isKeywordAutomationEnabled?.() === false) return null;
-			const keywords = config?.keywords || [];
+			const config = this._keywordConfig;
+			if (!config?.enabled) return null;
+			const keywords = config.keywords || [];
 			if (!keywords.length) return null;
 			const fields = config?.fields || {};
 			const targets: Array<{ field: string; value: string }> = [];
@@ -98,8 +112,8 @@ import { Extractor } from './09-extractor.ts';
 			for (const target of targets) {
 				const normalized = target.value.toLocaleLowerCase();
 				for (const keyword of keywords) {
-					if (normalized.includes(String(keyword).toLocaleLowerCase())) {
-						return { keyword, field: target.field };
+					if (normalized.includes(keyword.normalized)) {
+						return { keyword: keyword.raw, field: target.field };
 					}
 				}
 			}
@@ -109,7 +123,7 @@ import { Extractor } from './09-extractor.ts';
 			if (this._keywordHandled.has(node)) return;
 			const match = this._getKeywordMatch(node, meta);
 			if (!match) return;
-			const actions = this.settings?.getKeywordAutomation?.()?.actions || {};
+			const actions = this._keywordConfig?.actions || {};
 			if (!actions.dislike && !actions.blockHandle && !actions.createPair) return;
 			this._keywordHandled.add(node);
 			if (actions.dislike) this._autoDislikeBeforeHide(node);
@@ -155,7 +169,7 @@ import { Extractor } from './09-extractor.ts';
 			this._autoDisliked.delete(node);
 			this._keywordHandled.delete(node);
 			this._blockIdentities.delete(node);
-			if (!meta.id && meta.handle && this.settings?.getBlockMatchMode?.() === 'pair') this._metrics.missingChannelIds += 1;
+			if (!meta.id && meta.handle && this._blockMatchMode === 'pair') this._metrics.missingChannelIds += 1;
 			return { identity, meta };
 		}
 		invalidateNode(node: Element | null | undefined) {
@@ -166,7 +180,7 @@ import { Extractor } from './09-extractor.ts';
 			const meta = this._getMeta(node);
 			if (meta.id && this._idSet.has(meta.id)) return true;
 			const h = meta.handle;
-			const handleKey = getHandleCompareKey(h, this.settings?.isHandleCaseSensitive?.() || false);
+			const handleKey = getHandleCompareKey(h, this._caseSensitive);
 			if (handleKey && this._handleSet.has(handleKey)) return true;
 			if (h) {
 				for (const rx of this._regexes) {
@@ -226,7 +240,8 @@ import { Extractor } from './09-extractor.ts';
 				placeholder.className = 'tm-block-placeholder';
 				node.appendChild(placeholder);
 			}
-			placeholder.textContent = mode === 'placeholder-reveal' ? t('blockedCommentReveal') : t('blockedCommentPlaceholder');
+			const placeholderText = mode === 'placeholder-reveal' ? t('blockedCommentReveal') : t('blockedCommentPlaceholder');
+			if (placeholder.textContent !== placeholderText) placeholder.textContent = placeholderText;
 			if (mode === 'placeholder-reveal' && !placeholder.__tmRevealBound) {
 				placeholder.__tmRevealBound = true;
 				placeholder.addEventListener('click', () => {
@@ -241,7 +256,7 @@ import { Extractor } from './09-extractor.ts';
 				this._findBlockPlaceholder(node)?.remove();
 				return;
 			}
-			const blockMode = this.settings?.getCommentBlockMode?.() || 'hide';
+			const blockMode = this._commentBlockMode;
 			if (blockMode === 'hide') {
 				node.classList.add('tm-hidden');
 				node.classList.remove('tm-block-placeholder-mode', 'tm-block-revealed');
@@ -255,10 +270,11 @@ import { Extractor } from './09-extractor.ts';
 		}
 		applyHide(node: Element | null | undefined) {
 			if (!node) return;
+			if (this._settingsRevision !== this.settings?._revision) this.rebuildLookup();
 			const { identity, meta } = this._syncNodeIdentity(node);
 			this._applyKeywordAutomation(node, meta);
 			const shouldHide = this._matches(node);
-			const dislikeMode = this.settings?.getDislikeMode?.() || 'none';
+			const dislikeMode = this._dislikeMode;
 			const alreadyBlocked = this._blockIdentities.get(node) === identity && (node.classList.contains('tm-hidden') || node.classList.contains('tm-block-placeholder-mode'));
 			if (
 				shouldHide &&
@@ -273,8 +289,17 @@ import { Extractor } from './09-extractor.ts';
 		}
 		_connectIO() {
 			if (this._io) return this._io;
+			if (typeof IntersectionObserver !== 'function') return null;
 			this._io = new IntersectionObserver((entries) => {
-				for (const e of entries) if (e.isIntersecting) this.applyHide(e.target);
+				const startedAt = performance.now();
+				let applied = 0;
+				for (const e of entries) {
+					if (!e.isIntersecting) { this._visible.delete(e.target); continue; }
+					this._visible.add(e.target);
+					this.applyHide(e.target);
+					applied += 1;
+				}
+				if (applied) this._recordRefresh('incrementalRefreshes', applied, startedAt);
 			}, { root: null, rootMargin: '0px', threshold: 0 });
 			return this._io;
 		}
@@ -282,6 +307,7 @@ import { Extractor } from './09-extractor.ts';
 			if (this._io) this._io.disconnect();
 			this._io = null;
 			this._observed = new Set();
+			this._visible = new WeakSet();
 		}
 		resetTransientState() {
 			if (this._pendingFrame !== null) {
@@ -298,14 +324,22 @@ import { Extractor } from './09-extractor.ts';
 			this._pendingRoot = null;
 		}
 		_observeNode(node: Element | null | undefined) {
-			if (!node || this._observed.has(node)) return;
-			this._observed.add(node);
-			this._connectIO().observe(node);
+			if (!node) return false;
+			const io = this._connectIO();
+			if (!io) { this.applyHide(node); return true; }
+			if (!this._observed.has(node)) {
+				this._observed.add(node);
+				io.observe(node);
+			}
+			if (!this._visible.has(node)) return false;
+			this.applyHide(node);
+			return true;
 		}
 		unobserveNodes(nodes: Iterable<Element>) {
 			if (!this._io) return;
 			for (const node of nodes || []) {
 				if (!this._observed.delete(node)) continue;
+				this._visible.delete(node);
 				this._io.unobserve(node);
 			}
 		}
@@ -327,12 +361,12 @@ import { Extractor } from './09-extractor.ts';
 			}
 			if (!unique.size) return;
 			const startedAt = performance.now();
+			let applied = 0;
 			for (const node of unique) {
 				if (invalidate) this.invalidateNode(node);
-				this.applyHide(node);
-				this._observeNode(node);
+				if (this._observeNode(node)) applied += 1;
 			}
-			this._recordRefresh('incrementalRefreshes', unique.size, startedAt);
+			if (applied) this._recordRefresh('incrementalRefreshes', applied, startedAt);
 		}
 		doRefresh(root: Element | null | undefined) {
 			const scope = root || this._getDefaultRoot();
@@ -340,11 +374,9 @@ import { Extractor } from './09-extractor.ts';
 			const nodes = this._collectCommentNodes(scope);
 			if (!nodes.length) return;
 			const startedAt = performance.now();
-			for (const node of nodes) {
-				this.applyHide(node);
-				this._observeNode(node);
-			}
-			this._recordRefresh('fullRefreshes', nodes.length, startedAt);
+			let applied = 0;
+			for (const node of nodes) if (this._observeNode(node)) applied += 1;
+			if (applied) this._recordRefresh('fullRefreshes', applied, startedAt);
 		}
 		refreshScheduled(root: Element | null | undefined) {
 			const scope = root || this._getDefaultRoot();

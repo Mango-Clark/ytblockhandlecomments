@@ -381,6 +381,7 @@ Pair 결과:
 - `watch`: 기존 `ytd-comments#comments, ytd-comments` host 탐색 유지.
 - `shorts`: comment node 중심 host 탐색. `body`, `html`, `ytd-app`보다 좁은 공통 container가 있을 때만 comment observer 연결.
 - page key 변경 시 임시 `IntersectionObserver` 등록/댓글 metadata cache 초기화. 재사용 comments host가 여러 영상의 분리 댓글 노드를 붙잡는 문제 방지.
+- 댓글 mutation은 animation frame마다 한 번으로 합침. 화면 밖 댓글은 viewport에 들어오기 전까지 매칭·키워드 동작 없이 관찰만 하고, 보이는 댓글은 관련 mutation·설정 변경 후 다시 평가.
 - pair banner gating은 watch-only.
 
 ## 8. 탭 간 동기화

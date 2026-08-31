@@ -170,6 +170,33 @@ test('Shorts panel observer processes sibling additions and removals incremental
 	assert.ok(removedRoots.includes(existing));
 });
 
+test('comment mutation callbacks coalesce into one animation-frame refresh', () => {
+	const { api, document, flushAnimationFrames } = loadUserscript({ deferAnimationFrames: true });
+	const app = Object.create(api.App.prototype);
+	const host = document.createElement('div');
+	document.body.appendChild(host);
+	const refreshed: any[] = [];
+	let batches = 0;
+	Object.assign(app, {
+		_hostObserver: null, _commentObserver: null, _commentsHost: null,
+		_commentMutationFrame: null, _pendingMutationRoots: new Set(), _pendingRemovedRoots: new Set(),
+		hider: {
+			resetObservation: () => {}, refreshScheduled: () => {}, unobserveNodes: () => {},
+			noteMutationBatch: () => { batches += 1; },
+			refreshNodes: (roots: Set<any>) => refreshed.push(...roots)
+		}
+	});
+	app._attachCommentsHost(host);
+	const first = document.createElement('ytd-comment-renderer');
+	const second = document.createElement('ytd-comment-renderer');
+	app._commentObserver.trigger([{ target: host, addedNodes: [first], removedNodes: [] }]);
+	app._commentObserver.trigger([{ target: host, addedNodes: [second], removedNodes: [] }]);
+	assert.equal(refreshed.length, 0);
+	flushAnimationFrames();
+	assert.equal(batches, 1);
+	assert.deepEqual(refreshed, [first, second]);
+});
+
 test('comment identity mutations refresh only their comment root', () => {
 	const { api, document } = loadUserscript();
 	const app = Object.create(api.App.prototype);

@@ -8,6 +8,7 @@ type LoadOptions = {
 	gmSetValue?: (key: string, value: unknown) => void;
 	url?: string;
 	language?: string;
+	deferAnimationFrames?: boolean;
 };
 type TestContext = {
 	[key: string]: any;
@@ -51,6 +52,10 @@ class FakeIntersectionObserver {
 
 	unobserve() {}
 
+	trigger(entries: any[] = this.observeCalls.map((target: any) => ({ target, isIntersecting: true }))) {
+		if (!this.disconnected) this.callback(entries);
+	}
+
 	disconnect() {
 		this.disconnected = true;
 	}
@@ -63,6 +68,8 @@ export function loadUserscript(options: LoadOptions = {}) {
 	const location = new URL(options.url || 'https://www.youtube.com/watch?v=video-a');
 	const windowListeners = new Map<string, Set<(event: any) => void>>();
 	const gmValueListeners = new Map<string, GMValueChangeListener[]>();
+	const animationFrames = new Map<number, AnimationFrameCallback>();
+	let nextAnimationFrameId = 1;
 	let perfNow = 0;
 
 	const context: TestContext = {
@@ -83,10 +90,12 @@ export function loadUserscript(options: LoadOptions = {}) {
 			}
 		},
 		requestAnimationFrame: (callback: AnimationFrameCallback) => {
-			callback(0);
-			return 1;
+			const id = nextAnimationFrameId++;
+			if (options.deferAnimationFrames) animationFrames.set(id, callback);
+			else callback(0);
+			return id;
 		},
-		cancelAnimationFrame: () => {},
+		cancelAnimationFrame: (id: number) => { animationFrames.delete(id); },
 		addEventListener: (type: string, listener: (event: any) => void) => {
 			if (!windowListeners.has(type)) windowListeners.set(type, new Set());
 			windowListeners.get(type)?.add(listener);
@@ -126,6 +135,11 @@ export function loadUserscript(options: LoadOptions = {}) {
 		context,
 		document,
 		gmStore,
+		flushAnimationFrames: () => {
+			const pending = Array.from(animationFrames.values());
+			animationFrames.clear();
+			for (const callback of pending) callback(0);
+		},
 		dispatchGMValueChange: (key: string, value: unknown, listenerIndex?: number) => {
 			const listeners = gmValueListeners.get(key) || [];
 			const selected = listenerIndex == null ? listeners : listeners.slice(listenerIndex, listenerIndex + 1);

@@ -45,6 +45,9 @@ import { Logger } from './15-logger.ts';
 			this._lastPairRunResult = null;
 			this._commentsHost = null;
 			this._commentObserver = null;
+			this._commentMutationFrame = null;
+			this._pendingMutationRoots = new Set();
+			this._pendingRemovedRoots = new Set();
 			this._hostObserver = null;
 			this._pageSyncPending = false;
 			this._pageKey = null;
@@ -414,6 +417,10 @@ import { Logger } from './15-logger.ts';
 		}
 
 		_disconnectCommentObserver() {
+			if (this._commentMutationFrame !== null) cancelAnimationFrame(this._commentMutationFrame);
+			this._commentMutationFrame = null;
+			this._pendingMutationRoots?.clear?.();
+			this._pendingRemovedRoots?.clear?.();
 			if (this._commentObserver) this._commentObserver.disconnect();
 			this._commentObserver = null;
 			this._commentsHost = null;
@@ -464,23 +471,35 @@ import { Logger } from './15-logger.ts';
 		}
 
 		_handleCommentMutations(muts: MutationRecord[]) {
-			const roots = new Set<Element>();
-			const removedRoots = new Set<Element>();
+			this._pendingMutationRoots ||= new Set();
+			this._pendingRemovedRoots ||= new Set();
 			for (const m of muts) {
 				if (m.addedNodes?.length) {
 					const targetRoot = Extractor.getCommentRoot(m.target);
-					if (targetRoot) roots.add(targetRoot);
-					for (const node of m.addedNodes) this._collectRefreshRoots(node, roots);
+					if (targetRoot) this._pendingMutationRoots.add(targetRoot);
+					for (const node of m.addedNodes) this._collectRefreshRoots(node, this._pendingMutationRoots);
 				}
 				if (m.type === 'attributes' || m.type === 'characterData') {
-					this._collectMutationTargetRoot(m.target, roots);
+					this._collectMutationTargetRoot(m.target, this._pendingMutationRoots);
 				}
-				for (const node of m.removedNodes || []) this._collectRefreshRoots(node, removedRoots);
+				for (const node of m.removedNodes || []) this._collectRefreshRoots(node, this._pendingRemovedRoots);
 			}
-			this.hider.unobserveNodes(removedRoots);
-			if (!roots.size) return;
-			this.hider.noteMutationBatch();
-			this.hider.refreshNodes(roots, { invalidate: true });
+			if (this._commentMutationFrame != null) return;
+			const observer = this._commentObserver;
+			this._commentMutationFrame = -1;
+			const frame = requestAnimationFrame(() => {
+				this._commentMutationFrame = null;
+				const roots = this._pendingMutationRoots;
+				const removedRoots = this._pendingRemovedRoots;
+				this._pendingMutationRoots = new Set();
+				this._pendingRemovedRoots = new Set();
+				if (observer !== this._commentObserver) return;
+				this.hider.unobserveNodes(removedRoots);
+				if (!roots.size) return;
+				this.hider.noteMutationBatch();
+				this.hider.refreshNodes(roots, { invalidate: true });
+			});
+			if (this._commentMutationFrame === -1) this._commentMutationFrame = frame;
 		}
 
 		_attachCommentsHost(host: Element | null) {

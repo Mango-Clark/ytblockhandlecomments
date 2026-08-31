@@ -15,6 +15,7 @@
 
 ### Changed
 
+- 댓글 mutation을 animation frame마다 묶고 화면 밖 매칭은 viewport 진입까지 미루며 댓글별 hot path 밖에서 매칭 설정을 cache.
 - 인접 관리자 창을 오갈 때 차단 목록 검색·필터·유효한 선택·스크롤 위치를 복원하고 원클릭 필터 초기화를 추가.
 - 같은 turn의 저장 로그 쓰기를 묶고 기존 배열을 revision 로그 상태로 migration하며 탭 간 동시 추가 병합과 보관 수 감소 즉시 정리를 적용.
 

@@ -176,10 +176,29 @@ test('thread refresh hides only matching comment node', () => {
 	hider.rebuildLookup();
 
 	hider.refreshNodes([thread]);
+	hider._io.trigger();
 
 	assert.equal(thread.classList.contains('tm-hidden'), false);
 	assert.equal(top.comment.classList.contains('tm-hidden'), true);
 	assert.equal(reply.comment.classList.contains('tm-hidden'), false);
+});
+
+test('large comment sets defer work until intersection without duplicate observation', () => {
+	const { api, document, context } = loadUserscript();
+	const settings = new api.AppSettingsStorage();
+	const storage = new api.StorageV2(settings);
+	const pairStore = new api.PairMetaStorage(settings);
+	const hider = new api.CommentHider(storage, pairStore, settings);
+	const host = document.createElement('div');
+	for (let index = 0; index < 500; index += 1) host.appendChild(createBlockedComment(document, `@user${index}`).comment);
+	document.body.appendChild(host);
+
+	hider.doRefresh(host);
+	hider.doRefresh(host);
+	assert.equal(hider._io.observeCalls.length, 500);
+	assert.equal(context.__ytCommentBlockerPerf.scannedNodes, 0);
+	hider._io.trigger();
+	assert.equal(context.__ytCommentBlockerPerf.scannedNodes, 500);
 });
 
 test('placeholder mode replaces blocked comment without hiding node', () => {

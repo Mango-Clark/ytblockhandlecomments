@@ -381,6 +381,7 @@ Comment observation:
 - `watch` uses existing `ytd-comments#comments, ytd-comments` host lookup
 - `shorts` uses comment-node-driven discovery; promotes shared container only when narrower than `body`, `html`, or `ytd-app`
 - Page-key changes reset transient `IntersectionObserver` registrations and metadata caches, preventing reused hosts retaining detached nodes across videos
+- Comment mutations are combined once per animation frame. Offscreen comments are observed without running matching or keyword actions until they enter the viewport; visible comments are reevaluated after relevant mutations or settings changes.
 - Pair banner remains watch-only
 
 ## 8. Cross-Tab Sync
