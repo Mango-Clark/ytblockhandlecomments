@@ -201,6 +201,47 @@ test('large comment sets defer work until intersection without duplicate observa
 	assert.equal(context.__ytCommentBlockerPerf.scannedNodes, 500);
 });
 
+test('hidden comments are restored after their rule is removed offscreen', () => {
+	const { api, document } = loadUserscript();
+	const settings = new api.AppSettingsStorage();
+	const storage = new api.StorageV2(settings);
+	const pairStore = new api.PairMetaStorage(settings);
+	const hider = new api.CommentHider(storage, pairStore, settings);
+	const { comment } = createBlockedComment(document);
+	document.body.appendChild(comment);
+	storage.addHandle('@alpha');
+	hider.rebuildLookup();
+
+	hider.doRefresh(comment);
+	hider._io.trigger([{ target: comment, isIntersecting: true }]);
+	assert.equal(comment.classList.contains('tm-hidden'), true);
+	hider._io.trigger([{ target: comment, isIntersecting: false }]);
+	storage.remove({ type: 'handle', value: '@alpha' });
+	hider.rebuildLookup();
+	hider.doRefresh(comment);
+
+	assert.equal(comment.classList.contains('tm-hidden'), false);
+});
+
+test('late intersection entries ignore unobserved comments', () => {
+	const { api, document, context } = loadUserscript();
+	const settings = new api.AppSettingsStorage();
+	const storage = new api.StorageV2(settings);
+	const pairStore = new api.PairMetaStorage(settings);
+	const hider = new api.CommentHider(storage, pairStore, settings);
+	const { comment } = createBlockedComment(document);
+	document.body.appendChild(comment);
+	storage.addHandle('@alpha');
+	hider.rebuildLookup();
+
+	hider.doRefresh(comment);
+	hider.unobserveNodes([comment]);
+	hider._io.trigger([{ target: comment, isIntersecting: true }]);
+
+	assert.equal(comment.classList.contains('tm-hidden'), false);
+	assert.equal(context.__ytCommentBlockerPerf.scannedNodes, 0);
+});
+
 test('placeholder mode replaces blocked comment without hiding node', () => {
 	const { api, document } = loadUserscript();
 	const settings = new api.AppSettingsStorage();

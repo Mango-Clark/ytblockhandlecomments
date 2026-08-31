@@ -294,6 +294,7 @@ import { Extractor } from './09-extractor.ts';
 				const startedAt = performance.now();
 				let applied = 0;
 				for (const e of entries) {
+					if (!this._observed.has(e.target) || !e.target.parentNode) continue;
 					if (!e.isIntersecting) { this._visible.delete(e.target); continue; }
 					this._visible.add(e.target);
 					this.applyHide(e.target);
@@ -331,7 +332,8 @@ import { Extractor } from './09-extractor.ts';
 				this._observed.add(node);
 				io.observe(node);
 			}
-			if (!this._visible.has(node)) return false;
+			const hasAppliedBlock = node.classList.contains('tm-hidden') || node.classList.contains('tm-block-placeholder-mode');
+			if (!this._visible.has(node) && !hasAppliedBlock) return false;
 			this.applyHide(node);
 			return true;
 		}
