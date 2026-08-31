@@ -4,15 +4,6 @@
 
 ## P1 — High
 
-- [ ] (A) Optimize the Tampermonkey runtime for high-load pages
-
-  - (0) `76d0d7447b5add855d090430aa1ebd5a5faf8875`
-  - (1) Batch comment mutations per animation frame and release pending observer, timer, and DOM references on navigation or close.
-  - (2) Defer offscreen comment work until intersection while preserving visible-comment updates and observer fallback behavior.
-  - (3) Cache hot-path matching configuration and reuse block-list data, search, pair-status, and regex computations.
-  - (4) Prevent duplicate bootstrap, styles, global listeners, and toast timers; bound long-lived lookup caches.
-  - (5) Verify deterministic operation counts with 1,000 rules and 500 comments while preserving all existing features.
-
 ## P2 — Normal
 
 ## P3 — Low
@@ -80,3 +71,12 @@
   - (0) `76d0d7447b5add855d090430aa1ebd5a5faf8875`
   - (1) Explain in the English WIKI that live log changes update only the logging status controls.
   - (2) Add the matching Korean explanation and keep generated documentation synchronized.
+
+- [x] (I) Optimize the Tampermonkey runtime for high-load pages
+
+  - (0) `76d0d7447b5add855d090430aa1ebd5a5faf8875`
+  - (1) Batch comment mutations per animation frame and release pending observer, timer, and DOM references on navigation or close.
+  - (2) Defer offscreen comment work until intersection while preserving visible-comment updates and observer fallback behavior.
+  - (3) Cache hot-path matching configuration and reuse block-list data, search, pair-status, and regex computations.
+  - (4) Prevent duplicate bootstrap, styles, global listeners, and toast timers; bound long-lived lookup caches.
+  - (5) Verify deterministic operation counts with 1,000 rules and 500 comments while preserving all existing features.
