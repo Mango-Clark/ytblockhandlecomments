@@ -314,6 +314,7 @@ test('cross-tab listeners apply remote state before refreshing UI', () => {
 		apiConfig: { setAllLocal: (value: any) => { calls.push(`api:${value.apiKey}`); } },
 		settings: { setAllLocal: (value: any) => { calls.push(`settings:${value.dislikeMode}`); } },
 		refreshAfterStorageChange: () => { calls.push('refresh'); },
+		refreshUiOnly: () => { calls.push('ui'); },
 		refreshLanguageUi: () => { calls.push('language'); }
 	});
 
@@ -330,8 +331,25 @@ test('cross-tab listeners apply remote state before refreshing UI', () => {
 	assert.deepEqual(calls, [
 		'blocked:@remote', 'refresh',
 		'pairs:@remote', 'refresh',
-		'api:remote-key', 'refresh',
+		'api:remote-key', 'ui',
 		'settings:always', 'refresh',
 		'language'
 	]);
+});
+
+test('UI-only refresh does not rebuild or rescan comments', () => {
+	const { api } = loadUserscript();
+	const app = Object.assign(Object.create(api.App.prototype), {
+		hider: {
+			rebuildLookup: () => { throw new Error('unexpected lookup rebuild'); },
+			refreshScheduled: () => { throw new Error('unexpected comment scan'); }
+		},
+		_syncPairBanner: () => { throw new Error('unexpected pair summary'); }
+	});
+	let refreshes = 0;
+	api.Dialog.refreshAll = () => { refreshes += 1; };
+
+	app.refreshUiOnly();
+
+	assert.equal(refreshes, 1);
 });

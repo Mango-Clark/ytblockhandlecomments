@@ -378,6 +378,7 @@ Pair 결과:
 
 댓글 관찰:
 
+- 표시·테마·pair 정책·API 설정 UI 변경은 comment matcher를 재구성하거나 댓글 검사를 예약하지 않고 열린 dialog만 갱신.
 - userscript가 반복 평가되어도 stylesheet와 app은 한 번만 시작. 연속 알림은 하나의 toast live region을 재사용하고 대기 timer를 교체.
 - `watch`: 기존 `ytd-comments#comments, ytd-comments` host 탐색 유지.
 - `shorts`: comment node 중심 host 탐색. `body`, `html`, `ytd-app`보다 좁은 공통 container가 있을 때만 comment observer 연결.

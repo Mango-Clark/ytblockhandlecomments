@@ -139,6 +139,10 @@ import { Logger } from './15-logger.ts';
 			Dialog.refreshAll();
 		}
 
+		refreshUiOnly() {
+			Dialog.refreshAll();
+		}
+
 		refreshLanguageUi() {
 			this._registerMenu();
 			this._syncPairBanner();
@@ -156,7 +160,7 @@ import { Logger } from './15-logger.ts';
 		async testApiKey() {
 			const result = await this.pairService.testApiKey();
 			this.apiConfig.setLastTestResult(result);
-			this.refreshAfterStorageChange();
+			this.refreshUiOnly();
 			this.logger[result.ok ? 'info' : 'warn']('API key test completed', { category: result.category, ok: result.ok });
 			return result;
 		}
@@ -565,7 +569,7 @@ import { Logger } from './15-logger.ts';
 				GM_addValueChangeListener('youtube_data_api_v3_config', (_k, _old, val, remote) => {
 					if (!remote) return;
 					this.apiConfig.setAllLocal(val);
-					this.refreshAfterStorageChange();
+					this.refreshUiOnly();
 				});
 				GM_addValueChangeListener('app_settings_v1', (_k, _old, val, remote) => {
 					if (!remote) return;

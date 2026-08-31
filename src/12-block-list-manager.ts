@@ -39,6 +39,10 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				scrollTop: 0
 			};
 		}
+		_refreshUiOnly() {
+			if (typeof this.app.refreshUiOnly === 'function') this.app.refreshUiOnly();
+			else Dialog.refreshAll();
+		}
 		_makeBadge(code: string) {
 			const badge = document.createElement('span');
 			badge.className = `tm-badge ${code}`;
@@ -483,7 +487,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			}).then(value => {
 				if (value === 'reset') {
 					this.app.settings.resetThemeCustom();
-					this.app.refreshAfterStorageChange();
+					this._refreshUiOnly();
 					this.openThemeCustomizer();
 					return;
 				}
@@ -491,7 +495,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				if (!isValid()) { Toast.show(t('customThemeInvalid')); return; }
 				const colors = Object.fromEntries(Array.from(inputs.entries()).map(([key, input]) => [key, input.value.trim()]));
 				this.app.settings.setThemeCustom(colors);
-				this.app.refreshAfterStorageChange();
+				this._refreshUiOnly();
 			});
 		}
 		openSettings() {
@@ -1197,17 +1201,17 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			});
 			fontSizeSelect.addEventListener('change', () => {
 				this.app.settings.setFontSizeLevel(fontSizeSelect.value);
-				this.app.refreshAfterStorageChange();
+				this._refreshUiOnly();
 				renderAll();
 			});
 			uiScaleSelect.addEventListener('change', () => {
 				this.app.settings.setUiScaleLevel(uiScaleSelect.value);
-				this.app.refreshAfterStorageChange();
+				this._refreshUiOnly();
 				renderAll();
 			});
 			themeModeSelect.addEventListener('change', () => {
 				this.app.settings.setThemeMode(themeModeSelect.value);
-				this.app.refreshAfterStorageChange();
+				this._refreshUiOnly();
 				renderAll();
 				if (themeModeSelect.value === 'custom') this.openThemeCustomizer();
 			});
@@ -1249,12 +1253,12 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			});
 			pairUpdateUidToggle.addEventListener('change', () => {
 				this.app.settings.setPairUpdateUidCheckEnabled(pairUpdateUidToggle.checked);
-				this.app.refreshAfterStorageChange();
+				this._refreshUiOnly();
 				renderAll();
 			});
 			pairUpdateHandleToggle.addEventListener('change', () => {
 				this.app.settings.setPairUpdateHandleLookupEnabled(pairUpdateHandleToggle.checked);
-				this.app.refreshAfterStorageChange();
+				this._refreshUiOnly();
 				renderAll();
 			});
 			handleLookupMethodSelect.addEventListener('change', () => { this.app.settings.setHandleLookupMethod(handleLookupMethodSelect.value); renderAll(); });
@@ -1264,7 +1268,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			handleLookupFallbackToggle.addEventListener('change', () => { this.app.settings.setHandleLookupFallbackApiEnabled(handleLookupFallbackToggle.checked); renderAll(); });
 			saveApiBtn.addEventListener('click', () => {
 				this.app.apiConfig.setApiKey(apiInput.value);
-				this.app.refreshAfterStorageChange();
+				this._refreshUiOnly();
 				renderAll();
 				Toast.show(this.app.apiConfig.getLastSaveError() ? t('storageSaveFailed') : t('apiKeySaved'));
 			});
@@ -1280,7 +1284,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			});
 			clearApiBtn.addEventListener('click', () => {
 				this.app.apiConfig.clearApiKey();
-				this.app.refreshAfterStorageChange();
+				this._refreshUiOnly();
 				renderAll();
 				Toast.show(this.app.apiConfig.getLastSaveError() ? t('storageSaveFailed') : t('apiKeyCleared'));
 			});
@@ -2114,7 +2118,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			});
 			saveApiBtn.addEventListener('click', () => {
 				this.app.apiConfig.setApiKey(apiInput.value);
-				this.app.refreshAfterStorageChange();
+				this._refreshUiOnly();
 				renderAll();
 				Toast.show(this.app.apiConfig.getLastSaveError() ? t('storageSaveFailed') : t('apiKeySaved'));
 			});
@@ -2130,7 +2134,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			});
 			clearApiBtn.addEventListener('click', () => {
 				this.app.apiConfig.clearApiKey();
-				this.app.refreshAfterStorageChange();
+				this._refreshUiOnly();
 				renderAll();
 				Toast.show(this.app.apiConfig.getLastSaveError() ? t('storageSaveFailed') : t('apiKeyCleared'));
 			});

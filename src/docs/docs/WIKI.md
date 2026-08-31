@@ -378,6 +378,7 @@ Menu injection:
 
 Comment observation:
 
+- Display, theme, pair-policy, and API-configuration UI changes refresh open dialogs without rebuilding comment matchers or scheduling a comment scan.
 - Repeated userscript evaluation retains one stylesheet and one application boot; consecutive notices reuse one toast live region and replace its pending timers.
 - `watch` uses existing `ytd-comments#comments, ytd-comments` host lookup
 - `shorts` uses comment-node-driven discovery; promotes shared container only when narrower than `body`, `html`, or `ytd-app`
