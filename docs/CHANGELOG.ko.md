@@ -33,7 +33,7 @@
 
 ### Fixed
 
-- 규칙을 제거하면 화면 밖에서 숨겨진 댓글도 복원하고 관찰이 끝난 댓글에 늦게 도착한 intersection callback을 무시하도록 수정.
+- 규칙을 제거하면 화면 밖에서 숨겨진 댓글도 복원하고 분리되었거나 관찰이 끝난 댓글에 늦게 도착한 intersection callback을 무시하도록 수정.
 - 기존 로그 ID를 항목 내용 기준의 고정 길이로 canonicalize하여 reload·trimmed snapshot·오래된 탭 쓰기 후 중복되지 않도록 수정.
 - 묶음 로그 저장 실패로 optimistic 항목이 rollback되면 실시간 로그 상태도 실제 저장 상태로 복원.
 - 실시간 로그 갱신을 로그 상태 컨트롤로 제한하여 관련 없는 dialog와 저장 전 설정 입력값이 다시 렌더링되지 않도록 수정.

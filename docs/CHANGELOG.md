@@ -32,7 +32,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); projec
 
 ### Fixed
 
-- Restored offscreen hidden comments after rule removal and ignored late intersection callbacks for comments no longer under observation.
+- Restored offscreen hidden comments after rule removal and ignored late intersection callbacks for detached or unobserved comments.
 - Canonicalized bounded legacy log IDs by entry content to prevent duplicates across reloads, trimmed snapshots, and stale old-tab writes.
 - Restored live logging status after a failed batched storage write rolls back optimistic entries.
 - Limited live log updates to logging status controls so unrelated dialogs and unsaved settings input are not refreshed.

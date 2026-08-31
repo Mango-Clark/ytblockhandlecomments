@@ -54,6 +54,11 @@ import { Extractor } from './09-extractor.ts';
 		_getSettingsRevision() {
 			return this.settings?._matcherRevision ?? this.settings?._revision;
 		}
+		_isNodeConnected(node: Element | null | undefined) {
+			if (!node) return false;
+			if (typeof node.isConnected === 'boolean') return node.isConnected;
+			return !!document.documentElement?.contains?.(node);
+		}
 		rebuildLookup() {
 			this._settingsRevision = this._getSettingsRevision();
 			this._idSet.clear(); this._handleSet.clear(); this._regexes = [];
@@ -297,7 +302,7 @@ import { Extractor } from './09-extractor.ts';
 				const startedAt = performance.now();
 				let applied = 0;
 				for (const e of entries) {
-					if (!this._observed.has(e.target) || !e.target.parentNode) continue;
+					if (!this._observed.has(e.target) || !this._isNodeConnected(e.target)) continue;
 					if (!e.isIntersecting) { this._visible.delete(e.target); continue; }
 					this._visible.add(e.target);
 					this.applyHide(e.target);
@@ -361,7 +366,7 @@ import { Extractor } from './09-extractor.ts';
 		refreshNodes(nodes: Iterable<Element>, { invalidate = true } = {}) {
 			const unique = new Set<Element>();
 			for (const node of nodes || []) {
-				if (!node?.isConnected) continue;
+				if (!this._isNodeConnected(node)) continue;
 				for (const commentNode of this._collectCommentNodes(node)) unique.add(commentNode);
 			}
 			if (!unique.size) return;

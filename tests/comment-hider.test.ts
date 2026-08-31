@@ -242,6 +242,28 @@ test('late intersection entries ignore unobserved comments', () => {
 	assert.equal(context.__ytCommentBlockerPerf.scannedNodes, 0);
 });
 
+test('late intersection entries ignore comments in detached subtrees', () => {
+	const { api, document, context } = loadUserscript();
+	const settings = new api.AppSettingsStorage();
+	const storage = new api.StorageV2(settings);
+	const pairStore = new api.PairMetaStorage(settings);
+	const hider = new api.CommentHider(storage, pairStore, settings);
+	const wrapper = document.createElement('div');
+	const { comment } = createBlockedComment(document);
+	wrapper.appendChild(comment);
+	document.body.appendChild(wrapper);
+	storage.addHandle('@alpha');
+	hider.rebuildLookup();
+
+	hider.doRefresh(wrapper);
+	wrapper.remove();
+	hider._io.trigger([{ target: comment, isIntersecting: true }]);
+
+	assert.equal(comment.parentNode, wrapper);
+	assert.equal(comment.classList.contains('tm-hidden'), false);
+	assert.equal(context.__ytCommentBlockerPerf.scannedNodes, 0);
+});
+
 test('display-only settings do not invalidate matcher configuration', () => {
 	const { api, document } = loadUserscript();
 	const settings = new api.AppSettingsStorage();
