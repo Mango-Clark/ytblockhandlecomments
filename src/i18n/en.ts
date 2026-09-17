@@ -5,6 +5,11 @@ import type { I18nBundle } from '../02-utils-i18n.ts';
 	 * ---------------------------------------------------------- */
 
 	export const I18N_EN: I18nBundle = {
+			lowPerformanceMode: 'Low-performance mode',
+			lowPerformanceHelp: 'Process work in smaller batches and show 50 entries per page. Automatic channel lookup and pair creation pause; manual pair requests run one at a time. Existing blocking and keyword actions remain enabled. In pair matching mode, new UID links require manual pair creation. Turning this off does not replay skipped lookups.',
+			pagePrevious: 'Previous page',
+			pageNext: 'Next page',
+			pageStatus: (page: number, pages: number, total: number) => `Page ${page} / ${pages} · ${total} entries`,
 			block: 'Block',
 			unblock: 'Unblock',
 			confirmBlock: '🛑 Block this channel?',
@@ -288,7 +293,7 @@ import type { I18nBundle } from '../02-utils-i18n.ts';
 			searchNoMatches: 'No search results.',
 			resetFilters: 'Reset filters',
 			tagFilterLabel: 'Tags',
-			selectVisible: 'Select all visible',
+			selectVisible: 'Select all filtered entries (all pages)',
 			selectedCount: (n) => `Selected ${n}`,
 			bulkActionLabel: 'Bulk Action',
 			bulkDelete: 'Delete selected',

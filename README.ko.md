@@ -31,6 +31,12 @@
 
 ## 주요 기능
 
+### 성능
+
+- 설정·차단 목록의 중복 렌더링과 반복 상태 복사를 줄입니다.
+- 차단 목록·페어 결과는 페이지당 100개를 표시하며 필터·전체 선택은 일치하는 모든 항목에 적용됩니다.
+- 설정의 **저성능 모드**(기본 꺼짐)는 작업 분할, 페이지당 50개 표시, 검색 지연, 수동 페어 조회의 순차 처리를 적용합니다. 기존 차단 기능은 유지합니다.
+
 ### 핵심 차단
 
 - 댓글 작성자 handle 우클릭 차단·해제.
@@ -164,6 +170,7 @@ Pair 메타 저장소:
 ```ts
 {
 	version: 1,
+	lowPerformanceMode: boolean,
 	handleCaseSensitive: boolean,
 	autoAddRegexHandles: boolean,
 	blockMatchMode: 'handle' | 'pair',

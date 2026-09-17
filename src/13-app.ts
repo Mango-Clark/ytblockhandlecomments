@@ -79,12 +79,13 @@ import { Logger } from './15-logger.ts';
 		}
 
 		_resolveAddedHandle(handle: any) {
+			if (this.settings.isLowPerformanceMode?.()) return;
 			const normalized = sanitizeHandle(handle);
 			if (!normalized || !this.settings.isHandleLookupOnAddEnabled() || this.pairStore.getPair(normalized)) return;
 			const key = this.settings.isHandleCaseSensitive() ? normalized : normalized.toLocaleLowerCase();
 			if (this._keywordPairInFlight.has(key)) return;
 			this._keywordPairInFlight.add(key);
-			void this.pairService.createPairsForHandles([normalized])
+			void this.pairService.createPairsForHandles([normalized], { automatic: true })
 				.then((stats: PairRunStats) => { this._lastPairRunResult = stats; })
 				.catch(() => { })
 				.finally(() => {
@@ -130,13 +131,13 @@ import { Logger } from './15-logger.ts';
 			return true;
 		}
 
-		refreshAfterStorageChange() {
+		refreshAfterStorageChange(reason: 'all' | 'storage' = 'storage') {
 			this.hider.rebuildLookup();
 			const mode = this._getPageMode();
 			const host = this._commentsHost?.isConnected ? this._commentsHost : this._findCommentsHost(mode);
 			this.hider.refreshScheduled(host || undefined);
 			this._syncPairBanner();
-			Dialog.refreshAll();
+			Dialog.refreshAll(reason);
 		}
 
 		refreshUiOnly() {
@@ -200,11 +201,11 @@ import { Logger } from './15-logger.ts';
 				this._scheduleKeywordRefresh();
 				this._resolveAddedHandle(handle);
 			}
-			if (!actions.createPair || this.pairStore.getPair(handle)) return;
+			if (this.settings.isLowPerformanceMode?.() || !actions.createPair || this.pairStore.getPair(handle)) return;
 			const key = this.settings.isHandleCaseSensitive() ? handle : handle.toLocaleLowerCase();
 			if (this._keywordPairInFlight.has(key)) return;
 			this._keywordPairInFlight.add(key);
-			void this.pairService.createPairsForHandles([handle])
+			void this.pairService.createPairsForHandles([handle], { automatic: true })
 				.then((stats: PairRunStats) => { this._lastPairRunResult = stats; })
 				.catch(() => { })
 				.finally(() => {
@@ -510,8 +511,7 @@ import { Logger } from './15-logger.ts';
 			this._disconnectHostObserver();
 			if (!host) return;
 			if (this._commentsHost !== host || !this._commentObserver) {
-				if (this._commentObserver) this._commentObserver.disconnect();
-				this.hider.resetObservation();
+				this._disconnectCommentObserver();
 				this._commentsHost = host;
 				this._commentObserver = new MutationObserver(muts => this._handleCommentMutations(muts));
 				this._commentObserver.observe(host, {
@@ -531,6 +531,7 @@ import { Logger } from './15-logger.ts';
 			if (this._pageKey !== pageKey) {
 				this._pageKey = pageKey;
 				this._hostLookupAttempts = 0;
+				if (mode !== 'unsupported') this._disconnectCommentObserver();
 				this.hider.resetTransientState();
 			}
 			if (mode === 'unsupported') {
@@ -574,7 +575,7 @@ import { Logger } from './15-logger.ts';
 				GM_addValueChangeListener('app_settings_v1', (_k, _old, val, remote) => {
 					if (!remote) return;
 					this.settings.setAllLocal(val);
-					this.refreshAfterStorageChange();
+					this.refreshAfterStorageChange('all');
 				});
 				GM_addValueChangeListener('lang', (_k, _old, _val, remote) => {
 					if (!remote) return;

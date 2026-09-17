@@ -32,6 +32,8 @@ const PAIR_LOOKUP_CACHE_LIMIT = 256;
 			this._busy = false;
 			this._idlePromise = null;
 			this._handleLookupCache = new Map();
+			this._activeLookups = 0;
+			this._lookupWaiters = [];
 		}
 		getBlockedHandles() {
 			return this.storage.all().filter((item: BlockItem) => item.type === 'handle').map((item: BlockItem) => item.value);
@@ -133,12 +135,12 @@ const PAIR_LOOKUP_CACHE_LIMIT = 256;
 			});
 			return this._processHandles(handles);
 		}
-		async createPairsForHandles(handles: any[]) {
+		async createPairsForHandles(handles: any[], { automatic = false } = {}) {
 			const filtered = (handles || []).filter(handle => {
 				const code = this.getHandleStatus(handle).code;
 				return code === 'handle-only' || code === 'unverified';
 			});
-			return this._processHandles(filtered);
+			return this._processHandles(filtered, { automatic });
 		}
 		_shouldRefreshHandle(handle: any, { includeMissing = true } = {}) {
 			const existing = this.pairStore.getPair(handle);
@@ -181,7 +183,18 @@ const PAIR_LOOKUP_CACHE_LIMIT = 256;
 		async updatePairsForHandles(handles: any[]) {
 			return this._processHandles(handles || [], { update: true });
 		}
-		async _processHandles(handles: any[], { update = false } = {}): Promise<PairRunStats> {
+		async _withLookupSlot<T>(lookup: () => Promise<T>): Promise<T> {
+			while (this._activeLookups >= (this.settings?.isLowPerformanceMode?.() ? 1 : PAIR_LOOKUP_CONCURRENCY)) {
+				await new Promise<void>(resolve => this._lookupWaiters.push(resolve));
+			}
+			this._activeLookups++;
+			try { return await lookup(); }
+			finally {
+				this._activeLookups--;
+				for (const resume of this._lookupWaiters.splice(0)) resume();
+			}
+		}
+		async _processHandles(handles: any[], { update = false, automatic = false } = {}): Promise<PairRunStats> {
 			while (this._busy) await this._idlePromise;
 			this._busy = true;
 			let resolveIdle: () => void = () => {};
@@ -211,8 +224,10 @@ const PAIR_LOOKUP_CACHE_LIMIT = 256;
 					getHandleCompareKey(handle, caseSensitive),
 					index
 				]));
-				const processNextHandle = async () => {
+				const processNextHandle = async (worker: number) => {
 					while (nextHandleIndex < uniqueHandles.length) {
+						// Running requests finish, but only worker zero may start another in low mode.
+						if ((worker > 0 || automatic) && this.settings?.isLowPerformanceMode?.()) return;
 						const handle = uniqueHandles[nextHandleIndex++];
 					const existing = this.pairStore.getPair(handle);
 					const checkStoredUid = update && !!existing?.uid && !!this.settings?.isPairUpdateUidCheckEnabled?.();
@@ -223,7 +238,7 @@ const PAIR_LOOKUP_CACHE_LIMIT = 256;
 					let handleResolved = false;
 					if (checkStoredUid) {
 						try {
-							await this.resolveUid(existing.uid);
+							await this._withLookupSlot(() => this.resolveUid(existing.uid));
 							uidVerified = true;
 						} catch (error) {
 							uidError = error instanceof Error ? error.message : String(error);
@@ -231,7 +246,7 @@ const PAIR_LOOKUP_CACHE_LIMIT = 256;
 					}
 					if (lookupHandle) {
 						try {
-						const resolved = await this.resolveHandle(handle, { force: update });
+						const resolved = await this._withLookupSlot<any>(() => this.resolveHandle(handle, { force: update }));
 						if (existing?.uid && existing.uid !== resolved.uid) {
 							this.pairStore.upsertPair({
 								...existing,
@@ -327,8 +342,8 @@ const PAIR_LOOKUP_CACHE_LIMIT = 256;
 					}
 				};
 				await Promise.all(Array.from(
-					{ length: Math.min(PAIR_LOOKUP_CONCURRENCY, uniqueHandles.length) },
-					() => processNextHandle()
+					{ length: Math.min(this.settings?.isLowPerformanceMode?.() ? 1 : PAIR_LOOKUP_CONCURRENCY, uniqueHandles.length) },
+					(_: unknown, worker: number) => processNextHandle(worker)
 				));
 				stats.items.sort((a, b) => {
 					return (itemOrder.get(getHandleCompareKey(a.handle, caseSensitive)) ?? Number.MAX_SAFE_INTEGER)
@@ -338,8 +353,10 @@ const PAIR_LOOKUP_CACHE_LIMIT = 256;
 				this._busy = false;
 				this._idlePromise = null;
 				resolveIdle();
-				this.pairStore.setLastPairCheckAt(Date.now());
-				this.pairStore.refreshStatuses();
+				if (!automatic || stats.items.length) {
+					this.pairStore.setLastPairCheckAt(Date.now());
+					this.pairStore.refreshStatuses();
+				}
 			}
 			return stats;
 		}

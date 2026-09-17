@@ -143,9 +143,30 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				}
 			});
 		}
+		_getPageSize() { return this.app.settings?.isLowPerformanceMode?.() ? 50 : 100; }
+		_renderPagination(container: HTMLElement, page: number, total: number, onChange: (page: number) => void) {
+			const pages = Math.max(1, Math.ceil(total / this._getPageSize()));
+			page = Math.max(0, Math.min(page, pages - 1));
+			const previous = Object.assign(document.createElement('button'), { type: 'button', textContent: t('pagePrevious'), disabled: page === 0 });
+			const next = Object.assign(document.createElement('button'), { type: 'button', textContent: t('pageNext'), disabled: page === pages - 1 });
+			previous.dataset.action = 'previous-page';
+			next.dataset.action = 'next-page';
+			for (const button of [previous, next]) button.addEventListener('keydown', event => {
+				// Keep native button activation from reaching the dialog's Enter-to-close shortcut.
+				if (event.key === 'Enter') event.stopPropagation();
+			});
+			const status = document.createElement('span');
+			status.setAttribute('aria-live', 'polite');
+			status.textContent = t('pageStatus', page + 1, pages, total);
+			previous.addEventListener('click', () => onChange(page - 1));
+			next.addEventListener('click', () => onChange(page + 1));
+			container.className = 'tm-inline-actions tm-pagination';
+			container.replaceChildren(previous, status, next);
+			return page;
+		}
 		_renderPairResultList(container: HTMLElement, stats: PairRunStats | null | undefined) {
 			const previousOpen = container.querySelector('details')?.open;
-			const state = container.__pairResultState || { filter: 'all', sort: 'original' };
+			const state = container.__pairResultState || { filter: 'all', sort: 'original', page: 0 };
 			container.__pairResultState = state;
 			container.replaceChildren();
 			if (!stats?.items?.length) {
@@ -196,10 +217,12 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			});
 			filterSelect.addEventListener('change', () => {
 				state.filter = filterSelect.value || 'all';
+				state.page = 0;
 				this._renderPairResultList(container, stats);
 			});
 			sortSelect.addEventListener('change', () => {
 				state.sort = sortSelect.value || 'original';
+				state.page = 0;
 				this._renderPairResultList(container, stats);
 			});
 			copyFailedBtn.addEventListener('click', () => {
@@ -210,7 +233,15 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			controls.append(filterLabel, filterSelect, sortLabel, sortSelect, copyFailedBtn, exportFailedBtn);
 			const list = document.createElement('ul');
 			list.className = 'tm-result-list';
-			for (const item of this._getPairResultItems(stats, state)) {
+			const resultItems = this._getPairResultItems(stats, state);
+			const pagination = document.createElement('div');
+			state.page = this._renderPagination(pagination, state.page || 0, resultItems.length, page => {
+				state.page = page;
+				this._renderPairResultList(container, stats);
+				container.querySelector<HTMLButtonElement>(state.page === 0 ? '[data-action="next-page"]' : '[data-action="previous-page"]')?.focus();
+			});
+			const start = state.page * this._getPageSize();
+			for (const item of resultItems.slice(start, start + this._getPageSize())) {
 				const li = document.createElement('li');
 				const title = document.createElement('div');
 				title.innerHTML = '';
@@ -228,7 +259,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				if (item.message) li.appendChild(this._createMetaLine(item.message));
 				list.appendChild(li);
 			}
-			details.append(summary, controls, list);
+			details.append(summary, controls, list, pagination);
 			container.appendChild(details);
 		}
 		_renderApiTestStatus(container: HTMLElement, result: ApiTestResult | null, isRunning: boolean) {
@@ -348,6 +379,8 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				dislikeAction.input.checked = !!config.actions.dislike;
 				blockAction.input.checked = !!config.actions.blockHandle;
 				pairAction.input.checked = !!config.actions.createPair;
+				pairAction.input.disabled = !!this.app.settings.isLowPerformanceMode?.();
+				pairAction.help.textContent = t(pairAction.input.disabled ? 'lowPerformanceHelp' : 'keywordActionCreatePairHelp');
 			};
 			const applyLanguage = () => {
 				intro.textContent = t('blockKeywordAutomationHelp');
@@ -419,6 +452,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 					{ label: t('close'), value: false, primary: true }
 				],
 				onRefresh: (ctx: DialogRefreshContext) => {
+					if (ctx.reason === 'storage') return;
 					ctx.setTitle(t('blockKeywordAutomationTitle'));
 					ctx.buttons[0].textContent = t('openBlockList');
 					ctx.buttons[1].textContent = t('openSettings');
@@ -510,6 +544,14 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			settingsSection.className = 'tm-section tm-settings-panel';
 			const settingsTitle = document.createElement('h3');
 			const settingsIntro = document.createElement('p');
+			const lowModeLabel = document.createElement('label');
+			const lowModeToggle = document.createElement('input');
+			lowModeToggle.type = 'checkbox';
+			lowModeToggle.dataset.setting = 'low-performance-mode';
+			const lowModeText = document.createElement('span');
+			const lowModeHelp = document.createElement('p');
+			lowModeHelp.className = 'tm-muted';
+			lowModeLabel.append(lowModeToggle, lowModeText);
 			settingsIntro.className = 'tm-settings-intro tm-muted';
 			const settingsList = document.createElement('ul');
 			settingsList.className = 'tm-settings-list';
@@ -542,7 +584,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			const autoText = document.createElement('span');
 			autoLabel.append(autoToggle, autoText);
 			const autoHelp = document.createElement('p');
-			matchingControls.append(matchModeLabel, matchModeHelp, caseLabel, caseHelp, caseLegacy, autoLabel, autoHelp);
+			matchingControls.append(lowModeLabel, lowModeHelp, matchModeLabel, matchModeHelp, caseLabel, caseHelp, caseLegacy, autoLabel, autoHelp);
 			matchingGroup.append(matchingTitle, matchingControls);
 
 			const commentGroup = document.createElement('li');
@@ -945,6 +987,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			};
 			const renderAll = () => {
 				caseToggle.checked = this.app.settings.isHandleCaseSensitive();
+				lowModeToggle.checked = this.app.settings.isLowPerformanceMode();
 				autoToggle.checked = this.app.settings.isAutoAddRegexHandlesEnabled();
 				matchModeSelect.value = this.app.settings.getBlockMatchMode();
 				keywordEnabledToggle.checked = this.app.settings.isKeywordAutomationEnabled();
@@ -980,6 +1023,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				handleLookupCustomInput.value = String(this.app.settings._state.handleLookupCustomSeconds || 600);
 				handleLookupCustomInput.hidden = interval !== 'custom';
 				handleLookupOnAddToggle.checked = this.app.settings.isHandleLookupOnAddEnabled();
+				handleLookupOnAddToggle.disabled = this.app.settings.isLowPerformanceMode();
 				handleLookupFallbackToggle.checked = this.app.settings.isHandleLookupFallbackApiEnabled();
 				apiProgress.hidden = !apiTestBusy;
 				pairProgress.hidden = !pairBusy;
@@ -989,6 +1033,8 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			};
 			const applyLanguage = () => {
 				settingsTitle.textContent = t('settingsTitle');
+				lowModeText.textContent = t('lowPerformanceMode');
+				lowModeHelp.textContent = t('lowPerformanceHelp');
 				renderAll();
 				settingsIntro.textContent = t('settingsIntro');
 				matchingTitle.textContent = t('settingsMatchingTitle');
@@ -1101,6 +1147,11 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				updateBtn.textContent = pairBusy ? t('pairWorking') : t('pairUpdate');
 				debugTitle.textContent = t('debugTitle');
 			};
+			lowModeToggle.addEventListener('change', () => {
+				this.app.settings.setLowPerformanceMode(lowModeToggle.checked);
+				if (this.app.settings.getLastSaveError()) Toast.show(t('storageSaveFailed'));
+				renderAll();
+			});
 			caseToggle.addEventListener('change', () => {
 				this.app.settings.setHandleCaseSensitive(caseToggle.checked);
 				this.app.refreshAfterStorageChange();
@@ -1305,6 +1356,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				body,
 				buttons: [{ label: t('close'), value: false, primary: true }],
 				onRefresh: (ctx: DialogRefreshContext) => {
+					if (ctx.reason === 'storage') { renderPairSummary(); return; }
 					ctx.setTitle(t('settingsTitle'));
 					ctx.buttons[0].textContent = t('close');
 					applyLanguage();
@@ -1568,7 +1620,10 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			bottomToolbarRow.append(bulkLeft, searchNote);
 			toolbar.append(topToolbarRow, middleToolbarRow, bottomToolbarRow);
 			const list = Object.assign(document.createElement('ul'), { className: 'tm-block-list' });
-			listSection.append(listTitle, toolbar, list);
+			const pagination = document.createElement('div');
+			let page = Math.max(0, Math.floor(Number(savedViewState.page) || 0));
+			let lastListFilter = '';
+			listSection.append(listTitle, toolbar, list, pagination);
 			wrap.append(versionSection, settingsSection, apiSection, pairSection, form, listSection);
 
 			const regexMatchCache = new Map<string, RegexMatchCacheEntry>();
@@ -1580,6 +1635,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			const persistViewState = (scrollTop = this._listViewState?.scrollTop || 0) => {
 				this._listViewState = {
 					searchQuery,
+					page,
 					typeFilter: typeSelect.value || 'all',
 					tagFilters: Array.from(tagFilters),
 					selection: Array.from(selection),
@@ -1614,10 +1670,10 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				rowRefs.clear();
 				if (clearRegex) regexMatchCache.clear();
 			};
-			const getItemsRevision = (items: BlockItem[]) => (items || [])
+			const getItemsRevision = (items: BlockItem[]) => this.app.storage._revision !== undefined ? String(this.app.storage._revision) : (items || [])
 				.map(item => `${item.type}:${item.value}:${item.flags || ''}`)
 				.join('\u001f');
-			const getPairRevision = (items: BlockItem[], blockedIds: Set<string> | null = null) => (items || [])
+			const getPairRevision = (items: BlockItem[], blockedIds: Set<string> | null = null) => this.app.pairStore._revision !== undefined ? String(this.app.pairStore._revision) : (items || [])
 				.filter(item => item.type === 'handle')
 				.map(item => {
 					const status = this.app.pairService.getHandleStatus(item.value, blockedIds);
@@ -1738,6 +1794,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 						matches: null
 					};
 					regexMatchCache.set(cacheKey, entry);
+					if (regexMatchCache.size > 100) regexMatchCache.delete(regexMatchCache.keys().next().value!);
 				}
 				if (mode === 'full' && Array.isArray(entry.matches)) return entry;
 				if (mode === 'count' && typeof entry.matchCount === 'number') return entry;
@@ -1827,6 +1884,15 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				syncActionState(computeViewState());
 			};
 			const renderList = (viewState = computeViewState()) => {
+				const filterKey = JSON.stringify([searchQuery, typeSelect.value, Array.from(tagFilters).sort()]);
+				if (lastListFilter && lastListFilter !== filterKey) page = 0;
+				lastListFilter = filterKey;
+				page = this._renderPagination(pagination, page, viewState.visibleItems.length, nextPage => {
+					page = nextPage;
+					renderList();
+					pagination.querySelector<HTMLButtonElement>(nextPage === 0 ? '[data-action="next-page"]' : '[data-action="previous-page"]')?.focus();
+				});
+				persistViewState();
 				listTitle.textContent = t('manageTitle', viewState.allItems.length);
 				rowRefs.clear();
 				if (!viewState.allItems.length || !viewState.visibleItems.length) {
@@ -1840,7 +1906,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 					return;
 				}
 				const rows: HTMLLIElement[] = [];
-				for (const item of viewState.visibleItems) {
+				for (const item of viewState.visibleItems.slice(page * this._getPageSize(), (page + 1) * this._getPageSize())) {
 					const itemKey = getItemKey(item);
 					if (!itemKey) continue;
 					const li = document.createElement('li');
@@ -2058,15 +2124,26 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				this.app.refreshAfterStorageChange();
 				renderAll();
 			});
+			let searchRenderTimer: ReturnType<typeof setTimeout> | null = null;
 			searchInput.addEventListener('input', () => {
 				searchQuery = searchInput.value || '';
 				persistViewState();
-				if (isComposingSearch || searchRenderFrame != null) return;
-				searchRenderFrame = requestAnimationFrame(() => {
+				if (searchRenderTimer !== null) { clearTimeout(searchRenderTimer); searchRenderTimer = null; }
+				if (isComposingSearch) return;
+				const renderSearch = () => {
 					searchRenderFrame = null;
+					searchRenderTimer = null;
 					invalidateViewState();
 					renderList();
-				});
+				};
+				if (this.app.settings.isLowPerformanceMode()) {
+					if (searchRenderFrame !== null) { cancelAnimationFrame(searchRenderFrame); searchRenderFrame = null; }
+					searchRenderTimer = setTimeout(renderSearch, 200);
+				} else if (searchRenderFrame === null) {
+					searchRenderFrame = -1;
+					const frame = requestAnimationFrame(renderSearch);
+					if (searchRenderFrame === -1) searchRenderFrame = frame;
+				}
 			});
 			searchInput.addEventListener('compositionstart', () => { isComposingSearch = true; });
 			searchInput.addEventListener('compositionend', () => {
@@ -2198,14 +2275,21 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 					ctx.buttons[0].textContent = t('import');
 					ctx.buttons[1].textContent = t('export');
 					ctx.buttons[2].textContent = t('close');
-					applyLanguage();
+					if (ctx.reason === 'storage') renderAll();
+					else applyLanguage();
 				},
 				onBeforeClose: (value, dialog) => {
 					if (searchRenderFrame !== null) {
 						cancelAnimationFrame(searchRenderFrame);
 						searchRenderFrame = null;
 					}
+					if (searchRenderTimer !== null) clearTimeout(searchRenderTimer);
 					persistViewState(dialog.querySelector('.tm-content')?.scrollTop || 0);
+					rowRefs.clear();
+					regexMatchCache.clear();
+					searchIndexCache = null;
+					baseViewStateCache = null;
+					viewStateCache = null;
 					return value;
 				}
 			});

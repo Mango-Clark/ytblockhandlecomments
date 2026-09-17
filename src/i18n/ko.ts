@@ -5,6 +5,11 @@ import type { I18nBundle } from '../02-utils-i18n.ts';
 	 * ---------------------------------------------------------- */
 
 	export const I18N_KO: I18nBundle = {
+			lowPerformanceMode: '저성능 모드',
+			lowPerformanceHelp: '작업을 작은 단위로 나누고 목록을 페이지당 50개씩 표시합니다. 자동 채널 조회·페어 생성을 중단하며 수동 페어 요청은 하나씩 처리합니다. 기존 차단·키워드 동작은 유지합니다. 페어 차단 방식에서 새 UID 연결은 수동 페어 생성이 필요합니다. 모드를 꺼도 건너뛴 조회를 일괄 실행하지 않습니다.',
+			pagePrevious: '이전 페이지',
+			pageNext: '다음 페이지',
+			pageStatus: (page: number, pages: number, total: number) => `${page} / ${pages} 페이지 · ${total}개`,
 			block: '차단',
 			unblock: '차단 해제',
 			confirmBlock: '🛑 차단할까요?',
@@ -288,7 +293,7 @@ import type { I18nBundle } from '../02-utils-i18n.ts';
 			searchNoMatches: '검색 결과가 없습니다.',
 			resetFilters: '필터 초기화',
 			tagFilterLabel: '태그',
-			selectVisible: '현재 목록 전체 선택',
+			selectVisible: '필터 결과 전체 선택 (모든 페이지)',
 			selectedCount: (n) => `선택 ${n}개`,
 			bulkActionLabel: '일괄 작업',
 			bulkDelete: '선택 삭제',

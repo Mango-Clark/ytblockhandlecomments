@@ -28,6 +28,12 @@ Source layout:
 
 ## Features
 
+### Performance
+
+- Settings and block-list views avoid duplicate rendering and repeated state copies.
+- Block and pair-result lists show 100 entries per page; filtering and bulk selection cover all matching entries.
+- Optional **Low-performance mode** in Settings (off by default) uses smaller work batches, 50 entries per page, delayed search, and manual-only pair lookup with one request at a time. Existing blocking remains enabled.
+
 ### Core blocking
 
 - Block/unblock comment author by right-clicking handle.
@@ -157,6 +163,7 @@ App settings:
 ```ts
 {
 	version: 1,
+	lowPerformanceMode: boolean,
 	handleCaseSensitive: boolean,
 	autoAddRegexHandles: boolean,
 	blockMatchMode: 'handle' | 'pair',

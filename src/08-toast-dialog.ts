@@ -157,7 +157,7 @@ import {
 				instance = {
 					close,
 					onKey,
-					refresh: () => onRefresh?.(refreshContext)
+					refresh: (reason: 'all' | 'storage' = 'all') => onRefresh?.({ ...refreshContext, reason })
 				};
 				Dialog._instances.add(instance);
 				Dialog._syncKeyListener();
@@ -170,9 +170,9 @@ import {
 				try { instance.close?.(value); } catch { }
 			}
 		}
-		static refreshAll() {
+		static refreshAll(reason: 'all' | 'storage' = 'all') {
 			for (const instance of Array.from(Dialog._instances)) {
-				try { instance.refresh?.(); } catch { }
+				try { instance.refresh?.(reason); } catch { }
 			}
 		}
 	}

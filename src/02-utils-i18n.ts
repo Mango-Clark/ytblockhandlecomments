@@ -54,6 +54,7 @@ import { I18N_KO } from './i18n/ko.ts';
 	export type RegexSpec = { pattern: string; flags: string };
 	export type DialogButton = { label: string; value: any; primary?: boolean; danger?: boolean };
 	export type DialogRefreshContext = {
+		reason?: 'all' | 'storage';
 		dialog: HTMLElement;
 		header: HTMLElement;
 		content: HTMLElement;

@@ -115,6 +115,7 @@ App settings:
 ```ts
 {
   version: 1,
+  lowPerformanceMode: boolean,
   handleCaseSensitive: boolean,
   autoAddRegexHandles: boolean,
   blockMatchMode: 'handle' | 'pair',
@@ -303,7 +304,7 @@ Rule-list tools:
 - Handle-tag filters: `handle-only`, `paired`, `stale`, `mismatch`, `unverified`
 - Same-page restoration of search, filters, valid selections, and scroll position after visiting adjacent manager dialogs
 - One-click filter reset that preserves the current selection
-- Row selection, visible select-all, bulk actions
+- Row selection, filtered select-all across pages, bulk actions
 - Counter: `selected / visible / total`
 
 Regex rows:
@@ -326,6 +327,16 @@ Removal behavior:
 
 - Removing `handle` also removes paired UID rule and metadata
 - `Clear block list` clears rules and pair metadata
+
+### Performance And Low-Performance Mode
+
+- Settings → **Low-performance mode** is off by default, saved as `app_settings_v1.lowPerformanceMode`, synchronized across tabs, and cleared by settings reset. Existing stores without this field retain normal mode.
+- Normal mode renders 100 block-list/pair-result rows per page; low mode renders 50. Search/filtering and select-all operate on all matching entries across pages. Page and selection survive adjacent-dialog navigation; filter changes return to page one.
+- Low mode debounces search by 200ms and pauses automatic channel lookup on block addition and keyword-triggered pair creation. Saved automation preferences remain unchanged. Manual pair creation/update remains available with one concurrent request instead of eight. Requests already started finish; queued automatic work is skipped. Disabling low mode does not replay skipped lookups.
+- Existing handle/UID/regex matching, keyword blocking, and dislike actions remain available. With pair matching, new UID links require manual pair creation while low mode is enabled.
+- Comment work yields after 50 nodes or 8ms in normal mode, or 20 nodes or 4ms in low mode. Low-mode continuation waits 50ms; normal continuation uses the next animation frame. A single comment operation can exceed the cooperative time budget. Pending work is discarded on host/navigation reset.
+- Settings/list initialization renders once. Pair summaries are cached until data or expiry changes; status reads do not repeatedly normalize the entire pair store. Log status reads avoid copying all entries or flushing writes. Storage-only refreshes preserve unsaved settings inputs.
+- Performance tests cover 100/500/1,000 rules, bounded row counts and batches, cleanup, save rollback, and cross-tab behavior. Actual Chrome memory/crash improvement must be checked in the affected browser; automated DOM tests do not establish a RAM reduction percentage.
 
 ## 7. Dialogs, Menus, And Live i18n
 

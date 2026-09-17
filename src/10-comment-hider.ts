@@ -36,6 +36,10 @@ import { Extractor } from './09-extractor.ts';
 			this._pendingRoot = null;
 			this._pendingFrame = null;
 			this._io = null;
+			this._work = new Map<Element, boolean>();
+			this._workFrame = null;
+			this._workTimer = null;
+			this._draining = false;
 			this._metrics = {
 				mutationBatches: 0,
 				fullRefreshes: 0,
@@ -299,20 +303,26 @@ import { Extractor } from './09-extractor.ts';
 			if (this._io) return this._io;
 			if (typeof IntersectionObserver !== 'function') return null;
 			this._io = new IntersectionObserver((entries) => {
-				const startedAt = performance.now();
-				let applied = 0;
 				for (const e of entries) {
 					if (!this._observed.has(e.target) || !this._isNodeConnected(e.target)) continue;
 					if (!e.isIntersecting) { this._visible.delete(e.target); continue; }
 					this._visible.add(e.target);
-					this.applyHide(e.target);
-					applied += 1;
+					this._work.set(e.target, true);
 				}
-				if (applied) this._recordRefresh('incrementalRefreshes', applied, startedAt);
+				this._startWork();
 			}, { root: null, rootMargin: '0px', threshold: 0 });
 			return this._io;
 		}
 		resetObservation() {
+			if (this._pendingFrame !== null) cancelAnimationFrame(this._pendingFrame);
+			this._pendingFrame = null;
+			this._pendingRoot = null;
+			this._pending = false;
+			if (this._workFrame !== null) cancelAnimationFrame(this._workFrame);
+			if (this._workTimer !== null) clearTimeout(this._workTimer);
+			this._workFrame = null;
+			this._workTimer = null;
+			this._work.clear();
 			if (this._io) this._io.disconnect();
 			this._io = null;
 			this._observed = new Set();
@@ -346,11 +356,46 @@ import { Extractor } from './09-extractor.ts';
 			return true;
 		}
 		unobserveNodes(nodes: Iterable<Element>) {
-			if (!this._io) return;
 			for (const node of nodes || []) {
+				this._work.delete(node);
 				if (!this._observed.delete(node)) continue;
 				this._visible.delete(node);
-				this._io.unobserve(node);
+				this._io?.unobserve(node);
+			}
+		}
+		_startWork() {
+			if (this._draining || this._workFrame !== null || this._workTimer !== null) return;
+			this._drainWork();
+		}
+		_drainWork() {
+			const low = !!this.settings?.isLowPerformanceMode?.();
+			const startedAt = performance.now();
+			let processed = 0;
+			let applied = 0;
+			this._draining = true;
+			try {
+				for (const [node, force] of this._work as Map<Element, boolean>) {
+					this._work.delete(node);
+					if (this._isNodeConnected(node)) {
+						if (force && this._visible.has(node)) { this.applyHide(node); applied++; }
+						else if (this._observeNode(node)) applied++;
+					}
+					processed++;
+					if (processed >= (low ? 20 : 50) || performance.now() - startedAt >= (low ? 4 : 8)) break;
+				}
+			} finally {
+				this._draining = false;
+				if (applied) this._recordRefresh('incrementalRefreshes', applied, startedAt);
+				this._metrics.workBatches = (this._metrics.workBatches || 0) + (processed ? 1 : 0);
+				this._metrics.maxBatchNodes = Math.max(this._metrics.maxBatchNodes || 0, processed);
+				if (this._work.size) {
+					if (low) this._workTimer = setTimeout(() => { this._workTimer = null; this._drainWork(); }, 50);
+					else {
+						this._workFrame = -1;
+						const frame = requestAnimationFrame(() => { this._workFrame = null; this._drainWork(); });
+						if (this._workFrame === -1) this._workFrame = frame;
+					}
+				}
 			}
 		}
 		_recordRefresh(kind: 'fullRefreshes' | 'incrementalRefreshes', count: number, startedAt: number) {
@@ -370,23 +415,20 @@ import { Extractor } from './09-extractor.ts';
 				for (const commentNode of this._collectCommentNodes(node)) unique.add(commentNode);
 			}
 			if (!unique.size) return;
-			const startedAt = performance.now();
-			let applied = 0;
 			for (const node of unique) {
 				if (invalidate) this.invalidateNode(node);
-				if (this._observeNode(node)) applied += 1;
+				if (!this._work.has(node)) this._work.set(node, false);
 			}
-			if (applied) this._recordRefresh('incrementalRefreshes', applied, startedAt);
+			this._startWork();
 		}
 		doRefresh(root: Element | null | undefined) {
 			const scope = root || this._getDefaultRoot();
 			if (!scope) return;
 			const nodes = this._collectCommentNodes(scope);
 			if (!nodes.length) return;
-			const startedAt = performance.now();
-			let applied = 0;
-			for (const node of nodes) if (this._observeNode(node)) applied += 1;
-			if (applied) this._recordRefresh('fullRefreshes', applied, startedAt);
+			this._metrics.fullRefreshes += 1;
+			for (const node of nodes) if (!this._work.has(node)) this._work.set(node, false);
+			this._startWork();
 		}
 		refreshScheduled(root: Element | null | undefined) {
 			const scope = root || this._getDefaultRoot();

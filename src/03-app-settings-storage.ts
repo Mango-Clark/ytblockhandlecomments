@@ -113,6 +113,7 @@
 			const themeMode = this.THEME_MODES.includes(src.themeMode) ? src.themeMode : 'system';
 			return {
 				version: 1,
+				lowPerformanceMode: src.lowPerformanceMode === true,
 				handleCaseSensitive: !!src.handleCaseSensitive,
 				autoAddRegexHandles: !!src.autoAddRegexHandles,
 				blockMatchMode: ['handle', 'pair'].includes(src.blockMatchMode) ? src.blockMatchMode : 'handle',
@@ -299,6 +300,7 @@
 			const normalized = this._normalizeState(nextState);
 			if (
 				this._state.handleCaseSensitive === normalized.handleCaseSensitive &&
+				this._state.lowPerformanceMode === normalized.lowPerformanceMode &&
 				this._state.autoAddRegexHandles === normalized.autoAddRegexHandles &&
 				this._state.blockMatchMode === normalized.blockMatchMode &&
 				this._state.pairUpdateUidCheck === normalized.pairUpdateUidCheck &&
@@ -362,6 +364,8 @@
 			return this._state.pairUpdateHandleLookup !== false;
 		}
 		getHandleLookupMethod() { return this._state.handleLookupMethod || 'scraper'; }
+		isLowPerformanceMode() { return this._state.lowPerformanceMode === true; }
+		setLowPerformanceMode(enabled: boolean) { return this._saveState({ ...this._state, lowPerformanceMode: enabled }); }
 		setHandleLookupMethod(method: any) { return this._saveState({ ...this._state, handleLookupMethod: method === 'api' ? 'api' : 'scraper' }); }
 			isHandleLookupFallbackApiEnabled() { return !!this._state.handleLookupFallbackApi; }
 			setHandleLookupFallbackApiEnabled(enabled: any) { return this._saveState({ ...this._state, handleLookupFallbackApi: !!enabled }); }
