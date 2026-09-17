@@ -4,6 +4,14 @@
 
 ## P1 — High
 
+- [ ] (A) Reduce settings and block-list work and add low-performance mode
+
+  - (0) `de4477be8efd14e1cae919df335f6b38ba4568d6`
+  - (1) Avoid duplicate settings/list rendering, repeated pair normalization, full rollback copies, and log-status writes.
+  - (2) Paginate block and pair result lists; preserve filters, selection, navigation, accessibility, and English/Korean labels.
+  - (3) Add an opt-in low-performance setting with bounded comment batches, delayed search, and manual-only pair lookup at concurrency one.
+  - (4) Verify 100/500/1,000-rule workloads, storage rollback, cross-tab updates, mode changes, and cleanup; report browser-only checks separately.
+
 ## P2 — Normal
 
 ## P3 — Low

@@ -63,6 +63,9 @@ const PAIR_LOOKUP_CACHE_LIMIT = 256;
 		}
 		getSummary() {
 			this.pairStore.refreshStatuses();
+			const revision = `${this.storage._revision}:${this.pairStore._revision}:${this.settings?.isHandleCaseSensitive?.()}`;
+			const cacheable = this.storage._revision !== undefined && this.pairStore._revision !== undefined;
+			if (cacheable && this._summaryRevision === revision) return { ...this._summaryCache };
 			const allItems = this.storage.all();
 			const blockedIds = this.getBlockedIdSet(allItems);
 			const summary = {
@@ -84,6 +87,10 @@ const PAIR_LOOKUP_CACHE_LIMIT = 256;
 				else summary.handleOnly += 1;
 			}
 			summary.pairNeeded = summary.handleOnly + summary.unverified;
+			if (cacheable) {
+				this._summaryRevision = revision;
+				this._summaryCache = summary;
+			}
 			return summary;
 		}
 		shouldNotify(summary = this.getSummary()) {

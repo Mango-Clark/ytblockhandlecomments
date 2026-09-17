@@ -15,6 +15,8 @@
 
 ### Changed
 
+- 설정·목록의 중복 렌더링, 페어 요약 반복 계산, 차단 저장 복구용 복사, 저장 로그 상태 조회 비용을 줄임.
+
 - matcher에 영향을 주는 설정을 별도로 추적하여 표시·테마·logging·pair 정책·API 설정 변경은 matcher를 재구성하거나 댓글을 재검사하지 않도록 개선.
 - 하나의 toast live region을 재사용하고 userscript가 반복 주입되어도 stylesheet나 app runtime이 중복되지 않도록 개선.
 - handle 조회 cache를 최근 사용한 결과 256개로 제한하고 알림을 렌더링할 때 pair 요약을 재사용.

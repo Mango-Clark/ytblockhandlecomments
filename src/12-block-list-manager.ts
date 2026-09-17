@@ -989,6 +989,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			};
 			const applyLanguage = () => {
 				settingsTitle.textContent = t('settingsTitle');
+				renderAll();
 				settingsIntro.textContent = t('settingsIntro');
 				matchingTitle.textContent = t('settingsMatchingTitle');
 				matchModeText.textContent = t('blockMatchModeLabel') + ': ';
@@ -1099,7 +1100,6 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				createBtn.textContent = pairBusy ? t('pairWorking') : t('pairCreate');
 				updateBtn.textContent = pairBusy ? t('pairWorking') : t('pairUpdate');
 				debugTitle.textContent = t('debugTitle');
-				renderAll();
 			};
 			caseToggle.addEventListener('change', () => {
 				this.app.settings.setHandleCaseSensitive(caseToggle.checked);
@@ -1300,7 +1300,6 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 			};
 			createBtn.addEventListener('click', () => runPair('create'));
 			updateBtn.addEventListener('click', () => runPair('update'));
-			applyLanguage();
 			const settingsDialog = Dialog.show({
 				title: t('settingsTitle'),
 				body,
@@ -2186,7 +2185,6 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 				this.openBlockKeywordAutomation();
 			});
 
-			applyLanguage();
 			const dialogResult = Dialog.show({
 				title: t('manageTitle', this.app.storage.all().length),
 				body: wrap,

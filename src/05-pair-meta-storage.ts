@@ -18,6 +18,7 @@ import {
 			this.settings = settings;
 			this.KEY = 'pair_meta_v1';
 			this._lastSaveError = null;
+			this._revision = 0;
 			this._pairIndex = new Map();
 			this._pairIndexCaseSensitive = null;
 			this._state = this._init();
@@ -96,9 +97,15 @@ import {
 				pair
 			]));
 			this._pairIndexCaseSensitive = caseSensitive;
+			this._nextStatusAt = Infinity;
+			for (const pair of this._state.pairs as PairRecord[]) {
+				if (pair.status === 'verified' && pair.verifiedAt) this._nextStatusAt = Math.min(this._nextStatusAt, pair.verifiedAt + PAIR_STALE_MS);
+			}
 		}
 		_setLocalState(state: any) {
+			if (this._statesEqual(this._state, state)) return;
 			this._state = state;
+			this._revision += 1;
 			this._rebuildPairIndex();
 		}
 		_statesEqual(a: any, b: any) {
@@ -142,7 +149,7 @@ import {
 			return this.getState();
 		}
 		refreshStatuses() {
-			return this._saveState(this._state);
+			if (Date.now() >= this._nextStatusAt) this._saveState(this._state);
 		}
 		isUidDetectionEnabled() {
 			return !!this._state.enableUidDetection;

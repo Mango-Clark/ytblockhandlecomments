@@ -14,6 +14,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); projec
 
 ### Changed
 
+- Reduced duplicate settings/list rendering, repeated pair-summary work, block-save rollback copies, and saved-log status overhead.
+
 - Tracked matcher-affecting settings separately so display, theme, logging, pair-policy, and API-configuration changes do not rebuild matchers or rescan comments.
 - Reused a single toast live region and prevented repeated userscript injection from duplicating the stylesheet or application runtime.
 - Bounded the handle lookup cache to the 256 most recently used results and reused pair summaries during notification rendering.

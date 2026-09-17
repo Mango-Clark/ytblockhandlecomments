@@ -326,8 +326,9 @@ export class Logger {
 		return saved;
 	}
 	getStatus() {
-		const entries = this.getEntries();
-		return { count: entries.length, last: entries.at(-1) || null };
+		const entries = this._state.entries;
+		const last = entries.at(-1);
+		return { count: entries.length, last: last ? { at: last.at, level: last.level, message: last.message, ...(last.detail ? { detail: last.detail } : {}) } : null };
 	}
 	getConsolePreview(at = Date.now()) { return `${this._formatConsolePrefix(this._getConfig(), at)} Test log output`; }
 	testOutput() {

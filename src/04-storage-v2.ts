@@ -24,6 +24,7 @@ import {
 			this._writerId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 			this._lastSaveError = null;
 			this._clock = 0;
+			this._revision = 0;
 			this._entries = {};
 			this._clearRevision = null;
 			this._items = this._init();
@@ -138,11 +139,8 @@ import {
 			const unique = this._normalizeItems(items);
 			if (this._arraysEqual(this._items, unique)) { this._items = unique; return unique; }
 			const previousItems = Array.isArray(this._items) ? this._items : [];
-			const previousEntries = Object.fromEntries(Object.entries(this._entries).map(([key, entry]: [string, any]) => [key, {
-				...entry,
-				revision: entry.revision ? { ...entry.revision } : entry.revision,
-				item: entry.item ? { ...entry.item } : entry.item
-			}]));
+			// Entries are replaced, never mutated: retain only touched entries for rollback.
+			const previousEntries = new Map<string, any>();
 			const previousClearRevision = this._clearRevision;
 			const previousClock = this._clock;
 			const previous = new Map<string, BlockItem>((this._items || []).map((item: BlockItem) => [this._itemKey(item), item]));
@@ -151,23 +149,33 @@ import {
 			this._clock = revision.clock;
 			if (!unique.length && previous.size) this._clearRevision = revision;
 			for (const [key, item] of next) {
-				if (!previous.has(key)) this._entries[key] = { revision, deleted: false, item };
+				if (!previous.has(key)) {
+					previousEntries.set(key, this._entries[key]);
+					this._entries[key] = { revision, deleted: false, item };
+				}
 			}
 			for (const key of previous.keys()) {
-				if (!next.has(key) && unique.length) this._entries[key] = { revision, deleted: true, item: previous.get(key) };
+				if (!next.has(key) && unique.length) {
+					previousEntries.set(key, this._entries[key]);
+					this._entries[key] = { revision, deleted: true, item: previous.get(key) };
+				}
 			}
 			this._items = unique;
 			if (!this._setGM(this.KEY_V2, this._snapshot())) {
 				this._items = previousItems;
-				this._entries = previousEntries;
+				for (const [key, entry] of previousEntries) {
+					if (entry === undefined) delete this._entries[key];
+					else this._entries[key] = entry;
+				}
 				this._clearRevision = previousClearRevision;
 				this._clock = previousClock;
 				return this.all();
 			}
+			this._revision += 1;
 			return unique;
 		}
 
-		setAllLocal(items: any[]) { this._items = this._normalizeItems(items); return this.all(); }
+		setAllLocal(items: any[]) { this._items = this._normalizeItems(items); this._revision += 1; return this.all(); }
 		mergeRemote(raw: any) {
 			if (!raw || raw.version !== 2 || !Array.isArray(raw.items)) return false;
 			const localEntries = this._entries;
@@ -184,7 +192,7 @@ import {
 				const remote = this._entries[key];
 				if (!remote || this._compareRevision(local.revision, remote.revision) > 0) this._entries[key] = local;
 			}
-			this._clock = Math.max(this._clock, ...Object.values(this._entries).map((entry: any) => Number(entry.revision?.clock) || 0));
+			for (const entry of Object.values(this._entries) as any[]) this._clock = Math.max(this._clock, Number(entry.revision?.clock) || 0);
 			this._rebuildItems();
 			const changed = !this._arraysEqual(this._items, remoteItems) || this._compareRevision(localClear, remoteClear) > 0 || Object.keys(localEntries).some(key => !remoteEntries[key] || this._compareRevision(localEntries[key].revision, remoteEntries[key].revision) > 0);
 			if (changed && !this._setGM(this.KEY_V2, this._snapshot())) {
@@ -194,7 +202,9 @@ import {
 				this._clock = localClock;
 				return false;
 			}
-			return changed || !this._arraysEqual(localItems, this._items);
+			const itemsChanged = !this._arraysEqual(localItems, this._items);
+			if (itemsChanged) this._revision += 1;
+			return changed || itemsChanged;
 		}
 
 		_arraysEqual(a: BlockItem[], b: BlockItem[]) {
