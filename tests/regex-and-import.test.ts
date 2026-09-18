@@ -171,6 +171,68 @@ test('regex safety validation rejects invalid flag and length edges', () => {
 	assert.equal(valid.flags, 'i');
 });
 
+test('accepted patterns still match after RegExp.source expands their escaping', () => {
+	const { api } = loadUserscript();
+	const patterns = [
+		'@a|' + '/'.repeat(252),
+		'@a|' + '\n'.repeat(253),
+		'@a|' + '\r'.repeat(253),
+		'@a|' + '\u2028'.repeat(253),
+		'@a|' + '\u2029'.repeat(253),
+		String.raw`@a|\\` + '/'.repeat(251)
+	];
+	for (const pattern of patterns) {
+		assert.ok(api.validateRegexSpec(pattern, 'g'));
+		const rx = new RegExp(pattern, 'g');
+		assert.ok(rx.source.length > 256);
+		for (let run = 0; run < 2; run++) assert.equal(api.safeRegexTest(rx, '@a'), true, JSON.stringify(pattern));
+		assert.equal(api.safeRegexTest(rx, '@b'), false);
+	}
+	assert.equal(api.validateRegexSpec('@a|' + '/'.repeat(254)), null);
+	assert.equal(api.safeRegexTest(new RegExp('a'.repeat(257)), '@a'), false);
+});
+
+test('source escape normalization preserves literal backslashes and line terminators', () => {
+	const { api } = loadUserscript();
+	const cases = [
+		[String.raw`^@\\n$`, '@\\n', '@\n'],
+		[String.raw`^@\\r$`, '@\\r', '@\r'],
+		[String.raw`^@\\u2028$`, '@\\u2028', '@\u2028'],
+		[String.raw`^@\\u2029$`, '@\\u2029', '@\u2029'],
+		[String.raw`^@\\/$`, '@\\/', '@/'],
+		['^@[' + '/'.repeat(250) + ']$', '@/', '@\\'],
+		['^@\n$', '@\n', '@n'],
+		['^@\u2028$', '@\u2028', '@u2028']
+	];
+	for (const [pattern, match, miss] of cases) {
+		const rx = new RegExp(pattern);
+		assert.ok(api.validateRegexSpec(pattern));
+		assert.equal(api.safeRegexTest(rx, match), true, pattern);
+		assert.equal(api.safeRegexTest(rx, miss), false, pattern);
+	}
+});
+
+test('long slash rules survive storage reload and block comments and manager matches', () => {
+	const { api, document } = loadUserscript();
+	const settings = new api.AppSettingsStorage();
+	const storage = new api.StorageV2(settings);
+	const pattern = '@a|' + '/'.repeat(252);
+	assert.equal(storage.addRegex(pattern), true);
+	const reloaded = new api.StorageV2(settings);
+	assert.equal(reloaded.all()[0].value, pattern);
+	const manager = new api.BlockListManager({ storage: reloaded });
+	const matches = manager._getRegexMatches(reloaded.all()[0], [{ type: 'handle', value: '@a' }]);
+	assert.equal(matches.length, 1);
+	const hider = new api.CommentHider(reloaded, new api.PairMetaStorage(settings), settings);
+	const comment = document.createElement('ytd-comment-renderer');
+	const author = document.createElement('div');
+	author.id = 'author-handle';
+	author.textContent = '@a';
+	comment.appendChild(author);
+	hider.applyHide(comment);
+	assert.equal(comment.classList.contains('tm-hidden'), true);
+});
+
 test('exported regex literal parses back with original pattern and flags', () => {
 	const { api } = loadUserscript();
 	const literal = api.exportRegexLiteral({ type: 'regex', value: '^@foo/bar$', flags: 'i' });

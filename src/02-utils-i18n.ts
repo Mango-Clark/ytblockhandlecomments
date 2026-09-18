@@ -231,10 +231,21 @@ import { I18N_KO } from './i18n/ko.ts';
 		return null;
 	};
 	export const exportRegexLiteral = (item: BlockItem): string => `/${String(item.value || '').replace(/\//g, '\\/')}/${item.flags || ''}`;
+	// RegExp.source escapes literal slashes and line terminators. Undo those
+	// spellings before applying the input-length limit, consuming other escapes
+	// as pairs so a literal backslash followed by n, r, or u2028 stays literal.
+	const regexSourceToPattern = (source: string): string => source.replace(/\\(u202[89]|[\s\S])/g, (escape, token: string) => {
+		if (token === '/') return '/';
+		if (token === 'n') return '\n';
+		if (token === 'r') return '\r';
+		if (token === 'u2028') return '\u2028';
+		if (token === 'u2029') return '\u2029';
+		return escape;
+	});
 	const regexSafetyCache = new WeakMap<RegExp, boolean>();
 	export const safeRegexTest = (rx: RegExp | null | undefined, value: any): boolean => {
 		if (!rx || !value) return false;
-		if (!regexSafetyCache.has(rx)) regexSafetyCache.set(rx, !!validateRegexSpec(rx.source, rx.flags));
+		if (!regexSafetyCache.has(rx)) regexSafetyCache.set(rx, !!validateRegexSpec(regexSourceToPattern(rx.source), rx.flags));
 		if (!regexSafetyCache.get(rx)) return false;
 		const target = String(value).slice(0, SAFE_REGEX_MAX_TARGET);
 		const startedAt = performance.now();

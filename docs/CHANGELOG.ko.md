@@ -37,6 +37,8 @@
 
 ### Fixed
 
+- `RegExp.source`의 슬래시·줄바꿈 escape 확장으로 입력 길이 제한을 넘더라도 저장에 성공한 regex 규칙이 계속 적용되도록 수정하고 실행 시 검증에서 literal 백슬래시 의미를 보존.
+
 - 규칙을 제거하면 화면 밖에서 숨겨진 댓글도 복원하고 분리되었거나 관찰이 끝난 댓글에 늦게 도착한 intersection callback을 무시하도록 수정.
 - 기존 로그 ID를 항목 내용 기준의 고정 길이로 canonicalize하여 reload·trimmed snapshot·오래된 탭 쓰기 후 중복되지 않도록 수정.
 - 묶음 로그 저장 실패로 optimistic 항목이 rollback되면 실시간 로그 상태도 실제 저장 상태로 복원.

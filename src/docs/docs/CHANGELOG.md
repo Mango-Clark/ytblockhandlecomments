@@ -36,6 +36,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); projec
 
 ### Fixed
 
+- Kept accepted regex rules active when `RegExp.source` expands slash or line-terminator escaping beyond the input-length limit, preserving literal backslashes during runtime validation.
+
 - Restored offscreen hidden comments after rule removal and ignored late intersection callbacks for detached or unobserved comments.
 - Canonicalized bounded legacy log IDs by entry content to prevent duplicates across reloads, trimmed snapshots, and stale old-tab writes.
 - Restored live logging status after a failed batched storage write rolls back optimistic entries.

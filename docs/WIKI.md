@@ -217,7 +217,7 @@ Identity matching:
 - `handle` default; matches stored `handle` rules
 - `pair` matches stored `id` rules after UID Detection enabled
 - Regex tests extracted handle text only
-- Regex patterns are limited to 256 characters with unique `gimsuy` flags; matching uses the first 128 characters of a handle.
+- Regex patterns are limited to 256 input characters with unique `gimsuy` flags; matching uses the first 128 characters of a handle. Runtime validation restores literal slashes and line terminators escaped by `RegExp.source` before checking length, so engine-added escaping does not disable an accepted rule.
 - Structural validation bounds nested groups, alternatives, and consecutive repetitions before native matching to prevent [ReDoS](https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS). The 5 ms check after matching is only a result filter, not an execution timeout.
 - The conservative subset allows literals, character classes, anchors, ordinary/noncapturing groups, alternatives, and repetitions within complexity limits (4,096 estimated paths, 1,024 expanded units, at most 128 repetitions). Lookarounds, backreferences, named groups, and repeated groups that can match empty text are unsupported. Some otherwise valid patterns, such as `^@.*promo.*$`, exceed these limits; use simpler rules such as `^@.*promo`.
 - Groups containing alternatives or variable repetition cannot be repeated more than once, including fixed counts such as `(a|aa){12}`. Deterministic groups such as `(?:ab){12}` and alternatives outside repeated groups remain supported.
