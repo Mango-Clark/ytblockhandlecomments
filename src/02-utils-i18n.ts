@@ -187,6 +187,9 @@ import { I18N_KO } from './i18n/ko.ts';
 						? (quantifier[2] ? (quantifier[3] ? Number(quantifier[3]) : SAFE_REGEX_MAX_TARGET) : min)
 						: SAFE_REGEX_MAX_TARGET;
 					if (min > max || max > SAFE_REGEX_MAX_TARGET || (max > 1 && atom.minWidth === 0)) reject();
+					// Repeating alternatives or variable repetitions multiplies backtracking
+					// work across every handle, even for a fixed count within the path budget.
+					if (max > 1 && atom.paths > 1) reject();
 					let repeatedPaths = 0, power = 1;
 					for (let count = 0; count <= max; count++) {
 						if (count >= min) repeatedPaths += power;

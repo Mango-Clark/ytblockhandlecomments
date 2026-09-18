@@ -220,6 +220,7 @@ Identity matching:
 - Regex patterns are limited to 256 characters with unique `gimsuy` flags; matching uses the first 128 characters of a handle.
 - Structural validation bounds nested groups, alternatives, and consecutive repetitions before native matching to prevent [ReDoS](https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS). The 5 ms check after matching is only a result filter, not an execution timeout.
 - The conservative subset allows literals, character classes, anchors, ordinary/noncapturing groups, alternatives, and repetitions within complexity limits (4,096 estimated paths, 1,024 expanded units, at most 128 repetitions). Lookarounds, backreferences, named groups, and repeated groups that can match empty text are unsupported. Some otherwise valid patterns, such as `^@.*promo.*$`, exceed these limits; use simpler rules such as `^@.*promo`.
+- Groups containing alternatives or variable repetition cannot be repeated more than once, including fixed counts such as `(a|aa){12}`. Deterministic groups such as `(?:ab){12}` and alternatives outside repeated groups remain supported.
 - Unsupported regex rules are skipped during loading and cross-tab synchronization, and are not added by the editor or JSON/text import. Valid handle, ID, and regex rules remain active.
 
 Case sensitivity:

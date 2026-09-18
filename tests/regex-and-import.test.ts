@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import vm from 'node:vm';
 import { loadUserscript } from './helpers/load-userscript.ts';
 
 test('regex safety validation rejects catastrophic alternation pattern', () => {
@@ -13,6 +14,10 @@ const unsafePatterns = [
 	'^@(a|a(b)?)+$',
 	'^@(?:a?){30}a{30}$',
 	'^@(?:a{128}){128}$',
+	'(a|aa){12}a{64}b',
+	'(?:(a|aa)){12}a{64}b',
+	'(?:a|aa){2,12}?a{64}b',
+	'(?:a{1,2}){12}a{64}b',
 	'^@(?=a+$)a+$',
 	'^@(a+)\\1+$',
 	'^@(?<name>a+)\\k<name>$',
@@ -37,6 +42,8 @@ test('regex safety preserves common handle patterns and escaped syntax', () => {
 		['^@promo', 'i', '@Promo123'],
 		['^@(?:spam|promo)[0-9]{1,4}$', '', '@spam123'],
 		['^@(?:ab)+$', '', '@abab'],
+		['^@(?:ab){2}$', '', '@abab'],
+		['^@(?:spam|promo)?$', '', '@spam'],
 		['^@한글[0-9]+$', 'u', '@한글12'],
 		['^@\\p{L}+$', 'u', '@한글'],
 		['^@\\u{1F600}+$', 'u', '@😀😀'],
@@ -113,6 +120,44 @@ test('comment matching and manager previews exclude unsafe stored regex', () => 
 	hider.invalidateNode(comment);
 	assert.equal(hider._matches(comment), true);
 	assert.equal(manager._getRegexMatches(safe, [{ type: 'handle', value: author.textContent }]).length, 1);
+});
+
+test('opening the manager never executes repeated alternatives against a large handle list', () => {
+	const { api, context, document } = loadUserscript();
+	const settings = new api.AppSettingsStorage();
+	const storage = new api.StorageV2(settings);
+	const pairStore = new api.PairMetaStorage(settings);
+	const apiConfig = new api.ApiConfigStorage();
+	const handles = Array.from({ length: 90 }, (_: unknown, index: number) => ({ type: 'handle', value: '@' + 'a'.repeat(100) + index }));
+	const unsafe = { type: 'regex', value: '(a|aa){12}a{64}b', flags: '' };
+	storage.setAll(handles);
+	// Exercise the manager's own validation even if an old caller supplies an unsafe rule.
+	storage.all = () => [...handles, unsafe, { type: 'regex', value: '^@a', flags: '' }];
+	context.unsafeRegexExecutions = 0;
+	context.unsafeRegexSource = unsafe.value;
+	vm.runInContext(`
+		const nativeRegexTest = RegExp.prototype.test;
+		RegExp.prototype.test = function(value) {
+			if (this.source === unsafeRegexSource) {
+				unsafeRegexExecutions += 1;
+				return false;
+			}
+			return nativeRegexTest.call(this, value);
+		};
+	`, context);
+	const manager = new api.BlockListManager({
+		settings, storage, pairStore, apiConfig,
+		pairService: new api.PairService(storage, pairStore, apiConfig, settings),
+		getLastPairRunResult: () => null,
+		refreshAfterStorageChange: () => {}
+	});
+	for (let run = 0; run < 2; run++) {
+		manager.openList();
+		assert.equal(context.unsafeRegexExecutions, 0);
+		assert.equal(document.querySelectorAll('.tm-item-check').length, 92);
+		assert.ok(document.querySelector('.tm-dialog').textContent.includes(api.t('regexMatchedCount', 90)));
+		api.Dialog.closeAll();
+	}
 });
 
 test('regex safety validation rejects invalid flag and length edges', () => {
