@@ -1,7 +1,6 @@
 # Test Rules
 
-- Implementation-rule changes: update root + child `AGENTS.md` together; test details stay here.
-- Tests deterministic; network, browser profile, wall-clock independent.
-- Prefer existing fake DOM/userscript helpers.
-- Cover success + repeated/idempotent storage, navigation, menu, UI behavior.
-- Behavior changes: focused test first, then full suite.
+- Tests must be deterministic and independent of network, browser profile, and wall-clock timing.
+- Prefer existing fake DOM and userscript helpers.
+- Cover success plus repeated/idempotent storage, navigation, menu, and UI behavior where relevant.
+- For behavior changes, run focused tests first; full suite is enforced by final `npm run verify`.

@@ -1,7 +1,6 @@
 # Test Helper Rules
 
-- Implementation-rule changes: update root + affected parent/child `AGENTS.md` together; helper detail stays here.
-- Helpers: generic, reusable across tests.
-- Keep assertions/test expectations out of shared helpers.
-- Preserve fake DOM, globals, timers, userscript storage cleanup/isolation.
-- Extend existing helper before adding duplicate fixture/loader.
+- Keep helpers generic and reusable across tests.
+- Keep assertions and test-specific expectations out of shared helpers.
+- Preserve fake DOM, globals, timers, and userscript-storage cleanup/isolation.
+- Extend an existing helper before adding a duplicate fixture or loader.

@@ -1,8 +1,6 @@
 # Translation Rules
 
-- Implementation-rule changes: update root + affected parent/child `AGENTS.md` together; translation detail stays here.
-
-- `en.ts`/`ko.ts`: identical keys, placeholders, message intent.
-- Add English, then Korean.
-- Preserve YouTube UI labels, wording, capitalization, punctuation exactly.
-- No business logic/storage behavior in translations.
+- `en.ts` and `ko.ts` must have identical keys, placeholders, and message intent.
+- Add/update English first, then Korean.
+- Preserve YouTube UI labels, wording, capitalization, and punctuation exactly where compatibility requires it.
+- Keep business logic and storage behavior out of translation files.

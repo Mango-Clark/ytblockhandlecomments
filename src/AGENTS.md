@@ -1,12 +1,16 @@
 # Source Rules
 
-- Implementation-rule changes: update root + child `AGENTS.md`; source detail here.
-- Focus modules; preserve numeric load order.
-- Preserve userscript compatibility + storage/API contracts.
-- User-facing text: align English/Korean translations.
-- Edit `src/`; run `npm run build`; verify root `ytblockhandlecomments.js` with `npm run check:build`.
-- Documentation templates live in `src/docs/`; edit them, never generated root README or `docs/*.md` files.
-- Tampermonkey loads generated root `ytblockhandlecomments.js`; commit with changed `src/` files.
-- Behavior change: update tests; inspect async, cross-tab, repeated-navigation behavior.
-- UI/UX change: before implementation, add/update TODO with affected view + verification criteria.
-- Settings/navigation changes: verify tab entry points, return paths, labels, spacing, destructive-action emphasis, state preservation.
+- Keep modules focused and preserve numeric load order.
+- Preserve userscript compatibility and storage/API contracts.
+- User-facing text must keep English/Korean translations aligned.
+- Edit source under `src/`; run build to regenerate root `ytblockhandlecomments.js`.
+- Verify generated userscript output with the project build check.
+- Tampermonkey loads the generated root userscript; commit it with source changes.
+- Documentation templates live in `src/docs/`; never directly edit generated root README files or generated `docs/*.md` user docs.
+
+## Behavior And UI
+
+- Behavior changes require focused tests.
+- Inspect async, cross-tab, repeated-navigation, and repeated-action behavior where relevant.
+- UI/UX changes must update affected TODO verification criteria before implementation.
+- Settings/navigation changes must verify entry points, return paths, labels, spacing, destructive-action emphasis, and state preservation.

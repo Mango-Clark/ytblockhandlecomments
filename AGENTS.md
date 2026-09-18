@@ -4,120 +4,74 @@ Repo rules. Short. Concrete.
 
 ## Purpose
 
-Align docs, versioning, Git. Change files only for code/rule needs.
-Child `AGENTS.md`: parent gets one key sentence; details stay child.
-Substantial child/shared workflow change: add concise parent summary.
+Keep development correct, stable, reviewable, and token-efficient.
+Rules apply hierarchically: root, then the nearest affected child `AGENTS.md`.
+Direct user instruction has highest precedence.
 
-## Quick Rules
+## Core Rules
 
-- Implementation-rule change: update this file + all affected child `AGENTS.md` same patch.
+- Default branch: `dev`. Never modify `master` directly.
+- Preserve existing user changes; never discard unrelated work.
+- One root cause per patch. Keep diffs minimal and focused.
+- Do not batch unrelated fixes.
+- Prefer existing project patterns over parallel implementations.
+- If unsure whether a change is correct, report the finding; do not edit speculatively.
+- Rule changes must update every affected `AGENTS.md` in the same patch.
 
-- Use `dev` unless user says otherwise.
-- Update `src/docs/README.md` first, then `src/docs/README.ko.md`; run build to generate root README files.
-- Behavior/storage change: update `src/docs/docs/WIKI.md` first, then Korean pair; run build.
-- Update `src/docs/docs/CHANGELOG.md` first, then Korean pair; run build.
-- Apply [DavidAnson/markdownlint](https://github.com/DavidAnson/markdownlint) rules to every changed `*.md`, including changelogs, README/WIKI, TODO, and `AGENTS.md` files.
-- After every `*.md` change, run `npm run lint:markdown`; sync `.markdownlint.json` and `.markdownlintignore` with project doc rules.
-- Review every `*.md` after code changes.
-- Never bump versions without explicit user instruction.
-- Bump `VERSION` or package manifest only when explicitly instructed + shipping user-visible change.
-- For mechanical version/docs references, use `npm run bump:version -- <MAJOR.MINOR.PATCH>`.
-- For version update, build, commit, and matching tag `vMAJOR.MINOR.PATCH`, run `npm run bump:version -- <MAJOR.MINOR.PATCH>`.
-- Check `src/docs/docs/TODO.md`. Mark done items. On version bump, remove old done items.
-- Source/generated userscript/Tampermonkey rules: see `src/AGENTS.md`.
-- Run ESLint via project-local binary, e.g. `.\node_modules\.bin\eslint.cmd .` on Windows.
-- Never git-track local-only ESLint setup/install outputs unless requested.
-- Before PR/commit, clean `git status`.
-- Request maintainer review for code/changelog changes.
-- Commit each small patch/root-cause fix.
-- Never batch unrelated fixes.
-- Separate docs-only, tests-only, build/tooling, behavior commits when feasible.
-- Keep worktree clean.
+## Validation
 
-## Docs
+- Run focused validation while developing.
+- Before delivery of any non-TODO patch, run full `npm run verify`.
+- `npm run verify` must include code lint, Markdown lint, typecheck, tests, build, and generated-output verification.
+- Keep component checks independently runnable.
+- A failed required check blocks completion unless the user explicitly overrides it.
 
-- Docs language/pairing/structure/changelog/todo: see `docs/AGENTS.md`.
+## Review
 
-## Git
+- Code or changelog changes require independent subagent review before completion.
+- Review must inspect correctness, regressions, edge cases, unintended scope, and rule compliance.
+- If subagent review is unavailable or does not pass, do not mark the work complete.
+- Fix review findings, then rerun affected validation and final `npm run verify`.
 
-- Default branch `dev`.
-- Never touch `master`.
-- No shared-branch history rewrite.
-- Temporary branches OK. Merge back before delivery.
-- Clear branch names: `feature/<slug>`, `fix/<slug>`, `docs/<slug>`.
-- Release tags: `vMAJOR.MINOR.PATCH`, e.g. `v0.6.0`.
-- Keep release tag naming consistent; never mix `0.6.0` and `v0.6.0`.
-- `src/docs/docs/TODO.md`-only changes exempt from git push requirement.
-- Validate with `git status` and `git diff --stat`.
+## Changelog And Docs
 
-## Changelog
-
-- Follow Keep a Changelog 1.1.0.
-- Sections: Added, Changed, Deprecated, Removed, Fixed, Security.
-- Keep `Unreleased` first.
-- Use `YYYY-MM-DD`.
-
-## TODO
-
-- Implementation-rule change: update relevant child `AGENTS.md`; keep details consistent.
-
-- Mark done: `- [x]`.
-- After version bump, remove old done items.
-- Before TODO implementation, read full acceptance details; inspect related code, docs, settings, existing UI patterns.
-- Match neighboring workflows: reuse components, terminology, navigation, spacing, controls, defaults, state handling.
-- UI/UX changes: update all affected entry points/screens together; preserve responsive behavior, accessibility, loading, empty, error, disabled states.
-- Never add parallel controls/alternate interactions when existing project pattern covers same action.
-- Before marking done, verify full flow across adjacent screens; record only verified work in `Done`.
-- TODO code-scope items must include baseline commit hash used when written.
+- Record technical changes in the changelog, including internal/non-visible changes.
+- Routine text-only TODO edits do not require changelog entries.
+- For behavior or user-visible changes, review and update affected user documentation.
+- Do not review or rewrite unrelated docs for internal-only changes.
+- Documentation-specific rules live in `docs/AGENTS.md`.
 
 ## Reliability
 
-- Before behavior changes, check races: concurrent runs, shared state, cross-tab storage order, async callback ordering.
-- Avoid partial writes: pair source/generated/docs/version updates; verify synced files.
-- Prefer idempotence: repeated scripts, migrations, storage updates, user actions produce same final state where practical.
+- Before behavior changes, check concurrency, shared state, cross-tab ordering, async callback ordering, and repeated navigation where relevant.
+- Avoid partial writes; keep source, generated output, docs, and metadata consistent.
+- Prefer idempotent behavior for scripts, migrations, storage updates, and repeated user actions.
+
+## Git
+
+- Use Conventional Commits: `<type>(<scope>): <imperative summary>`.
+- Allowed types: `feat`, `fix`, `refactor`, `perf`, `docs`, `test`, `chore`, `build`, `ci`, `style`, `revert`.
+- English commit messages; scope optional; subject under 50 characters when feasible.
+- Separate docs-only, tests-only, build/tooling, and behavior changes when feasible.
+- Before commit, ensure only intended changes are included.
+- Commit every completed non-TODO-only patch.
+- Do not auto-commit `src/docs/docs/TODO.md`-only changes.
+- After commit, verify the worktree is clean unless intentionally left with TODO-only changes.
+- Do not push unless the user explicitly requests it.
+- Do not rewrite shared-branch history.
+- Temporary branches are allowed; merge them back before delivery.
+- Branch names: `feature/<slug>`, `fix/<slug>`, `docs/<slug>`.
+
+## Version And Release
+
+- Never bump versions without explicit user instruction.
+- Use `npm run bump:version -- <MAJOR.MINOR.PATCH>` for version/release updates.
+- The release command is the canonical workflow for version files, generated output, commit, `vMAJOR.MINOR.PATCH` tag, and push.
+- Do not manually bypass release-script safeguards.
 
 ## Audit And Autofix
 
-- Zero changes valid.
-- Never change file solely for autofix.
-- Edit only concrete `path:line` bugs.
-
-Allowed:
-
-- Security bug.
-- Perf bug causing real freeze/hot-path slowdown.
-- QOL/correctness bug causing broken behavior.
-
-Disallowed:
-
-- Style-only change.
-- Broad refactor.
-- Speculative improvement.
-- Dependency add without clear need.
-
-Patch rule:
-
-- One root cause per patch.
-- Smallest diff.
-- Run relevant tests/lint.
-- Unsure: report finding. Never edit.
-
-## Commit
-
-- Always commit after patch.
-- Before final commit, run project-local ESLint when available; report result.
-- Use Conventional Commits: `<type>(<scope>): <imperative summary>`.
-- Allowed types: `feat`, `fix`, `refactor`, `perf`, `docs`, `test`, `chore`, `build`, `ci`, `style`, `revert`.
-- Scope optional; keep consistent for repeated areas, e.g. `manager`, `docs`, `build`.
-- English commit messages.
-- Imperative mood after colon.
-- Subject under 50 chars when feasible.
-- Body only when why unclear.
-- Prefer one commit per focused patch.
-- Commit completed patch before next.
-
-## Precedence
-
-- Direct user instruction wins.
-- Then this file.
-- Then parent `AGENTS.md`.
+- Zero changes is a valid result.
+- Edit only concrete bugs or required rule/project changes.
+- Allowed autofix targets: security bugs, real performance faults, correctness/QOL bugs.
+- Disallowed without explicit request: style-only changes, broad refactors, speculative improvements, unnecessary dependencies.
