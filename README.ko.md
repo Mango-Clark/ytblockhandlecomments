@@ -53,7 +53,7 @@
 - 자동 싫어요: 안 함·새 숨김만·숨김 동안 항상.
 - YouTube의 comment DOM node 재사용에도 keyword·자동 싫어요 재적용.
 - regex·keyword 대상·싫어요·handle 차단·UID pair를 한 창에서 설정.
-- 저장·매칭 전 regex 길이·flag·대상·휴리스틱 safety 검사.
+- 저장·매칭 전 regex 길이·flag·보수적 구조 복잡도 검사. 매칭 대상은 128자로 제한.
 - regex 최초 일치 handle 자동 저장 후 handle 매칭.
 
 ### 설정·테마

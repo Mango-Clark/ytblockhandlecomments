@@ -44,6 +44,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); projec
 
 ### Security
 
+- Prevented browser freezes from regex safety-check bypasses involving nested groups and consecutive repetitions. Added conservative complexity validation before matching, including stored/imported rules and cross-tab updates; unsupported expressions are skipped.
+
 - Omitted sensitive diagnostic fields and redacted recognizable credential or identifier values, including JWTs and API-key-shaped strings.
 
 ## [1.5.3] - 2026-08-21

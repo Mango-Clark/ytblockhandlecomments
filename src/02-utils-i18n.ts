@@ -128,19 +128,87 @@ import { I18N_KO } from './i18n/ko.ts';
 	export const SAFE_REGEX_FLAGS = /^[gimsuy]*$/;
 	export const REGEX_MATCH_INITIAL_LIMIT = 20;
 	export const REGEX_MATCH_PAGE_SIZE = 50;
-	export const UNSAFE_REGEX_PATTERNS = [
-		/\((?:\\.|[^()\\])*(?:[+*?]|\{\d*,?\d*\})(?:\\.|[^()\\])*\)(?:[+*?]|\{)/,
-		/\((?:\\.|[^()\\])+\|(?:\\.|[^()\\])+\)(?:[+*?]|\{)/,
-		/(?:\.\*){2,}/,
-		/(?:\[[^\]]+\][+*]){2,}/
-	];
+	// Bound possible backtracking paths before native execution. A post-test timer
+	// cannot interrupt RegExp.test(), even when the target is only 128 characters.
+	const SAFE_REGEX_MAX_PATHS = 4096;
+	const SAFE_REGEX_MAX_EXPANDED_SIZE = 1024;
+	type RegexCost = { paths: number; size: number; minWidth: number };
+	const checkRegexComplexity = (pattern: string, flags: string): void => {
+		let index = 0;
+		const reject = (): never => { throw new Error('Unsupported or excessive regex complexity'); };
+		const bounded = (cost: RegexCost): RegexCost => {
+			if (cost.paths > SAFE_REGEX_MAX_PATHS || cost.size > SAFE_REGEX_MAX_EXPANDED_SIZE) reject();
+			return cost;
+		};
+		const expression = (): RegexCost => {
+			let paths = 0, size = 0, minWidth = Infinity;
+			let sequence: RegexCost = { paths: 1, size: 0, minWidth: 0 };
+			while (index < pattern.length && pattern[index] !== ')') {
+				if (pattern[index] === '|') {
+					paths += sequence.paths;
+					size += sequence.size;
+					minWidth = Math.min(minWidth, sequence.minWidth);
+					sequence = { paths: 1, size: 0, minWidth: 0 };
+					index += 1;
+					continue;
+				}
+				const ch = pattern[index++];
+				let atom: RegexCost = { paths: 1, size: 1, minWidth: 1 };
+				if (ch === '(') {
+					if (pattern[index] === '?') {
+						// Lookarounds and named captures/backreferences are outside this subset.
+						if (pattern.slice(index, index + 2) !== '?:') reject();
+						index += 2;
+					}
+					atom = expression();
+					if (pattern[index++] !== ')') reject();
+				} else if (ch === '[') {
+					while (index < pattern.length && pattern[index] !== ']') {
+						if (pattern[index++] === '\\') index += 1;
+					}
+					if (pattern[index++] !== ']') reject();
+				} else if (ch === '\\') {
+					const escape = /^(?:[dDsSwWbBfnrtv]|0(?!\d)|c[A-Za-z]|x[\da-fA-F]{2}|u[\da-fA-F]{4}|[^A-Za-z0-9])/.exec(pattern.slice(index));
+					const unicode = flags.includes('u')
+						? /^(?:u\{[\da-fA-F]+\}|[pP]\{[A-Za-z_=]+\})/.exec(pattern.slice(index)) : null;
+					const token = unicode?.[0] || escape?.[0] || reject();
+					index += token.length;
+					if (token === 'b' || token === 'B') atom.minWidth = 0;
+				} else if (ch === '^' || ch === '$') atom.minWidth = 0;
+				else if ('*+?{}'.includes(ch)) reject();
+
+				const quantifier = /^(?:[?*+]|\{(\d+)(?:(,)(\d*))?\})/.exec(pattern.slice(index));
+				if (quantifier) {
+					index += quantifier[0].length;
+					if (pattern[index] === '?') index += 1;
+					const text = quantifier[0];
+					const min = text === '+' ? 1 : text.startsWith('{') ? Number(quantifier[1]) : 0;
+					const max = text === '?' ? 1 : text.startsWith('{')
+						? (quantifier[2] ? (quantifier[3] ? Number(quantifier[3]) : SAFE_REGEX_MAX_TARGET) : min)
+						: SAFE_REGEX_MAX_TARGET;
+					if (min > max || max > SAFE_REGEX_MAX_TARGET || (max > 1 && atom.minWidth === 0)) reject();
+					let repeatedPaths = 0, power = 1;
+					for (let count = 0; count <= max; count++) {
+						if (count >= min) repeatedPaths += power;
+						if (repeatedPaths > SAFE_REGEX_MAX_PATHS || power > SAFE_REGEX_MAX_PATHS) reject();
+						power *= atom.paths;
+					}
+					atom = bounded({ paths: repeatedPaths, size: 1 + atom.size * max, minWidth: atom.minWidth * min });
+				}
+				sequence = bounded({ paths: sequence.paths * atom.paths, size: sequence.size + atom.size, minWidth: sequence.minWidth + atom.minWidth });
+			}
+			return bounded({ paths: paths + sequence.paths, size: size + sequence.size, minWidth: Math.min(minWidth, sequence.minWidth) });
+		};
+		expression();
+		if (index !== pattern.length) reject();
+	};
 	export const validateRegexSpec = (pattern: any, flags = ''): RegexSpec | null => {
 		const value = String(pattern || '');
 		const flagText = String(flags || '');
 		if (!value || value.length > SAFE_REGEX_MAX_PATTERN) return null;
 		if (flagText.length > 6 || !SAFE_REGEX_FLAGS.test(flagText) || new Set(flagText).size !== flagText.length) return null;
-		if (UNSAFE_REGEX_PATTERNS.some(rx => rx.test(value))) return null;
 		try {
+			checkRegexComplexity(value, flagText);
 			new RegExp(value, flagText);
 			return { pattern: value, flags: flagText };
 		} catch {
@@ -160,8 +228,11 @@ import { I18N_KO } from './i18n/ko.ts';
 		return null;
 	};
 	export const exportRegexLiteral = (item: BlockItem): string => `/${String(item.value || '').replace(/\//g, '\\/')}/${item.flags || ''}`;
+	const regexSafetyCache = new WeakMap<RegExp, boolean>();
 	export const safeRegexTest = (rx: RegExp | null | undefined, value: any): boolean => {
 		if (!rx || !value) return false;
+		if (!regexSafetyCache.has(rx)) regexSafetyCache.set(rx, !!validateRegexSpec(rx.source, rx.flags));
+		if (!regexSafetyCache.get(rx)) return false;
 		const target = String(value).slice(0, SAFE_REGEX_MAX_TARGET);
 		const startedAt = performance.now();
 		try {

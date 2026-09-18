@@ -50,7 +50,7 @@ Source layout:
 - Auto-dislike modes: off, newly hidden only, always while hidden.
 - Reapply keyword/auto-dislike actions when YouTube reuses comment DOM nodes.
 - Configure regex, keyword fields, dislike, handle-block, UID-pair actions in one dialog.
-- Validate regex length, flags, target, heuristics before storage/matching.
+- Validate regex length, flags, and conservative structural complexity before storage/matching; limit matching targets to 128 characters.
 - Auto-save handles first hidden by regex for later handle matching.
 
 ### Settings and themes

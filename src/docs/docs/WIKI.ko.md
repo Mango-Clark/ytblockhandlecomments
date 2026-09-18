@@ -217,7 +217,10 @@ API 설정:
 - `handle`: 기본. 저장된 `handle` 규칙 매칭.
 - `pair`: UID 감지 후 저장된 `id` 규칙 매칭.
 - regex는 추출된 handle 텍스트에만 적용.
-- regex가 pattern 길이, flag, 대상 길이, 위험 backtracking safety 제한 초과 시 저장 거부.
+- regex pattern은 256자, 중복 없는 `gimsuy` flag로 제한하며 handle의 앞 128자만 매칭합니다.
+- 중첩 그룹·대안·연속 반복의 구조 복잡도를 native 매칭 전에 제한하여 [ReDoS](https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS)를 방지합니다. 매칭 후 5ms 검사는 결과 필터이며 실행을 중단하는 timeout이 아닙니다.
+- 보수적 허용 범위에는 literal·문자 클래스·anchor·일반/비캡처 그룹·대안·복잡도 제한 내 반복이 포함됩니다(추정 경로 4,096개, 확장 단위 1,024개, 반복 최대 128회). lookaround·역참조·이름 있는 그룹·빈 문자열에 일치할 수 있는 그룹의 반복은 지원하지 않습니다. `^@.*promo.*$`처럼 문법상 유효해도 제한을 넘는 패턴은 `^@.*promo`와 같은 단순한 규칙으로 바꾸세요.
+- 허용 범위를 벗어난 regex는 로드·탭 간 동기화 시 건너뛰며 편집기·JSON/텍스트 가져오기로 추가되지 않습니다. 유효한 handle·ID·regex 규칙은 계속 적용됩니다.
 
 대소문자 구분:
 
