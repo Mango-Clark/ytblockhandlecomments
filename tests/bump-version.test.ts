@@ -88,7 +88,7 @@ test('completed TODO items remove their indented acceptance details', () => {
 
 test('release stages templates and generated files, then pushes tag', () => {
 	assert.ok(releaseFiles.includes('VERSION'));
-	assert.ok(releaseFiles.includes('src/docs/docs/CHANGELOG.md'));
+	assert.ok(releaseFiles.includes('src/template/docs/CHANGELOG.md'));
 	assert.ok(releaseFiles.includes('docs/CHANGELOG.md'));
 	assert.deepEqual(releasePushCommands('v1.5.1'), [
 		['push', 'origin', 'dev'],

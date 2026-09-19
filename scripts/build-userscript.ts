@@ -8,8 +8,8 @@ const outputPath = path.join(root, 'ytblockhandlecomments.js');
 const headerPath = path.join(root, 'src', '00-userscript-header.ts');
 const entryPoint = path.join(root, 'src', '14-bootstrap.ts');
 const versionPath = path.join(root, 'VERSION');
-const docsSourcePath = path.join(root, 'src', 'docs');
-const generatedDocumentNotice = '<!-- Generated from src/docs templates by npm run build. Edit the templates instead. -->\n';
+const templateSourcePath = path.join(root, 'src', 'template');
+const generatedDocumentNotice = '<!-- Generated from src/template templates by npm run build. Edit the templates instead. -->\n';
 
 export const documentOutputs = [
 	'README.md',
@@ -111,15 +111,15 @@ export const replaceVersionTokens = (source: string, version: string): string =>
 	return generated;
 };
 
-const templatePathFor = (output: string): string => path.join(docsSourcePath, output);
-const listTemplateOutputs = (directory = docsSourcePath, prefix = ''): string[] => fs.readdirSync(directory, { withFileTypes: true })
+const templatePathFor = (output: string): string => path.join(templateSourcePath, output);
+const listTemplateOutputs = (directory = templateSourcePath, prefix = ''): string[] => fs.readdirSync(directory, { withFileTypes: true })
 	.flatMap(entry => entry.isDirectory()
 		? listTemplateOutputs(path.join(directory, entry.name), path.join(prefix, entry.name))
 		: entry.name.endsWith('.md') ? [path.join(prefix, entry.name).replace(/\\/g, '/')] : []);
 const ensureDocumentTemplates = (): void => {
 	const actual = listTemplateOutputs().sort();
 	const expected = [...documentOutputs].sort();
-	if (actual.join('\n') !== expected.join('\n')) throw new Error(`Unknown or missing document template in src/docs/: ${actual.join(', ')}`);
+	if (actual.join('\n') !== expected.join('\n')) throw new Error(`Unknown or missing document template in src/template/: ${actual.join(', ')}`);
 };
 
 const writeGeneratedFile = (file: GeneratedFile): void => {
@@ -135,7 +135,7 @@ export const readDocumentTemplates = (version: string): GeneratedFile[] => {
 	ensureDocumentTemplates();
 	return documentOutputs.map(output => {
 	const template = templatePathFor(output);
-	if (!fs.existsSync(template)) throw new Error(`Missing document template: src/docs/${output}`);
+	if (!fs.existsSync(template)) throw new Error(`Missing document template: src/template/${output}`);
 	return { path: path.join(root, output), content: `${generatedDocumentNotice}${replaceVersionTokens(readRawSource(template), version)}\n` };
 	});
 };

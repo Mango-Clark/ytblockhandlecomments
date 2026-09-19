@@ -1,4 +1,4 @@
-<!-- Generated from src/docs templates by npm run build. Edit the templates instead. -->
+<!-- Generated from src/template templates by npm run build. Edit the templates instead. -->
 # 📚 YouTube Comment Blocker Wiki — v1.5.3
 
 [English](WIKI.md) | [한국어](WIKI.ko.md)

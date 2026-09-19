@@ -1,6 +1,6 @@
 # Docs Rules
 
-Generated user docs are built from `src/docs/` templates via `npm run build`.
+Generated user docs are built from `src/template/` templates via `npm run build`.
 Generated files carry a build notice; edit templates only. `docs/AGENTS.md` is direct-managed.
 
 ## Common
@@ -14,18 +14,18 @@ Generated files carry a build notice; edit templates only. `docs/AGENTS.md` is d
 
 ## README
 
-- Edit `src/docs/README.md`, then `src/docs/README.ko.md`, then build.
+- Edit `src/template/README.md`, then `src/template/README.ko.md`, then build.
 - Feature descriptions must match implemented behavior.
 
 ## WIKI
 
-- For behavior/storage changes, edit `src/docs/docs/WIKI.md`, then the Korean pair, then build.
+- For behavior/storage changes, edit `src/template/docs/WIKI.md`, then the Korean pair, then build.
 - Document user behavior, storage effects, and configuration constraints.
 - Keep implementation-only reference details out of README.
 
 ## Changelog
 
-- Edit `src/docs/docs/CHANGELOG.md`, then the Korean pair, then build.
+- Edit `src/template/docs/CHANGELOG.md`, then the Korean pair, then build.
 - Record technical changes, including internal implementation, build/tooling, storage, test-affecting, and non-visible behavior changes.
 - Omit only changes with no meaningful technical effect, such as pure formatting or wording cleanup.
 - Follow Keep a Changelog 1.1.0 sections: `Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, `Security`.
@@ -33,7 +33,7 @@ Generated files carry a build notice; edit templates only. `docs/AGENTS.md` is d
 
 ## TODO
 
-- `src/docs/docs/TODO.md` is planning-only; never auto-commit TODO-only changes.
+- `src/template/docs/TODO.md` is planning-only; never auto-commit TODO-only changes.
 - Keep exactly these ordered sections: `P0 — Critical`, `P1 — High`, `P2 — Normal`, `P3 — Low`, `Blocked`, `Backlog`, `Done`.
 - Use `- [ ]` for open work and `- [x]` only in `Done`.
 - One concise actionable task per top-level item; nested bullets only for acceptance details.

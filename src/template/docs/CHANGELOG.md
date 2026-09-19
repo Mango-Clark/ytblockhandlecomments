@@ -16,6 +16,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); projec
 
 ### Changed
 
+- Renamed the documentation template directory to `src/template/` and updated build and release tooling references.
 - Made the block-list controller own selection, filters, pagination, caches, scheduled search work, and dialog disposal; API-test and pairing busy state now have separate lifecycle owners and independent operation generations, while disposed list state is cleared and stale results are ignored after close or re-open.
 - Made generated-file replacement atomic so a complete output is prepared before it replaces the userscript or documentation artifact.
 - Centralized GM storage error handling, documented numeric module prefixes as reading-order guidance, and added a complete repository verification command.

@@ -55,7 +55,7 @@ Direct user instruction has highest precedence.
 - Separate docs-only, tests-only, build/tooling, and behavior changes when feasible.
 - Before commit, ensure only intended changes are included.
 - Commit every completed non-TODO-only patch.
-- Do not auto-commit `src/docs/docs/TODO.md`-only changes.
+- Do not auto-commit `src/template/docs/TODO.md`-only changes.
 - After commit, verify the worktree is clean unless intentionally left with TODO-only changes.
 - Do not push unless the user explicitly requests it.
 - Do not rewrite shared-branch history.

@@ -48,7 +48,7 @@ export const releaseFiles = [
 	'VERSION',
 	'src/00-userscript-header.ts',
 	'src/02-utils-i18n.ts',
-	...documentOutputs.map(file => `src/docs/${file}`),
+	...documentOutputs.map(file => `src/template/${file}`),
 	...documentOutputs,
 	'ytblockhandlecomments.js'
 ];
@@ -110,15 +110,15 @@ const files: VersionFile[] = [
 		replace: () => `${version}\n`
 	},
 	{
-		path: 'src/docs/docs/CHANGELOG.md',
-		replace: (text) => releaseChangelog(text, 'src/docs/docs/CHANGELOG.md')
+		path: 'src/template/docs/CHANGELOG.md',
+		replace: (text) => releaseChangelog(text, 'src/template/docs/CHANGELOG.md')
 	},
 	{
-		path: 'src/docs/docs/CHANGELOG.ko.md',
-		replace: (text) => releaseChangelog(text, 'src/docs/docs/CHANGELOG.ko.md')
+		path: 'src/template/docs/CHANGELOG.ko.md',
+		replace: (text) => releaseChangelog(text, 'src/template/docs/CHANGELOG.ko.md')
 	},
 	{
-		path: 'src/docs/docs/TODO.md',
+		path: 'src/template/docs/TODO.md',
 		writeOnly: true,
 		replace: removeCompletedTodoItems
 	}

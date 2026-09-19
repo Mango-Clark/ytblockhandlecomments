@@ -6,7 +6,7 @@ Run all commands from repository root. Scripts use installed project tools + cur
 
 ## Files
 
-- `build-userscript.ts`: reads `VERSION`, bundles `src/14-bootstrap.ts`, and generates userscript + Markdown outputs from `src/docs/` templates.
+- `build-userscript.ts`: reads `VERSION`, bundles `src/14-bootstrap.ts`, and generates userscript + Markdown outputs from `src/template/` templates.
 - `bump-version.ts`: updates `VERSION`, release templates, builds generated files, commits release, creates + pushes matching `vMAJOR.MINOR.PATCH` tag.
 - `tsconfig.json`: TypeScript config for scripts.
 
@@ -26,7 +26,7 @@ npm run typecheck
 
 ## Build Workflow
 
-`build-userscript.ts` reads the one-line `VERSION` file. It uses `src/14-bootstrap.ts` as bundle entry and replaces `{{version}}` in userscript source + `src/docs/` Markdown templates. `src/docs/README*.md` generates root README files; `src/docs/docs/*.md` generates matching `docs/*.md` files. `docs/AGENTS.md` remains direct-managed.
+`build-userscript.ts` reads the one-line `VERSION` file. It uses `src/14-bootstrap.ts` as bundle entry and replaces `{{version}}` in userscript source + `src/template/` Markdown templates. `src/template/README*.md` generates root README files; `src/template/docs/*.md` generates matching `docs/*.md` files. `docs/AGENTS.md` remains direct-managed.
 
 After source changes:
 
@@ -84,8 +84,8 @@ Script stops before file changes if worktree dirty or target tag exists. Missing
 On success, script:
 
 1. Updates `VERSION`.
-2. Moves current `src/docs/docs/CHANGELOG*.md` `Unreleased` entries into new release section; creates fresh empty `Unreleased` section.
-3. Removes completed entries from `src/docs/docs/TODO.md`.
+2. Moves current `src/template/docs/CHANGELOG*.md` `Unreleased` entries into new release section; creates fresh empty `Unreleased` section.
+3. Removes completed entries from `src/template/docs/TODO.md`.
 4. Builds userscript + generated Markdown files.
 5. Stages explicit version, templates, generated documentation, TODO, + userscript files.
 6. Creates release commit + `v<version>` tag.
