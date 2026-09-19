@@ -241,6 +241,10 @@ Notes:
 - Local no-deps `node:test` harness with small DOM shim.
 - Regression coverage: manager lifecycle and search, dialog i18n refresh, pair result UI state, sorting/filtering helpers, quota counters, navigation observer reset, pair update skip/force, regex safety/import literals.
 
+### Long-term browser coverage
+
+The default verification suite intentionally stays dependency-free and deterministic. A future optional Playwright layer should run through a separate `npm run test:e2e` command using a Chromium local fixture and a GM API shim. It should cover browser lifecycle ordering, repeated userscript injection, custom-element replacement, fetch cancellation, and cross-tab events without making browser binaries or live YouTube network access part of `npm run verify`. A real Tampermonkey extension profile and heap measurements remain later extensions of that plan.
+
 ## Notes
 
 - `handle` default identity method; `pair` matches `id` rules only with `UID Detection` enabled.

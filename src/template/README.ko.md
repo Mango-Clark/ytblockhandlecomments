@@ -250,6 +250,10 @@ API 설정 저장소:
 - 외부 의존성 없이 `node:test` + 작은 DOM shim 회귀 테스트.
 - 범위: 관리자 lifecycle·검색, 대화상자 i18n refresh, pair 결과 UI 상태·정렬·필터 helper, quota 안내 counter, 탐색 observer reset, pair update skip/force, regex safety/import literal.
 
+### 장기 브라우저 coverage 계획
+
+기본 검증 suite는 dependency-free·결정론적 실행을 유지한다. 향후 선택형 Playwright 계층은 별도 `npm run test:e2e` 명령으로 실행하고, Chromium local fixture와 GM API shim을 사용한다. 브라우저 lifecycle 순서, userscript 반복 주입, custom-element 교체, fetch 취소, 탭 간 이벤트를 검증하되 browser binary나 실제 YouTube network를 `npm run verify`에 포함하지 않는다. 실제 Tampermonkey extension profile과 heap 측정은 이후 확장 범위로 남긴다.
+
 ---
 
 ## 참고 사항

@@ -13,16 +13,15 @@
 
 ## Backlog
 
-- [ ] (A) Investigate real-browser coverage for userscript lifecycle boundaries
-
-  - (0) `6b4e471c939a80c4b1f9f1ecdbb8ce6625ddd969`
-  - (1) Problem: the suite thoroughly exercises the fake DOM and mocked GM APIs but does not establish coverage of actual Tampermonkey listener ordering, browser fetch cancellation, YouTube custom-element replacement, or heap behavior.
-  - (2) Why: these are the remaining boundaries most likely to differ from the deterministic unit environment after the lifecycle and performance updates.
-  - (3) Related: `tests/helpers/fake-dom.ts`, `tests/helpers/load-userscript.ts`, navigation/performance/manager tests, and the generated userscript.
-  - (4) Direction: investigation needed—identify the smallest reproducible browser harness and decide which cross-tab, repeated-navigation, network, and memory scenarios justify integration or end-to-end gates.
-  - (5) Importance: unprioritized investigation; do not add a heavyweight browser dependency until the coverage gap and maintenance cost are measured.
-
 ## Done
+
+- [x] (A) Investigate real-browser coverage for userscript lifecycle boundaries
+
+  - (0) `2019b90d3b158ffdbd85cdd3316597b5ed3c0944`
+  - (1) The current suite intentionally remains dependency-free, using `node:test`, a VM loader, and a small DOM shim; no browser executable or Playwright/Puppeteer dependency is present.
+  - (2) The uncovered boundaries are real browser event ordering, Tampermonkey API behavior, YouTube custom-element replacement, browser fetch cancellation, and heap behavior. Deterministic unit tests remain the required default gate.
+  - (3) The long-term optional Playwright plan is documented in both READMEs: add a separate Chromium/local-fixture E2E command with a GM shim, keep it outside `npm run verify`, and consider a real Tampermonkey extension profile only as a later expansion.
+  - (4) No dependency or browser binary was added in this investigation.
 
 - [x] (B) Publish generated outputs as one recoverable build transaction
 
