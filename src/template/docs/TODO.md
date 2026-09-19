@@ -4,16 +4,6 @@
 
 ## P1 — High
 
-- [ ] (C) Bound and cancel external pair/API lookup operations
-
-  - (0) `6b4e471c939a80c4b1f9f1ecdbb8ce6625ddd969`
-  - (1) Problem: YouTube page and Data API fetches have no timeout or abort signal, and a stalled request keeps the shared pair run and manager busy state pending indefinitely.
-  - (2) Why: one network request can block queued handles, automatic updates, manual retries, and subsequent dialogs; closing a dialog only suppresses its UI callback and does not release the underlying work.
-  - (3) Related: `src/07-pair-service.ts`, `src/12b-manager-settings.ts`, `src/12d-manager-pairing.ts`, `src/12e-manager-runtime.ts`, `src/13-app.ts`, and pair/manager tests.
-  - (4) Direction: add bounded request timeouts and run-scoped cancellation, classify timeout/cancellation separately from API failures, release shared busy promises in every exit path, and decide whether dialog close cancels or deliberately detaches a global run.
-  - (5) Importance: High (confirmed reliability gap).
-  - (6) Subtasks: cover hung fetches, mid-batch cancellation, retry after timeout, low-performance serial queues, shared automatic/manual runs, and late response suppression.
-
 ## P2 — Normal
 
 - [ ] (A) Distinguish GM read failures from missing or invalid stored values
@@ -62,6 +52,14 @@
   - (5) Importance: unprioritized investigation; do not add a heavyweight browser dependency until the coverage gap and maintenance cost are measured.
 
 ## Done
+
+- [x] (M) Bound and cancel external pair/API lookup operations
+
+  - (0) `df7622b8d7b082bfb86b8dfa3deef4f7f23e9476`
+  - (1) Page/API fetches and response body parsing now use bounded timeouts, while timeout, network, and cancellation results remain distinguishable.
+  - (2) Pair runs carry a shared `AbortSignal`; explicit cancellation aborts active requests, stops queued handles, releases lookup-slot waits, and avoids cancellation fallback writes. Retry after timeout remains possible.
+  - (3) Closing a settings or list dialog detaches its UI generation while the shared app run continues; late results cannot update disposed settings UI or stale list state.
+  - (4) Verify hung fetch/body reads, timeout retry, mid-run cancellation, lookup-slot cancellation, shared app cancellation, low-performance behavior, API categories, late callbacks, and English/Korean documentation.
 
 - [x] (L) Preserve pair metadata under concurrent cross-tab writers
 
