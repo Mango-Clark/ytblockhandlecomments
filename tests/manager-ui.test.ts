@@ -118,6 +118,21 @@ test('i18n dictionaries provide Korean and English labels', () => {
 	assert.equal(api.t('loggingOutputTitle'), 'Output destinations');
 });
 
+test('pair result rendering keeps manager wrapper overrides', () => {
+	const { api, document } = loadUserscript();
+	const manager = new api.BlockListManager({});
+	manager._getPairOutcomeLabel = () => 'Overridden outcome';
+	manager._getPairResultItems = () => [{ outcome: 'created', handle: '@wrapped', uid: 'UC1234567890' }];
+	manager._getFailedPairHandles = () => ['@wrapped-failed'];
+	manager._createMetaLine = (text: string) => Object.assign(document.createElement('div'), { textContent: `Overridden meta: ${text}` });
+	const container = document.createElement('div');
+	manager._renderPairResultList(container, { items: [{ outcome: 'created', handle: '@ignored' }] });
+	assert.match(container.textContent, /Overridden outcome/);
+	assert.match(container.textContent, /@wrapped/);
+	assert.match(container.textContent, /Overridden meta/);
+	assert.equal((container.querySelector('.tm-inline-actions button') as any)?.disabled, false);
+});
+
 test('settings dialog updates auto-dislike mode', () => {
 	const { api, document } = loadUserscript();
 	const settings = new api.AppSettingsStorage();

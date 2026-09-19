@@ -24,7 +24,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 import { createManagerListController, getManagerPageSize, renderManagerPagination } from './12a-manager-list.ts';
 import { createManagerApiController, refreshSettingsUi } from './12b-manager-settings.ts';
 import { createManagerExport, downloadManagerExport, parseManagerImport, persistManagerImport } from './12c-manager-export.ts';
-import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel, getPairResultItems } from './12d-manager-pairing.ts';
+import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel, getPairResultItems, renderManagerPairResultList, showManagerPairResultDialog } from './12d-manager-pairing.ts';
 
 	/* ----------------------------------------------------------
 	 * 7. BlockListManager (UI + Import/Export)
@@ -121,102 +121,19 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 		_getPageSize() { return getManagerPageSize(this.app); }
 		_renderPagination(container: HTMLElement, page: number, total: number, onChange: (page: number) => void) { return renderManagerPagination(container, page, total, this._getPageSize(), onChange); }
 		_renderPairResultList(container: HTMLElement, stats: PairRunStats | null | undefined) {
-			const previousOpen = container.querySelector('details')?.open;
-			const state = container.__pairResultState || { filter: 'all', sort: 'original', page: 0 };
-			container.__pairResultState = state;
-			container.replaceChildren();
-			if (!stats?.items?.length) {
-				container.textContent = t('pairResultEmpty');
-				container.className = 'tm-inline-note';
-				return;
-			}
-			container.className = 'tm-result-panel';
-			const details = document.createElement('details');
-			details.open = typeof previousOpen === 'boolean' ? previousOpen : true;
-			const summary = document.createElement('summary');
-			summary.textContent = t('pairResultDetails');
-			const controls = document.createElement('div');
-			controls.className = 'tm-inline-actions';
-			const filterLabel = document.createElement('label');
-			filterLabel.textContent = t('pairResultFilterLabel');
-			const filterSelect = document.createElement('select');
-			const outcomes = ['all', 'created', 'updated', 'mismatch', 'failed', 'skipped'];
-			for (const outcome of outcomes) {
-				const option = document.createElement('option');
-				option.value = outcome;
-				option.textContent = outcome === 'all' ? t('pairResultFilterAll') : this._getPairOutcomeLabel(outcome);
-				filterSelect.appendChild(option);
-			}
-			filterSelect.value = state.filter;
-			const sortLabel = document.createElement('label');
-			sortLabel.textContent = t('pairResultSortLabel');
-			const sortSelect = document.createElement('select');
-			[
-				['original', t('pairResultSortOriginal')],
-				['outcome', t('pairResultSortOutcome')],
-				['handle', t('pairResultSortHandle')]
-			].forEach(([value, label]) => {
-				const option = document.createElement('option');
-				option.value = value;
-				option.textContent = label;
-				sortSelect.appendChild(option);
-			});
-			sortSelect.value = state.sort;
-			const failedHandles = this._getFailedPairHandles(stats);
-			const copyFailedBtn = Object.assign(document.createElement('button'), {
-				textContent: t('pairResultCopyFailed'),
-				disabled: !failedHandles.length
-			});
-			const exportFailedBtn = Object.assign(document.createElement('button'), {
-				textContent: t('pairResultExportFailed'),
-				disabled: !failedHandles.length
-			});
-			filterSelect.addEventListener('change', () => {
-				state.filter = filterSelect.value || 'all';
-				state.page = 0;
-				this._renderPairResultList(container, stats);
-			});
-			sortSelect.addEventListener('change', () => {
-				state.sort = sortSelect.value || 'original';
-				state.page = 0;
-				this._renderPairResultList(container, stats);
-			});
-			copyFailedBtn.addEventListener('click', () => {
-				this._copyText(failedHandles.join('\n'));
-				Toast.show(t('pairResultFailedCopied', failedHandles.length));
-			});
-			exportFailedBtn.addEventListener('click', () => this._showFailedPairExport(failedHandles));
-			controls.append(filterLabel, filterSelect, sortLabel, sortSelect, copyFailedBtn, exportFailedBtn);
-			const list = document.createElement('ul');
-			list.className = 'tm-result-list';
-			const resultItems = this._getPairResultItems(stats, state);
-			const pagination = document.createElement('div');
-			state.page = this._renderPagination(pagination, state.page || 0, resultItems.length, page => {
-				state.page = page;
-				this._renderPairResultList(container, stats);
-				container.querySelector<HTMLButtonElement>(state.page === 0 ? '[data-action="next-page"]' : '[data-action="previous-page"]')?.focus();
-			});
-			const start = state.page * this._getPageSize();
-			for (const item of resultItems.slice(start, start + this._getPageSize())) {
-				const li = document.createElement('li');
-				const title = document.createElement('div');
-				title.innerHTML = '';
-				const outcome = document.createElement('span');
-				outcome.className = 'tm-result-outcome';
-				outcome.textContent = this._getPairOutcomeLabel(item.outcome);
-				const handle = document.createElement('span');
-				handle.textContent = ` ${item.handle}`;
-				title.append(outcome, handle);
-				li.appendChild(title);
-				if (item.uid) li.appendChild(this._createMetaLine(t('metaUid', item.uid)));
-				if (item.resolvedUid && item.resolvedUid !== item.uid) {
-					li.appendChild(this._createMetaLine(t('metaResolvedUid', item.resolvedUid)));
-				}
-				if (item.message) li.appendChild(this._createMetaLine(item.message));
-				list.appendChild(li);
-			}
-			details.append(summary, controls, list, pagination);
-			container.appendChild(details);
+			return renderManagerPairResultList(container, stats, this._pairResultContext());
+		}
+		_pairResultContext() {
+			return {
+				getPageSize: () => this._getPageSize(),
+				renderPagination: (container: HTMLElement, page: number, total: number, onChange: (page: number) => void) => this._renderPagination(container, page, total, onChange),
+				copyText: (text: string) => this._copyText(text),
+				showFailedExport: (handles: string[]) => this._showFailedPairExport(handles),
+				getOutcomeLabel: (code: PairOutcome | string) => this._getPairOutcomeLabel(code),
+				getResultItems: (stats: PairRunStats | null | undefined, options: { filter?: string; sort?: string }) => this._getPairResultItems(stats, options),
+				getFailedHandles: (stats: PairRunStats | null | undefined) => this._getFailedPairHandles(stats),
+				createMetaLine: (text: any) => this._createMetaLine(text)
+			};
 		}
 		_renderApiTestStatus(container: HTMLElement, result: ApiTestResult | null, isRunning: boolean) {
 			container.replaceChildren();
@@ -250,18 +167,7 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 			}
 		}
 		_showPairResultDialog(stats: PairRunStats) {
-			const body = document.createElement('div');
-			this._renderPairResultList(body, stats);
-			Dialog.show({
-				title: t('pairResultDialogTitle'),
-				body,
-				buttons: [{ label: t('close'), value: false, primary: true }],
-				onRefresh: (ctx: DialogRefreshContext) => {
-					ctx.setTitle(t('pairResultDialogTitle'));
-					ctx.buttons[0].textContent = t('close');
-					this._renderPairResultList(body, stats);
-				}
-			});
+			return showManagerPairResultDialog(stats, this._pairResultContext());
 		}
 		openBlockKeywordAutomation() {
 			const body = document.createElement('div');

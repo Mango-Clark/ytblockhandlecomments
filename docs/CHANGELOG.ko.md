@@ -18,6 +18,7 @@
 
 ### Changed
 
+- 공개 manager wrapper와 기존 lifecycle 동작은 유지하면서 pair 결과 목록·다이얼로그 표시를 `12d` 기능 경계 뒤로 이동.
 - 공개 `BlockListManager` 진입점과 다이얼로그 동작은 유지하면서 manager import parsing·저장 count 처리를 `12c` 기능 경계 뒤로 이동.
 - GM 읽기 상태를 missing·invalid·failed로 구분하고, failed baseline에서는 복구 전까지 쓰기·migration·remote merge를 막으며 시작 시 안전한 새로고침 진단을 표시.
 - 페이지/API pair 조회에 제한 시간과 작업 범위 취소를 적용하고 timeout/cancelled 결과를 분리했으며, 관리자 창을 닫아도 공유 app 작업은 계속하고 해당 UI만 분리.

@@ -16,6 +16,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); projec
 
 ### Changed
 
+- Moved pair-result list and dialog presentation behind the `12d` feature boundary while preserving the public manager wrappers and existing lifecycle behavior.
 - Moved manager import parsing and persistence counting behind the `12c` feature boundary while preserving the public `BlockListManager` entry point and dialog behavior.
 - Distinguished missing, invalid, and failed GM reads; failed baselines now block writes, migrations, and remote merges until recovery, and startup shows a safe reload diagnostic.
 - Added bounded timeouts and run-scoped cancellation for page/API pair lookups, with separate timeout and cancellation results; closing a manager dialog detaches its UI while shared app work continues.
