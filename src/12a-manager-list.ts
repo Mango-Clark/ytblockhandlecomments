@@ -17,14 +17,10 @@ export type ManagerListState = {
 	baseViewStateCache: any;
 	viewStateCache: any;
 	selectionVersion: number;
-	beginAsync(): number;
-	isCurrent(operation: number): boolean;
 	dispose(): void;
 };
 
 export function createManagerListController(savedViewState: any, validTagFilters: Set<string>): ManagerListState {
-	let active = true;
-	let operationGeneration = 0;
 	const state: ManagerListState = {
 		selection: new Set<string>(Array.isArray(savedViewState?.selection) ? savedViewState.selection : []),
 		tagFilters: new Set<string>((Array.isArray(savedViewState?.tagFilters) ? savedViewState.tagFilters : [])
@@ -43,11 +39,7 @@ export function createManagerListController(savedViewState: any, validTagFilters
 		baseViewStateCache: null,
 		viewStateCache: null,
 		selectionVersion: 0,
-		beginAsync() { operationGeneration += 1; return operationGeneration; },
-		isCurrent(operation: number) { return active && operation === operationGeneration; },
 		dispose() {
-			active = false;
-			operationGeneration += 1;
 			if (state.searchRenderFrame !== null) cancelAnimationFrame(state.searchRenderFrame);
 			if (state.searchRenderTimer !== null) clearTimeout(state.searchRenderTimer);
 			state.searchRenderFrame = null;
@@ -57,6 +49,10 @@ export function createManagerListController(savedViewState: any, validTagFilters
 			state.searchIndexCache = null;
 			state.baseViewStateCache = null;
 			state.viewStateCache = null;
+			state.selection.clear();
+			state.tagFilters.clear();
+			state.expandedRegexKeys.clear();
+			state.showAllRegexKeys.clear();
 		}
 	};
 	return state;

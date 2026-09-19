@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createManagerListController } from '../src/12a-manager-list.ts';
+import { createManagerApiController } from '../src/12b-manager-settings.ts';
+import { createManagerPairController } from '../src/12d-manager-pairing.ts';
 
 test('manager list controller owns transient state and invalidates work on dispose', () => {
 	const state = createManagerListController({
@@ -9,29 +11,33 @@ test('manager list controller owns transient state and invalidates work on dispo
 		searchQuery: 'saved',
 		page: 2
 	}, new Set(['paired', 'stale']));
-	const operation = state.beginAsync();
-
 	assert.deepEqual(Array.from(state.selection), ['h:@saved']);
 	assert.deepEqual(Array.from(state.tagFilters), ['paired']);
 	assert.equal(state.searchQuery, 'saved');
 	assert.equal(state.page, 2);
-	assert.equal(state.isCurrent(operation), true);
-
 	state.dispose();
 
-	assert.equal(state.isCurrent(operation), false);
+	assert.equal(state.selection.size, 0);
+	assert.equal(state.tagFilters.size, 0);
+	assert.equal(state.expandedRegexKeys.size, 0);
+	assert.equal(state.showAllRegexKeys.size, 0);
 	assert.equal(state.regexMatchCache.size, 0);
 	assert.equal(state.rowRefs.size, 0);
 	assert.equal(state.searchIndexCache, null);
 	assert.equal(state.viewStateCache, null);
 });
 
-test('a newer list operation invalidates the previous operation', () => {
-	const state = createManagerListController({}, new Set());
-	const first = state.beginAsync();
-	const second = state.beginAsync();
+test('API and pairing controllers keep independent operation generations', () => {
+	const api = createManagerApiController();
+	const pairing = createManagerPairController();
+	const apiOperation = api.begin();
+	const pairOperation = pairing.begin();
 
-	assert.equal(state.isCurrent(first), false);
-	assert.equal(state.isCurrent(second), true);
-	state.dispose();
+	assert.equal(api.isCurrent(apiOperation), true);
+	assert.equal(pairing.isCurrent(pairOperation), true);
+	api.begin();
+	assert.equal(api.isCurrent(apiOperation), false);
+	assert.equal(pairing.isCurrent(pairOperation), true);
+	api.dispose();
+	pairing.dispose();
 });

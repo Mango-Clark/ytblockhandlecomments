@@ -2,13 +2,21 @@ import { t, type PairOutcome, type PairRunStats } from './02-utils-i18n.ts';
 
 export type ManagerPairController = {
 	busy: boolean;
+	begin(): number;
+	isCurrent(operation: number): boolean;
 	dispose(): void;
 };
 
-export const createManagerPairController = (): ManagerPairController => ({
-	busy: false,
-	dispose() { this.busy = false; }
-});
+export const createManagerPairController = (): ManagerPairController => {
+	let active = true;
+	let generation = 0;
+	return {
+		busy: false,
+		begin() { generation += 1; return generation; },
+		isCurrent(operation) { return active && operation === generation; },
+		dispose() { active = false; generation += 1; this.busy = false; }
+	};
+};
 
 export const getPairOutcomeLabel = (code: PairOutcome | string): string => {
 	if (code === 'created') return t('pairOutcomeCreated');

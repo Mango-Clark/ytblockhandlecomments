@@ -2139,16 +2139,16 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 				Toast.show(this.app.apiConfig.getLastSaveError() ? t('storageSaveFailed') : t('apiKeySaved'));
 			});
 			testApiBtn.addEventListener('click', async () => {
-				const operation = listState.beginAsync();
+				const operation = apiState.begin();
 				apiState.busy = true;
 				renderSummary();
 				try {
 					const result = await this.app.testApiKey();
-					if (listState.isCurrent(operation)) Toast.show(t('apiKeyTestResult', getApiTestCategoryLabel(result.category), result.message, result.httpStatus ? String(result.httpStatus) : ''), 3200);
+					if (apiState.isCurrent(operation)) Toast.show(t('apiKeyTestResult', getApiTestCategoryLabel(result.category), result.message, result.httpStatus ? String(result.httpStatus) : ''), 3200);
 				} catch (error) {
-					if (listState.isCurrent(operation)) Toast.show(t('operationFailed', error instanceof Error ? error.message : String(error)), 3200);
+					if (apiState.isCurrent(operation)) Toast.show(t('operationFailed', error instanceof Error ? error.message : String(error)), 3200);
 				} finally {
-					if (listState.isCurrent(operation)) { apiState.busy = false; renderSummary(); }
+					if (apiState.isCurrent(operation)) { apiState.busy = false; renderSummary(); }
 				}
 			});
 			clearApiBtn.addEventListener('click', () => {
@@ -2158,24 +2158,24 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 				Toast.show(this.app.apiConfig.getLastSaveError() ? t('storageSaveFailed') : t('apiKeyCleared'));
 			});
 			createBtn.addEventListener('click', async () => {
-				const operation = listState.beginAsync();
+				const operation = pairState.begin();
 				setBusy(true);
 				try {
 					const stats = await this.app.runPairUpdate('create');
-					if (listState.isCurrent(operation)) Toast.show(t('pairResult', stats), 3200);
+					if (pairState.isCurrent(operation)) Toast.show(t('pairResult', stats), 3200);
 				} catch (error) {
-					if (listState.isCurrent(operation)) Toast.show(t('operationFailed', error instanceof Error ? error.message : String(error)), 3200);
-				} finally { if (listState.isCurrent(operation)) { setBusy(false); renderAll(); } }
+					if (pairState.isCurrent(operation)) Toast.show(t('operationFailed', error instanceof Error ? error.message : String(error)), 3200);
+				} finally { if (pairState.isCurrent(operation)) { setBusy(false); renderAll(); } }
 			});
 			updateBtn.addEventListener('click', async () => {
-				const operation = listState.beginAsync();
+				const operation = pairState.begin();
 				setBusy(true);
 				try {
 					const stats = await this.app.runPairUpdate('update');
-					if (listState.isCurrent(operation)) Toast.show(t('pairResult', stats), 3200);
+					if (pairState.isCurrent(operation)) Toast.show(t('pairResult', stats), 3200);
 				} catch (error) {
-					if (listState.isCurrent(operation)) Toast.show(t('operationFailed', error instanceof Error ? error.message : String(error)), 3200);
-				} finally { if (listState.isCurrent(operation)) { setBusy(false); renderAll(); } }
+					if (pairState.isCurrent(operation)) Toast.show(t('operationFailed', error instanceof Error ? error.message : String(error)), 3200);
+				} finally { if (pairState.isCurrent(operation)) { setBusy(false); renderAll(); } }
 			});
 			executeBtn.addEventListener('click', async () => {
 				const selectedItems = computeViewState().selectedItems;
@@ -2195,13 +2195,13 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 					return;
 				}
 				setBusy(true);
-				const operation = listState.beginAsync();
+				const operation = pairState.begin();
 				try {
 					const stats = await this.app.runPairUpdate(bulkSelect.value, handles);
-					if (listState.isCurrent(operation)) Toast.show(t('pairResult', stats), 3200);
+					if (pairState.isCurrent(operation)) Toast.show(t('pairResult', stats), 3200);
 				} catch (error) {
-					if (listState.isCurrent(operation)) Toast.show(t('operationFailed', error instanceof Error ? error.message : String(error)), 3200);
-				} finally { if (listState.isCurrent(operation)) { setBusy(false); renderAll(); } }
+					if (pairState.isCurrent(operation)) Toast.show(t('operationFailed', error instanceof Error ? error.message : String(error)), 3200);
+				} finally { if (pairState.isCurrent(operation)) { setBusy(false); renderAll(); } }
 			});
 			openAutomationBtn.addEventListener('click', () => {
 				Dialog.closeAll('navigate');
