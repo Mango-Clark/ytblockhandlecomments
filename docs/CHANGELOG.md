@@ -11,6 +11,32 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); projec
 
 ### Added
 
+- None
+
+### Changed
+
+- None
+
+### Deprecated
+
+- None
+
+### Removed
+
+- None
+
+### Fixed
+
+- None
+
+### Security
+
+- None
+
+## [1.5.4] - 2026-09-19
+
+### Added
+
 - Added optional low-performance mode with smaller comment batches, delayed search, paused automatic pair lookup, and serial manual pair requests.
 - Paginated block and pair-result lists (100 rows normally, 50 in low mode), preserving selection across pages.
 - Added grouped logging controls with saved-entry status, console preview, test output, empty-state actions, and confirmed clear.
