@@ -4,7 +4,6 @@ import {
 	getItemKey,
 	getLang,
 	getScriptVersion,
-	isChannelId,
 	isNonNull,
 	parseRegexLiteral,
 	REGEX_MATCH_INITIAL_LIMIT,
@@ -24,7 +23,7 @@ import {
 import { Dialog, Toast } from './08-toast-dialog.ts';
 import { createManagerListController, getManagerPageSize, renderManagerPagination } from './12a-manager-list.ts';
 import { createManagerApiController, refreshSettingsUi } from './12b-manager-settings.ts';
-import { createManagerExport, downloadManagerExport } from './12c-manager-export.ts';
+import { createManagerExport, downloadManagerExport, parseManagerImport, persistManagerImport } from './12c-manager-export.ts';
 import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel, getPairResultItems } from './12d-manager-pairing.ts';
 
 	/* ----------------------------------------------------------
@@ -2329,40 +2328,14 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 					const txt = rawText.trim();
 					if (!txt) return { ok: false, count: 0 };
 
-					let items = [];
-					try {
-						const obj = JSON.parse(txt);
-						if (obj && Array.isArray(obj.items)) items = obj.items;
-						else if (obj && Array.isArray(obj.handles)) items = obj.handles.map((h: any) => ({ type: 'handle', value: h }));
-					} catch {
-						const parts = txt.split(/\n+/).flatMap(line => {
-							const trimmed = line.trim();
-							const literal = parseRegexLiteral(trimmed);
-							return literal ? [trimmed] : trimmed.split(',');
-						});
-						items = parts.map(s => s.trim()).filter(Boolean).map(s => {
-							if (s.startsWith('@')) return { type: 'handle', value: s };
-							const literal = parseRegexLiteral(s);
-							if (literal) return { type: 'regex', value: literal.pattern, flags: literal.flags };
-							if (isChannelId(s)) return { type: 'id', value: s };
-							return { type: 'handle', value: s };
-						}).filter(Boolean);
-					}
-					const before = this.app.storage.all().length;
-					const nextItems = [...this.app.storage.all(), ...items];
-					const persistence = this.app.storage.setAllResult
-						? this.app.storage.setAllResult(nextItems)
-						: (() => {
-							const value = this.app.storage.setAll(nextItems);
-							return { ok: !this.app.storage.getLastSaveError?.(), value };
-						})();
+					const items = parseManagerImport(txt);
+					const persistence = persistManagerImport(this.app.storage, items);
 					if (!persistence.ok) {
 						Toast.show(t('storageSaveFailed'));
 						return { ok: false, count: 0 };
 					}
-					const count = persistence.value.length - before;
 					this.app.refreshAfterStorageChange();
-					return { ok: true, count };
+					return { ok: true, count: persistence.count };
 				}
 			}).then(res => {
 				if (res && res.ok) Toast.show(t('importedCount', res.count));

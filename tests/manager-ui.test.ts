@@ -365,6 +365,27 @@ test('logging settings persist independently and retain the configured level', (
 	assert.equal((gmStore.get('yt_comment_blocker_logs_v1') as any).entries.length, 0);
 });
 
+test('manager import boundary parses supported formats and reports persistence counts', () => {
+	const { api } = loadUserscript();
+	assert.equal(JSON.stringify(api.parseManagerImport(JSON.stringify({ handles: ['@alpha', '@beta'] }))), JSON.stringify([
+		{ type: 'handle', value: '@alpha' },
+		{ type: 'handle', value: '@beta' }
+	]));
+	assert.equal(JSON.stringify(api.parseManagerImport('/^foo/i\nUC12345678901234567890')), JSON.stringify([
+		{ type: 'regex', value: '^foo', flags: 'i' },
+		{ type: 'id', value: 'UC12345678901234567890' }
+	]));
+	assert.equal(api.parseManagerImport('{"version":2}').length, 0);
+	assert.equal(api.parseManagerImport('"@quoted"').length, 0);
+	const items: any[] = [{ type: 'handle', value: '@existing' }];
+	const result = api.persistManagerImport({
+		all: () => items.slice(),
+		setAllResult: (next: any[]) => { items.splice(0, items.length, ...next); return { ok: true, value: items.slice() }; }
+	}, [{ type: 'handle', value: '@new' }]);
+	assert.equal(result.ok, true);
+	assert.equal(result.count, 1);
+});
+
 test('logger redacts nested identifiers without leaking circular payloads', () => {
 	const { api } = loadUserscript();
 	const settings = new api.AppSettingsStorage();
