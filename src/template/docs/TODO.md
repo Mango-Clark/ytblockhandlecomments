@@ -4,16 +4,6 @@
 
 ## P1 — High
 
-- [ ] (B) Preserve pair metadata under concurrent cross-tab writers
-
-  - (0) `6b4e471c939a80c4b1f9f1ecdbb8ce6625ddd969`
-  - (1) Problem: `pair_meta_v1` writes replace the full state and remote listeners call `setAllLocal`, unlike the convergent block-list and log stores.
-  - (2) Why: pair lookup workers or user actions in two tabs can overwrite independently added, updated, or removed pairs and can regress notification/check timestamps according to listener order.
-  - (3) Related: `src/05-pair-meta-storage.ts`, `src/07-pair-service.ts`, `src/13-app.ts`, `tests/pair-service.test.ts`, and storage concurrency tests.
-  - (4) Direction: define per-pair and scalar conflict semantics, merge remote snapshots deterministically, preserve delete/clear intent, and keep repeated listener delivery idempotent.
-  - (5) Importance: High (confirmed design gap with data-loss risk).
-  - (6) Subtasks: test two-writer add/add, update/remove, clear/stale-write, timestamp ordering, write rollback, and listener convergence.
-
 - [ ] (C) Bound and cancel external pair/API lookup operations
 
   - (0) `6b4e471c939a80c4b1f9f1ecdbb8ce6625ddd969`
@@ -72,6 +62,14 @@
   - (5) Importance: unprioritized investigation; do not add a heavyweight browser dependency until the coverage gap and maintenance cost are measured.
 
 ## Done
+
+- [x] (L) Preserve pair metadata under concurrent cross-tab writers
+
+  - (0) `512d215`
+  - (1) Pair records now use per-handle last-writer revisions with deletion tombstones and a clear revision, so concurrent additions, updates, removals, and clears converge deterministically.
+  - (2) UID detection uses revision ordering; pair check and notification timestamps merge by the greatest timestamp and remain monotonic locally.
+  - (3) Remote snapshots merge idempotently, accept legacy snapshots without a version field, restore local state after rejected writes, and refresh the UI only when merged state changes.
+  - (4) Verify two-writer add/add, update/remove, clear/stale-write, empty tombstones, timestamp ordering, legacy snapshots, write rollback, repeated listener delivery, and English/Korean documentation.
 
 - [x] (K) Make persistence failures explicit in pair, API-test, and import workflows
 
