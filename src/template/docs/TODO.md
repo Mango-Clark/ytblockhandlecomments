@@ -8,16 +8,6 @@
 
 ## P3 — Low
 
-- [ ] (A) Complete the manager feature-boundary extraction
-
-  - (0) `6b4e471c939a80c4b1f9f1ecdbb8ce6625ddd969`
-  - (1) Problem: `12a`–`12d` contain small controllers/helpers, while `src/12e-manager-runtime.ts` still owns roughly 2,300 lines of list, settings, pairing, import/export, dialog lifecycle, and rendering behavior through an open-ended index signature.
-  - (2) Why: the recent modularization created named boundaries without moving most state transitions and failure contracts behind them, leaving changes coupled and making isolated integration tests difficult.
-  - (3) Related: `src/12-block-list-manager.ts`, `src/12a-manager-list.ts` through `src/12e-manager-runtime.ts`, manager tests, and `types/node-lite.d.ts`.
-  - (4) Direction: move cohesive dialog controllers and typed state contracts behind the existing modules incrementally, remove the index-signature escape hatch, and preserve the public `BlockListManager` entry point.
-  - (5) Importance: Low (confirmed maintainability debt, not a current behavior defect).
-  - (6) Subtasks: extract import/export persistence, settings save orchestration, pair-run presentation, and list rendering/cache invalidation with focused tests per boundary.
-
 - [ ] (B) Publish generated outputs as one recoverable build transaction
 
   - (0) `6b4e471c939a80c4b1f9f1ecdbb8ce6625ddd969`
@@ -42,6 +32,14 @@
   - (5) Importance: unprioritized investigation; do not add a heavyweight browser dependency until the coverage gap and maintenance cost are measured.
 
 ## Done
+
+- [x] (A) Complete the manager feature-boundary extraction
+
+  - (0) `088cf30faf68133afb4dd8d3f7b1850ead75cae3`
+  - (1) Extracted import/export persistence, settings-save orchestration, pair-run presentation, list cache invalidation, and list-row rendering behind typed `12a`–`12d` boundaries; removed the runtime index-signature escape hatch.
+  - (2) Preserved the public `BlockListManager` entry point and existing row, dialog, persistence-failure, pairing, selection, regex, and toast behavior through focused manager tests.
+  - (3) Updated paired English/Korean changelog and wiki documentation and regenerated the userscript and document outputs.
+  - (4) Verified with `npm run verify` and 191 passing tests.
 
 - [x] (N) Distinguish GM read failures from missing or invalid stored values
 
