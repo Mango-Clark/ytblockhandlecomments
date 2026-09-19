@@ -17,6 +17,7 @@
 
 ### Changed
 
+- 생성 userscript와 Markdown 출력을 staged transaction으로 게시하고 write·rename 실패 시 rollback하도록 개선했으며 `--check`는 계속 read-only로 유지.
 - 목록 rendering 동작은 유지하면서 manager selection과 view cache 무효화를 `12a` list 경계 뒤로 이동.
 - public manager 진입점과 행 상호작용을 유지하면서 manager 목록 행 rendering을 typed `12a` list 경계 뒤로 이동.
 - manager runtime의 open-ended index signature를 제거하고 app·보존 view state 필드를 명시적으로 선언.

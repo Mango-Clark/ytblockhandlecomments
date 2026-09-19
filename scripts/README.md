@@ -22,7 +22,7 @@ npm run bump:version -- 1.2.1 -- --check
 npm run typecheck
 ```
 
-`npm run build` writes generated userscript + Markdown files. `npm run check:build` builds in memory; fails when any generated output is outdated. `npm run typecheck` checks main source + script/test TypeScript configs.
+`npm run build` stages generated userscript + Markdown files and publishes them as one recoverable transaction. A write or rename failure restores the previous complete set. `npm run check:build` builds in memory and never writes; it fails when any generated output is outdated. `npm run typecheck` checks main source + script/test TypeScript configs.
 
 ## Build Workflow
 

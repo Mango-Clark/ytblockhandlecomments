@@ -25,6 +25,21 @@ export const documentOutputs = [
 
 type CompactState = 'normal' | 'single' | 'double' | 'regex' | 'regex-class' | 'template';
 type GeneratedFile = { path: string; content: string };
+export type GeneratedFileOps = {
+	writeFileSync: (file: string, content: string, encoding: 'utf8') => void;
+	readFileSync: (file: string, encoding: 'utf8') => string;
+	renameSync: (from: string, to: string) => void;
+	rmSync: (file: string, options: { force: boolean }) => void;
+	existsSync: (file: string) => boolean;
+};
+
+const defaultGeneratedFileOps: GeneratedFileOps = {
+	writeFileSync: (file, content, encoding) => fs.writeFileSync(file, content, encoding),
+	readFileSync: (file, encoding) => fs.readFileSync(file, encoding),
+	renameSync: (from, to) => fs.renameSync(from, to),
+	rmSync: (file, options) => fs.rmSync(file, options),
+	existsSync: file => fs.existsSync(file)
+};
 
 const normalizeNewlines = (value: unknown): string => String(value || '').replace(/\r\n/g, '\n');
 const readRawSource = (file: string): string => normalizeNewlines(fs.readFileSync(file, 'utf8')).trimEnd();
@@ -122,14 +137,95 @@ const ensureDocumentTemplates = (): void => {
 	if (actual.join('\n') !== expected.join('\n')) throw new Error(`Unknown or missing document template in src/template/: ${actual.join(', ')}`);
 };
 
-const writeGeneratedFile = (file: GeneratedFile): void => {
-	const temporaryPath = `${file.path}.tmp-${process.pid}`;
-	try {
-		fs.writeFileSync(temporaryPath, file.content, 'utf8');
-		fs.renameSync(temporaryPath, file.path);
-	} finally {
-		if (fs.existsSync(temporaryPath)) fs.rmSync(temporaryPath, { force: true });
+const transactionId = (): string => `${process.pid}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+type TransactionFile = GeneratedFile & {
+	temporaryPath: string;
+	backupPath: string;
+	hadOriginal: boolean;
+	originalMoved: boolean;
+	targetPublished: boolean;
+};
+
+
+const cleanupTransactionFiles = (files: TransactionFile[], ops: GeneratedFileOps, removeBackups = true): unknown[] => {
+	const errors: unknown[] = [];
+	for (const file of files) {
+		try {
+			if (ops.existsSync(file.temporaryPath)) ops.rmSync(file.temporaryPath, { force: true });
+		} catch (error) { errors.push(error); }
 	}
+	if (!removeBackups || errors.length) return errors;
+	for (const file of files) {
+		try {
+			if (ops.existsSync(file.backupPath)) ops.rmSync(file.backupPath, { force: true });
+		} catch (error) { errors.push(error); }
+	}
+	return errors;
+};
+
+const rollbackGeneratedFiles = (files: TransactionFile[], ops: GeneratedFileOps): unknown[] => {
+	const errors: unknown[] = [];
+	for (const file of [...files].reverse()) {
+		if (file.originalMoved) {
+			let targetReady = true;
+			try {
+				if (ops.existsSync(file.path)) ops.rmSync(file.path, { force: true });
+			} catch (error) {
+				errors.push(error);
+				targetReady = false;
+			}
+			if (targetReady) {
+				try {
+					if (ops.existsSync(file.backupPath)) ops.renameSync(file.backupPath, file.path);
+				} catch (error) { errors.push(error); }
+			}
+		} else if (file.targetPublished) {
+			try {
+				if (ops.existsSync(file.path)) ops.rmSync(file.path, { force: true });
+			} catch (error) { errors.push(error); }
+		}
+	}
+	return errors;
+};
+
+export const publishGeneratedFiles = (
+	generatedFiles: GeneratedFile[],
+	ops: GeneratedFileOps = defaultGeneratedFileOps,
+	id = transactionId()
+): void => {
+	const paths = generatedFiles.map(file => file.path);
+	if (new Set(paths).size !== paths.length) throw new Error('Generated output paths must be unique.');
+	const files: TransactionFile[] = generatedFiles.map(file => ({
+		...file,
+		temporaryPath: `${file.path}.tmp-${id}`,
+		backupPath: `${file.path}.bak-${id}`,
+		hadOriginal: ops.existsSync(file.path),
+		originalMoved: false,
+		targetPublished: false
+	}));
+	try {
+		for (const file of files) ops.writeFileSync(file.temporaryPath, file.content, 'utf8');
+		for (const file of files) {
+			if (ops.readFileSync(file.temporaryPath, 'utf8') !== file.content) throw new Error(`Staged output validation failed: ${file.path}`);
+		}
+		for (const file of files) {
+			if (file.hadOriginal) {
+				ops.renameSync(file.path, file.backupPath);
+				file.originalMoved = true;
+			}
+			ops.renameSync(file.temporaryPath, file.path);
+			file.targetPublished = true;
+		}
+	} catch (error) {
+		const rollbackErrors = rollbackGeneratedFiles(files, ops);
+		const cleanupErrors = cleanupTransactionFiles(files, ops, rollbackErrors.length === 0);
+		const recoveryErrors = [...rollbackErrors, ...cleanupErrors];
+		if (recoveryErrors.length) throw new AggregateError(recoveryErrors, 'Generated output transaction failed and recovery was incomplete.', { cause: error });
+		throw error;
+	}
+	const cleanupErrors = cleanupTransactionFiles(files, ops);
+	if (cleanupErrors.length) throw new AggregateError(cleanupErrors, 'Generated output transaction published but cleanup was incomplete.');
 };
 export const readDocumentTemplates = (version: string): GeneratedFile[] => {
 	ensureDocumentTemplates();
@@ -151,17 +247,20 @@ export const buildGeneratedFiles = async (): Promise<GeneratedFile[]> => {
 	return [{ path: outputPath, content: `${header}\n${body}\n` }, ...readDocumentTemplates(version)];
 };
 
+export const findOutdatedGeneratedFiles = (generatedFiles: GeneratedFile[], ops: GeneratedFileOps = defaultGeneratedFileOps): GeneratedFile[] => generatedFiles
+	.filter(file => !ops.existsSync(file.path) || normalizeNewlines(ops.readFileSync(file.path, 'utf8')) !== file.content);
+
 const main = async (): Promise<void> => {
 	const generatedFiles = await buildGeneratedFiles();
 	if (process.argv.includes('--check')) {
-		const outdated = generatedFiles.filter(file => !fs.existsSync(file.path) || normalizeNewlines(fs.readFileSync(file.path, 'utf8')) !== file.content);
+		const outdated = findOutdatedGeneratedFiles(generatedFiles);
 		if (outdated.length) {
 			console.error(`Generated files are out of sync: ${outdated.map(file => path.relative(root, file.path)).join(', ')}. Run npm run build.`);
 			process.exit(1);
 		}
 		return;
 	}
-	for (const file of generatedFiles) writeGeneratedFile(file);
+	publishGeneratedFiles(generatedFiles);
 };
 
 if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve('scripts/build-userscript.ts')) {
