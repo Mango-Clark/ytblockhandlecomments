@@ -1,3 +1,4 @@
+<!-- Generated from src/docs templates by npm run build. Edit the templates instead. -->
 # Documentation
 
 - [Wiki (English)](WIKI.md)

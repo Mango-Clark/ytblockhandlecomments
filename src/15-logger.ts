@@ -1,4 +1,5 @@
 import { type SettingsLike } from './02-utils-i18n.ts';
+import { GMBackedStore } from './03a-gm-backed-store.ts';
 
 type LogLevel = 'error' | 'warn' | 'info' | 'debug';
 type LogRevision = { counter: number; writer: string };
@@ -9,9 +10,17 @@ type StoredLogState = { version: 2; clearRevision: LogRevision; entries: StoredL
 const LEVEL_WEIGHT: Record<LogLevel, number> = { error: 0, warn: 1, info: 2, debug: 3 };
 const EMPTY_REVISION: LogRevision = { counter: 0, writer: '' };
 
-export class Logger {
-	[key: string]: any;
+export class Logger extends GMBackedStore {
+	declare settings: SettingsLike;
+	declare KEY: string;
+	declare _writer: string;
+	declare _writeScheduled: boolean;
+	declare _changeListeners: Set<() => void>;
+	declare _state: StoredLogState;
+	declare _persistedState: StoredLogState;
+	declare _counter: number;
 	constructor(settings: SettingsLike) {
+		super();
 		this.settings = settings;
 		this.KEY = 'yt_comment_blocker_logs_v1';
 		this._lastSaveError = null;
@@ -29,12 +38,6 @@ export class Logger {
 			} catch { }
 		}
 	}
-	_getGM(key: string, fallback: any) { try { return GM_getValue(key, fallback); } catch { return fallback; } }
-	_setGM(key: string, value: any) {
-		try { GM_setValue(key, value); this._lastSaveError = null; return true; }
-		catch (error) { this._lastSaveError = error; return false; }
-	}
-	getLastSaveError() { return this._lastSaveError; }
 	subscribe(listener: () => void) {
 		this._changeListeners.add(listener);
 		return () => this._changeListeners.delete(listener);

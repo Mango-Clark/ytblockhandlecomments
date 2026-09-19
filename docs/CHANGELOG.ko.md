@@ -1,3 +1,4 @@
+<!-- Generated from src/docs templates by npm run build. Edit the templates instead. -->
 # 변경사항
 
 [English](CHANGELOG.md) | [한국어](CHANGELOG.ko.md)
@@ -17,6 +18,8 @@
 
 ### Changed
 
+- GM 저장소 오류 처리를 공통화하고 숫자 모듈 접두사를 읽기 순서 안내로 문서화했으며 전체 저장소 검증 명령을 추가.
+- 공개 manager 진입점을 유지하면서 목록·설정·내보내기·페어링 기능 경계를 분리.
 - 설정·목록의 중복 렌더링, 페어 요약 반복 계산, 차단 저장 복구용 복사, 저장 로그 상태 조회 비용을 줄임.
 
 - matcher에 영향을 주는 설정을 별도로 추적하여 표시·테마·logging·pair 정책·API 설정 변경은 matcher를 재구성하거나 댓글을 재검사하지 않도록 개선.

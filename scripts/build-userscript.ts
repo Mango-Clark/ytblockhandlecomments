@@ -9,6 +9,7 @@ const headerPath = path.join(root, 'src', '00-userscript-header.ts');
 const entryPoint = path.join(root, 'src', '14-bootstrap.ts');
 const versionPath = path.join(root, 'VERSION');
 const docsSourcePath = path.join(root, 'src', 'docs');
+const generatedDocumentNotice = '<!-- Generated from src/docs templates by npm run build. Edit the templates instead. -->\n';
 
 export const documentOutputs = [
 	'README.md',
@@ -125,7 +126,7 @@ export const readDocumentTemplates = (version: string): GeneratedFile[] => {
 	return documentOutputs.map(output => {
 	const template = templatePathFor(output);
 	if (!fs.existsSync(template)) throw new Error(`Missing document template: src/docs/${output}`);
-	return { path: path.join(root, output), content: `${replaceVersionTokens(readRawSource(template), version)}\n` };
+	return { path: path.join(root, output), content: `${generatedDocumentNotice}${replaceVersionTokens(readRawSource(template), version)}\n` };
 	});
 };
 

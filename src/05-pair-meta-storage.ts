@@ -1,3 +1,4 @@
+import { GMBackedStore } from './03a-gm-backed-store.ts';
 import {
 	PAIR_STALE_MS,
 	getHandleCompareKey,
@@ -12,9 +13,16 @@ import {
 	/* ----------------------------------------------------------
 	 * 4. Pair metadata storage
 	 * ---------------------------------------------------------- */
-	export class PairMetaStorage {
-		[key: string]: any;
+	export class PairMetaStorage extends GMBackedStore {
+		declare settings: SettingsLike;
+		declare KEY: string;
+		declare _revision: number;
+		declare _pairIndex: Map<string | null, PairRecord>;
+		declare _pairIndexCaseSensitive: boolean | null;
+		declare _state: any;
+		declare _nextStatusAt: number;
 		constructor(settings: SettingsLike) {
+			super();
 			this.settings = settings;
 			this.KEY = 'pair_meta_v1';
 			this._lastSaveError = null;
@@ -24,12 +32,6 @@ import {
 			this._state = this._init();
 			this._rebuildPairIndex();
 		}
-		_getGM(key: string, def: any) { try { return GM_getValue(key, def); } catch { return def; } }
-		_setGM(key: string, val: any) {
-			try { GM_setValue(key, val); this._lastSaveError = null; return true; }
-			catch (error) { this._lastSaveError = error; return false; }
-		}
-		getLastSaveError() { return this._lastSaveError; }
 		_defaultState(): LooseObject {
 			return {
 				version: 1,

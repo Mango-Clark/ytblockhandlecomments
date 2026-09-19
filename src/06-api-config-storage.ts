@@ -1,3 +1,4 @@
+import { GMBackedStore } from './03a-gm-backed-store.ts';
 import {
 	type ApiTestResult,
 	type LooseObject
@@ -6,19 +7,15 @@ import {
 	/* ----------------------------------------------------------
 	 * 5. API config storage
 	 * ---------------------------------------------------------- */
-	export class ApiConfigStorage {
-		[key: string]: any;
+	export class ApiConfigStorage extends GMBackedStore {
+		declare KEY: string;
+		declare _state: any;
 		constructor() {
+			super();
 			this.KEY = 'youtube_data_api_v3_config';
 			this._lastSaveError = null;
 			this._state = this._init();
 		}
-		_getGM(key: string, def: any) { try { return GM_getValue(key, def); } catch { return def; } }
-		_setGM(key: string, val: any) {
-			try { GM_setValue(key, val); this._lastSaveError = null; return true; }
-			catch (error) { this._lastSaveError = error; return false; }
-		}
-		getLastSaveError() { return this._lastSaveError; }
 		_defaultState(): LooseObject {
 			return { version: 2, apiKey: '', lastTestResult: null, quotaFailureCount: 0, lastQuotaFailureAt: null };
 		}

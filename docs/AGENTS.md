@@ -1,7 +1,7 @@
 # Docs Rules
 
 Generated user docs are built from `src/docs/` templates via `npm run build`.
-Edit templates only; `docs/AGENTS.md` is direct-managed.
+Generated files carry a build notice; edit templates only. `docs/AGENTS.md` is direct-managed.
 
 ## Common
 

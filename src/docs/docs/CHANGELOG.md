@@ -16,6 +16,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); projec
 
 ### Changed
 
+- Centralized GM storage error handling, documented numeric module prefixes as reading-order guidance, and added a complete repository verification command.
+- Split manager list, settings, export, and pairing feature boundaries behind a stable public manager entry point.
 - Reduced duplicate settings/list rendering, repeated pair-summary work, block-save rollback copies, and saved-log status overhead.
 
 - Tracked matcher-affecting settings separately so display, theme, logging, pair-policy, and API-configuration changes do not rebuild matchers or rescan comments.

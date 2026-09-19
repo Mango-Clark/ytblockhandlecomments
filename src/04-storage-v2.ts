@@ -1,3 +1,4 @@
+import { GMBackedStore } from './03a-gm-backed-store.ts';
 import {
 	getHandleCompareKey,
 	getItemKey,
@@ -13,10 +14,20 @@ import {
 	/* ----------------------------------------------------------
 	 * 3. Storage V2 (id/handle/regex) + migration
 	 * ---------------------------------------------------------- */
-	export class StorageV2 {
-		[key: string]: any;
+	export class StorageV2 extends GMBackedStore {
+		declare settings: SettingsLike;
+		declare KEY_LEGACY: string;
+		declare KEY_V1: string;
+		declare KEY_V2: string;
+		declare _writerId: string;
+		declare _clock: number;
+		declare _revision: number;
+		declare _entries: Record<string, any>;
+		declare _clearRevision: any;
+		declare _items: BlockItem[];
 		// v2 schema: { version: 2, updatedAt: number, items: Array<{type:'id'|'handle'|'regex', value:string, flags?:string}> }
 		constructor(settings: SettingsLike) {
+			super();
 			this.settings = settings;
 			this.KEY_LEGACY = 'blockedHandles';
 			this.KEY_V1 = 'blockedHandles_v1';
@@ -29,32 +40,26 @@ import {
 			this._clearRevision = null;
 			this._items = this._init();
 		}
-		_getGM(key: string, def: any) { try { return GM_getValue(key, def); } catch { return def; } }
-		_setGM(key: string, val: any) {
-			try { GM_setValue(key, val); this._lastSaveError = null; return true; }
-			catch (error) { this._lastSaveError = error; return false; }
-		}
-		getLastSaveError() { return this._lastSaveError; }
 
 		_loadLegacy() {
-			const raw = this._getGM(this.KEY_LEGACY, []);
+			const raw = this._getGM<unknown>(this.KEY_LEGACY, []);
 			let handles: any[] = [];
 			if (Array.isArray(raw)) handles = raw;
 			else if (typeof raw === 'string') handles = raw.split(/\s*[,\n]\s*/);
 			return handles.map(norm).filter(isNonNull).map((h: string) => ({ type: 'handle', value: h }));
 		}
 		_loadV1() {
-			const v = this._getGM(this.KEY_V1, null);
+			const v = this._getGM<any>(this.KEY_V1, null);
 			if (!v || typeof v !== 'object' || v.version !== 1 || !Array.isArray(v.handles)) return [];
 			return v.handles.map(norm).filter(isNonNull).map((h: string) => ({ type: 'handle', value: h }));
 		}
 		_loadV2() {
-			const v = this._getGM(this.KEY_V2, null);
+			const v = this._getGM<any>(this.KEY_V2, null);
 			if (!v || typeof v !== 'object' || v.version !== 2 || !Array.isArray(v.items)) return [];
 			return v.items.filter((it: any) => it && typeof it.value === 'string' && ['id', 'handle', 'regex'].includes(it.type));
 		}
 		_hasValidV2() {
-			const v = this._getGM(this.KEY_V2, null);
+			const v = this._getGM<any>(this.KEY_V2, null);
 			return !!v && typeof v === 'object' && v.version === 2 && Array.isArray(v.items);
 		}
 		_itemKey(item: BlockItem) {
@@ -219,7 +224,7 @@ import {
 		}
 		_init() {
 			if (this._hasValidV2()) {
-				const raw = this._getGM(this.KEY_V2, null);
+				const raw = this._getGM<unknown>(this.KEY_V2, null);
 				const items = this._normalizeItems(this._loadV2());
 				this._hydrateSync(raw, items);
 				this._items = items;

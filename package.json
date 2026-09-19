@@ -6,9 +6,11 @@
     "bump:version": "node scripts/bump-version.ts",
     "build": "node scripts/build-userscript.ts",
     "check:build": "node scripts/build-userscript.ts --check",
+    "lint": "eslint .",
     "lint:markdown": "markdownlint \"**/*.md\"",
     "test": "node --test",
-    "typecheck": "tsc --noEmit && tsc --noEmit -p scripts/tsconfig.json && tsc --noEmit -p tests/tsconfig.json"
+    "typecheck": "tsc --noEmit && tsc --noEmit -p scripts/tsconfig.json && tsc --noEmit -p tests/tsconfig.json",
+    "verify": "npm run lint && npm run lint:markdown && npm run typecheck && npm test && npm run build && npm run check:build"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

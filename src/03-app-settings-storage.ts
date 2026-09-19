@@ -1,10 +1,28 @@
 
+	import { GMBackedStore } from './03a-gm-backed-store.ts';
+
 	/* ----------------------------------------------------------
 	 * 2. App settings storage
 	 * ---------------------------------------------------------- */
-	export class AppSettingsStorage {
-		[key: string]: any;
+	export class AppSettingsStorage extends GMBackedStore {
+		declare KEY: string;
+		declare _revision: number;
+		declare _matcherRevision: number;
+		declare CONSOLE_TIME_FORMATS: string[];
+		declare THEME_MODES: string[];
+		declare THEME_DEFAULTS: Record<string, string>;
+		declare DISPLAY_SCALE: Record<number, number>;
+		declare _state: any;
+		declare _youtubeThemeTarget: any;
+		declare _youtubeAppDiscoveryObserver: any;
+		declare _youtubeDiscoveryActive: boolean;
+		declare _youtubeAppThemeObserver: any;
+		declare _youtubeRootThemeObserver: any;
+		declare _youtubeAppReplacementObserver: any;
+		declare _youtubeObserversActive: boolean;
+		declare _themeMediaQuery: any;
 		constructor() {
+			super();
 			this.KEY = 'app_settings_v1';
 			this._lastSaveError = null;
 			this._revision = 0;
@@ -27,12 +45,6 @@
 			this._bindThemeUpdates();
 			this._applyThemeSettings();
 		}
-		_getGM(key: string, def: any) { try { return GM_getValue(key, def); } catch { return def; } }
-		_setGM(key: string, val: any) {
-			try { GM_setValue(key, val); this._lastSaveError = null; return true; }
-			catch (error) { this._lastSaveError = error; return false; }
-		}
-		getLastSaveError() { return this._lastSaveError; }
 		_normalizeLevel(value: any) {
 			const level = Number(value);
 			if (!Number.isInteger(level) || level < 1 || level > 5) return 3;
