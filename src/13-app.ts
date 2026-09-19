@@ -58,6 +58,7 @@ import { Logger } from './15-logger.ts';
 			this._syncAcrossTabs();
 			this._registerMenu();
 			this._schedulePageSync();
+			if ([this.settings, this.logger, this.storage, this.pairStore, this.apiConfig].some((store: any) => !store.getReadStatus?.().ok)) Toast.show(t('storageReadFailed'), 6000);
 			this.logger.info('Application started');
 		}
 
@@ -572,7 +573,7 @@ import { Logger } from './15-logger.ts';
 				GM_addValueChangeListener('blocked_v2', (_k, _old, val, remote) => {
 					if (!remote) return;
 					if (val && val.version === 2 && Array.isArray(val.items)) {
-						this.storage.mergeRemote(val);
+						if (this.storage.mergeRemote(val) === false) return;
 						this.refreshAfterStorageChange();
 						Toast.show(t('syncToast'));
 					}
@@ -589,11 +590,15 @@ import { Logger } from './15-logger.ts';
 				});
 				GM_addValueChangeListener('youtube_data_api_v3_config', (_k, _old, val, remote) => {
 					if (!remote) return;
+					const apiReadStatus = this.apiConfig.getReadStatus?.();
+					if (apiReadStatus && !apiReadStatus.ok) return;
 					this.apiConfig.setAllLocal(val);
 					this.refreshUiOnly();
 				});
 				GM_addValueChangeListener('app_settings_v1', (_k, _old, val, remote) => {
 					if (!remote) return;
+					const settingsReadStatus = this.settings.getReadStatus?.();
+					if (settingsReadStatus && !settingsReadStatus.ok) return;
 					this.settings.setAllLocal(val);
 					this.refreshAfterStorageChange('all');
 				});

@@ -101,7 +101,9 @@ import {
 			return next;
 		}
 		_init() {
-			const raw = this._getGM(this.KEY, null);
+			const result = this._readGM(this.KEY, null);
+			const raw = result.value;
+			if (result.status === 'present' && (!raw || typeof raw !== 'object' || Array.isArray(raw))) this._markGMReadInvalid(this.KEY, raw);
 			const state = this._normalizeState(raw);
 			this._hydrateSync(raw, state);
 			return state;
@@ -280,6 +282,7 @@ import {
 			return JSON.stringify(left || null).localeCompare(JSON.stringify(right || null));
 		}
 		mergeRemote(raw: any) {
+			if (!this.getReadStatus().ok) return false;
 			if (!raw || (raw.version != null && raw.version !== 1) || !Array.isArray(raw.pairs)) return false;
 			const localSnapshot = JSON.stringify(this._snapshot());
 			const localState = this._state;

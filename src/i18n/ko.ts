@@ -38,6 +38,7 @@ import type { I18nBundle } from '../02-utils-i18n.ts';
 			confirmResetSettings: '표시 크기, 댓글 표시, 자동 싫어요, regex 자동 추가, handle 대소문자 설정을 초기화할까요?',
 			settingsReset: '설정을 초기화했습니다',
 			storageSaveFailed: '변경을 저장하지 못했습니다. Tampermonkey 저장소 권한 또는 용량을 확인한 뒤 다시 시도하세요.',
+			storageReadFailed: '저장된 데이터를 읽지 못했습니다. Tampermonkey 저장소 권한을 확인한 뒤 페이지를 새로고침하세요. 데이터를 읽을 수 있을 때까지 변경을 저장하지 않습니다.',
 			operationFailed: (message) => `작업에 실패했습니다. 오류를 확인한 뒤 다시 시도하세요: ${message}`,
 			defaultOption: '(기본)',
 			themeModeLabel: '테마 모드',

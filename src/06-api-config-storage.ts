@@ -56,7 +56,9 @@ import {
 			};
 		}
 		_init() {
-			return this._normalizeState(this._getGM(this.KEY, null));
+			const result = this._readGM(this.KEY, null);
+			if (result.status === 'present' && (!result.value || typeof result.value !== 'object' || Array.isArray(result.value))) this._markGMReadInvalid(this.KEY, result.value);
+			return this._normalizeState(result.value);
 		}
 		getState() {
 			return { ...this._state };

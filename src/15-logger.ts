@@ -27,7 +27,9 @@ export class Logger extends GMBackedStore {
 		this._writer = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 		this._writeScheduled = false;
 		this._changeListeners = new Set<() => void>();
-		this._state = this._normalizeState(this._getGM(this.KEY, []));
+		const initial = this._readGM(this.KEY, []);
+		if (initial.status === 'present' && !Array.isArray(initial.value) && (!initial.value || typeof initial.value !== 'object')) this._markGMReadInvalid(this.KEY, initial.value);
+		this._state = this._normalizeState(initial.value);
 		this._persistedState = this._state;
 		this._counter = this._getMaxCounter(this._state);
 		if (typeof GM_addValueChangeListener === 'function') {
@@ -143,6 +145,7 @@ export class Logger extends GMBackedStore {
 	}
 	_flush() { return this._writeScheduled ? this._writeState() : true; }
 	_mergeRemote(raw: any) {
+		if (!this.getReadStatus().ok) return false;
 		const remote = this._normalizeState(raw);
 		this._counter = Math.max(this._counter, this._getMaxCounter(remote));
 		const clearRevision = this._compareRevision(remote.clearRevision, this._state.clearRevision) > 0

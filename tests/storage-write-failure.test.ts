@@ -64,6 +64,81 @@ test('preserves pair metadata when Tampermonkey rejects a write', () => {
 	assert.ok(store.getLastSaveError());
 });
 
+test('distinguishes missing values from failed reads and blocks writes over a failed baseline', () => {
+	let failReads = true;
+	let writes = 0;
+	const { api, gmStore } = loadUserscript({
+		gmGetValue: (key, fallback) => {
+			if (failReads && key === 'app_settings_v1') throw new Error('storage unavailable');
+			return gmStore.has(key) ? gmStore.get(key) : fallback;
+		},
+		gmSetValue: (key, value) => { writes += 1; gmStore.set(key, value); }
+	});
+	const failed = new api.AppSettingsStorage();
+	assert.equal(failed.getReadStatus().ok, false);
+	assert.deepEqual(Array.from(failed.getReadStatus().failed), ['app_settings_v1']);
+	assert.equal(failed.getLastReadError().keys[0], 'app_settings_v1');
+	failed.setDislikeMode('always');
+	assert.equal(writes, 0);
+	assert.equal(gmStore.has('app_settings_v1'), false);
+
+	failReads = false;
+	const recovered = new api.AppSettingsStorage();
+	assert.equal(recovered.getReadStatus().ok, true);
+	recovered.setDislikeMode('always');
+	assert.equal(writes, 1);
+	assert.equal(recovered.getDislikeMode(), 'always');
+});
+
+test('does not run block-list migration or remote merge after a failed read', () => {
+	let failReads = true;
+	let writes = 0;
+	const { api, gmStore } = loadUserscript({
+		gmGetValue: (key, fallback) => {
+			if (failReads && key === 'blocked_v2') throw new Error('storage unavailable');
+			return gmStore.has(key) ? gmStore.get(key) : fallback;
+		},
+		gmSetValue: (key, value) => { writes += 1; gmStore.set(key, value); }
+	});
+	gmStore.set('blockedHandles', ['@legacy']);
+	const storage = new api.StorageV2(new api.AppSettingsStorage());
+	assert.equal(storage.all().length, 0);
+	assert.equal(storage.getReadStatus().ok, false);
+	assert.equal(writes, 0);
+	assert.equal(storage.mergeRemote({ version: 2, items: [{ type: 'handle', value: '@remote' }] }), false);
+
+	failReads = false;
+	const recovered = new api.StorageV2(new api.AppSettingsStorage());
+	assert.equal(recovered.all()[0]?.value, '@legacy');
+});
+
+test('does not apply remote settings or API values after failed reads', () => {
+	for (const key of ['app_settings_v1', 'youtube_data_api_v3_config']) {
+		const { api, dispatchGMValueChange } = loadUserscript({
+			gmGetValue: (readKey, fallback) => {
+				if (readKey === key) throw new Error('storage unavailable');
+				return fallback;
+			}
+		});
+		const app = new api.App();
+		let applied = 0;
+		const store = key === 'app_settings_v1' ? app.settings : app.apiConfig;
+		store.setAllLocal = () => { applied += 1; };
+		dispatchGMValueChange(key, key === 'app_settings_v1' ? {} : { version: 2 }, 0);
+		assert.equal(applied, 0);
+	}
+});
+
+test('does not report a block-list sync success when remote merge is rejected', () => {
+	const { api, dispatchGMValueChange } = loadUserscript({ gmStore: { blocked_v2: { version: 2, items: [] } } });
+	const app = new api.App();
+	let refreshed = 0;
+	app.refreshAfterStorageChange = () => { refreshed += 1; };
+	app.storage.mergeRemote = () => false;
+	dispatchGMValueChange('blocked_v2', { version: 2, items: [{ type: 'handle', value: '@remote' }] }, 0);
+	assert.equal(refreshed, 0);
+});
+
 test('reports failed API-test result persistence explicitly', async () => {
 	const { api } = loadWithWriteFailure();
 	const app = new api.App();

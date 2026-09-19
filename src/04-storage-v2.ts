@@ -42,26 +42,19 @@ import {
 			this._items = this._init();
 		}
 
-		_loadLegacy() {
-			const raw = this._getGM<unknown>(this.KEY_LEGACY, []);
+		_loadLegacy(raw = this._getGM<unknown>(this.KEY_LEGACY, [])) {
 			let handles: any[] = [];
 			if (Array.isArray(raw)) handles = raw;
 			else if (typeof raw === 'string') handles = raw.split(/\s*[,\n]\s*/);
 			return handles.map(norm).filter(isNonNull).map((h: string) => ({ type: 'handle', value: h }));
 		}
-		_loadV1() {
-			const v = this._getGM<any>(this.KEY_V1, null);
+		_loadV1(v = this._getGM<any>(this.KEY_V1, null)) {
 			if (!v || typeof v !== 'object' || v.version !== 1 || !Array.isArray(v.handles)) return [];
 			return v.handles.map(norm).filter(isNonNull).map((h: string) => ({ type: 'handle', value: h }));
 		}
-		_loadV2() {
-			const v = this._getGM<any>(this.KEY_V2, null);
+		_loadV2(v = this._getGM<any>(this.KEY_V2, null)) {
 			if (!v || typeof v !== 'object' || v.version !== 2 || !Array.isArray(v.items)) return [];
 			return v.items.filter((it: any) => it && typeof it.value === 'string' && ['id', 'handle', 'regex'].includes(it.type));
-		}
-		_hasValidV2() {
-			const v = this._getGM<any>(this.KEY_V2, null);
-			return !!v && typeof v === 'object' && v.version === 2 && Array.isArray(v.items);
 		}
 		_itemKey(item: BlockItem) {
 			const caseSensitive = this.settings?.isHandleCaseSensitive?.() || false;
@@ -183,6 +176,7 @@ import {
 
 		setAllLocal(items: any[]) { this._items = this._normalizeItems(items); this._revision += 1; return this.all(); }
 		mergeRemote(raw: any) {
+			if (!this.getReadStatus().ok) return false;
 			if (!raw || raw.version !== 2 || !Array.isArray(raw.items)) return false;
 			const localEntries = this._entries;
 			const localClear = this._clearRevision;
@@ -224,14 +218,19 @@ import {
 			return true;
 		}
 		_init() {
-			if (this._hasValidV2()) {
-				const raw = this._getGM<unknown>(this.KEY_V2, null);
-				const items = this._normalizeItems(this._loadV2());
+			const v2 = this._readGM<any>(this.KEY_V2, null);
+			const raw = v2.value;
+			if (v2.status === 'present' && raw && typeof raw === 'object' && raw.version === 2 && Array.isArray(raw.items)) {
+				const items = this._normalizeItems(this._loadV2(raw));
 				this._hydrateSync(raw, items);
 				this._items = items;
 				return items;
 			}
-			return this._saveV2([...this._loadV1(), ...this._loadLegacy()]);
+			if (v2.status === 'present') this._markGMReadInvalid(this.KEY_V2, raw);
+			const v1 = this._readGM<any>(this.KEY_V1, null);
+			const legacy = this._readGM<unknown>(this.KEY_LEGACY, []);
+			if (v1.status === 'present' && (!v1.value || typeof v1.value !== 'object' || v1.value.version !== 1 || !Array.isArray(v1.value.handles))) this._markGMReadInvalid(this.KEY_V1, v1.value);
+			return this._saveV2([...this._loadV1(v1.value), ...this._loadLegacy(legacy.value)]);
 		}
 		all(): BlockItem[] { return this._items.slice(); }
 		setAll(items: any[]) { return this._saveV2(items); }
