@@ -33,6 +33,7 @@ import { I18N_KO } from './i18n/ko.ts';
 		addedIds: number;
 		skipped: number;
 		items: PairRunItem[];
+		persistenceFailures?: number;
 	};
 	export type PairSummary = {
 		handles: number;
@@ -50,6 +51,11 @@ import { I18N_KO } from './i18n/ko.ts';
 		category: ApiTestCategory;
 		httpStatus: number | null;
 		message: string;
+	};
+	export type PersistenceResult<T> = {
+		ok: boolean;
+		value: T;
+		error?: unknown;
 	};
 	export type RegexSpec = { pattern: string; flags: string };
 	export type DialogButton = { label: string; value: any; primary?: boolean; danger?: boolean };

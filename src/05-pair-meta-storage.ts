@@ -7,6 +7,7 @@ import {
 	type LooseObject,
 	type PairRecord,
 	type PairStatus,
+	type PersistenceResult,
 	type SettingsLike
 } from './02-utils-i18n.ts';
 
@@ -133,15 +134,15 @@ import {
 			}
 			return true;
 		}
-		_saveState(nextState: any) {
+		_saveState(nextState: any): PersistenceResult<any> {
 			const normalized = this._normalizeState(nextState);
 			if (this._statesEqual(this._state, normalized)) {
 				this._setLocalState(normalized);
-				return this.getState();
+				return { ok: true, value: this.getState() };
 			}
-			if (!this._setGM(this.KEY, normalized)) return this.getState();
+			if (!this._setGM(this.KEY, normalized)) return { ok: false, value: this.getState(), error: this.getLastSaveError() };
 			this._setLocalState(normalized);
-			return this.getState();
+			return { ok: true, value: this.getState() };
 		}
 		getState() {
 			return { ...this._state, pairs: this._state.pairs.map((pair: PairRecord) => ({ ...pair })) };
@@ -150,8 +151,12 @@ import {
 			this._setLocalState(this._normalizeState(state));
 			return this.getState();
 		}
-		refreshStatuses() {
-			if (Date.now() >= this._nextStatusAt) this._saveState(this._state);
+		refreshStatuses(): PersistenceResult<any> {
+			if (Date.now() >= this._nextStatusAt) return this._saveState(this._state);
+			return { ok: true, value: this.getState() };
+		}
+		_result(ok: boolean, error?: unknown): PersistenceResult<any> {
+			return { ok, value: this.getState(), ...(error ? { error } : {}) };
 		}
 		isUidDetectionEnabled() {
 			return !!this._state.enableUidDetection;
@@ -186,7 +191,7 @@ import {
 		}
 		upsertPair(pair: any) {
 			const normalized = this._normalizePair(pair);
-			if (!normalized) return this.getState();
+			if (!normalized) return this._result(false, new Error('Invalid pair metadata'));
 			const compareKey = getHandleCompareKey(normalized.handle, this.settings?.isHandleCaseSensitive?.() || false);
 			const nextPairs = this._state.pairs.filter((item: PairRecord) =>
 				getHandleCompareKey(item.handle, this.settings?.isHandleCaseSensitive?.() || false) !== compareKey
@@ -196,7 +201,7 @@ import {
 		}
 		removePair(handle: any) {
 			const normalized = getHandleCompareKey(handle, this.settings?.isHandleCaseSensitive?.() || false);
-			if (!normalized) return this.getState();
+			if (!normalized) return this._result(false, new Error('Invalid pair handle'));
 			return this._saveState({
 				...this._state,
 				pairs: this._state.pairs.filter((pair: PairRecord) =>
@@ -208,7 +213,7 @@ import {
 			const keys = new Set((handles || [])
 				.map(handle => getHandleCompareKey(handle, this.settings?.isHandleCaseSensitive?.() || false))
 				.filter(Boolean));
-			if (!keys.size) return this.getState();
+			if (!keys.size) return this._result(true);
 			return this._saveState({
 				...this._state,
 				pairs: this._state.pairs.filter((pair: PairRecord) =>

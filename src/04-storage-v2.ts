@@ -8,6 +8,7 @@ import {
 	sanitizeHandle,
 	validateRegexSpec,
 	type BlockItem,
+	type PersistenceResult,
 	type SettingsLike
 } from './02-utils-i18n.ts';
 
@@ -234,6 +235,16 @@ import {
 		}
 		all(): BlockItem[] { return this._items.slice(); }
 		setAll(items: any[]) { return this._saveV2(items); }
+		setAllResult(items: any[]): PersistenceResult<BlockItem[]> {
+			const normalized = this._normalizeItems(items);
+			const changed = !this._arraysEqual(this._items, normalized);
+			const value = this._saveV2(items);
+			return {
+				ok: !changed || this._arraysEqual(value, normalized),
+				value: this.all(),
+				error: this.getLastSaveError()
+			};
+		}
 		addHandle(h: any) {
 			const v = sanitizeHandle(h);
 			if (!v) return false;
@@ -242,11 +253,14 @@ import {
 			return this._items.length > before;
 		}
 		addId(id: any) {
+			return this.addIdResult(id).value.added;
+		}
+		addIdResult(id: any): PersistenceResult<{ items: BlockItem[]; added: boolean }> {
 			id = (id || '').trim();
-			if (!isChannelId(id)) return false;
+			if (!isChannelId(id)) return { ok: false, value: { items: this.all(), added: false }, error: new Error('Invalid channel ID') };
 			const before = this._items.length;
-			this._saveV2([...this._items, { type: 'id', value: id }]);
-			return this._items.length > before;
+			const result = this.setAllResult([...this._items, { type: 'id', value: id }]);
+			return { ...result, value: { items: result.value, added: result.value.length > before } };
 		}
 		addRegex(pattern: any, flags = '') {
 			const spec = validateRegexSpec(pattern, flags);
@@ -256,13 +270,16 @@ import {
 			return this._items.length > before;
 		}
 		remove(item: BlockItem) {
+			return this.removeResult(item).value.removed;
+		}
+		removeResult(item: BlockItem): PersistenceResult<{ items: BlockItem[]; removed: boolean }> {
 			const key = getItemKey(item);
 			const before = this._items.length;
-			this._saveV2(this._items.filter((it: BlockItem) => {
+			const result = this.setAllResult(this._items.filter((it: BlockItem) => {
 				const k = getItemKey(it);
 				return k !== key;
 			}));
-			return this._items.length < before;
+			return { ...result, value: { items: result.value, removed: result.value.length < before } };
 		}
 		clear() { return this._saveV2([]).length === 0; }
 	}

@@ -143,8 +143,8 @@ import type { I18nBundle } from '../02-utils-i18n.ts';
 				`stale ${stale}건, mismatch ${mismatch}건이 있어 Update Pair가 필요합니다.`,
 			updateNow: '지금 업데이트',
 			later: '나중에',
-			pairResult: ({ created, refreshed, mismatches, failed, addedIds, skipped }) =>
-				`생성 ${created} / 갱신 ${refreshed} / mismatch ${mismatches} / 실패 ${failed} / UID 추가 ${addedIds} / skip ${skipped || 0}`,
+			pairResult: ({ created, refreshed, mismatches, failed, addedIds, skipped, persistenceFailures }) =>
+				`생성 ${created} / 갱신 ${refreshed} / mismatch ${mismatches} / 실패 ${failed} / UID 추가 ${addedIds} / skip ${skipped || 0}${persistenceFailures ? ` / 저장 실패 ${persistenceFailures}` : ''}`,
 			pairSkippedFresh: '아직 갱신 주기 내에 있어 API 조회를 건너뜀',
 			pairUidReplaced: 'mismatch 감지 후 UID 규칙을 교체했습니다',
 			pairResultDetails: '최근 Pair 실행 결과',

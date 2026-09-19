@@ -1255,9 +1255,10 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 				});
 			});
 			uidToggle.addEventListener('change', () => {
-				this.app.pairStore.setUidDetectionEnabled(uidToggle.checked);
+				const result = this.app.pairStore.setUidDetectionEnabled(uidToggle.checked);
 				this.app.refreshAfterStorageChange();
 				renderAll();
+				if (!result.ok) Toast.show(t('storageSaveFailed'));
 			});
 			pairUpdateUidToggle.addEventListener('change', () => {
 				this.app.settings.setPairUpdateUidCheckEnabled(pairUpdateUidToggle.checked);
@@ -1275,26 +1276,27 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 			handleLookupOnAddToggle.addEventListener('change', () => { this.app.settings.setHandleLookupOnAddEnabled(handleLookupOnAddToggle.checked); renderAll(); });
 			handleLookupFallbackToggle.addEventListener('change', () => { this.app.settings.setHandleLookupFallbackApiEnabled(handleLookupFallbackToggle.checked); renderAll(); });
 			saveApiBtn.addEventListener('click', () => {
-				this.app.apiConfig.setApiKey(apiInput.value);
+				const result = this.app.apiConfig.setApiKey(apiInput.value);
 				this._refreshUiOnly();
 				renderAll();
-				Toast.show(this.app.apiConfig.getLastSaveError() ? t('storageSaveFailed') : t('apiKeySaved'));
+				Toast.show(result.ok ? t('apiKeySaved') : t('storageSaveFailed'));
 			});
 			testApiBtn.addEventListener('click', async () => {
 				apiTestBusy = true;
 				renderAll();
 				try {
-					const result = await this.app.testApiKey();
-					Toast.show(t('apiKeyTestResult', getApiTestCategoryLabel(result.category), result.message, result.httpStatus ? String(result.httpStatus) : ''), 3200);
+					const operation = await this.app.testApiKey();
+					if (!operation.ok) Toast.show(t('storageSaveFailed'), 3200);
+					else Toast.show(t('apiKeyTestResult', getApiTestCategoryLabel(operation.result.category), operation.result.message, operation.result.httpStatus ? String(operation.result.httpStatus) : ''), 3200);
 				} catch (error) {
 					Toast.show(t('operationFailed', error instanceof Error ? error.message : String(error)), 3200);
 				} finally { apiTestBusy = false; renderAll(); }
 			});
 			clearApiBtn.addEventListener('click', () => {
-				this.app.apiConfig.clearApiKey();
+				const result = this.app.apiConfig.clearApiKey();
 				this._refreshUiOnly();
 				renderAll();
-				Toast.show(this.app.apiConfig.getLastSaveError() ? t('storageSaveFailed') : t('apiKeyCleared'));
+				Toast.show(result.ok ? t('apiKeyCleared') : t('storageSaveFailed'));
 			});
 			const runPair = async (mode: string) => {
 				pairBusy = true;
@@ -2061,9 +2063,10 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 				this.openSettings();
 			});
 			toggle.addEventListener('change', () => {
-				this.app.pairStore.setUidDetectionEnabled(toggle.checked);
+				const result = this.app.pairStore.setUidDetectionEnabled(toggle.checked);
 				this.app.refreshAfterStorageChange();
 				renderAll();
+				if (!result.ok) Toast.show(t('storageSaveFailed'));
 			});
 			searchInput.addEventListener('input', () => {
 				listState.searchQuery = searchInput.value || '';
@@ -2133,10 +2136,10 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 				syncActionState();
 			});
 			saveApiBtn.addEventListener('click', () => {
-				this.app.apiConfig.setApiKey(apiInput.value);
+				const result = this.app.apiConfig.setApiKey(apiInput.value);
 				this._refreshUiOnly();
 				renderAll();
-				Toast.show(this.app.apiConfig.getLastSaveError() ? t('storageSaveFailed') : t('apiKeySaved'));
+				Toast.show(result.ok ? t('apiKeySaved') : t('storageSaveFailed'));
 			});
 			testApiBtn.addEventListener('click', async () => {
 				const operation = apiState.begin();
@@ -2144,7 +2147,9 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 				renderSummary();
 				try {
 					const result = await this.app.testApiKey();
-					if (apiState.isCurrent(operation)) Toast.show(t('apiKeyTestResult', getApiTestCategoryLabel(result.category), result.message, result.httpStatus ? String(result.httpStatus) : ''), 3200);
+					if (apiState.isCurrent(operation)) Toast.show(result.ok
+						? t('apiKeyTestResult', getApiTestCategoryLabel(result.result.category), result.result.message, result.result.httpStatus ? String(result.result.httpStatus) : '')
+						: t('storageSaveFailed'), 3200);
 				} catch (error) {
 					if (apiState.isCurrent(operation)) Toast.show(t('operationFailed', error instanceof Error ? error.message : String(error)), 3200);
 				} finally {
@@ -2152,10 +2157,10 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 				}
 			});
 			clearApiBtn.addEventListener('click', () => {
-				this.app.apiConfig.clearApiKey();
+				const result = this.app.apiConfig.clearApiKey();
 				this._refreshUiOnly();
 				renderAll();
-				Toast.show(this.app.apiConfig.getLastSaveError() ? t('storageSaveFailed') : t('apiKeyCleared'));
+				Toast.show(result.ok ? t('apiKeyCleared') : t('storageSaveFailed'));
 			});
 			createBtn.addEventListener('click', async () => {
 				const operation = pairState.begin();
@@ -2329,8 +2334,18 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 						}).filter(Boolean);
 					}
 					const before = this.app.storage.all().length;
-					this.app.storage.setAll([...this.app.storage.all(), ...items]);
-					const count = this.app.storage.all().length - before;
+					const nextItems = [...this.app.storage.all(), ...items];
+					const persistence = this.app.storage.setAllResult
+						? this.app.storage.setAllResult(nextItems)
+						: (() => {
+							const value = this.app.storage.setAll(nextItems);
+							return { ok: !this.app.storage.getLastSaveError?.(), value };
+						})();
+					if (!persistence.ok) {
+						Toast.show(t('storageSaveFailed'));
+						return { ok: false, count: 0 };
+					}
+					const count = persistence.value.length - before;
 					this.app.refreshAfterStorageChange();
 					return { ok: true, count };
 				}

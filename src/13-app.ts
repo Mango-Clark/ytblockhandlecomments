@@ -35,7 +35,7 @@ import { Logger } from './15-logger.ts';
 			this.storage = new StorageV2(this.settings);
 			this.pairStore = new PairMetaStorage(this.settings);
 			this.apiConfig = new ApiConfigStorage();
-			this.pairService = new PairService(this.storage, this.pairStore, this.apiConfig, this.settings);
+			this.pairService = new PairService(this.storage, this.pairStore, this.apiConfig, this.settings, this.logger);
 			this._keywordPairInFlight = new Set();
 			this._keywordRefreshPending = false;
 			this.hider = new CommentHider(this.storage, this.pairStore, this.settings, (match: any) => this._handleKeywordMatch(match));
@@ -160,10 +160,11 @@ import { Logger } from './15-logger.ts';
 
 		async testApiKey() {
 			const result = await this.pairService.testApiKey();
-			this.apiConfig.setLastTestResult(result);
+			const persistence = this.apiConfig.setLastTestResult(result);
+			if (!persistence.ok) return { ok: false, result, error: persistence.error };
 			this.refreshUiOnly();
 			this.logger[result.ok ? 'info' : 'warn']('API key test completed', { category: result.category, ok: result.ok });
-			return result;
+			return { ok: true, result };
 		}
 
 		runPairUpdate(mode = 'update', handles: string[] | null = null) {
@@ -174,7 +175,13 @@ import { Logger } from './15-logger.ts';
 					: (handles ? await this.pairService.updatePairsForHandles(handles) : await this.pairService.updatePairs({ includeMissing: true }));
 				this._lastPairRunResult = stats;
 				this.refreshAfterStorageChange();
-				this.logger[stats.failed ? 'warn' : 'info']('Pair operation completed', { mode, created: stats.created, refreshed: stats.refreshed, failed: stats.failed });
+				this.logger[stats.failed ? 'warn' : 'info']('Pair operation completed', {
+					mode,
+					created: stats.created,
+					refreshed: stats.refreshed,
+					failed: stats.failed,
+					persistenceFailures: stats.persistenceFailures || 0
+				});
 				return stats;
 			};
 			this._pairRunPromise = run().finally(() => { this._pairRunPromise = null; });

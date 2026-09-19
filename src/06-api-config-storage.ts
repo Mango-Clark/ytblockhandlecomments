@@ -1,7 +1,8 @@
 import { GMBackedStore } from './03a-gm-backed-store.ts';
 import {
 	type ApiTestResult,
-	type LooseObject
+	type LooseObject,
+	type PersistenceResult
 } from './02-utils-i18n.ts';
 
 	/* ----------------------------------------------------------
@@ -64,7 +65,7 @@ import {
 			this._state = this._normalizeState(state);
 			return this.getState();
 		}
-		_saveState(nextState: any) {
+		_saveState(nextState: any): PersistenceResult<any> {
 			const normalized = this._normalizeState(nextState);
 			const sameResult = JSON.stringify(this._state.lastTestResult) === JSON.stringify(normalized.lastTestResult);
 			if (
@@ -74,11 +75,11 @@ import {
 				(this._state.lastQuotaFailureAt || null) === (normalized.lastQuotaFailureAt || null)
 			) {
 				this._state = normalized;
-				return this.getState();
+				return { ok: true, value: this.getState() };
 			}
-			if (!this._setGM(this.KEY, normalized)) return this.getState();
+			if (!this._setGM(this.KEY, normalized)) return { ok: false, value: this.getState(), error: this.getLastSaveError() };
 			this._state = normalized;
-			return this.getState();
+			return { ok: true, value: this.getState() };
 		}
 		hasApiKey() {
 			return !!this._state.apiKey;

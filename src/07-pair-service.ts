@@ -24,11 +24,12 @@ const PAIR_LOOKUP_CACHE_LIMIT = 256;
 	 * ---------------------------------------------------------- */
 	export class PairService {
 		[key: string]: any;
-		constructor(storage: StorageLike, pairStore: PairStoreLike, apiConfig: ApiConfigLike, settings: SettingsLike) {
+		constructor(storage: StorageLike, pairStore: PairStoreLike, apiConfig: ApiConfigLike, settings: SettingsLike, logger: any = null) {
 			this.storage = storage;
 			this.pairStore = pairStore;
 			this.apiConfig = apiConfig;
 			this.settings = settings;
+			this.logger = logger;
 			this._busy = false;
 			this._idlePromise = null;
 			this._handleLookupCache = new Map();
@@ -194,6 +195,30 @@ const PAIR_LOOKUP_CACHE_LIMIT = 256;
 				for (const resume of this._lookupWaiters.splice(0)) resume();
 			}
 		}
+		_asPersistenceResult(result: any) {
+			return result && typeof result.ok === 'boolean' ? result : { ok: true, value: result };
+		}
+		_recordPersistenceFailure(stats: PairRunStats, handle: string | null, error: unknown) {
+			stats.persistenceFailures = (stats.persistenceFailures || 0) + 1;
+			stats.failed += 1;
+			if (handle) stats.items.push({ handle, outcome: 'failed', message: error instanceof Error ? error.message : String(error) });
+		}
+		_recordRollbackFailure(stats: PairRunStats, error: unknown) {
+			stats.persistenceFailures = (stats.persistenceFailures || 0) + 1;
+			this.logger?.warn?.('Pair rollback failed', { error: error instanceof Error ? error.message : String(error) });
+		}
+		_rollbackPair(stats: PairRunStats, existing: PairRecord | null, handle: string) {
+			const result = this._asPersistenceResult(existing
+				? this.pairStore.upsertPair(existing)
+				: this.pairStore.removePair(handle));
+			if (!result.ok) this._recordRollbackFailure(stats, result.error || 'Pair rollback failed.');
+		}
+		_rollbackStorage(stats: PairRunStats, items: BlockItem[]) {
+			const result = this.storage.setAllResult
+				? this.storage.setAllResult(items)
+				: this._asPersistenceResult(this.storage.setAll(items));
+			if (!result.ok) this._recordRollbackFailure(stats, result.error || 'Block list rollback failed.');
+		}
 		async _processHandles(handles: any[], { update = false, automatic = false } = {}): Promise<PairRunStats> {
 			while (this._busy) await this._idlePromise;
 			this._busy = true;
@@ -206,7 +231,8 @@ const PAIR_LOOKUP_CACHE_LIMIT = 256;
 				failed: 0,
 				addedIds: 0,
 				skipped: 0,
-				items: []
+				items: [],
+				persistenceFailures: 0
 			};
 			const uniqueHandles: string[] = [];
 			const seen = new Set<string>();
@@ -248,7 +274,8 @@ const PAIR_LOOKUP_CACHE_LIMIT = 256;
 						try {
 						const resolved = await this._withLookupSlot<any>(() => this.resolveHandle(handle, { force: update }));
 						if (existing?.uid && existing.uid !== resolved.uid) {
-							this.pairStore.upsertPair({
+							const previousItems = this.storage.all();
+							const pairWrite = this._asPersistenceResult(this.pairStore.upsertPair({
 								...existing,
 								handle,
 								uid: resolved.uid,
@@ -257,11 +284,33 @@ const PAIR_LOOKUP_CACHE_LIMIT = 256;
 								lastResolvedUid: resolved.uid,
 								lastError: null,
 								source: resolved.source || existing.source || 'youtube-data-api-v3'
-							});
-							if (this.hasBlockedId(existing.uid) && !this._uidUsedByOtherPair(existing.uid)) {
-								this.storage.remove({ type: 'id', value: existing.uid });
+							}));
+							if (!pairWrite.ok) {
+								this._recordPersistenceFailure(stats, handle, pairWrite.error || 'Pair metadata could not be saved.');
+								continue;
 							}
-							if (!this.hasBlockedId(resolved.uid) && this.storage.addId(resolved.uid)) stats.addedIds += 1;
+							if (this.hasBlockedId(existing.uid) && !this._uidUsedByOtherPair(existing.uid)) {
+								const removeResult = this.storage.removeResult
+									? this.storage.removeResult({ type: 'id', value: existing.uid })
+									: { ok: this.storage.remove({ type: 'id', value: existing.uid }), value: { removed: true } };
+								if (!removeResult.ok) {
+									this._rollbackPair(stats, existing, handle);
+									this._recordPersistenceFailure(stats, handle, removeResult.error || 'Block list could not be saved.');
+									continue;
+								}
+							}
+							if (!this.hasBlockedId(resolved.uid)) {
+								const addResult = this.storage.addIdResult
+									? this.storage.addIdResult(resolved.uid)
+									: { ok: this.storage.addId(resolved.uid), value: { added: true } };
+								if (!addResult.ok) {
+									this._rollbackStorage(stats, previousItems);
+									this._rollbackPair(stats, existing, handle);
+									this._recordPersistenceFailure(stats, handle, addResult.error || 'Block list could not be saved.');
+									continue;
+								}
+								if (addResult.value.added) stats.addedIds += 1;
+							}
 							stats.mismatches += 1;
 							stats.items.push({
 								handle,
@@ -272,7 +321,7 @@ const PAIR_LOOKUP_CACHE_LIMIT = 256;
 							});
 							continue;
 						}
-						this.pairStore.upsertPair({
+						const pairWrite = this._asPersistenceResult(this.pairStore.upsertPair({
 							handle,
 							uid: resolved.uid,
 							verifiedAt: Date.now(),
@@ -280,9 +329,21 @@ const PAIR_LOOKUP_CACHE_LIMIT = 256;
 							source: resolved.source,
 							lastResolvedUid: resolved.uid,
 							lastError: null
-						});
-						if (!this.hasBlockedId(resolved.uid) && this.storage.addId(resolved.uid)) {
-							stats.addedIds += 1;
+						}));
+						if (!pairWrite.ok) {
+							this._recordPersistenceFailure(stats, handle, pairWrite.error || 'Pair metadata could not be saved.');
+							continue;
+						}
+						if (!this.hasBlockedId(resolved.uid)) {
+							const addResult = this.storage.addIdResult
+								? this.storage.addIdResult(resolved.uid)
+								: { ok: this.storage.addId(resolved.uid), value: { added: true } };
+							if (!addResult.ok) {
+								this._rollbackPair(stats, existing, handle);
+								this._recordPersistenceFailure(stats, handle, addResult.error || 'Block list could not be saved.');
+								continue;
+							}
+							if (addResult.value.added) stats.addedIds += 1;
 						}
 						if (existing?.uid) {
 							stats.refreshed += 1;
@@ -299,7 +360,7 @@ const PAIR_LOOKUP_CACHE_LIMIT = 256;
 					}
 					if (handleResolved) continue;
 					if (uidVerified && existing?.uid) {
-						this.pairStore.upsertPair({
+						const pairWrite = this._asPersistenceResult(this.pairStore.upsertPair({
 							...existing,
 							handle,
 							verifiedAt: Date.now(),
@@ -307,7 +368,11 @@ const PAIR_LOOKUP_CACHE_LIMIT = 256;
 							source: existing.source || 'youtube-data-api-v3',
 							lastResolvedUid: existing.uid,
 							lastError: handleError || null
-						});
+						}));
+						if (!pairWrite.ok) {
+							this._recordPersistenceFailure(stats, handle, pairWrite.error || 'Pair metadata could not be saved.');
+							continue;
+						}
 						stats.refreshed += 1;
 						stats.items.push({ handle, outcome: 'updated', uid: existing.uid, message: handleError || undefined });
 						continue;
@@ -321,7 +386,7 @@ const PAIR_LOOKUP_CACHE_LIMIT = 256;
 								? 'stale'
 								: 'unverified'))
 						: 'unverified';
-					this.pairStore.upsertPair({
+					const pairWrite = this._asPersistenceResult(this.pairStore.upsertPair({
 						...existing,
 						handle,
 						uid: existing?.uid || '',
@@ -330,7 +395,11 @@ const PAIR_LOOKUP_CACHE_LIMIT = 256;
 						source: existing?.source || 'youtube-data-api-v3',
 						lastResolvedUid: existing?.lastResolvedUid || null,
 						lastError: message
-					});
+					}));
+					if (!pairWrite.ok) {
+						this._recordPersistenceFailure(stats, handle, pairWrite.error || 'Pair metadata could not be saved.');
+						continue;
+					}
 					stats.failed += 1;
 					stats.items.push({
 						handle,
@@ -354,8 +423,10 @@ const PAIR_LOOKUP_CACHE_LIMIT = 256;
 				this._idlePromise = null;
 				resolveIdle();
 				if (!automatic || stats.items.length) {
-					this.pairStore.setLastPairCheckAt(Date.now());
-					this.pairStore.refreshStatuses();
+					const checkResult = this._asPersistenceResult(this.pairStore.setLastPairCheckAt(Date.now()));
+					if (!checkResult.ok) this._recordPersistenceFailure(stats, null, checkResult.error || 'Pair check time could not be saved.');
+					const refreshResult = this._asPersistenceResult(this.pairStore.refreshStatuses());
+					if (!refreshResult.ok) this._recordPersistenceFailure(stats, null, refreshResult.error || 'Pair status could not be saved.');
 				}
 			}
 			return stats;

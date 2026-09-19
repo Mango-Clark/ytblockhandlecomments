@@ -143,8 +143,8 @@ import type { I18nBundle } from '../02-utils-i18n.ts';
 				`${stale} stale pair(s) and ${mismatch} mismatch pair(s) need an update.`,
 			updateNow: 'Update Now',
 			later: 'Later',
-			pairResult: ({ created, refreshed, mismatches, failed, addedIds, skipped }) =>
-				`Created ${created} / Refreshed ${refreshed} / Mismatch ${mismatches} / Failed ${failed} / Added UID ${addedIds} / Skipped ${skipped || 0}`,
+			pairResult: ({ created, refreshed, mismatches, failed, addedIds, skipped, persistenceFailures }) =>
+				`Created ${created} / Refreshed ${refreshed} / Mismatch ${mismatches} / Failed ${failed} / Added UID ${addedIds} / Skipped ${skipped || 0}${persistenceFailures ? ` / Save failures ${persistenceFailures}` : ''}`,
 			pairSkippedFresh: 'Skipped API lookup because the pair is still within the refresh interval',
 			pairUidReplaced: 'Replaced the UID rule after a mismatch',
 			pairResultDetails: 'Last Pair Run',
