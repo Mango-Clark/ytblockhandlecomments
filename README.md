@@ -14,6 +14,8 @@ Quick install:
 Source layout:
 
 - Edit role-based sources in `src/`
+- Numeric prefixes provide a reading order; ES module imports determine runtime order
+- Shared Tampermonkey storage handling lives in `03a-gm-backed-store.ts`; the public manager entry point delegates list, settings, export, pairing, and runtime work across `12a`–`12e`
 - Run `npm run build` to regenerate `ytblockhandlecomments.js`
 - Run `npm run check:build` to verify root userscript matches `src/`
 - Tampermonkey installs only root `ytblockhandlecomments.js`; `src/` is development source
@@ -235,10 +237,10 @@ Notes:
 
 ## Testing
 
-- Run `node --test`
-- Run `npm run check:build`
+- Run `npm run verify` for code lint, Markdown lint, typechecking, tests, build, and generated-output verification
+- Component checks remain available through `npm run lint`, `npm run lint:markdown`, `npm run typecheck`, `npm test`, and `npm run check:build`
 - Local no-deps `node:test` harness with small DOM shim.
-- Regression coverage: manager search, dialog i18n refresh, pair result UI state, sorting/filtering helpers, quota counters, navigation observer reset, pair update skip/force, regex safety/import literals.
+- Regression coverage: manager lifecycle and search, dialog i18n refresh, pair result UI state, sorting/filtering helpers, quota counters, navigation observer reset, pair update skip/force, regex safety/import literals.
 
 ## Notes
 

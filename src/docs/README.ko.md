@@ -14,6 +14,8 @@
 소스 구조:
 
 - 역할별 소스: `src/`
+- 숫자 접두사는 읽기 순서를 안내하며 실제 실행 순서는 ES module import가 결정
+- Tampermonkey 저장소 공통 처리는 `03a-gm-backed-store.ts`, 공개 manager 진입점은 목록·설정·내보내기·pairing·runtime 작업을 `12a`–`12e`에 위임
 - `npm run build`로 `ytblockhandlecomments.js` 재생성
 - `npm run check:build`로 루트 userscript와 `src/` 동기화 확인
 - Tampermonkey 설치 대상: 루트 `ytblockhandlecomments.js`; `src/`는 개발용
@@ -243,10 +245,10 @@ API 설정 저장소:
 
 ## 테스트
 
-- `node --test` 실행
-- `npm run check:build` 실행
+- `npm run verify`로 code lint, Markdown lint, typecheck, test, build, 생성물 동기화 검사 실행
+- 개별 검사는 `npm run lint`, `npm run lint:markdown`, `npm run typecheck`, `npm test`, `npm run check:build`로 각각 실행 가능
 - 외부 의존성 없이 `node:test` + 작은 DOM shim 회귀 테스트.
-- 범위: 관리자 검색, 대화상자 i18n refresh, pair 결과 UI 상태·정렬·필터 helper, quota 안내 counter, 탐색 observer reset, pair update skip/force, regex safety/import literal.
+- 범위: 관리자 lifecycle·검색, 대화상자 i18n refresh, pair 결과 UI 상태·정렬·필터 helper, quota 안내 counter, 탐색 observer reset, pair update skip/force, regex safety/import literal.
 
 ---
 

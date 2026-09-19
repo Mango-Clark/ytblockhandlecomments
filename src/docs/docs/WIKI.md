@@ -11,6 +11,10 @@ Userscript hides YouTube comments by channel identity on watch and Shorts pages.
 Source layout:
 
 - `src/`: role-based source slices; separate Korean/English i18n dictionaries.
+- Numeric prefixes are a recommended reading order; ES module imports determine runtime order. Letter suffixes keep split modules beside their parent feature.
+- `03-app-settings-storage.ts`, `04-storage-v2.ts`, `05-pair-meta-storage.ts`, `06-api-config-storage.ts`, and `15-logger.ts` share the error-safe `03a-gm-backed-store.ts` adapter while retaining separate schemas and synchronization rules.
+- `12-block-list-manager.ts` is the stable public entry point. `12a`–`12d` own list state, settings/API lifecycle, export helpers, and pairing lifecycle; `12e-manager-runtime.ts` composes the manager UI.
+- `13-app.ts` coordinates storage, matching, pairing, menus, and navigation; `14-bootstrap.ts` guards one-time startup and exposes the test surface.
 - `ytblockhandlecomments.js`: single Tampermonkey distribution file.
 - `npm run build`: regenerate root userscript from `src/`.
 - `npm run check:build`: verify root userscript sync.
@@ -300,6 +304,12 @@ Sections:
 - Matching, API key, UID pair, navigation controls
 - Regex add
 - Rule list
+
+Lifecycle ownership:
+
+- Each opened block-list dialog owns its selection, filters, pagination, caches, scheduled search work, and disposal.
+- API-key tests and pair runs use independent busy state and operation generations. Closing or replacing a dialog invalidates its generation, so late asynchronous results cannot update the new dialog or restore stale loading state.
+- Disposal cancels scheduled search rendering and clears transient sets, maps, row references, and computed-view caches while preserving the explicitly saved adjacent-dialog view state.
 
 Rule-list tools:
 

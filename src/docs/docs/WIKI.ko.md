@@ -11,6 +11,10 @@ watch/Shorts 페이지 YouTube 댓글을 채널 식별자로 숨기는 사용자
 소스 구조:
 
 - `src/`: 역할별 소스 조각. 한국어/영어 i18n dictionary 별도 파일.
+- 숫자 접두사는 권장 읽기 순서이며 실제 실행 순서는 ES module import가 결정. 문자 접미사는 분리한 module을 상위 기능 옆에 유지.
+- `03-app-settings-storage.ts`, `04-storage-v2.ts`, `05-pair-meta-storage.ts`, `06-api-config-storage.ts`, `15-logger.ts`는 오류 안전 `03a-gm-backed-store.ts` adapter를 공유하면서 각 schema·동기화 규칙은 분리 유지.
+- `12-block-list-manager.ts`는 안정적인 공개 진입점. `12a`–`12d`는 목록 상태·설정/API lifecycle·내보내기 helper·pairing lifecycle을 담당하고 `12e-manager-runtime.ts`가 manager UI를 조합.
+- `13-app.ts`는 저장소·매칭·pairing·메뉴·탐색을 조정하고 `14-bootstrap.ts`는 단일 시작을 보장하며 test surface를 노출.
 - `ytblockhandlecomments.js`: 단일 Tampermonkey 배포 파일.
 - `npm run build`: `src/`에서 루트 userscript 재생성.
 - `npm run check:build`: 루트 userscript와 `src/` 동기화 확인.
@@ -300,6 +304,12 @@ API 호출 최소화:
 - 매칭/API 키/UID pair/이동 버튼 제어
 - regex 추가
 - 규칙 목록
+
+Lifecycle 소유권:
+
+- 열린 각 차단 목록 dialog는 선택·필터·페이지·cache·예약 검색 작업과 폐기를 직접 소유.
+- API key test와 pair 실행은 독립된 busy 상태와 작업 세대를 사용. dialog를 닫거나 교체하면 해당 세대가 무효화되어 늦게 끝난 비동기 결과가 새 dialog를 갱신하거나 이전 loading 상태를 복원하지 않음.
+- 폐기 시 예약 검색 rendering을 취소하고 임시 set·map·row 참조·계산된 view cache를 비우되, 인접 dialog용으로 명시적으로 저장한 view 상태는 보존.
 
 규칙 목록 도구:
 
