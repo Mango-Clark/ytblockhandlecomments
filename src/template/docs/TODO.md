@@ -8,16 +8,6 @@
 
 ## P3 — Low
 
-- [ ] (B) Publish generated outputs as one recoverable build transaction
-
-  - (0) `6b4e471c939a80c4b1f9f1ecdbb8ce6625ddd969`
-  - (1) Problem: each generated file is atomically replaced, but the userscript and Markdown outputs are published sequentially, so a later write/rename failure leaves a mixed generation in the worktree.
-  - (2) Why: the renamed template workflow treats source, generated docs, and userscript as one consistency set, while per-file atomicity does not protect the set as a whole.
-  - (3) Related: `scripts/build-userscript.ts`, `scripts/bump-version.ts`, `tests/build-userscript.test.ts`, and release-script tests.
-  - (4) Direction: stage every output first, validate the complete staged set, then publish with rollback/cleanup guarantees that remain safe on Windows and on repeated runs.
-  - (5) Importance: Low (confirmed tooling consistency gap).
-  - (6) Subtasks: inject write and rename failures at each output position, verify originals remain coherent, clean temporary files, and confirm `--check` never mutates files.
-
 ## Blocked
 
 ## Backlog
@@ -32,6 +22,14 @@
   - (5) Importance: unprioritized investigation; do not add a heavyweight browser dependency until the coverage gap and maintenance cost are measured.
 
 ## Done
+
+- [x] (B) Publish generated outputs as one recoverable build transaction
+
+  - (0) `e68b42bc292ead60313d4c4f545bfd591cb31023`
+  - (1) Build outputs are staged and read back before publication; existing files are backed up and restored when a write, backup rename, or publish rename fails.
+  - (2) Recovery attempts every affected output, preserves backups when recovery or staging cleanup is incomplete, and reports cleanup failures without silently leaving a mixed generation.
+  - (3) Focused tests cover each output position, write/rename/backup/rollback/cleanup failures, complete publication, and read-only generated-output checks on Windows.
+  - (4) Updated script documentation and paired English/Korean changelogs; verified with `npm run verify` and 199 passing tests.
 
 - [x] (A) Complete the manager feature-boundary extraction
 
