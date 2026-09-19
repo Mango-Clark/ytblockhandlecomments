@@ -7,16 +7,6 @@
 
 ## P2 — Normal
 
-- [ ] (A) Distinguish GM read failures from missing or invalid stored values
-
-  - (0) `6b4e471c939a80c4b1f9f1ecdbb8ce6625ddd969`
-  - (1) Problem: the shared `_getGM` adapter converts every exception into the supplied fallback, so consumers cannot distinguish unavailable storage from a legitimately absent key.
-  - (2) Why: after a transient read failure, a later settings, block-list, pair, API-config, or logger mutation can persist fallback-derived state over data that was never loaded; the new common adapter makes this behavior consistent but still silent.
-  - (3) Related: `src/03a-gm-backed-store.ts`, all GM-backed stores in `src/03-*` through `src/06-*`, `src/15-logger.ts`, and `tests/storage-write-failure.test.ts`.
-  - (4) Direction: expose a typed read result/error state, prevent writes and migrations from a failed-load baseline until recovery or explicit user action, and surface a recoverable diagnostic without exposing secrets.
-  - (5) Importance: Medium (confirmed contract gap; destructive runtime frequency requires investigation).
-  - (6) Subtasks: investigate Tampermonkey read-failure modes, then test constructor failure, recovery/reload, migration, remote sync, and mutation attempts after failed reads.
-
 ## P3 — Low
 
 - [ ] (A) Complete the manager feature-boundary extraction
@@ -53,6 +43,14 @@
   - (5) Importance: unprioritized investigation; do not add a heavyweight browser dependency until the coverage gap and maintenance cost are measured.
 
 ## Done
+
+- [x] (N) Distinguish GM read failures from missing or invalid stored values
+
+  - (0) `f739486a39a409ee6372296733d1b31e11345d0a`
+  - (1) The shared adapter now records missing, present, invalid, and failed reads with a safe diagnostic status; raw storage errors and values are not exposed.
+  - (2) Failed-load baselines keep fallback state in memory and block writes, migrations, remote merges, and cross-tab replacement until a later successful read; normal missing and invalid values retain their existing normalization behavior.
+  - (3) Startup shows a recoverable reload message, and sync notifications are shown only after a remote merge is applied.
+  - (4) Verify constructor failure, recovery/reload, migration, remote settings/API/block-list sync, rejected merge notifications, mutation attempts, and English/Korean documentation.
 
 - [x] (M) Bound and cancel external pair/API lookup operations
 
