@@ -14,7 +14,7 @@ watch/Shorts 페이지 YouTube 댓글을 채널 식별자로 숨기는 사용자
 - 숫자 접두사는 권장 읽기 순서이며 실제 실행 순서는 ES module import가 결정. 문자 접미사는 분리한 module을 상위 기능 옆에 유지.
 - `03-app-settings-storage.ts`, `04-storage-v2.ts`, `05-pair-meta-storage.ts`, `06-api-config-storage.ts`, `15-logger.ts`는 오류 안전 `03a-gm-backed-store.ts` adapter를 공유하면서 각 schema·동기화 규칙은 분리 유지.
 - GM 저장소는 missing·present·invalid·failed 읽기 상태를 기록. 읽기 실패 시 메모리 fallback을 유지하되 정상 읽기 전까지 쓰기·migration·remote merge를 막고, 저장값이나 원문 오류를 노출하지 않는 새로고침 진단을 표시.
-- `12-block-list-manager.ts`는 안정적인 공개 진입점. `12a`–`12d`는 목록 상태·cache 무효화·설정 저장/API lifecycle·import/export 데이터·저장 helper·pair 결과 표시를 담당하고 `12e-manager-runtime.ts`가 나머지 manager UI를 조합.
+- `12-block-list-manager.ts`는 안정적인 공개 진입점. `12a`–`12d`는 목록 상태·cache 무효화·typed 목록 행 rendering·설정 저장/API lifecycle·import/export 데이터·저장 helper·pair 결과 표시를 담당하고 `12e-manager-runtime.ts`가 나머지 manager UI를 조합.
 - `13-app.ts`는 저장소·매칭·pairing·메뉴·탐색을 조정하고 `14-bootstrap.ts`는 단일 시작을 보장하며 test surface를 노출.
 - `ytblockhandlecomments.js`: 단일 Tampermonkey 배포 파일.
 - `npm run build`: `src/`에서 루트 userscript 재생성.

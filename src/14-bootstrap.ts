@@ -20,7 +20,7 @@ import { Dialog, Toast } from './08-toast-dialog.ts';
 import { BlockListManager } from './12-block-list-manager.ts';
 import { parseManagerImport, persistManagerImport } from './12c-manager-export.ts';
 import { saveManagerLoggingSettings } from './12b-manager-settings.ts';
-import { createManagerListCacheController, createManagerListController } from './12a-manager-list.ts';
+import { createManagerListCacheController, createManagerListController, renderManagerListRows } from './12a-manager-list.ts';
 import { App } from './13-app.ts';
 import { Logger } from './15-logger.ts';
 
@@ -46,6 +46,7 @@ const TEST_HOOK = typeof window === 'object' ? window.__YT_BLOCK_TEST_HOOK__ || 
 			saveManagerLoggingSettings,
 			createManagerListCacheController,
 			createManagerListController,
+			renderManagerListRows,
 			App,
 			Logger,
 			t,

@@ -15,7 +15,7 @@ Source layout:
 - Numeric prefixes are a recommended reading order; ES module imports determine runtime order. Letter suffixes keep split modules beside their parent feature.
 - `03-app-settings-storage.ts`, `04-storage-v2.ts`, `05-pair-meta-storage.ts`, `06-api-config-storage.ts`, and `15-logger.ts` share the error-safe `03a-gm-backed-store.ts` adapter while retaining separate schemas and synchronization rules.
 - GM-backed stores record missing, present, invalid, and failed reads. A failed read keeps fallback state in memory, blocks writes, migrations, and remote merges until a later instance can read the storage successfully, and shows a reload diagnostic without exposing stored values or raw errors.
-- `12-block-list-manager.ts` is the stable public entry point. `12a`–`12d` own list state and cache invalidation, settings save/API lifecycle, import/export data and persistence helpers, and pair-result presentation; `12e-manager-runtime.ts` composes the remaining manager UI.
+- `12-block-list-manager.ts` is the stable public entry point. `12a`–`12d` own list state, cache invalidation, typed list-row rendering, settings save/API lifecycle, import/export data and persistence helpers, and pair-result presentation; `12e-manager-runtime.ts` composes the remaining manager UI.
 - `13-app.ts` coordinates storage, matching, pairing, menus, and navigation; `14-bootstrap.ts` guards one-time startup and exposes the test surface.
 - `ytblockhandlecomments.js`: single Tampermonkey distribution file.
 - `npm run build`: regenerate root userscript from `src/`.

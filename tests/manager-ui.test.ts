@@ -137,6 +137,74 @@ test('manager list cache controller invalidates selection and row caches', () =>
 	assert.equal(persisted, 2);
 });
 
+test('manager list row renderer preserves selection and pair metadata', () => {
+	const { api, document } = loadUserscript();
+	const state = api.createManagerListController({}, new Set());
+	const item = { type: 'handle', value: '@alpha' };
+	const row = api.renderManagerListRows([item], {
+		state,
+		viewState: { blockedIds: new Set() },
+		pageSize: 100,
+		pairBusy: false,
+		isBusy: () => false,
+		getPairStatus: () => ({ code: 'paired', pair: { uid: 'UC1234567890', source: 'manual' } }),
+		formatDate: () => '2026-01-01',
+		makeBadge: (code: string) => Object.assign(document.createElement('span'), { textContent: code }),
+		createMetaLine: (text: string) => Object.assign(document.createElement('span'), { textContent: text }),
+		showToast: () => {},
+		getRegexMatchState: () => ({ matchCount: 0, matches: [] }),
+		computeViewState: () => ({ blockedIds: new Set() }),
+		setSelectionValue: (key: string, selected: boolean) => {
+			if (selected) state.selection.add(key);
+			else state.selection.delete(key);
+			return true;
+		},
+		markSelectionChanged: () => {},
+		syncVisibleSelection: () => {},
+		syncActionState: () => {},
+		removeItem: () => true,
+		renderAll: () => {}
+	});
+	assert.equal(row.length, 1);
+	assert.match(row[0].textContent, /@alpha/);
+	assert.match(row[0].textContent, /UC1234567890/);
+	const checkbox = row[0].querySelector('.tm-item-check') as HTMLInputElement;
+	checkbox.checked = true;
+	checkbox.dispatchEvent({ type: 'change' } as any);
+	assert.equal(state.selection.has('h:@alpha'), true);
+});
+
+test('manager list row renderer selects regex matches and reports feedback', () => {
+	const { api, document } = loadUserscript();
+	const state = api.createManagerListController({}, new Set());
+	const match = { type: 'handle', value: '@alpha' };
+	let feedback = '';
+	const rows = api.renderManagerListRows([{ type: 'regex', value: '^@a' }], {
+		state,
+		viewState: { blockedIds: new Set() },
+		pageSize: 100,
+		pairBusy: false,
+		isBusy: () => false,
+		getPairStatus: () => ({ code: 'unpaired', pair: null }),
+		formatDate: () => null,
+		makeBadge: (code: string) => Object.assign(document.createElement('span'), { textContent: code }),
+		createMetaLine: (text: string) => Object.assign(document.createElement('span'), { textContent: text }),
+		showToast: (message: string) => { feedback = message; },
+		getRegexMatchState: () => ({ matchCount: 1, matches: [match] }),
+		computeViewState: () => ({ blockedIds: new Set() }),
+		setSelectionValue: () => true,
+		markSelectionChanged: () => {},
+		syncVisibleSelection: () => {},
+		syncActionState: () => {},
+		removeItem: () => true,
+		renderAll: () => {}
+	});
+	const selectMatches = rows[0].querySelectorAll('button').find((button: any) => button.textContent === '매칭 handle 선택');
+	selectMatches.click();
+	assert.equal(state.selection.has('h:@alpha'), true);
+	assert.equal(feedback, '1개 handle을 선택했습니다');
+});
+
 test('pair result rendering keeps manager wrapper overrides', () => {
 	const { api, document } = loadUserscript();
 	const manager = new api.BlockListManager({});

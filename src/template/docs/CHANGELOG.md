@@ -17,6 +17,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); projec
 ### Changed
 
 - Moved manager selection and view-cache invalidation behind the `12a` list boundary while preserving list rendering behavior.
+- Moved manager list-row rendering behind the typed `12a` list boundary while preserving the public manager entry point and row interactions.
 - Removed the manager runtime's open-ended index signature and declared its app and persisted view state fields explicitly.
 - Moved logging-setting validation, persistence, and retention cleanup results behind the `12b` feature boundary while keeping runtime rendering and messages unchanged.
 - Moved pair-result list and dialog presentation behind the `12d` feature boundary while preserving the public manager wrappers and existing lifecycle behavior.

@@ -1,4 +1,4 @@
-import { getItemKey, t, type BlockItem } from './02-utils-i18n.ts';
+import { getItemKey, REGEX_MATCH_INITIAL_LIMIT, REGEX_MATCH_PAGE_SIZE, t, type BlockItem } from './02-utils-i18n.ts';
 
 export type ManagerListState = {
 	selection: Set<string>;
@@ -119,4 +119,159 @@ export function createManagerListCacheController(state: ManagerListState, persis
 			if (changed) markSelectionChanged();
 		}
 	};
+}
+
+export type ManagerListRowContext = {
+	state: ManagerListState;
+	viewState: any;
+	pageSize: number;
+	pairBusy: boolean;
+	isBusy: () => boolean;
+	getPairStatus: (handle: string, blockedIds: Set<string>) => any;
+	formatDate: (value: number) => string | null;
+	makeBadge: (code: string) => HTMLElement;
+	createMetaLine: (text: any) => HTMLElement;
+	showToast: (message: string) => void;
+	getRegexMatchState: (item: BlockItem, viewState: any, mode: string) => any;
+	computeViewState: () => any;
+	setSelectionValue: (key: string | null, selected: boolean) => boolean;
+	markSelectionChanged: () => void;
+	syncVisibleSelection: () => void;
+	syncActionState: () => void;
+	removeItem: (item: BlockItem) => boolean;
+	renderAll: () => void;
+};
+
+export function renderManagerListRows(items: BlockItem[], context: ManagerListRowContext): HTMLLIElement[] {
+	const { state } = context;
+	const rows: HTMLLIElement[] = [];
+	for (const item of items) {
+		const itemKey = getItemKey(item);
+		if (!itemKey) continue;
+		const li = document.createElement('li');
+		const checkbox = document.createElement('input');
+		checkbox.type = 'checkbox';
+		checkbox.className = 'tm-item-check';
+		checkbox.checked = state.selection.has(itemKey);
+		checkbox.addEventListener('change', () => {
+			context.setSelectionValue(itemKey, checkbox.checked);
+			context.syncActionState();
+		});
+		state.rowRefs.set(itemKey, { checkbox });
+
+		const left = document.createElement('div');
+		left.className = 'tm-block-main';
+		const label = document.createElement('div');
+		label.className = 'tm-block-label';
+		label.textContent = item.type === 'regex' ? `/${item.value}/${item.flags || ''}` : item.value;
+		const badges = document.createElement('div');
+		badges.className = 'tm-block-badges';
+		const meta = document.createElement('div');
+		meta.className = 'tm-block-meta';
+
+		if (item.type === 'handle') {
+			const status = context.getPairStatus(item.value, context.viewState.blockedIds);
+			badges.appendChild(context.makeBadge(status.code));
+			if (status.pair?.uid) meta.appendChild(context.createMetaLine(t('metaUid', status.pair.uid)));
+			if (status.pair?.verifiedAt) meta.appendChild(context.createMetaLine(t('metaVerifiedAt', context.formatDate(status.pair.verifiedAt))));
+			if (status.pair?.lastResolvedUid && status.pair.lastResolvedUid !== status.pair.uid) meta.appendChild(context.createMetaLine(t('metaResolvedUid', status.pair.lastResolvedUid)));
+			if (status.pair?.source) meta.appendChild(context.createMetaLine(t('metaSource', status.pair.source)));
+			if (status.pair?.lastError) meta.appendChild(context.createMetaLine(t('metaError', status.pair.lastError)));
+		} else if (item.type === 'id') {
+			badges.appendChild(context.makeBadge('uid'));
+		} else if (item.type === 'regex') {
+			badges.appendChild(context.makeBadge('regex'));
+			const regexSummary = document.createElement('div');
+			regexSummary.className = 'tm-regex-summary';
+			const renderRegexSummary = () => {
+				const currentViewState = context.computeViewState();
+				const regexActions = document.createElement('div');
+				regexActions.className = 'tm-regex-actions';
+				const regexState = context.getRegexMatchState(item, currentViewState, state.expandedRegexKeys.has(itemKey) ? 'full' : 'count');
+				const countLine = document.createElement('div');
+				countLine.className = 'tm-inline-note';
+				countLine.textContent = t('regexMatchedCount', regexState.matchCount || 0);
+				const selectMatchesBtn = Object.assign(document.createElement('button'), { textContent: t('regexSelectMatches') });
+				selectMatchesBtn.disabled = !(regexState.matchCount || 0) || context.isBusy();
+				selectMatchesBtn.addEventListener('click', () => {
+					const matchState = context.getRegexMatchState(item, context.computeViewState(), 'full');
+					let changed = false;
+					for (const match of matchState.matches || []) {
+						const matchKey = getItemKey(match);
+						if (!matchKey || state.selection.has(matchKey)) continue;
+						state.selection.add(matchKey);
+						changed = true;
+					}
+					if (changed) context.markSelectionChanged();
+					context.syncVisibleSelection();
+					context.syncActionState();
+					context.showToast(t('regexSelectedMatches', matchState.matchCount || 0));
+				});
+				const toggleRegexBtn = Object.assign(document.createElement('button'), { textContent: state.expandedRegexKeys.has(itemKey) ? t('regexCollapse') : t('regexExpand') });
+				toggleRegexBtn.disabled = !(regexState.matchCount || 0);
+				toggleRegexBtn.addEventListener('click', () => {
+					if (state.expandedRegexKeys.has(itemKey)) {
+						state.expandedRegexKeys.delete(itemKey);
+						state.showAllRegexKeys.delete(itemKey);
+					} else {
+						state.expandedRegexKeys.add(itemKey);
+						state.showAllRegexKeys.set(itemKey, REGEX_MATCH_INITIAL_LIMIT);
+					}
+					renderRegexSummary();
+				});
+				regexActions.append(countLine, selectMatchesBtn, toggleRegexBtn);
+				regexSummary.replaceChildren(regexActions);
+				if (!state.expandedRegexKeys.has(itemKey)) return;
+				const matches = (context.getRegexMatchState(item, currentViewState, 'full').matches || []) as BlockItem[];
+				if (!matches.length) {
+					const empty = document.createElement('div');
+					empty.className = 'tm-inline-note';
+					empty.textContent = t('regexNoMatches');
+					regexSummary.appendChild(empty);
+					return;
+				}
+				const listWrap = document.createElement('ul');
+				listWrap.className = 'tm-regex-match-list';
+				const storedLimit = Number(state.showAllRegexKeys.get(itemKey));
+				const limit = Math.min(matches.length, Number.isFinite(storedLimit) && storedLimit > 0 ? storedLimit : REGEX_MATCH_INITIAL_LIMIT);
+				for (const match of matches.slice(0, limit)) {
+					const row = document.createElement('li');
+					row.textContent = match.value;
+					listWrap.appendChild(row);
+				}
+				regexSummary.appendChild(listWrap);
+				if (limit < matches.length) {
+					const showMoreBtn = Object.assign(document.createElement('button'), { textContent: t('regexShowMore', limit, matches.length) });
+					showMoreBtn.addEventListener('click', () => {
+						state.showAllRegexKeys.set(itemKey, Math.min(matches.length, limit + REGEX_MATCH_PAGE_SIZE));
+						renderRegexSummary();
+					});
+					regexSummary.appendChild(showMoreBtn);
+				} else if (matches.length > REGEX_MATCH_INITIAL_LIMIT) {
+					const showLessBtn = Object.assign(document.createElement('button'), { textContent: t('regexShowLess') });
+					showLessBtn.addEventListener('click', () => {
+						state.showAllRegexKeys.set(itemKey, REGEX_MATCH_INITIAL_LIMIT);
+						renderRegexSummary();
+					});
+					regexSummary.appendChild(showLessBtn);
+				}
+			};
+			renderRegexSummary();
+			meta.appendChild(regexSummary);
+		}
+
+		const removeBtn = Object.assign(document.createElement('button'), { textContent: t('unblock') });
+		removeBtn.disabled = context.pairBusy;
+		removeBtn.addEventListener('click', () => {
+			context.setSelectionValue(itemKey, false);
+			const removed = context.removeItem(item);
+			context.renderAll();
+			context.showToast(removed ? t('removed', label.textContent) : t('storageSaveFailed'));
+		});
+		left.append(label, badges);
+		if (meta.childNodes.length) left.appendChild(meta);
+		li.append(checkbox, left, removeBtn);
+		rows.push(li);
+	}
+	return rows;
 }
