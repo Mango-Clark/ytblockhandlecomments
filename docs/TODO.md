@@ -5,15 +5,83 @@
 
 ## P1 — High
 
+- [ ] (B) Preserve pair metadata under concurrent cross-tab writers
+
+  - (0) `6b4e471c939a80c4b1f9f1ecdbb8ce6625ddd969`
+  - (1) Problem: `pair_meta_v1` writes replace the full state and remote listeners call `setAllLocal`, unlike the convergent block-list and log stores.
+  - (2) Why: pair lookup workers or user actions in two tabs can overwrite independently added, updated, or removed pairs and can regress notification/check timestamps according to listener order.
+  - (3) Related: `src/05-pair-meta-storage.ts`, `src/07-pair-service.ts`, `src/13-app.ts`, `tests/pair-service.test.ts`, and storage concurrency tests.
+  - (4) Direction: define per-pair and scalar conflict semantics, merge remote snapshots deterministically, preserve delete/clear intent, and keep repeated listener delivery idempotent.
+  - (5) Importance: High (confirmed design gap with data-loss risk).
+  - (6) Subtasks: test two-writer add/add, update/remove, clear/stale-write, timestamp ordering, write rollback, and listener convergence.
+
+- [ ] (C) Bound and cancel external pair/API lookup operations
+
+  - (0) `6b4e471c939a80c4b1f9f1ecdbb8ce6625ddd969`
+  - (1) Problem: YouTube page and Data API fetches have no timeout or abort signal, and a stalled request keeps the shared pair run and manager busy state pending indefinitely.
+  - (2) Why: one network request can block queued handles, automatic updates, manual retries, and subsequent dialogs; closing a dialog only suppresses its UI callback and does not release the underlying work.
+  - (3) Related: `src/07-pair-service.ts`, `src/12b-manager-settings.ts`, `src/12d-manager-pairing.ts`, `src/12e-manager-runtime.ts`, `src/13-app.ts`, and pair/manager tests.
+  - (4) Direction: add bounded request timeouts and run-scoped cancellation, classify timeout/cancellation separately from API failures, release shared busy promises in every exit path, and decide whether dialog close cancels or deliberately detaches a global run.
+  - (5) Importance: High (confirmed reliability gap).
+  - (6) Subtasks: cover hung fetches, mid-batch cancellation, retry after timeout, low-performance serial queues, shared automatic/manual runs, and late response suppression.
+
 ## P2 — Normal
 
+- [ ] (A) Distinguish GM read failures from missing or invalid stored values
+
+  - (0) `6b4e471c939a80c4b1f9f1ecdbb8ce6625ddd969`
+  - (1) Problem: the shared `_getGM` adapter converts every exception into the supplied fallback, so consumers cannot distinguish unavailable storage from a legitimately absent key.
+  - (2) Why: after a transient read failure, a later settings, block-list, pair, API-config, or logger mutation can persist fallback-derived state over data that was never loaded; the new common adapter makes this behavior consistent but still silent.
+  - (3) Related: `src/03a-gm-backed-store.ts`, all GM-backed stores in `src/03-*` through `src/06-*`, `src/15-logger.ts`, and `tests/storage-write-failure.test.ts`.
+  - (4) Direction: expose a typed read result/error state, prevent writes and migrations from a failed-load baseline until recovery or explicit user action, and surface a recoverable diagnostic without exposing secrets.
+  - (5) Importance: Medium (confirmed contract gap; destructive runtime frequency requires investigation).
+  - (6) Subtasks: investigate Tampermonkey read-failure modes, then test constructor failure, recovery/reload, migration, remote sync, and mutation attempts after failed reads.
+
 ## P3 — Low
+
+- [ ] (A) Complete the manager feature-boundary extraction
+
+  - (0) `6b4e471c939a80c4b1f9f1ecdbb8ce6625ddd969`
+  - (1) Problem: `12a`–`12d` contain small controllers/helpers, while `src/12e-manager-runtime.ts` still owns roughly 2,300 lines of list, settings, pairing, import/export, dialog lifecycle, and rendering behavior through an open-ended index signature.
+  - (2) Why: the recent modularization created named boundaries without moving most state transitions and failure contracts behind them, leaving changes coupled and making isolated integration tests difficult.
+  - (3) Related: `src/12-block-list-manager.ts`, `src/12a-manager-list.ts` through `src/12e-manager-runtime.ts`, manager tests, and `types/node-lite.d.ts`.
+  - (4) Direction: move cohesive dialog controllers and typed state contracts behind the existing modules incrementally, remove the index-signature escape hatch, and preserve the public `BlockListManager` entry point.
+  - (5) Importance: Low (confirmed maintainability debt, not a current behavior defect).
+  - (6) Subtasks: extract import/export persistence, settings save orchestration, pair-run presentation, and list rendering/cache invalidation with focused tests per boundary.
+
+- [ ] (B) Publish generated outputs as one recoverable build transaction
+
+  - (0) `6b4e471c939a80c4b1f9f1ecdbb8ce6625ddd969`
+  - (1) Problem: each generated file is atomically replaced, but the userscript and Markdown outputs are published sequentially, so a later write/rename failure leaves a mixed generation in the worktree.
+  - (2) Why: the renamed template workflow treats source, generated docs, and userscript as one consistency set, while per-file atomicity does not protect the set as a whole.
+  - (3) Related: `scripts/build-userscript.ts`, `scripts/bump-version.ts`, `tests/build-userscript.test.ts`, and release-script tests.
+  - (4) Direction: stage every output first, validate the complete staged set, then publish with rollback/cleanup guarantees that remain safe on Windows and on repeated runs.
+  - (5) Importance: Low (confirmed tooling consistency gap).
+  - (6) Subtasks: inject write and rename failures at each output position, verify originals remain coherent, clean temporary files, and confirm `--check` never mutates files.
 
 ## Blocked
 
 ## Backlog
 
+- [ ] (A) Investigate real-browser coverage for userscript lifecycle boundaries
+
+  - (0) `6b4e471c939a80c4b1f9f1ecdbb8ce6625ddd969`
+  - (1) Problem: the suite thoroughly exercises the fake DOM and mocked GM APIs but does not establish coverage of actual Tampermonkey listener ordering, browser fetch cancellation, YouTube custom-element replacement, or heap behavior.
+  - (2) Why: these are the remaining boundaries most likely to differ from the deterministic unit environment after the lifecycle and performance updates.
+  - (3) Related: `tests/helpers/fake-dom.ts`, `tests/helpers/load-userscript.ts`, navigation/performance/manager tests, and the generated userscript.
+  - (4) Direction: investigation needed—identify the smallest reproducible browser harness and decide which cross-tab, repeated-navigation, network, and memory scenarios justify integration or end-to-end gates.
+  - (5) Importance: unprioritized investigation; do not add a heavyweight browser dependency until the coverage gap and maintenance cost are measured.
+
 ## Done
+
+- [x] (K) Make persistence failures explicit in pair, API-test, and import workflows
+
+  - (0) `699257cc81ad3a9d7ca8c06e074866acfe96374d`
+  - (1) Pair metadata, API-test results, and block-list imports now return explicit persistence success/failure results.
+  - (2) Pair statistics, UI messages, and operation logs report persistence failures without counting failed writes as successful work.
+  - (3) Pair updates roll back partial metadata/block-list mutations where possible and report rollback failures.
+  - (4) JSON/text imports support truthful retry behavior, with legacy storage fallback coverage.
+  - (5) Verify single and partial pair-write failure, failed `setLastPairCheckAt`, API-test persistence failure, import failure/retry, rollback failure, and English/Korean messages.
 
 - [x] (A) Preserve block-list manager view state across adjacent dialogs
 
