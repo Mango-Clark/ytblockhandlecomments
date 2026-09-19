@@ -18,6 +18,16 @@ function createService() {
 	};
 }
 
+function createPairStore(raw: any = null) {
+	const { api, gmStore } = loadUserscript({ gmStore: raw ? { pair_meta_v1: raw } : {} });
+	const settings = new api.AppSettingsStorage();
+	return { api, gmStore, store: new api.PairMetaStorage(settings) };
+}
+
+function pairSnapshot(gmStore: Map<string, unknown>) {
+	return gmStore.get('pair_meta_v1');
+}
+
 test('pair lookup index stays synchronized with state changes', () => {
 	const { api } = loadUserscript();
 	const settings = new api.AppSettingsStorage();
@@ -202,6 +212,127 @@ test('channel-page lookup normalizes and caches a handle result', async () => {
 	assert.equal(requests, 1);
 });
 
+test('concurrent pair additions converge without dropping either pair', () => {
+	const left = createPairStore();
+	const right = createPairStore();
+	left.store.upsertPair({ handle: '@alpha', uid: 'UC1234567890', verifiedAt: Date.now(), status: 'verified', source: 'left' });
+	right.store.upsertPair({ handle: '@beta', uid: 'UC0987654321', verifiedAt: Date.now(), status: 'verified', source: 'right' });
+
+	right.store.mergeRemote(pairSnapshot(left.gmStore));
+	left.store.mergeRemote(pairSnapshot(right.gmStore));
+
+	assert.deepEqual(Array.from(left.store.allPairs(), (pair: any) => pair.handle).sort(), ['@alpha', '@beta']);
+	assert.deepEqual(Array.from(right.store.allPairs(), (pair: any) => pair.handle).sort(), ['@alpha', '@beta']);
+});
+
+test('concurrent pair update and remove converge by revision', () => {
+	const initial = {
+		version: 1,
+		enableUidDetection: true,
+		pairs: [{ handle: '@alpha', uid: 'UC1234567890', verifiedAt: Date.now(), status: 'verified', source: 'initial' }]
+	};
+	const left = createPairStore(initial);
+	const right = createPairStore(initial);
+	left.store.upsertPair({ handle: '@alpha', uid: 'UC0987654321', verifiedAt: Date.now(), status: 'verified', source: 'updated' });
+	right.store.removePair('@alpha');
+
+	left.store.mergeRemote(pairSnapshot(right.gmStore));
+	right.store.mergeRemote(pairSnapshot(left.gmStore));
+
+	assert.equal(JSON.stringify(left.store.allPairs()), JSON.stringify(right.store.allPairs()));
+	assert.equal(left.store.getState().lastPairCheckAt, right.store.getState().lastPairCheckAt);
+});
+
+test('pair clear wins over stale entries while later additions survive', () => {
+	const initial = {
+		version: 1,
+		pairs: [{ handle: '@old', uid: 'UC1234567890', verifiedAt: Date.now(), status: 'verified', source: 'initial' }]
+	};
+	const clearer = createPairStore(initial);
+	const staleWriter = createPairStore(initial);
+	const staleSnapshot = pairSnapshot(staleWriter.gmStore);
+	clearer.store.clearPairs();
+	staleWriter.store.upsertPair({ handle: '@new', uid: 'UC0987654321', verifiedAt: Date.now(), status: 'verified', source: 'new' });
+	clearer.store.mergeRemote(staleSnapshot);
+	clearer.store.mergeRemote(pairSnapshot(staleWriter.gmStore));
+
+	assert.deepEqual(Array.from(clearer.store.allPairs(), (pair: any) => pair.handle), ['@new']);
+});
+
+test('empty remove and clear preserve tombstones against stale snapshots', () => {
+	const initial = {
+		version: 1,
+		pairs: [{ handle: '@alpha', uid: 'UC1234567890', verifiedAt: Date.now(), status: 'verified', source: 'initial' }]
+	};
+	const stale = createPairStore(initial);
+	const staleSnapshot = pairSnapshot(stale.gmStore);
+	const remover = createPairStore();
+	remover.store.removePair('@alpha');
+	assert.equal(remover.store.mergeRemote(staleSnapshot), false);
+	assert.equal(remover.store.getPair('@alpha'), null);
+
+	const clearer = createPairStore();
+	clearer.store.clearPairs();
+	assert.equal(clearer.store.mergeRemote(staleSnapshot), false);
+	assert.equal(clearer.store.getPair('@alpha'), null);
+});
+
+test('pair metadata merge is idempotent and scalar revisions converge', () => {
+	const left = createPairStore();
+	const right = createPairStore();
+	left.store.setUidDetectionEnabled(true);
+	left.store.setLastPairCheckAt(100);
+	right.store.setUidDetectionEnabled(false);
+	right.store.setLastPairCheckAt(200);
+	const remote = pairSnapshot(left.gmStore);
+
+	assert.equal(right.store.mergeRemote(remote), true);
+	const afterFirstMerge = JSON.stringify(right.store.getState());
+	assert.equal(right.store.mergeRemote(remote), false);
+	assert.equal(JSON.stringify(right.store.getState()), afterFirstMerge);
+	left.store.mergeRemote(pairSnapshot(right.gmStore));
+	assert.equal(JSON.stringify(left.store.getState()), JSON.stringify(right.store.getState()));
+});
+
+test('pair timestamp scalars keep the greatest value during merge', () => {
+	const left = createPairStore();
+	const right = createPairStore();
+	left.store.setLastPairCheckAt(100);
+	right.store.setLastPairCheckAt(200);
+	left.store.mergeRemote(pairSnapshot(right.gmStore));
+	right.store.mergeRemote(pairSnapshot(left.gmStore));
+	assert.equal(left.store.getLastPairCheckAt(), 200);
+	assert.equal(right.store.getLastPairCheckAt(), 200);
+});
+
+test('pair timestamp scalars never move backward locally', () => {
+	const { store } = createPairStore();
+	store.setLastPairCheckAt(200);
+	store.setLastPairCheckAt(100);
+	store.dismissNotification(200);
+	store.dismissNotification(100);
+	assert.equal(store.getLastPairCheckAt(), 200);
+	assert.equal(store.getNotificationDismissedAt(), 200);
+});
+
+test('legacy pair snapshots merge without a version field', () => {
+	const left = createPairStore();
+	left.store.upsertPair({ handle: '@legacy', uid: 'UC1234567890', verifiedAt: Date.now(), status: 'verified', source: 'legacy' });
+	const right = createPairStore();
+	assert.equal(right.store.mergeRemote({ pairs: (pairSnapshot(left.gmStore) as any).pairs }), true);
+	assert.equal(right.store.getPair('@legacy')?.uid, 'UC1234567890');
+});
+
+test('pair metadata merge rolls back local state when the merged write fails', () => {
+	const left = createPairStore();
+	left.store.upsertPair({ handle: '@alpha', uid: 'UC1234567890', verifiedAt: Date.now(), status: 'verified', source: 'left' });
+	const { api } = loadUserscript({ gmSetValue: () => { throw new Error('quota exceeded'); } });
+	const right = new api.PairMetaStorage(new api.AppSettingsStorage());
+
+	assert.equal(right.mergeRemote(pairSnapshot(left.gmStore)), false);
+	assert.equal(right.getPair('@alpha'), null);
+});
+
 test('handle lookup cache retains only the most recent results', async () => {
 	const { service } = createService();
 	service._resolveHandleFromPage = async () => ({ uid: 'UC1234567890', source: 'test' });
@@ -376,7 +507,7 @@ test('pair notice stays dismissed for the stale interval', () => {
 	pairStore.dismissNotification(now - (2 * dayMs));
 	assert.equal(service.shouldNotify(), false);
 
-	pairStore.dismissNotification(now - (8 * dayMs));
+	pairStore.setAllLocal({ ...pairStore.getState(), pairNotificationDismissedAt: now - (8 * dayMs) });
 	assert.equal(service.shouldNotify(), true);
 });
 
@@ -406,6 +537,6 @@ test('pair notice waits after a recent pair check', () => {
 	pairStore.setLastPairCheckAt(now - (2 * dayMs));
 	assert.equal(service.shouldNotify(), false);
 
-	pairStore.setLastPairCheckAt(now - (8 * dayMs));
+	pairStore.setAllLocal({ ...pairStore.getState(), lastPairCheckAt: now - (8 * dayMs) });
 	assert.equal(service.shouldNotify(), true);
 });

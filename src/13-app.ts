@@ -570,7 +570,11 @@ import { Logger } from './15-logger.ts';
 				});
 				GM_addValueChangeListener('pair_meta_v1', (_k, _old, val, remote) => {
 					if (!remote) return;
-					this.pairStore.setAllLocal(val);
+					if (!val || (val.version != null && val.version !== 1) || !Array.isArray(val.pairs)) return;
+					const changed = this.pairStore.mergeRemote
+						? this.pairStore.mergeRemote(val)
+						: (this.pairStore.setAllLocal(val), true);
+					if (!changed) return;
 					this.refreshAfterStorageChange();
 					Toast.show(t('pairSyncToast'));
 				});

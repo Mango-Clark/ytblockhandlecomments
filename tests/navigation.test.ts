@@ -308,9 +308,10 @@ test('cross-tab listeners apply remote state before refreshing UI', () => {
 		listeners.set(key, listener);
 	};
 	const calls: string[] = [];
+	let pairMerges = 0;
 	const app = Object.assign(Object.create(api.App.prototype), {
 		storage: { mergeRemote: (value: any) => { calls.push(`blocked:${value.items[0].value}`); } },
-		pairStore: { setAllLocal: (value: any) => { calls.push(`pairs:${value.pairs[0].handle}`); } },
+		pairStore: { mergeRemote: (value: any) => { calls.push(`pairs:${value.pairs[0].handle}`); pairMerges += 1; return pairMerges === 1; } },
 		apiConfig: { setAllLocal: (value: any) => { calls.push(`api:${value.apiKey}`); } },
 		settings: { setAllLocal: (value: any) => { calls.push(`settings:${value.dislikeMode}`); } },
 		refreshAfterStorageChange: () => { calls.push('refresh'); },
@@ -324,13 +325,14 @@ test('cross-tab listeners apply remote state before refreshing UI', () => {
 		items: [{ type: 'handle', value: '@remote' }]
 	}, true);
 	listeners.get('pair_meta_v1')?.('', null, { pairs: [{ handle: '@remote' }] }, true);
+	listeners.get('pair_meta_v1')?.('', null, { pairs: [{ handle: '@remote' }] }, true);
 	listeners.get('youtube_data_api_v3_config')?.('', null, { apiKey: 'remote-key' }, true);
 	listeners.get('app_settings_v1')?.('', null, { dislikeMode: 'always' }, true);
 	listeners.get('lang')?.('', null, 'en', true);
 
 	assert.deepEqual(calls, [
 		'blocked:@remote', 'refresh',
-		'pairs:@remote', 'refresh',
+		'pairs:@remote', 'refresh', 'pairs:@remote',
 		'api:remote-key', 'ui',
 		'settings:always', 'refresh',
 		'language'

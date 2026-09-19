@@ -194,6 +194,7 @@ API 설정:
 
 - 유효한 `blocked_v2` 없을 때만 레거시 `blockedHandles`, `blockedHandles_v1` 자동 migration. 이후 삭제/전체 초기화 시 legacy 복원 안 함.
 - 탭 간 `blocked_v2` 변경에 선택적 항목별 revision, tombstone, clear revision 저장. 동시 추가 병합. 추가/삭제/전체 초기화 충돌은 높은 revision 기준, echo write 없이 수렴.
+- 탭 간 `pair_meta_v1` 변경은 handle별 revision과 삭제 tombstone을 저장. 전체 초기화는 clear 시점보다 오래된 pair를 숨기고 이후 추가는 유지. UID 감지는 revision 순서, 검사 시각과 알림 dismiss 시각은 더 큰 timestamp가 승리하여 뒤로 가지 않음. 같은 remote 전달은 멱등 처리.
 - 기본 `app_settings_v1.dislikeMode`: `none`.
 - 기본 `app_settings_v1.commentBlockMode`: `hide`.
 - 기본 `app_settings_v1.blockMatchMode`: `handle`.
@@ -424,6 +425,8 @@ Pair 결과:
 - `lang`
 
 lookup cache, 열린 UI, watch 배너도 다시 그림.
+
+pair metadata는 handle별 last-writer revision으로 병합하고 삭제는 tombstone, 전체 삭제는 clear revision으로 보존합니다. UID 감지 설정은 revision 순서로 충돌을 해결하며 `lastPairCheckAt`과 `pairNotificationDismissedAt`은 절대 감소하지 않습니다. 최신 상태를 추가하는 경우에만 병합 snapshot을 다시 저장하고, 저장 거부 시 로컬 상태를 복구합니다.
 
 ## 9. 가져오기 및 내보내기
 

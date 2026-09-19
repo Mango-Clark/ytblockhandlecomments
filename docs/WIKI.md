@@ -194,6 +194,7 @@ Notes:
 
 - Legacy `blockedHandles` and `blockedHandles_v1` migrate only if valid `blocked_v2` absent; later delete/clear never restores legacy entries
 - Cross-tab `blocked_v2` changes carry optional entry revisions, tombstones, and clear revision. Concurrent additions merge; highest revision resolves add/delete/clear conflicts without echo writes.
+- Cross-tab `pair_meta_v1` changes carry per-handle revisions and deletion tombstones. Clear uses a revision that suppresses older pairs; later additions remain visible. UID detection uses revision ordering, while check and notification timestamps merge monotonically by the greatest timestamp. Repeated remote delivery is idempotent.
 - Default `app_settings_v1.dislikeMode`: `none`
 - Default `app_settings_v1.commentBlockMode`: `hide`
 - Default `app_settings_v1.blockMatchMode`: `handle`
@@ -424,6 +425,8 @@ Remote Tampermonkey changes refresh local state for:
 - `lang`
 
 Refresh updates lookup caches, open UI, and watch-page banner.
+
+Pair metadata uses per-handle last-writer revisions with tombstones for deletes and a clear revision for full clears. Scalar UID-detection changes use revision ordering; `lastPairCheckAt` and `pairNotificationDismissedAt` never move backward. A merged snapshot is written back only when it adds newer state, and a rejected merge write restores the local state.
 
 ## 9. Import And Export
 
