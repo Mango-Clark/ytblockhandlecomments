@@ -17,6 +17,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); projec
 
 ### Changed
 
+- Removed the manager runtime's open-ended index signature and declared its app and persisted view state fields explicitly.
 - Moved logging-setting validation, persistence, and retention cleanup results behind the `12b` feature boundary while keeping runtime rendering and messages unchanged.
 - Moved pair-result list and dialog presentation behind the `12d` feature boundary while preserving the public manager wrappers and existing lifecycle behavior.
 - Moved manager import parsing and persistence counting behind the `12c` feature boundary while preserving the public `BlockListManager` entry point and dialog behavior.

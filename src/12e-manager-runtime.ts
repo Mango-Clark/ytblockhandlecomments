@@ -30,7 +30,8 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 	 * 7. BlockListManager (UI + Import/Export)
 	 * ---------------------------------------------------------- */
 	export class BlockListManager {
-		[key: string]: any;
+		declare app: AppLike;
+		declare _listViewState: { searchQuery: string; page?: number; typeFilter: string; tagFilters: string[]; selection: string[]; scrollTop: number };
 		constructor(app: AppLike) {
 			this.app = app;
 			this._listViewState = {
