@@ -31,7 +31,7 @@ const withOutputFiles = (run: (files: Array<{ path: string; content: string }>) 
 	finally {
 		for (const file of files) {
 			fs.rmSync(file.path, { force: true });
-			for (const suffix of ['success', 'check', 'write-1', 'write-2', 'write-3', 'rename-0', 'rename-1', 'rename-2', 'backup-0', 'backup-1', 'backup-2', 'rollback', 'cleanup']) {
+			for (const suffix of ['success', 'check', 'write-1', 'write-2', 'write-3', 'rename-0', 'rename-1', 'rename-2', 'backup-0', 'backup-1', 'backup-2', 'rollback', 'cleanup', 'cleanup-temp']) {
 				fs.rmSync(`${file.path}.tmp-${suffix}`, { force: true });
 				fs.rmSync(`${file.path}.bak-${suffix}`, { force: true });
 			}
