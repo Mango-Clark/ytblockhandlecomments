@@ -1,5 +1,15 @@
 import { t, type PairOutcome, type PairRunStats } from './02-utils-i18n.ts';
 
+export type ManagerPairController = {
+	busy: boolean;
+	dispose(): void;
+};
+
+export const createManagerPairController = (): ManagerPairController => ({
+	busy: false,
+	dispose() { this.busy = false; }
+});
+
 export const getPairOutcomeLabel = (code: PairOutcome | string): string => {
 	if (code === 'created') return t('pairOutcomeCreated');
 	if (code === 'updated') return t('pairOutcomeUpdated');

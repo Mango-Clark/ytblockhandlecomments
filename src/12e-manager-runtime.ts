@@ -22,10 +22,10 @@ import {
 	type PairRunStats
 } from './02-utils-i18n.ts';
 import { Dialog, Toast } from './08-toast-dialog.ts';
-import { getManagerPageSize, renderManagerPagination } from './12a-manager-list.ts';
-import { refreshSettingsUi } from './12b-manager-settings.ts';
+import { createManagerListController, getManagerPageSize, renderManagerPagination } from './12a-manager-list.ts';
+import { createManagerApiController, refreshSettingsUi } from './12b-manager-settings.ts';
 import { createManagerExport, downloadManagerExport } from './12c-manager-export.ts';
-import { getFailedPairHandles, getPairOutcomeLabel, getPairResultItems } from './12d-manager-pairing.ts';
+import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel, getPairResultItems } from './12d-manager-pairing.ts';
 
 	/* ----------------------------------------------------------
 	 * 7. BlockListManager (UI + Import/Export)
@@ -1327,18 +1327,11 @@ import { getFailedPairHandles, getPairOutcomeLabel, getPairResultItems } from '.
 			const savedViewState = this._listViewState || {};
 			const validTypeFilters = new Set(['all', 'handle', 'id', 'regex']);
 			const validTagFilters = new Set(['handle-only', 'paired', 'stale', 'mismatch', 'unverified']);
+			const listState = createManagerListController(savedViewState, validTagFilters);
+			const apiState = createManagerApiController();
+			const pairState = createManagerPairController();
 			const wrap = document.createElement('div');
-			const selection = new Set<string>(Array.isArray(savedViewState.selection) ? savedViewState.selection : []);
-			const tagFilters = new Set<string>((Array.isArray(savedViewState.tagFilters) ? savedViewState.tagFilters : [])
-				.filter((code: string) => validTagFilters.has(code)));
-			const expandedRegexKeys = new Set();
-			const showAllRegexKeys = new Map();
-			let busy = false;
-			let apiTestBusy = false;
-			let searchQuery = String(savedViewState.searchQuery || '');
-			let searchRenderFrame: number | null = null;
-			let isComposingSearch = false;
-			const isBusy = () => busy;
+			const isBusy = () => pairState.busy;
 
 			const versionSection = document.createElement('section');
 			versionSection.className = 'tm-section';
@@ -1479,7 +1472,7 @@ import { getFailedPairHandles, getPairOutcomeLabel, getPairResultItems } from '.
 			const searchInput = document.createElement('input');
 			searchInput.type = 'search';
 			searchInput.dataset.managerFilter = 'search';
-			searchInput.value = searchQuery;
+			searchInput.value = listState.searchQuery;
 			const searchNote = document.createElement('div');
 			searchNote.className = 'tm-search-note';
 			const typeSelect = document.createElement('select');
@@ -1536,10 +1529,10 @@ import { getFailedPairHandles, getPairOutcomeLabel, getPairResultItems } from '.
 				const input = document.createElement('input');
 				input.type = 'checkbox';
 				input.dataset.managerTag = code;
-				input.checked = tagFilters.has(code);
+				input.checked = listState.tagFilters.has(code);
 				input.addEventListener('change', () => {
-					if (input.checked) tagFilters.add(code);
-					else tagFilters.delete(code);
+					if (input.checked) listState.tagFilters.add(code);
+					else listState.tagFilters.delete(code);
 					persistViewState();
 					invalidateViewState();
 					renderList();
@@ -1578,24 +1571,15 @@ import { getFailedPairHandles, getPairOutcomeLabel, getPairResultItems } from '.
 			toolbar.append(topToolbarRow, middleToolbarRow, bottomToolbarRow);
 			const list = Object.assign(document.createElement('ul'), { className: 'tm-block-list' });
 			const pagination = document.createElement('div');
-			let page = Math.max(0, Math.floor(Number(savedViewState.page) || 0));
-			let lastListFilter = '';
 			listSection.append(listTitle, toolbar, list, pagination);
 			wrap.append(versionSection, settingsSection, apiSection, pairSection, form, listSection);
-
-			const regexMatchCache = new Map<string, RegexMatchCacheEntry>();
-			const rowRefs = new Map<string, { checkbox: HTMLInputElement }>();
-			let searchIndexCache: { itemsRevision: string; index: ReturnType<typeof buildManagerSearchIndex> } | null = null;
-			let baseViewStateCache: BlockListBaseViewState | null = null;
-			let viewStateCache: BlockListViewState | null = null;
-			let selectionVersion = 0;
 			const persistViewState = (scrollTop = this._listViewState?.scrollTop || 0) => {
 				this._listViewState = {
-					searchQuery,
-					page,
+					searchQuery: listState.searchQuery,
+					page: listState.page,
 					typeFilter: typeSelect.value || 'all',
-					tagFilters: Array.from(tagFilters),
-					selection: Array.from(selection),
+					tagFilters: Array.from(listState.tagFilters),
+					selection: Array.from(listState.selection),
 					scrollTop: Math.max(0, Number(scrollTop) || 0)
 				};
 			};
@@ -1604,28 +1588,28 @@ import { getFailedPairHandles, getPairOutcomeLabel, getPairResultItems } from '.
 				? this.app.pairService.getHandleStatus(item.value, blockedIds).code
 				: null;
 			const markSelectionChanged = () => {
-				selectionVersion += 1;
-				viewStateCache = null;
+				listState.selectionVersion += 1;
+				listState.viewStateCache = null;
 				persistViewState();
 			};
 			const setSelectionValue = (key: string | null, selected: boolean) => {
 				if (!key) return false;
 				if (selected) {
-					if (selection.has(key)) return false;
-					selection.add(key);
+					if (listState.selection.has(key)) return false;
+					listState.selection.add(key);
 					markSelectionChanged();
 					return true;
 				}
-				if (!selection.has(key)) return false;
-				selection.delete(key);
+				if (!listState.selection.has(key)) return false;
+				listState.selection.delete(key);
 				markSelectionChanged();
 				return true;
 			};
 			const invalidateViewState = ({ clearRegex = false } = {}) => {
-				baseViewStateCache = null;
-				viewStateCache = null;
-				rowRefs.clear();
-				if (clearRegex) regexMatchCache.clear();
+				listState.baseViewStateCache = null;
+				listState.viewStateCache = null;
+				listState.rowRefs.clear();
+				if (clearRegex) listState.regexMatchCache.clear();
 			};
 			const getItemsRevision = (items: BlockItem[]) => this.app.storage._revision !== undefined ? String(this.app.storage._revision) : (items || [])
 				.map(item => `${item.type}:${item.value}:${item.flags || ''}`)
@@ -1651,9 +1635,9 @@ import { getFailedPairHandles, getPairOutcomeLabel, getPairResultItems } from '.
 					.map((item: BlockItem): [string | null, BlockItem] => [getItemKey(item), item])
 					.filter((entry: [string | null, BlockItem]): entry is [string, BlockItem] => !!entry[0]));
 				let changed = false;
-				for (const key of Array.from(selection)) {
+				for (const key of Array.from(listState.selection)) {
 					if (!valid.has(key)) {
-						selection.delete(key);
+						listState.selection.delete(key);
 						changed = true;
 					}
 				}
@@ -1667,19 +1651,19 @@ import { getFailedPairHandles, getPairOutcomeLabel, getPairResultItems } from '.
 					.map((item: BlockItem): [string | null, BlockItem] => [getItemKey(item), item])
 					.filter((entry: [string | null, BlockItem]): entry is [string, BlockItem] => !!entry[0]));
 				const handleItems = allItems.filter((item: BlockItem) => item.type === 'handle');
-				if (!searchIndexCache || searchIndexCache.itemsRevision !== itemsRevision) {
-					searchIndexCache = { itemsRevision, index: buildManagerSearchIndex(allItems) };
+				if (!listState.searchIndexCache || listState.searchIndexCache.itemsRevision !== itemsRevision) {
+					listState.searchIndexCache = { itemsRevision, index: buildManagerSearchIndex(allItems) };
 					const metrics = window.__ytCommentBlockerPerf ||= {};
 					metrics.managerIndexBuilds = (metrics.managerIndexBuilds || 0) + 1;
 				}
-				const searchIndex = searchIndexCache.index;
-				const searched = searchManagerIndex(searchIndex, searchQuery);
+				const searchIndex = listState.searchIndexCache.index;
+				const searched = searchManagerIndex(searchIndex, listState.searchQuery);
 				const typeValue = typeSelect.value || 'all';
 				const visibleItems = searched.filter((item: BlockItem) => {
 					if (typeValue !== 'all' && item.type !== typeValue) return false;
-					if (!tagFilters.size) return true;
+					if (!listState.tagFilters.size) return true;
 					if (item.type !== 'handle') return false;
-					return tagFilters.has(getStatusCode(item, blockedIds));
+					return listState.tagFilters.has(getStatusCode(item, blockedIds));
 				});
 				const visibleKeys = visibleItems.map(getItemKey).filter(isNonNull);
 				return {
@@ -1688,8 +1672,8 @@ import { getFailedPairHandles, getPairOutcomeLabel, getPairResultItems } from '.
 						getPairRevision(handleItems, blockedIds),
 						String(this.app.settings.isHandleCaseSensitive()),
 						(typeSelect.value || 'all'),
-						String(searchQuery || '').trim().toLowerCase(),
-						Array.from(tagFilters).sort().join(',')
+						String(listState.searchQuery || '').trim().toLowerCase(),
+						Array.from(listState.tagFilters).sort().join(',')
 					].join('|'),
 					itemsRevision,
 					allItems,
@@ -1702,31 +1686,31 @@ import { getFailedPairHandles, getPairOutcomeLabel, getPairResultItems } from '.
 				};
 			};
 			const computeViewState = (force = false): BlockListViewState => {
-				if (force || !baseViewStateCache) baseViewStateCache = buildBaseViewState();
-				const baseViewState = baseViewStateCache;
+				if (force || !listState.baseViewStateCache) listState.baseViewStateCache = buildBaseViewState();
+				const baseViewState = listState.baseViewStateCache;
 				pruneSelection(baseViewState.keyedItems);
 				if (
 					!force &&
-					viewStateCache &&
-					viewStateCache.baseSignature === baseViewState.signature &&
-					viewStateCache.selectionVersion === selectionVersion
+					listState.viewStateCache &&
+					listState.viewStateCache.baseSignature === baseViewState.signature &&
+					listState.viewStateCache.selectionVersion === listState.selectionVersion
 				) {
-					return viewStateCache;
+					return listState.viewStateCache;
 				}
-				const selectedItems = Array.from(selection)
+				const selectedItems = Array.from(listState.selection)
 					.map(key => baseViewState.keyedItems.get(key))
 					.filter(isNonNull);
 				const selectedHandleCount = selectedItems.filter(item => item.type === 'handle').length;
-				const selectedVisibleCount = baseViewState.visibleKeys.filter(key => selection.has(key)).length;
-				viewStateCache = {
+				const selectedVisibleCount = baseViewState.visibleKeys.filter((key: string) => listState.selection.has(key)).length;
+				listState.viewStateCache = {
 					...baseViewState,
 					baseSignature: baseViewState.signature,
-					selectionVersion,
+					selectionVersion: listState.selectionVersion,
 					selectedItems,
 					selectedHandleCount,
 					selectedVisibleCount
 				};
-				return viewStateCache;
+				return listState.viewStateCache;
 			};
 			const getRegexMatchState = (regexItem: BlockItem, viewState: BlockListViewState, mode = 'count'): RegexMatchCacheEntry => {
 				if (!regexItem || regexItem.type !== 'regex') {
@@ -1742,7 +1726,7 @@ import { getFailedPairHandles, getPairOutcomeLabel, getPairResultItems } from '.
 					viewState?.itemsRevision || '',
 					String(this.app.settings.isHandleCaseSensitive())
 				].join('|');
-				let entry = regexMatchCache.get(cacheKey);
+				let entry = listState.regexMatchCache.get(cacheKey);
 				if (!entry) {
 					entry = {
 						revision: viewState?.itemsRevision || '',
@@ -1750,8 +1734,8 @@ import { getFailedPairHandles, getPairOutcomeLabel, getPairResultItems } from '.
 						matchCount: null,
 						matches: null
 					};
-					regexMatchCache.set(cacheKey, entry);
-					if (regexMatchCache.size > 100) regexMatchCache.delete(regexMatchCache.keys().next().value!);
+					listState.regexMatchCache.set(cacheKey, entry);
+					if (listState.regexMatchCache.size > 100) listState.regexMatchCache.delete(listState.regexMatchCache.keys().next().value!);
 				}
 				if (mode === 'full' && Array.isArray(entry.matches)) return entry;
 				if (mode === 'count' && typeof entry.matchCount === 'number') return entry;
@@ -1779,8 +1763,8 @@ import { getFailedPairHandles, getPairOutcomeLabel, getPairResultItems } from '.
 				return entry;
 			};
 			const syncVisibleSelection = () => {
-				for (const [itemKey, refs] of rowRefs.entries()) {
-					if (refs?.checkbox) refs.checkbox.checked = selection.has(itemKey);
+				for (const [itemKey, refs] of listState.rowRefs.entries()) {
+					if (refs?.checkbox) refs.checkbox.checked = listState.selection.has(itemKey);
 				}
 			};
 			const syncApiStatus = () => {
@@ -1788,27 +1772,27 @@ import { getFailedPairHandles, getPairOutcomeLabel, getPairResultItems } from '.
 				apiStatus.textContent = this.app.apiConfig.hasApiKey()
 					? t('apiKeyStatusSaved', this.app.apiConfig.getMaskedApiKey())
 					: t('apiKeyStatusMissing');
-				this._renderApiTestStatus(apiTestStatus, this.app.apiConfig.getLastTestResult(), apiTestBusy);
-				apiProgress.hidden = !apiTestBusy;
+				this._renderApiTestStatus(apiTestStatus, this.app.apiConfig.getLastTestResult(), apiState.busy);
+				apiProgress.hidden = !apiState.busy;
 			};
 			const syncActionState = (viewState = computeViewState()) => {
 				const hasKey = this.app.apiConfig.hasApiKey();
 				const pairBulk = bulkSelect.value === 'create' || bulkSelect.value === 'update';
-				createBtn.disabled = busy || !hasKey;
-				updateBtn.disabled = busy || !hasKey;
-				createBtn.textContent = busy ? t('pairWorking') : t('pairCreate');
-				updateBtn.textContent = busy ? t('pairWorking') : t('pairUpdate');
-				pairProgress.hidden = !busy;
-				testApiBtn.disabled = apiTestBusy || !hasKey;
-				testApiBtn.textContent = apiTestBusy ? t('apiKeyTestRunning') : t('apiKeyTest');
-				masterToggle.disabled = busy || !viewState.visibleKeys.length;
+				createBtn.disabled = pairState.busy || !hasKey;
+				updateBtn.disabled = pairState.busy || !hasKey;
+				createBtn.textContent = pairState.busy ? t('pairWorking') : t('pairCreate');
+				updateBtn.textContent = pairState.busy ? t('pairWorking') : t('pairUpdate');
+				pairProgress.hidden = !pairState.busy;
+				testApiBtn.disabled = apiState.busy || !hasKey;
+				testApiBtn.textContent = apiState.busy ? t('apiKeyTestRunning') : t('apiKeyTest');
+				masterToggle.disabled = pairState.busy || !viewState.visibleKeys.length;
 				masterToggle.checked = !!viewState.visibleKeys.length && viewState.selectedVisibleCount === viewState.visibleKeys.length;
 				masterToggle.indeterminate = viewState.selectedVisibleCount > 0 && viewState.selectedVisibleCount < viewState.visibleKeys.length;
-				executeBtn.disabled = busy || !selection.size || (pairBulk && (!hasKey || !viewState.selectedHandleCount));
-				clearSelectionBtn.disabled = busy || !selection.size;
-				bulkSelect.disabled = busy;
+				executeBtn.disabled = pairState.busy || !listState.selection.size || (pairBulk && (!hasKey || !viewState.selectedHandleCount));
+				clearSelectionBtn.disabled = pairState.busy || !listState.selection.size;
+				bulkSelect.disabled = pairState.busy;
 				counter.textContent = t('pairResultSummary', {
-					selected: selection.size,
+					selected: listState.selection.size,
 					visible: viewState.visibleItems.length,
 					total: viewState.allItems.length
 				});
@@ -1841,41 +1825,41 @@ import { getFailedPairHandles, getPairOutcomeLabel, getPairResultItems } from '.
 				syncActionState(computeViewState());
 			};
 			const renderList = (viewState = computeViewState()) => {
-				const filterKey = JSON.stringify([searchQuery, typeSelect.value, Array.from(tagFilters).sort()]);
-				if (lastListFilter && lastListFilter !== filterKey) page = 0;
-				lastListFilter = filterKey;
-				page = this._renderPagination(pagination, page, viewState.visibleItems.length, nextPage => {
-					page = nextPage;
+				const filterKey = JSON.stringify([listState.searchQuery, typeSelect.value, Array.from(listState.tagFilters).sort()]);
+				if (listState.lastListFilter && listState.lastListFilter !== filterKey) listState.page = 0;
+				listState.lastListFilter = filterKey;
+				listState.page = this._renderPagination(pagination, listState.page, viewState.visibleItems.length, nextPage => {
+					listState.page = nextPage;
 					renderList();
 					pagination.querySelector<HTMLButtonElement>(nextPage === 0 ? '[data-action="next-page"]' : '[data-action="previous-page"]')?.focus();
 				});
 				persistViewState();
 				listTitle.textContent = t('manageTitle', viewState.allItems.length);
-				rowRefs.clear();
+				listState.rowRefs.clear();
 				if (!viewState.allItems.length || !viewState.visibleItems.length) {
 					const li = document.createElement('li');
 					li.className = 'tm-list-empty';
 					li.textContent = viewState.allItems.length
-						? (searchQuery ? t('searchNoMatches') : t('noFilteredEntries'))
+						? (listState.searchQuery ? t('searchNoMatches') : t('noFilteredEntries'))
 						: t('noEntries');
 					list.replaceChildren(li);
 					syncActionState(viewState);
 					return;
 				}
 				const rows: HTMLLIElement[] = [];
-				for (const item of viewState.visibleItems.slice(page * this._getPageSize(), (page + 1) * this._getPageSize())) {
+				for (const item of viewState.visibleItems.slice(listState.page * this._getPageSize(), (listState.page + 1) * this._getPageSize())) {
 					const itemKey = getItemKey(item);
 					if (!itemKey) continue;
 					const li = document.createElement('li');
 					const checkbox = document.createElement('input');
 					checkbox.type = 'checkbox';
 					checkbox.className = 'tm-item-check';
-					checkbox.checked = selection.has(itemKey);
+					checkbox.checked = listState.selection.has(itemKey);
 					checkbox.addEventListener('change', () => {
 						setSelectionValue(itemKey, checkbox.checked);
 						syncActionState();
 					});
-					rowRefs.set(itemKey, { checkbox });
+					listState.rowRefs.set(itemKey, { checkbox });
 
 					const left = document.createElement('div');
 					left.className = 'tm-block-main';
@@ -1912,7 +1896,7 @@ import { getFailedPairHandles, getPairOutcomeLabel, getPairResultItems } from '.
 							const regexState = getRegexMatchState(
 								item,
 								currentViewState,
-								expandedRegexKeys.has(itemKey) ? 'full' : 'count'
+								listState.expandedRegexKeys.has(itemKey) ? 'full' : 'count'
 							);
 							const countLine = document.createElement('div');
 							countLine.className = 'tm-inline-note';
@@ -1926,8 +1910,8 @@ import { getFailedPairHandles, getPairOutcomeLabel, getPairResultItems } from '.
 								let changed = false;
 								for (const match of matchState.matches || []) {
 									const matchKey = getItemKey(match);
-									if (!matchKey || selection.has(matchKey)) continue;
-									selection.add(matchKey);
+									if (!matchKey || listState.selection.has(matchKey)) continue;
+									listState.selection.add(matchKey);
 									changed = true;
 								}
 								if (changed) markSelectionChanged();
@@ -1936,22 +1920,22 @@ import { getFailedPairHandles, getPairOutcomeLabel, getPairResultItems } from '.
 								Toast.show(t('regexSelectedMatches', matchState.matchCount || 0));
 							});
 							const toggleRegexBtn = Object.assign(document.createElement('button'), {
-								textContent: expandedRegexKeys.has(itemKey) ? t('regexCollapse') : t('regexExpand')
+								textContent: listState.expandedRegexKeys.has(itemKey) ? t('regexCollapse') : t('regexExpand')
 							});
 							toggleRegexBtn.disabled = !(regexState.matchCount || 0);
 							toggleRegexBtn.addEventListener('click', () => {
-								if (expandedRegexKeys.has(itemKey)) {
-									expandedRegexKeys.delete(itemKey);
-									showAllRegexKeys.delete(itemKey);
+								if (listState.expandedRegexKeys.has(itemKey)) {
+									listState.expandedRegexKeys.delete(itemKey);
+									listState.showAllRegexKeys.delete(itemKey);
 								} else {
-									expandedRegexKeys.add(itemKey);
-									showAllRegexKeys.set(itemKey, REGEX_MATCH_INITIAL_LIMIT);
+									listState.expandedRegexKeys.add(itemKey);
+									listState.showAllRegexKeys.set(itemKey, REGEX_MATCH_INITIAL_LIMIT);
 								}
 								renderRegexSummary();
 							});
 							regexActions.append(countLine, selectMatchesBtn, toggleRegexBtn);
 							regexSummary.replaceChildren(regexActions);
-							if (!expandedRegexKeys.has(itemKey)) return;
+							if (!listState.expandedRegexKeys.has(itemKey)) return;
 							const fullMatchState = getRegexMatchState(item, currentViewState, 'full');
 							const matches = fullMatchState.matches || [];
 							if (!matches.length) {
@@ -1963,7 +1947,7 @@ import { getFailedPairHandles, getPairOutcomeLabel, getPairResultItems } from '.
 							}
 							const listWrap = document.createElement('ul');
 							listWrap.className = 'tm-regex-match-list';
-							const storedLimit = Number(showAllRegexKeys.get(itemKey));
+							const storedLimit = Number(listState.showAllRegexKeys.get(itemKey));
 							const limit = Math.min(
 								matches.length,
 								Number.isFinite(storedLimit) && storedLimit > 0 ? storedLimit : REGEX_MATCH_INITIAL_LIMIT
@@ -1979,7 +1963,7 @@ import { getFailedPairHandles, getPairOutcomeLabel, getPairResultItems } from '.
 									textContent: t('regexShowMore', limit, matches.length)
 								});
 								showMoreBtn.addEventListener('click', () => {
-									showAllRegexKeys.set(itemKey, Math.min(matches.length, limit + REGEX_MATCH_PAGE_SIZE));
+									listState.showAllRegexKeys.set(itemKey, Math.min(matches.length, limit + REGEX_MATCH_PAGE_SIZE));
 									renderRegexSummary();
 								});
 								regexSummary.appendChild(showMoreBtn);
@@ -1988,7 +1972,7 @@ import { getFailedPairHandles, getPairOutcomeLabel, getPairResultItems } from '.
 									textContent: t('regexShowLess')
 								});
 								showLessBtn.addEventListener('click', () => {
-									showAllRegexKeys.set(itemKey, REGEX_MATCH_INITIAL_LIMIT);
+									listState.showAllRegexKeys.set(itemKey, REGEX_MATCH_INITIAL_LIMIT);
 									renderRegexSummary();
 								});
 								regexSummary.appendChild(showLessBtn);
@@ -1999,7 +1983,7 @@ import { getFailedPairHandles, getPairOutcomeLabel, getPairResultItems } from '.
 					}
 
 					const removeBtn = Object.assign(document.createElement('button'), { textContent: t('unblock') });
-					removeBtn.disabled = busy;
+					removeBtn.disabled = pairState.busy;
 					removeBtn.addEventListener('click', () => {
 						setSelectionValue(itemKey, false);
 						const removed = this.app.removeEntry(item);
@@ -2059,11 +2043,11 @@ import { getFailedPairHandles, getPairOutcomeLabel, getPairResultItems } from '.
 				bulkSelect.options[2].textContent = t('bulkUpdatePairs');
 				executeBtn.textContent = t('execute');
 				clearSelectionBtn.textContent = t('clearSelection');
-				searchNote.textContent = searchQuery ? t('searchLabel') : '';
+				searchNote.textContent = listState.searchQuery ? t('searchLabel') : '';
 				renderAll();
 			};
 			const setBusy = (nextBusy: boolean) => {
-				busy = !!nextBusy;
+				pairState.busy = !!nextBusy;
 				renderSummary();
 			};
 
@@ -2081,30 +2065,29 @@ import { getFailedPairHandles, getPairOutcomeLabel, getPairResultItems } from '.
 				this.app.refreshAfterStorageChange();
 				renderAll();
 			});
-			let searchRenderTimer: ReturnType<typeof setTimeout> | null = null;
 			searchInput.addEventListener('input', () => {
-				searchQuery = searchInput.value || '';
+				listState.searchQuery = searchInput.value || '';
 				persistViewState();
-				if (searchRenderTimer !== null) { clearTimeout(searchRenderTimer); searchRenderTimer = null; }
-				if (isComposingSearch) return;
+				if (listState.searchRenderTimer !== null) { clearTimeout(listState.searchRenderTimer); listState.searchRenderTimer = null; }
+				if (listState.isComposingSearch) return;
 				const renderSearch = () => {
-					searchRenderFrame = null;
-					searchRenderTimer = null;
+					listState.searchRenderFrame = null;
+					listState.searchRenderTimer = null;
 					invalidateViewState();
 					renderList();
 				};
 				if (this.app.settings.isLowPerformanceMode()) {
-					if (searchRenderFrame !== null) { cancelAnimationFrame(searchRenderFrame); searchRenderFrame = null; }
-					searchRenderTimer = setTimeout(renderSearch, 200);
-				} else if (searchRenderFrame === null) {
-					searchRenderFrame = -1;
+					if (listState.searchRenderFrame !== null) { cancelAnimationFrame(listState.searchRenderFrame); listState.searchRenderFrame = null; }
+					listState.searchRenderTimer = setTimeout(renderSearch, 200);
+				} else if (listState.searchRenderFrame === null) {
+					listState.searchRenderFrame = -1;
 					const frame = requestAnimationFrame(renderSearch);
-					if (searchRenderFrame === -1) searchRenderFrame = frame;
+					if (listState.searchRenderFrame === -1) listState.searchRenderFrame = frame;
 				}
 			});
-			searchInput.addEventListener('compositionstart', () => { isComposingSearch = true; });
+			searchInput.addEventListener('compositionstart', () => { listState.isComposingSearch = true; });
 			searchInput.addEventListener('compositionend', () => {
-				isComposingSearch = false;
+				listState.isComposingSearch = false;
 				searchInput.dispatchEvent(new Event('input'));
 			});
 			typeSelect.addEventListener('change', () => {
@@ -2113,10 +2096,10 @@ import { getFailedPairHandles, getPairOutcomeLabel, getPairResultItems } from '.
 				renderList();
 			});
 			resetFiltersBtn.addEventListener('click', () => {
-				searchQuery = '';
+				listState.searchQuery = '';
 				searchInput.value = '';
 				typeSelect.value = 'all';
-				tagFilters.clear();
+				listState.tagFilters.clear();
 				tagInputs.forEach(({ input }) => { input.checked = false; });
 				persistViewState();
 				invalidateViewState();
@@ -2130,11 +2113,11 @@ import { getFailedPairHandles, getPairOutcomeLabel, getPairResultItems } from '.
 					const key = getItemKey(item);
 					if (!key) continue;
 					if (masterToggle.checked) {
-						if (selection.has(key)) continue;
-						selection.add(key);
+						if (listState.selection.has(key)) continue;
+						listState.selection.add(key);
 						changed = true;
-					} else if (selection.has(key)) {
-						selection.delete(key);
+					} else if (listState.selection.has(key)) {
+						listState.selection.delete(key);
 						changed = true;
 					}
 				}
@@ -2143,8 +2126,8 @@ import { getFailedPairHandles, getPairOutcomeLabel, getPairResultItems } from '.
 				syncActionState();
 			});
 			clearSelectionBtn.addEventListener('click', () => {
-				if (!selection.size) return;
-				selection.clear();
+				if (!listState.selection.size) return;
+				listState.selection.clear();
 				markSelectionChanged();
 				syncVisibleSelection();
 				syncActionState();
@@ -2156,14 +2139,17 @@ import { getFailedPairHandles, getPairOutcomeLabel, getPairResultItems } from '.
 				Toast.show(this.app.apiConfig.getLastSaveError() ? t('storageSaveFailed') : t('apiKeySaved'));
 			});
 			testApiBtn.addEventListener('click', async () => {
-				apiTestBusy = true;
+				const operation = listState.beginAsync();
+				apiState.busy = true;
 				renderSummary();
 				try {
 					const result = await this.app.testApiKey();
-					Toast.show(t('apiKeyTestResult', getApiTestCategoryLabel(result.category), result.message, result.httpStatus ? String(result.httpStatus) : ''), 3200);
+					if (listState.isCurrent(operation)) Toast.show(t('apiKeyTestResult', getApiTestCategoryLabel(result.category), result.message, result.httpStatus ? String(result.httpStatus) : ''), 3200);
 				} catch (error) {
-					Toast.show(t('operationFailed', error instanceof Error ? error.message : String(error)), 3200);
-				} finally { apiTestBusy = false; renderSummary(); }
+					if (listState.isCurrent(operation)) Toast.show(t('operationFailed', error instanceof Error ? error.message : String(error)), 3200);
+				} finally {
+					if (listState.isCurrent(operation)) { apiState.busy = false; renderSummary(); }
+				}
 			});
 			clearApiBtn.addEventListener('click', () => {
 				this.app.apiConfig.clearApiKey();
@@ -2172,22 +2158,24 @@ import { getFailedPairHandles, getPairOutcomeLabel, getPairResultItems } from '.
 				Toast.show(this.app.apiConfig.getLastSaveError() ? t('storageSaveFailed') : t('apiKeyCleared'));
 			});
 			createBtn.addEventListener('click', async () => {
+				const operation = listState.beginAsync();
 				setBusy(true);
 				try {
 					const stats = await this.app.runPairUpdate('create');
-					Toast.show(t('pairResult', stats), 3200);
+					if (listState.isCurrent(operation)) Toast.show(t('pairResult', stats), 3200);
 				} catch (error) {
-					Toast.show(t('operationFailed', error instanceof Error ? error.message : String(error)), 3200);
-				} finally { setBusy(false); renderAll(); }
+					if (listState.isCurrent(operation)) Toast.show(t('operationFailed', error instanceof Error ? error.message : String(error)), 3200);
+				} finally { if (listState.isCurrent(operation)) { setBusy(false); renderAll(); } }
 			});
 			updateBtn.addEventListener('click', async () => {
+				const operation = listState.beginAsync();
 				setBusy(true);
 				try {
 					const stats = await this.app.runPairUpdate('update');
-					Toast.show(t('pairResult', stats), 3200);
+					if (listState.isCurrent(operation)) Toast.show(t('pairResult', stats), 3200);
 				} catch (error) {
-					Toast.show(t('operationFailed', error instanceof Error ? error.message : String(error)), 3200);
-				} finally { setBusy(false); renderAll(); }
+					if (listState.isCurrent(operation)) Toast.show(t('operationFailed', error instanceof Error ? error.message : String(error)), 3200);
+				} finally { if (listState.isCurrent(operation)) { setBusy(false); renderAll(); } }
 			});
 			executeBtn.addEventListener('click', async () => {
 				const selectedItems = computeViewState().selectedItems;
@@ -2195,7 +2183,7 @@ import { getFailedPairHandles, getPairOutcomeLabel, getPairResultItems } from '.
 				if (bulkSelect.value === 'delete') {
 					if (!this.app.removeEntries(selectedItems)) { Toast.show(t('storageSaveFailed')); return; }
 					const removedCount = selectedItems.length;
-					selection.clear();
+					listState.selection.clear();
 					markSelectionChanged();
 					renderAll();
 					Toast.show(t('bulkDeleteResult', removedCount));
@@ -2207,12 +2195,13 @@ import { getFailedPairHandles, getPairOutcomeLabel, getPairResultItems } from '.
 					return;
 				}
 				setBusy(true);
+				const operation = listState.beginAsync();
 				try {
 					const stats = await this.app.runPairUpdate(bulkSelect.value, handles);
-					Toast.show(t('pairResult', stats), 3200);
+					if (listState.isCurrent(operation)) Toast.show(t('pairResult', stats), 3200);
 				} catch (error) {
-					Toast.show(t('operationFailed', error instanceof Error ? error.message : String(error)), 3200);
-				} finally { setBusy(false); renderAll(); }
+					if (listState.isCurrent(operation)) Toast.show(t('operationFailed', error instanceof Error ? error.message : String(error)), 3200);
+				} finally { if (listState.isCurrent(operation)) { setBusy(false); renderAll(); } }
 			});
 			openAutomationBtn.addEventListener('click', () => {
 				Dialog.closeAll('navigate');
@@ -2235,18 +2224,11 @@ import { getFailedPairHandles, getPairOutcomeLabel, getPairResultItems } from '.
 					if (ctx.reason === 'storage') renderAll();
 					else applyLanguage();
 				},
-				onBeforeClose: (value, dialog) => {
-					if (searchRenderFrame !== null) {
-						cancelAnimationFrame(searchRenderFrame);
-						searchRenderFrame = null;
-					}
-					if (searchRenderTimer !== null) clearTimeout(searchRenderTimer);
-					persistViewState(dialog.querySelector('.tm-content')?.scrollTop || 0);
-					rowRefs.clear();
-					regexMatchCache.clear();
-					searchIndexCache = null;
-					baseViewStateCache = null;
-					viewStateCache = null;
+					onBeforeClose: (value, dialog) => {
+						persistViewState(dialog.querySelector('.tm-content')?.scrollTop || 0);
+						apiState.dispose();
+						pairState.dispose();
+						listState.dispose();
 					return value;
 				}
 			});

@@ -121,6 +121,16 @@ const ensureDocumentTemplates = (): void => {
 	const expected = [...documentOutputs].sort();
 	if (actual.join('\n') !== expected.join('\n')) throw new Error(`Unknown or missing document template in src/docs/: ${actual.join(', ')}`);
 };
+
+const writeGeneratedFile = (file: GeneratedFile): void => {
+	const temporaryPath = `${file.path}.tmp-${process.pid}`;
+	try {
+		fs.writeFileSync(temporaryPath, file.content, 'utf8');
+		fs.renameSync(temporaryPath, file.path);
+	} finally {
+		if (fs.existsSync(temporaryPath)) fs.rmSync(temporaryPath, { force: true });
+	}
+};
 export const readDocumentTemplates = (version: string): GeneratedFile[] => {
 	ensureDocumentTemplates();
 	return documentOutputs.map(output => {
@@ -151,7 +161,7 @@ const main = async (): Promise<void> => {
 		}
 		return;
 	}
-	for (const file of generatedFiles) fs.writeFileSync(file.path, file.content, 'utf8');
+	for (const file of generatedFiles) writeGeneratedFile(file);
 };
 
 if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve('scripts/build-userscript.ts')) {

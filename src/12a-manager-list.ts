@@ -1,5 +1,67 @@
 import { t } from './02-utils-i18n.ts';
 
+export type ManagerListState = {
+	selection: Set<string>;
+	tagFilters: Set<string>;
+	expandedRegexKeys: Set<string>;
+	showAllRegexKeys: Map<string, number>;
+	searchQuery: string;
+	searchRenderFrame: number | null;
+	isComposingSearch: boolean;
+	searchRenderTimer: ReturnType<typeof setTimeout> | null;
+	page: number;
+	lastListFilter: string;
+	regexMatchCache: Map<string, any>;
+	rowRefs: Map<string, { checkbox: HTMLInputElement }>;
+	searchIndexCache: any;
+	baseViewStateCache: any;
+	viewStateCache: any;
+	selectionVersion: number;
+	beginAsync(): number;
+	isCurrent(operation: number): boolean;
+	dispose(): void;
+};
+
+export function createManagerListController(savedViewState: any, validTagFilters: Set<string>): ManagerListState {
+	let active = true;
+	let operationGeneration = 0;
+	const state: ManagerListState = {
+		selection: new Set<string>(Array.isArray(savedViewState?.selection) ? savedViewState.selection : []),
+		tagFilters: new Set<string>((Array.isArray(savedViewState?.tagFilters) ? savedViewState.tagFilters : [])
+			.filter((code: string) => validTagFilters.has(code))),
+		expandedRegexKeys: new Set(),
+		showAllRegexKeys: new Map(),
+		searchQuery: String(savedViewState?.searchQuery || ''),
+		searchRenderFrame: null,
+		isComposingSearch: false,
+		searchRenderTimer: null,
+		page: Math.max(0, Math.floor(Number(savedViewState?.page) || 0)),
+		lastListFilter: '',
+		regexMatchCache: new Map(),
+		rowRefs: new Map(),
+		searchIndexCache: null,
+		baseViewStateCache: null,
+		viewStateCache: null,
+		selectionVersion: 0,
+		beginAsync() { operationGeneration += 1; return operationGeneration; },
+		isCurrent(operation: number) { return active && operation === operationGeneration; },
+		dispose() {
+			active = false;
+			operationGeneration += 1;
+			if (state.searchRenderFrame !== null) cancelAnimationFrame(state.searchRenderFrame);
+			if (state.searchRenderTimer !== null) clearTimeout(state.searchRenderTimer);
+			state.searchRenderFrame = null;
+			state.searchRenderTimer = null;
+			state.regexMatchCache.clear();
+			state.rowRefs.clear();
+			state.searchIndexCache = null;
+			state.baseViewStateCache = null;
+			state.viewStateCache = null;
+		}
+	};
+	return state;
+}
+
 export const getManagerPageSize = (app: any): number => app?.settings?.isLowPerformanceMode?.() ? 50 : 100;
 
 export function renderManagerPagination(container: HTMLElement, page: number, total: number, pageSize: number, onChange: (page: number) => void): number {

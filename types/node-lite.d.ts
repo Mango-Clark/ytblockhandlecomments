@@ -12,6 +12,7 @@ declare const module: {
 declare const process: {
 	argv: string[];
 	execPath: string;
+	pid: number;
 	exit(code?: number): never;
 };
 
@@ -33,6 +34,8 @@ declare module 'node:fs' {
 		readFileSync(path: string, encoding: string): string;
 		readdirSync(path: string, options: { withFileTypes: true }): DirectoryEntry[];
 		writeFileSync(path: string, data: string, encoding: string): void;
+		renameSync(oldPath: string, newPath: string): void;
+		rmSync(path: string, options?: { force?: boolean }): void;
 	};
 	export default fs;
 }

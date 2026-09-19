@@ -1103,3 +1103,35 @@ test('api busy state shows a loading bar', () => {
 	assert.equal(testButton.textContent, 'API 키를 테스트하는 중입니다...');
 	resolveTest({ category: 'ok', message: 'ok', httpStatus: 200 });
 });
+
+test('closing the list invalidates a pending API result before reopening', async () => {
+	const { api, document } = loadUserscript();
+	const settings = new api.AppSettingsStorage();
+	const storage = new api.StorageV2(settings);
+	const pairStore = new api.PairMetaStorage(settings);
+	const apiConfig = new api.ApiConfigStorage();
+	let resolveTest: any = null;
+	const manager = new api.BlockListManager({
+		settings,
+		storage,
+		pairStore,
+		apiConfig,
+		pairService: new api.PairService(storage, pairStore, apiConfig, settings),
+		getLastPairRunResult: () => null,
+		refreshAfterStorageChange: () => {},
+		testApiKey: () => new Promise(resolve => { resolveTest = resolve; })
+	});
+
+	manager.openList();
+	document.querySelectorAll('button').find((button: any) => button.textContent === 'API 키 테스트').click();
+	api.Dialog.closeAll('close');
+	resolveTest({ category: 'ok', message: 'late result', httpStatus: 200 });
+	await Promise.resolve();
+	await Promise.resolve();
+
+	manager.openList();
+	const progress = document.querySelector('.tm-progress');
+	assert.equal(progress.hidden, true);
+	assert.equal(document.querySelectorAll('.tm-dialog').length, 1);
+	api.Dialog.closeAll();
+});
