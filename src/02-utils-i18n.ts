@@ -24,6 +24,7 @@ import { I18N_KO } from './i18n/ko.ts';
 		uid?: string;
 		resolvedUid?: string;
 		message?: string;
+		reason?: 'timeout' | 'cancelled' | 'network';
 	};
 	export type PairRunStats = {
 		created: number;
@@ -44,7 +45,7 @@ import { I18N_KO } from './i18n/ko.ts';
 		unverified: number;
 		pairNeeded: number;
 	};
-	export type ApiTestCategory = 'ok' | 'invalid' | 'quota' | 'forbidden' | 'network' | 'unknown';
+	export type ApiTestCategory = 'ok' | 'invalid' | 'quota' | 'forbidden' | 'network' | 'timeout' | 'cancelled' | 'unknown';
 	export type ApiTestResult = {
 		checkedAt: number;
 		ok: boolean;
@@ -389,6 +390,8 @@ import { I18N_KO } from './i18n/ko.ts';
 			case 'quota': return t('apiKeyTestQuota');
 			case 'forbidden': return t('apiKeyTestForbidden');
 			case 'network': return t('apiKeyTestNetwork');
+			case 'timeout': return t('apiKeyTestTimeout');
+			case 'cancelled': return t('apiKeyTestCancelled');
 			default: return t('apiKeyTestUnknown');
 		}
 	};

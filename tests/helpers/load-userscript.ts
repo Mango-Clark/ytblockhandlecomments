@@ -82,6 +82,7 @@ export function loadUserscript(options: LoadOptions = {}) {
 		navigator: { language: options.language || 'ko-KR' },
 		URL,
 		URLSearchParams,
+		AbortController,
 		MutationObserver: FakeMutationObserver,
 		IntersectionObserver: FakeIntersectionObserver,
 		performance: {

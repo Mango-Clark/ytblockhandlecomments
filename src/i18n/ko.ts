@@ -111,6 +111,8 @@ import type { I18nBundle } from '../02-utils-i18n.ts';
 			apiKeyTestQuota: 'quota 초과',
 			apiKeyTestForbidden: '권한 거부',
 			apiKeyTestNetwork: '네트워크 실패',
+			apiKeyTestTimeout: '시간 초과',
+			apiKeyTestCancelled: '취소됨',
 			apiKeyTestUnknown: '알 수 없음',
 			apiQuotaGuidanceTitle: 'Quota 안내',
 			apiQuotaGuidance: ({ count, reset }) =>
@@ -169,6 +171,8 @@ import type { I18nBundle } from '../02-utils-i18n.ts';
 			pairResultSummary: ({ selected, visible, total }) => `선택 ${selected} / 표시 ${visible} / 전체 ${total}`,
 			pairLookupFailed: 'UID 조회 실패',
 			pairLookupNoUid: 'UID를 찾지 못했습니다.',
+			pairLookupTimeout: 'UID 조회 시간이 초과되었습니다.',
+			pairLookupCancelled: 'UID 조회가 취소되었습니다.',
 			handleCaseLabel: 'Handle 대소문자 구분',
 			handleCaseHelp: '꺼져 있으면 소문자 기준으로 비교하고, 켜져 있으면 정확한 대소문자로 비교합니다.',
 			handleCaseLegacy: '기존 handle은 소문자로 저장됐을 수 있어 exact 보장은 새로 추가하거나 다시 저장한 항목부터 적용됩니다.',

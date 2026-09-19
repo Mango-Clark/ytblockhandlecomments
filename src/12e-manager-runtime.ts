@@ -880,6 +880,8 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 
 			let apiTestBusy = false;
 			let pairBusy = false;
+			let disposed = false;
+			let operationGeneration = 0;
 			const renderApiStatus = () => {
 				const hasKey = this.app.apiConfig.hasApiKey();
 				apiInput.value = this.app.apiConfig.getApiKey();
@@ -1282,15 +1284,20 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 				Toast.show(result.ok ? t('apiKeySaved') : t('storageSaveFailed'));
 			});
 			testApiBtn.addEventListener('click', async () => {
+				const operationId = ++operationGeneration;
 				apiTestBusy = true;
 				renderAll();
 				try {
-					const operation = await this.app.testApiKey();
-					if (!operation.ok) Toast.show(t('storageSaveFailed'), 3200);
-					else Toast.show(t('apiKeyTestResult', getApiTestCategoryLabel(operation.result.category), operation.result.message, operation.result.httpStatus ? String(operation.result.httpStatus) : ''), 3200);
+					const result = await this.app.testApiKey();
+					if (!disposed && operationGeneration === operationId) {
+						if (!result.ok) Toast.show(t('storageSaveFailed'), 3200);
+						else Toast.show(t('apiKeyTestResult', getApiTestCategoryLabel(result.result.category), result.result.message, result.result.httpStatus ? String(result.result.httpStatus) : ''), 3200);
+					}
 				} catch (error) {
-					Toast.show(t('operationFailed', error instanceof Error ? error.message : String(error)), 3200);
-				} finally { apiTestBusy = false; renderAll(); }
+					if (!disposed && operationGeneration === operationId) Toast.show(t('operationFailed', error instanceof Error ? error.message : String(error)), 3200);
+				} finally {
+					if (!disposed && operationGeneration === operationId) { apiTestBusy = false; renderAll(); }
+				}
 			});
 			clearApiBtn.addEventListener('click', () => {
 				const result = this.app.apiConfig.clearApiKey();
@@ -1299,14 +1306,17 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 				Toast.show(result.ok ? t('apiKeyCleared') : t('storageSaveFailed'));
 			});
 			const runPair = async (mode: string) => {
+				const operationId = ++operationGeneration;
 				pairBusy = true;
 				applyLanguage();
 				try {
 					const stats = await this.app.runPairUpdate(mode);
-					Toast.show(t('pairResult', stats), 3200);
+					if (!disposed && operationGeneration === operationId) Toast.show(t('pairResult', stats), 3200);
 				} catch (error) {
-					Toast.show(t('operationFailed', error instanceof Error ? error.message : String(error)), 3200);
-				} finally { pairBusy = false; applyLanguage(); }
+					if (!disposed && operationGeneration === operationId) Toast.show(t('operationFailed', error instanceof Error ? error.message : String(error)), 3200);
+				} finally {
+					if (!disposed && operationGeneration === operationId) { pairBusy = false; applyLanguage(); }
+				}
 			};
 			createBtn.addEventListener('click', () => runPair('create'));
 			updateBtn.addEventListener('click', () => runPair('update'));
@@ -1314,11 +1324,16 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 				title: t('settingsTitle'),
 				body,
 				buttons: [{ label: t('close'), value: false, primary: true }],
-				onRefresh: (ctx: DialogRefreshContext) => {
+					onRefresh: (ctx: DialogRefreshContext) => {
 					if (ctx.reason === 'storage') { renderPairSummary(); return; }
 					ctx.setTitle(t('settingsTitle'));
 					ctx.buttons[0].textContent = t('close');
 					applyLanguage();
+				},
+				onBeforeClose: (value: any) => {
+					disposed = true;
+					operationGeneration += 1;
+					return value;
 				}
 			});
 			const unsubscribeLogging = this.app.logger?.subscribe?.(renderLoggingState) || (() => {});

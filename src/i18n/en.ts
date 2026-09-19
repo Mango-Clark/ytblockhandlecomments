@@ -111,6 +111,8 @@ import type { I18nBundle } from '../02-utils-i18n.ts';
 			apiKeyTestQuota: 'Quota exceeded',
 			apiKeyTestForbidden: 'Forbidden',
 			apiKeyTestNetwork: 'Network failure',
+			apiKeyTestTimeout: 'Timed out',
+			apiKeyTestCancelled: 'Cancelled',
 			apiKeyTestUnknown: 'Unknown',
 			apiQuotaGuidanceTitle: 'Quota guidance',
 			apiQuotaGuidance: ({ count, reset }) =>
@@ -169,6 +171,8 @@ import type { I18nBundle } from '../02-utils-i18n.ts';
 			pairResultSummary: ({ selected, visible, total }) => `Selected ${selected} / Visible ${visible} / Total ${total}`,
 			pairLookupFailed: 'UID lookup failed',
 			pairLookupNoUid: 'Could not find a UID.',
+			pairLookupTimeout: 'UID lookup timed out.',
+			pairLookupCancelled: 'UID lookup was cancelled.',
 			handleCaseLabel: 'Handle Case Sensitive',
 			handleCaseHelp: 'Off compares normalized lowercase handles. On compares exact handle casing.',
 			handleCaseLegacy: 'Older handles may have been stored in lowercase, so exact matching is guaranteed only after re-saving or newly adding them.',

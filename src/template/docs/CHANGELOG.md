@@ -16,6 +16,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); projec
 
 ### Changed
 
+- Added bounded timeouts and run-scoped cancellation for page/API pair lookups, with separate timeout and cancellation results; closing a manager dialog detaches its UI while shared app work continues.
 - Made pair metadata converge across tabs with per-pair revisions, deletion tombstones, clear revisions, scalar conflict ordering, idempotent remote merges, and rollback on failed merged writes.
 - Made pair updates, API-test result persistence, and block-list imports report storage failures explicitly, suppress success-only side effects, and roll back partial pair mutations where possible.
 - Renamed the documentation template directory to `src/template/` and updated build and release tooling references.

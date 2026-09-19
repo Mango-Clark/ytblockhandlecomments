@@ -169,10 +169,12 @@ import { Logger } from './15-logger.ts';
 
 		runPairUpdate(mode = 'update', handles: string[] | null = null) {
 			if (this._pairRunPromise) return this._pairRunPromise;
+			const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+			this._pairRunController = controller;
 			const run = async () => {
 				const stats = mode === 'create'
-					? (handles ? await this.pairService.createPairsForHandles(handles) : await this.pairService.createMissingPairs())
-					: (handles ? await this.pairService.updatePairsForHandles(handles) : await this.pairService.updatePairs({ includeMissing: true }));
+					? (handles ? await this.pairService.createPairsForHandles(handles, { signal: controller?.signal || null }) : await this.pairService.createMissingPairs({ signal: controller?.signal || null }))
+					: (handles ? await this.pairService.updatePairsForHandles(handles, { signal: controller?.signal || null }) : await this.pairService.updatePairs({ includeMissing: true, signal: controller?.signal || null }));
 				this._lastPairRunResult = stats;
 				this.refreshAfterStorageChange();
 				this.logger[stats.failed ? 'warn' : 'info']('Pair operation completed', {
@@ -184,8 +186,15 @@ import { Logger } from './15-logger.ts';
 				});
 				return stats;
 			};
-			this._pairRunPromise = run().finally(() => { this._pairRunPromise = null; });
+			this._pairRunPromise = run().finally(() => {
+				this._pairRunPromise = null;
+				this._pairRunController = null;
+			});
 			return this._pairRunPromise;
+		}
+
+		cancelPairUpdate() {
+			this._pairRunController?.abort();
 		}
 
 		_scheduleKeywordRefresh() {

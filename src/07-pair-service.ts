@@ -18,6 +18,7 @@ import {
 
 const PAIR_LOOKUP_CONCURRENCY = 8;
 const PAIR_LOOKUP_CACHE_LIMIT = 256;
+const PAIR_LOOKUP_TIMEOUT_MS = 15000;
 
 	/* ----------------------------------------------------------
 	 * 6. Pair resolution and policy
@@ -35,6 +36,7 @@ const PAIR_LOOKUP_CACHE_LIMIT = 256;
 			this._handleLookupCache = new Map();
 			this._activeLookups = 0;
 			this._lookupWaiters = [];
+			this._lookupTimeoutMs = PAIR_LOOKUP_TIMEOUT_MS;
 		}
 		getBlockedHandles() {
 			return this.storage.all().filter((item: BlockItem) => item.type === 'handle').map((item: BlockItem) => item.value);
@@ -129,19 +131,19 @@ const PAIR_LOOKUP_CACHE_LIMIT = 256;
 		clearPairArtifacts() {
 			this.pairStore.clearPairs();
 		}
-		async createMissingPairs() {
+		async createMissingPairs(options: any = {}) {
 			const handles = this.getBlockedHandles().filter((handle: string) => {
 				const code = this.getHandleStatus(handle).code;
 				return code === 'handle-only' || code === 'unverified';
 			});
-			return this._processHandles(handles);
+			return this._processHandles(handles, options);
 		}
-		async createPairsForHandles(handles: any[], { automatic = false } = {}) {
+		async createPairsForHandles(handles: any[], { automatic = false, signal = null }: { automatic?: boolean; signal?: AbortSignal | null } = {}) {
 			const filtered = (handles || []).filter(handle => {
 				const code = this.getHandleStatus(handle).code;
 				return code === 'handle-only' || code === 'unverified';
 			});
-			return this._processHandles(filtered, { automatic });
+			return this._processHandles(filtered, { automatic, signal });
 		}
 		_shouldRefreshHandle(handle: any, { includeMissing = true } = {}) {
 			const existing = this.pairStore.getPair(handle);
@@ -152,7 +154,7 @@ const PAIR_LOOKUP_CACHE_LIMIT = 256;
 			if (status === 'handle-only') return includeMissing;
 			return status === 'stale' || status === 'mismatch' || status === 'unverified';
 		}
-		async updatePairs({ includeMissing = true } = {}): Promise<PairRunStats> {
+		async updatePairs({ includeMissing = true, signal = null }: { includeMissing?: boolean; signal?: AbortSignal | null } = {}): Promise<PairRunStats> {
 			const handles: string[] = [];
 			const skipped: PairRunItem[] = [];
 			for (const handle of this.getBlockedHandles()) {
@@ -176,18 +178,105 @@ const PAIR_LOOKUP_CACHE_LIMIT = 256;
 					items: skipped
 				};
 			}
-			const stats = await this._processHandles(handles, { update: true });
+			const stats = await this._processHandles(handles, { update: true, signal });
 			stats.skipped += skipped.length;
 			stats.items.push(...skipped);
 			return stats;
 		}
-		async updatePairsForHandles(handles: any[]) {
-			return this._processHandles(handles || [], { update: true });
+		async updatePairsForHandles(handles: any[], { signal = null }: { signal?: AbortSignal | null } = {}) {
+			return this._processHandles(handles || [], { update: true, signal });
 		}
-		async _withLookupSlot<T>(lookup: () => Promise<T>): Promise<T> {
-			while (this._activeLookups >= (this.settings?.isLowPerformanceMode?.() ? 1 : PAIR_LOOKUP_CONCURRENCY)) {
-				await new Promise<void>(resolve => this._lookupWaiters.push(resolve));
+		_lookupError(code: 'timeout' | 'cancelled', cause?: unknown) {
+			const error = new Error(code === 'timeout' ? t('pairLookupTimeout') : t('pairLookupCancelled'), { cause });
+			(error as any).code = code;
+			return error;
+		}
+		async _fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}, signal: AbortSignal | null = null) {
+			if (signal?.aborted) throw this._lookupError('cancelled');
+			let timer: ReturnType<typeof setTimeout> | null = null;
+			let timedOut = false;
+			let controller: AbortController | null = null;
+			let removeAbortListener = () => {};
+			let requestSignal = signal || undefined;
+			if (typeof AbortController !== 'undefined') {
+				controller = new AbortController();
+				requestSignal = controller.signal;
+				const abort = () => controller?.abort();
+				if (signal) {
+					signal.addEventListener('abort', abort, { once: true });
+					removeAbortListener = () => signal.removeEventListener('abort', abort);
+				}
 			}
+			const request = fetch(input, { ...init, ...(requestSignal ? { signal: requestSignal } : {}) });
+			const timeout = new Promise<never>((_, reject) => {
+				timer = setTimeout(() => {
+					timedOut = true;
+					controller?.abort();
+					reject(this._lookupError('timeout'));
+				}, this._lookupTimeoutMs);
+			});
+			try {
+				return await Promise.race([request, timeout]);
+			} catch (error) {
+				if ((error as any)?.code) throw error;
+				if (timedOut) throw this._lookupError('timeout', error);
+				if (signal?.aborted) throw this._lookupError('cancelled', error);
+				throw error;
+			} finally {
+				if (timer) clearTimeout(timer);
+				removeAbortListener();
+			}
+		}
+		async _readResponseBody(response: Response, method: 'text' | 'json', signal: AbortSignal | null = null) {
+			if (signal?.aborted) throw this._lookupError('cancelled');
+			let timer: ReturnType<typeof setTimeout> | null = null;
+			let timedOut = false;
+			let removeAbortListener = () => {};
+			let rejectCancelled: ((reason: unknown) => void) | null = null;
+			const cancelled = new Promise<never>((_, reject) => { rejectCancelled = reject; });
+			if (signal) {
+				const abort = () => {
+					void response.body?.cancel?.();
+					rejectCancelled?.(this._lookupError('cancelled'));
+				};
+				signal.addEventListener('abort', abort, { once: true });
+				removeAbortListener = () => signal.removeEventListener('abort', abort);
+			}
+			const body = response[method]();
+			const timeout = new Promise<never>((_, reject) => {
+				timer = setTimeout(() => {
+					timedOut = true;
+					void response.body?.cancel?.();
+					reject(this._lookupError('timeout'));
+				}, this._lookupTimeoutMs);
+			});
+			try {
+				return await Promise.race([body, timeout, cancelled]);
+			} catch (error) {
+				if ((error as any)?.code) throw error;
+				if (timedOut) throw this._lookupError('timeout', error);
+				if (signal?.aborted) throw this._lookupError('cancelled', error);
+				throw error;
+			} finally {
+				if (timer) clearTimeout(timer);
+				removeAbortListener();
+			}
+		}
+		async _withLookupSlot<T>(lookup: () => Promise<T>, signal: AbortSignal | null = null): Promise<T> {
+			while (this._activeLookups >= (this.settings?.isLowPerformanceMode?.() ? 1 : PAIR_LOOKUP_CONCURRENCY)) {
+				if (signal?.aborted) throw this._lookupError('cancelled');
+				await new Promise<void>((resolve, reject) => {
+					let removeAbortListener = () => {};
+					const resume = () => { removeAbortListener(); resolve(); };
+					if (signal) {
+						const abort = () => { removeAbortListener(); reject(this._lookupError('cancelled')); };
+						signal.addEventListener('abort', abort, { once: true });
+						removeAbortListener = () => signal.removeEventListener('abort', abort);
+					}
+					this._lookupWaiters.push(resume);
+				});
+			}
+			if (signal?.aborted) throw this._lookupError('cancelled');
 			this._activeLookups++;
 			try { return await lookup(); }
 			finally {
@@ -219,8 +308,20 @@ const PAIR_LOOKUP_CACHE_LIMIT = 256;
 				: this._asPersistenceResult(this.storage.setAll(items));
 			if (!result.ok) this._recordRollbackFailure(stats, result.error || 'Block list rollback failed.');
 		}
-		async _processHandles(handles: any[], { update = false, automatic = false } = {}): Promise<PairRunStats> {
-			while (this._busy) await this._idlePromise;
+		async _processHandles(handles: any[], { update = false, automatic = false, signal = null }: { update?: boolean; automatic?: boolean; signal?: AbortSignal | null } = {}): Promise<PairRunStats> {
+			while (this._busy) {
+				if (signal?.aborted) return { created: 0, refreshed: 0, mismatches: 0, failed: 0, addedIds: 0, skipped: 0, items: [] };
+				if (!signal) await this._idlePromise;
+				else await new Promise<void>((resolve, reject) => {
+					let removeAbortListener = () => {};
+					const finish = () => { removeAbortListener(); resolve(); };
+					const abort = () => { removeAbortListener(); reject(this._lookupError('cancelled')); };
+					signal.addEventListener('abort', abort, { once: true });
+					removeAbortListener = () => signal.removeEventListener('abort', abort);
+					this._idlePromise.then(finish);
+				});
+			}
+			if (signal?.aborted) return { created: 0, refreshed: 0, mismatches: 0, failed: 0, addedIds: 0, skipped: 0, items: [] };
 			this._busy = true;
 			let resolveIdle: () => void = () => {};
 			this._idlePromise = new Promise<void>(resolve => { resolveIdle = resolve; });
@@ -252,6 +353,7 @@ const PAIR_LOOKUP_CACHE_LIMIT = 256;
 				]));
 				const processNextHandle = async (worker: number) => {
 					while (nextHandleIndex < uniqueHandles.length) {
+						if (signal?.aborted) return;
 						// Running requests finish, but only worker zero may start another in low mode.
 						if ((worker > 0 || automatic) && this.settings?.isLowPerformanceMode?.()) return;
 						const handle = uniqueHandles[nextHandleIndex++];
@@ -260,19 +362,22 @@ const PAIR_LOOKUP_CACHE_LIMIT = 256;
 					const lookupHandle = !update || !existing?.uid || this.settings?.isPairUpdateHandleLookupEnabled?.() !== false;
 					let uidVerified = false;
 					let uidError = '';
+					let uidErrorCode = 'network';
 					let handleError = '';
+					let handleErrorCode = 'network';
 					let handleResolved = false;
 					if (checkStoredUid) {
 						try {
-							await this._withLookupSlot(() => this.resolveUid(existing.uid));
+							await this._withLookupSlot(() => this.resolveUid(existing.uid, { signal }), signal);
 							uidVerified = true;
 						} catch (error) {
 							uidError = error instanceof Error ? error.message : String(error);
+							uidErrorCode = (error as any)?.code || 'network';
 						}
 					}
 					if (lookupHandle) {
 						try {
-						const resolved = await this._withLookupSlot<any>(() => this.resolveHandle(handle, { force: update }));
+						const resolved = await this._withLookupSlot<any>(() => this.resolveHandle(handle, { force: update, signal }), signal);
 						if (existing?.uid && existing.uid !== resolved.uid) {
 							const previousItems = this.storage.all();
 							const pairWrite = this._asPersistenceResult(this.pairStore.upsertPair({
@@ -356,9 +461,16 @@ const PAIR_LOOKUP_CACHE_LIMIT = 256;
 							handleResolved = true;
 						} catch (error) {
 							handleError = error instanceof Error ? error.message : String(error);
+							handleErrorCode = (error as any)?.code || 'network';
 						}
 					}
 					if (handleResolved) continue;
+					if (signal?.aborted || handleErrorCode === 'cancelled' || uidErrorCode === 'cancelled') {
+						const message = handleError || uidError || t('pairLookupCancelled');
+						stats.failed += 1;
+						stats.items.push({ handle, outcome: 'failed', message, reason: 'cancelled' });
+						return;
+					}
 					if (uidVerified && existing?.uid) {
 						const pairWrite = this._asPersistenceResult(this.pairStore.upsertPair({
 							...existing,
@@ -406,7 +518,8 @@ const PAIR_LOOKUP_CACHE_LIMIT = 256;
 						outcome: 'failed',
 						uid: existing?.uid || undefined,
 						resolvedUid: existing?.lastResolvedUid || undefined,
-						message
+						message,
+						reason: handleErrorCode === 'timeout' || handleErrorCode === 'cancelled' ? handleErrorCode : 'network'
 					});
 					}
 				};
@@ -431,7 +544,7 @@ const PAIR_LOOKUP_CACHE_LIMIT = 256;
 			}
 			return stats;
 		}
-		async testApiKey() {
+		async testApiKey({ signal = null }: { signal?: AbortSignal | null } = {}) {
 			const apiKey = this.apiConfig.getApiKey();
 			if (!apiKey) {
 				return {
@@ -448,9 +561,9 @@ const PAIR_LOOKUP_CACHE_LIMIT = 256;
 				url.searchParams.set('id', 'UC_x5XG1OV2P6uZZ5FSM9Ttw');
 				url.searchParams.set('key', apiKey);
 				url.searchParams.set('hl', getLang() === 'ko' ? 'ko' : 'en');
-				const response = await fetch(url.toString(), { cache: 'no-store', referrerPolicy: 'no-referrer' });
+				const response = await this._fetchWithTimeout(url.toString(), { cache: 'no-store', referrerPolicy: 'no-referrer' }, signal);
 				let payload = null;
-				try { payload = await response.json(); } catch { }
+				try { payload = await this._readResponseBody(response, 'json', signal); } catch (error) { if ((error as any)?.code) throw error; }
 				const reason = payload?.error?.errors?.[0]?.reason || '';
 				const message = payload?.error?.message || (response.ok ? 'OK' : `${response.status}`);
 				if (response.ok) {
@@ -480,13 +593,13 @@ const PAIR_LOOKUP_CACHE_LIMIT = 256;
 				return {
 					checkedAt: Date.now(),
 					ok: false,
-					category: 'network',
+					category: (error as any)?.code === 'timeout' || (error as any)?.code === 'cancelled' ? (error as any).code : 'network',
 					httpStatus: null,
 					message: error instanceof Error ? error.message : String(error)
 				};
 			}
 		}
-		async resolveHandle(handle: string, { force = false } = {}) {
+		async resolveHandle(handle: string, { force = false, signal = null }: { force?: boolean; signal?: AbortSignal | null } = {}) {
 			const normalized = sanitizeHandle(handle);
 			if (!normalized) throw new Error(t('pairLookupNoUid'));
 			const key = getHandleCompareKey(normalized, this.settings?.isHandleCaseSensitive?.() || false);
@@ -500,18 +613,20 @@ const PAIR_LOOKUP_CACHE_LIMIT = 256;
 			if (cached) this._handleLookupCache.delete(key);
 			let result;
 			if (this.settings?.getHandleLookupMethod?.() !== 'api') {
-				try { result = await this._resolveHandleFromPage(normalized); }
+				try { result = await this._resolveHandleFromPage(normalized, signal); }
 				catch (error) {
 					if (!this.settings?.isHandleLookupFallbackApiEnabled?.() || !this.apiConfig.hasApiKey()) {
 						const message = error instanceof Error ? error.message : String(error);
 						const guidance = getLang() === 'ko'
 							? '다시 시도하거나, 테스트한 API 키로 API fallback을 켜세요.'
 							: 'Retry, or enable API fallback with a tested API key.';
-						throw new Error(`${message} ${guidance}`, { cause: error });
+						const wrapped = new Error(`${message} ${guidance}`, { cause: error });
+						if ((error as any)?.code) (wrapped as any).code = (error as any).code;
+						throw wrapped;
 					}
 				}
 			}
-			if (!result) result = await this._resolveHandleFromApi(normalized);
+			if (!result) result = await this._resolveHandleFromApi(normalized, signal);
 			this._handleLookupCache.set(key, { checkedAt: Date.now(), result });
 			while (this._handleLookupCache.size > PAIR_LOOKUP_CACHE_LIMIT) {
 				const oldestKey = this._handleLookupCache.keys().next().value;
@@ -520,16 +635,16 @@ const PAIR_LOOKUP_CACHE_LIMIT = 256;
 			}
 			return result;
 		}
-		async _resolveHandleFromPage(handle: string) {
-			const response = await fetch(`https://www.youtube.com/@${encodeURIComponent(handle.slice(1))}`, { cache: 'no-store', referrerPolicy: 'no-referrer' });
+		async _resolveHandleFromPage(handle: string, signal: AbortSignal | null = null) {
+			const response = await this._fetchWithTimeout(`https://www.youtube.com/@${encodeURIComponent(handle.slice(1))}`, { cache: 'no-store', referrerPolicy: 'no-referrer' }, signal);
 			if (!response.ok) throw new Error(`${t('pairLookupFailed')} (${response.status})`);
-			const html = await response.text();
+			const html = await this._readResponseBody(response, 'text', signal);
 			const patterns = [/"externalId":"(UC[0-9A-Za-z_-]{10,})"/, /"channelId":"(UC[0-9A-Za-z_-]{10,})"/, /itemprop="channelId"\s+content="(UC[0-9A-Za-z_-]{10,})"/];
 			const uid = patterns.map(pattern => pattern.exec(html)?.[1]).find(isChannelId);
 			if (!uid) throw new Error(t('pairLookupNoUid'));
 			return { uid, source: 'youtube-channel-page' };
 		}
-		async _resolveHandleFromApi(handle: string) {
+		async _resolveHandleFromApi(handle: string, signal: AbortSignal | null = null) {
 			const apiKey = this.apiConfig.getApiKey();
 			if (!apiKey) throw new Error(t('apiKeyRequired'));
 
@@ -539,9 +654,9 @@ const PAIR_LOOKUP_CACHE_LIMIT = 256;
 			url.searchParams.set('key', apiKey);
 			url.searchParams.set('hl', getLang() === 'ko' ? 'ko' : 'en');
 
-			const response = await fetch(url.toString(), { cache: 'no-store', referrerPolicy: 'no-referrer' });
+			const response = await this._fetchWithTimeout(url.toString(), { cache: 'no-store', referrerPolicy: 'no-referrer' }, signal);
 			let payload = null;
-			try { payload = await response.json(); } catch { }
+			try { payload = await this._readResponseBody(response, 'json', signal); } catch (error) { if ((error as any)?.code) throw error; }
 
 			if (!response.ok) {
 				const message = payload?.error?.message || `${t('pairLookupFailed')} (${response.status})`;
@@ -552,7 +667,7 @@ const PAIR_LOOKUP_CACHE_LIMIT = 256;
 			if (!isChannelId(uid)) throw new Error(t('pairLookupNoUid'));
 			return { uid, source: 'youtube-data-api-v3' };
 		}
-		async resolveUid(uid: string) {
+		async resolveUid(uid: string, { signal = null }: { signal?: AbortSignal | null } = {}) {
 			const apiKey = this.apiConfig.getApiKey();
 			if (!apiKey) throw new Error(t('apiKeyRequired'));
 
@@ -562,9 +677,9 @@ const PAIR_LOOKUP_CACHE_LIMIT = 256;
 			url.searchParams.set('key', apiKey);
 			url.searchParams.set('hl', getLang() === 'ko' ? 'ko' : 'en');
 
-			const response = await fetch(url.toString(), { cache: 'no-store', referrerPolicy: 'no-referrer' });
+			const response = await this._fetchWithTimeout(url.toString(), { cache: 'no-store', referrerPolicy: 'no-referrer' }, signal);
 			let payload = null;
-			try { payload = await response.json(); } catch { }
+			try { payload = await this._readResponseBody(response, 'json', signal); } catch (error) { if ((error as any)?.code) throw error; }
 
 			if (!response.ok) {
 				const message = payload?.error?.message || `${t('pairLookupFailed')} (${response.status})`;

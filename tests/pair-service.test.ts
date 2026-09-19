@@ -212,6 +212,71 @@ test('channel-page lookup normalizes and caches a handle result', async () => {
 	assert.equal(requests, 1);
 });
 
+test('hung handle lookups time out with a distinct reason and can retry', async () => {
+	const { service, context } = createService();
+	service._lookupTimeoutMs = 5;
+	context.fetch = async () => new Promise(() => {});
+	let error: any = null;
+	try { await service.resolveHandle('@alpha', { force: true }); } catch (reason) { error = reason; }
+	assert.equal(error?.code, 'timeout');
+	assert.match(error?.message, /시간이 초과|timed out/i);
+
+	context.fetch = async () => ({ ok: true, text: async () => '<script>{"externalId":"UC1234567890"}</script>' });
+	const result = await service.resolveHandle('@alpha', { force: true });
+	assert.equal(result.uid, 'UC1234567890');
+});
+
+test('stalled response bodies also respect the lookup timeout', async () => {
+	const { service, context } = createService();
+	service._lookupTimeoutMs = 5;
+	context.fetch = async () => ({ ok: true, text: async () => new Promise(() => {}) });
+	let error: any = null;
+	try { await service.resolveHandle('@alpha', { force: true }); } catch (reason) { error = reason; }
+	assert.equal(error?.code, 'timeout');
+});
+
+test('lookup slot waits can be cancelled before a slot opens', async () => {
+	const { service } = createService();
+	service._activeLookups = 8;
+	const controller = new AbortController();
+	const waiting = service._withLookupSlot(async () => {}, controller.signal);
+	controller.abort();
+	let error: any = null;
+	try { await waiting; } catch (reason) { error = reason; }
+	assert.equal(error?.code, 'cancelled');
+	service._activeLookups = 0;
+});
+
+test('API test classifies a timeout separately from network failures', async () => {
+	const { service, apiConfig, context } = createService();
+	apiConfig.setApiKey('test-key');
+	service._lookupTimeoutMs = 5;
+	context.fetch = async () => new Promise(() => {});
+	const result = await service.testApiKey();
+	assert.equal(result.category, 'timeout');
+});
+
+test('cancelled pair runs stop queued lookups and report cancellation', async () => {
+	const { storage, pairStore, service } = createService();
+	storage.addHandle('@alpha');
+	storage.addHandle('@beta');
+	const controller = new AbortController();
+	service._resolveHandleFromPage = async (_handle: string, signal: AbortSignal) => {
+		await new Promise<void>((_resolve, reject) => signal.addEventListener('abort', () => {
+			const error: any = new Error('cancelled');
+			error.code = 'cancelled';
+			reject(error);
+		}, { once: true }));
+		return { uid: 'UC1234567890', source: 'youtube-channel-page' };
+	};
+	const run = service.createPairsForHandles(['@alpha', '@beta'], { signal: controller.signal });
+	await Promise.resolve();
+	controller.abort();
+	const stats = await run;
+	assert.ok(stats.items.some((item: any) => item.reason === 'cancelled'));
+	assert.equal(pairStore.getPair('@beta'), null);
+});
+
 test('concurrent pair additions converge without dropping either pair', () => {
 	const left = createPairStore();
 	const right = createPairStore();
@@ -410,6 +475,31 @@ test('manual pair requests share an in-flight run instead of reporting a busy sk
 	assert.equal(calls, 1);
 	resolveRun(stats);
 	assert.equal((await first).created, 1);
+	assert.equal(app._pairRunPromise, null);
+});
+
+test('app pair cancellation aborts the shared run signal', async () => {
+	const { api } = loadUserscript();
+	let receivedSignal: AbortSignal | null = null;
+	let resolveRun: (value: any) => void = () => {};
+	const app = {
+		_pairRunPromise: null,
+		_pairRunController: null,
+		pairService: {
+			createMissingPairs: ({ signal }: { signal: AbortSignal }) => {
+				receivedSignal = signal;
+				return new Promise(resolve => { resolveRun = resolve; });
+			}
+		},
+		refreshAfterStorageChange: () => {},
+		logger: { info: () => {}, warn: () => {} }
+	};
+	const run = api.App.prototype.runPairUpdate.call(app, 'create');
+	await Promise.resolve();
+	api.App.prototype.cancelPairUpdate.call(app);
+	assert.equal((receivedSignal as any)?.aborted, true);
+	resolveRun({ created: 0, refreshed: 0, mismatches: 0, failed: 1, addedIds: 0, skipped: 0, items: [] });
+	await run;
 	assert.equal(app._pairRunPromise, null);
 });
 

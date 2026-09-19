@@ -18,6 +18,7 @@
 
 ### Changed
 
+- 페이지/API pair 조회에 제한 시간과 작업 범위 취소를 적용하고 timeout/cancelled 결과를 분리했으며, 관리자 창을 닫아도 공유 app 작업은 계속하고 해당 UI만 분리.
 - pair metadata에 pair별 revision·삭제 tombstone·clear revision·scalar 충돌 순서를 적용하여 탭 간 상태가 수렴하도록 하고, 반복 remote merge를 멱등 처리하며 merge 저장 실패 시 복구.
 - pair 갱신·API 테스트 결과 저장·차단 목록 import가 저장 실패를 명시적으로 반환하도록 개선하고, 성공 전용 후속 동작을 막으며 가능한 경우 부분 pair 변경을 복구.
 - 문서 template 디렉터리를 `src/template/`로 변경하고 build·release 도구의 참조를 갱신.

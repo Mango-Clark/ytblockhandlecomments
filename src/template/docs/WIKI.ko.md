@@ -165,7 +165,7 @@ API 설정:
   lastTestResult: {
     checkedAt: number,
     ok: boolean,
-    category: 'ok' | 'invalid' | 'quota' | 'forbidden' | 'network' | 'unknown',
+    category: 'ok' | 'invalid' | 'quota' | 'forbidden' | 'network' | 'timeout' | 'cancelled' | 'unknown',
     httpStatus: number | null,
     message: string
   } | null
@@ -263,7 +263,8 @@ channel ID 조회:
 1. 기본: userscript의 YouTube origin에서 `https://www.youtube.com/@<url-encoded-handle>`를 요청.
 2. 공개 채널 HTML에서 `externalId`, `channelId`, `itemprop="channelId"` 순으로 읽음.
 3. undocumented parser라 YouTube HTML 변경 시 실패 가능. HTTP/channel ID 미검출 시 기존 pair 유지, 재시도/API fallback 안내.
-4. 명시적 API 방식: `GET https://www.googleapis.com/youtube/v3/channels`에 `part=id`, `forHandle=@handle`, `key=<apiKey>` 전송.
+4. 페이지/API 조회에는 제한 시간이 있습니다. 시간 초과는 일반 네트워크 실패와 별도 category로 기록하고, 명시적 작업 취소는 `cancelled`로 구분합니다.
+5. 명시적 API 방식: `GET https://www.googleapis.com/youtube/v3/channels`에 `part=id`, `forHandle=@handle`, `key=<apiKey>` 전송.
 
 저장 UID 확인:
 
@@ -295,6 +296,7 @@ API 호출 최소화:
 - pair 갱신에서 저장 UID 확인/handle 재조회 각각 선택. 하나는 항상 켬.
 - 선택 handle bulk `Update Pair`는 명시적 사용자 요청. fresh여도 재조회.
 - bulk pair 실행은 handle 조회를 최대 8개까지 동시에 처리하고 결과 목록의 입력 순서를 유지.
+- 공유 pair 작업을 취소하면 실행 중인 요청을 중단하고 대기 중인 handle을 건너뛰며 취소 fallback 상태를 저장하지 않습니다. 관리자 창을 닫으면 해당 UI 세대만 분리되고 다른 호출자가 공유하는 app 작업은 계속됩니다.
 - watch pair 검토 알림은 `나중에` 선택 또는 최근 pair 검사 후 같은 stale 주기 동안 숨김.
 
 ## 6. 관리자 대화상자
@@ -359,7 +361,7 @@ Pair 결과:
 
 - `GM_setting` 참고 카테고리 목록 레이아웃. 작업 그룹별 제목/컨트롤/짧은 도움말.
 - 중첩 dialog의 Escape/Enter/Tab/backdrop은 최상위 dialog만 처리. 닫을 때 이전 element로 focus 복원.
-- API test/pair 작업은 `finally`로 loading control 복구. 동시 수동 요청은 현재 실행을 공유하고, 자동 요청은 건너뛰지 않고 실행 종료까지 대기.
+- API test/pair 작업은 `finally`로 loading control 복구하고 조회에 제한 시간을 둡니다. 동시 수동 요청은 현재 실행을 공유하고, 자동 요청은 건너뛰지 않고 실행 종료까지 대기합니다. 창을 닫으면 UI만 분리되고 공유 app 작업은 취소하지 않습니다.
 - debug metrics: page mode, comments host·extraction failure counter, 최근 selector reason. 댓글 본문/URL/API 키/계정 정보 제외.
 - 변경 자동 저장 안내.
 - 컨트롤 구분: 매칭, 댓글 표시, 키워드 자동 처리, 로그, 표시 크기, 유지보수.

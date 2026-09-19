@@ -165,7 +165,7 @@ API config:
   lastTestResult: {
     checkedAt: number,
     ok: boolean,
-    category: 'ok' | 'invalid' | 'quota' | 'forbidden' | 'network' | 'unknown',
+    category: 'ok' | 'invalid' | 'quota' | 'forbidden' | 'network' | 'timeout' | 'cancelled' | 'unknown',
     httpStatus: number | null,
     message: string
   } | null
@@ -263,7 +263,8 @@ Channel ID lookup:
 1. Default: fetch `https://www.youtube.com/@<url-encoded-handle>` from userscript YouTube origin.
 2. Parse `externalId`, `channelId`, then `itemprop="channelId"` from public channel HTML.
 3. Undocumented parser may break with YouTube HTML changes. HTTP/no-channel-ID failures preserve pair data and show retry/API-fallback guidance.
-4. Explicit API mode calls `GET https://www.googleapis.com/youtube/v3/channels` with `part=id`, `forHandle=@handle`, and `key=<apiKey>`.
+4. Page and API lookups have a bounded timeout. Timeout results are classified separately from ordinary network failures, and explicit run cancellation is reported separately as cancelled.
+5. Explicit API mode calls `GET https://www.googleapis.com/youtube/v3/channels` with `part=id`, `forHandle=@handle`, and `key=<apiKey>`.
 
 Stored UID verification:
 
@@ -295,6 +296,7 @@ API minimization:
 - Pair update independently supports stored UID verification and handle re-resolution; at least one always enabled.
 - Selected-handle bulk `Update Pair` explicitly refreshes selected handles even when fresh.
 - Bulk pair runs process up to eight handle lookups concurrently while preserving input order in the result list.
+- Cancelling a shared pair run aborts active requests, stops queued handles, and avoids writing cancellation fallback records. Closing a manager dialog detaches its UI generation while the shared app run continues for other callers.
 - Watch-page pair review prompts suppressed for same stale interval after `Later` or recent pair check.
 
 ## 6. Manager Dialog
@@ -359,7 +361,7 @@ Settings dialog:
 
 - Category-list layout inspired by `GM_setting`: task groups have title, controls, brief help
 - Nested dialogs route Escape, Enter, Tab, and backdrop actions to top dialog only; close restores opener focus
-- API tests/pair actions use `finally` cleanup. Concurrent manual requests share the active run; automatic requests wait for it instead of being skipped.
+- API tests/pair actions use `finally` cleanup. Requests have bounded timeouts. Concurrent manual requests share the active run; automatic requests wait for it instead of being skipped. Closing a dialog detaches the view; it does not cancel the shared app run.
 - Debug metrics include page mode, comments-host/extraction failure counters, latest selector reason; exclude comment text, URLs, API keys, account data
 - Intro note: changes auto-save
 - Groups: matching, comment display, keyword automation, logging, display size, maintenance

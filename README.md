@@ -203,7 +203,7 @@ API config:
   lastTestResult: {
     checkedAt: number,
     ok: boolean,
-    category: 'ok' | 'invalid' | 'quota' | 'forbidden' | 'network' | 'unknown',
+		category: 'ok' | 'invalid' | 'quota' | 'forbidden' | 'network' | 'timeout' | 'cancelled' | 'unknown',
     httpStatus: number | null,
     message: string
   } | null
