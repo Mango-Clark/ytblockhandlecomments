@@ -941,6 +941,23 @@ test('settings and block list dialogs can open each other', () => {
 	assert.ok(document.querySelectorAll('.tm-dialog').some((dialog: any) => dialog.textContent.includes('표시 크기')));
 });
 
+test('manager settings boundary reports logging validation and persistence failures', () => {
+	const { api } = loadUserscript();
+	const config = { consolePrefix: '[TEST]', consoleTimeFormat: 'iso', consoleTimeZone: 'system', retention: 500 };
+	const validation = api.saveManagerLoggingSettings({
+		setLogging: () => null,
+		getLastSaveError: () => null,
+		getLogging: () => ({}),
+		getLoggingValidationError: () => 'consolePrefix'
+	}, null, config);
+	assert.equal(validation.ok, false);
+	assert.equal(validation.validationError, 'consolePrefix');
+	const persistence = api.saveManagerLoggingSettings({ setLogging: () => null, getLastSaveError: () => new Error('write') }, null, config);
+	assert.equal(persistence.persistenceFailed, true);
+	const trimFailure = api.saveManagerLoggingSettings({ setLogging: () => ({}) }, { trimToRetention: () => false }, config);
+	assert.equal(trimFailure.persistenceFailed, true);
+});
+
 test('block list restores view state, resets filters, and prunes stale selections', () => {
 	const { api, document } = loadUserscript();
 	const settings = new api.AppSettingsStorage();

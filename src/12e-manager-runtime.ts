@@ -22,7 +22,7 @@ import {
 } from './02-utils-i18n.ts';
 import { Dialog, Toast } from './08-toast-dialog.ts';
 import { createManagerListController, getManagerPageSize, renderManagerPagination } from './12a-manager-list.ts';
-import { createManagerApiController, refreshSettingsUi } from './12b-manager-settings.ts';
+import { createManagerApiController, refreshSettingsUi, saveManagerLoggingSettings } from './12b-manager-settings.ts';
 import { createManagerExport, downloadManagerExport, parseManagerImport, persistManagerImport } from './12c-manager-export.ts';
 import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel, getPairResultItems, renderManagerPairResultList, showManagerPairResultDialog } from './12d-manager-pairing.ts';
 
@@ -1041,7 +1041,7 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 				this.openBlockKeywordAutomation();
 			});
 			const saveLogging = () => {
-				const saved = this.app.settings.setLogging({
+				const config = {
 					fileEnabled: logFileToggle.checked,
 					consoleEnabled: logConsoleToggle.checked,
 					level: logLevelSelect.value,
@@ -1051,15 +1051,13 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 					consoleTimeFormat: consoleFormatSelect.value === 'custom' ? consoleFormatInput.value : consoleFormatSelect.value,
 					consoleTimeZone: consoleTimezoneSelect.value,
 					consoleTimeZoneInput: consoleTimezoneInput.value
-				});
-				if (!saved) {
-					if (this.app.settings.getLastSaveError()) { Toast.show(t('storageSaveFailed')); renderAll(); return; }
-					const field = this.app.settings.getLoggingValidationError({ ...this.app.settings.getLogging(), consolePrefix: consolePrefixInput.value, consoleTimeFormat: consoleFormatSelect.value === 'custom' ? consoleFormatInput.value : consoleFormatSelect.value, consoleTimeZone: consoleTimezoneSelect.value, consoleTimeZoneInput: consoleTimezoneInput.value });
+				};
+				const result = saveManagerLoggingSettings(this.app.settings, this.app.logger, config);
+				if (!result.ok) {
+					if (result.persistenceFailed) { Toast.show(t('storageSaveFailed')); renderAll(); return; }
+					const field = result.validationError || '';
 					consoleLoggingStatus.textContent = t('consoleLoggingInvalid', field);
 					return;
-				}
-				if (this.app.logger?.trimToRetention && !this.app.logger.trimToRetention(Number(logRetentionSelect.value))) {
-					Toast.show(t('storageSaveFailed'));
 				}
 				renderAll();
 			};

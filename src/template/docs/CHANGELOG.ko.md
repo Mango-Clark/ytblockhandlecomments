@@ -17,6 +17,7 @@
 
 ### Changed
 
+- logging 설정의 validation·저장·retention 정리 결과를 `12b` 기능 경계 뒤로 이동하고 runtime의 표시·메시지 동작은 유지.
 - 공개 manager wrapper와 기존 lifecycle 동작은 유지하면서 pair 결과 목록·다이얼로그 표시를 `12d` 기능 경계 뒤로 이동.
 - 공개 `BlockListManager` 진입점과 다이얼로그 동작은 유지하면서 manager import parsing·저장 count 처리를 `12c` 기능 경계 뒤로 이동.
 - GM 읽기 상태를 missing·invalid·failed로 구분하고, failed baseline에서는 복구 전까지 쓰기·migration·remote merge를 막으며 시작 시 안전한 새로고침 진단을 표시.

@@ -19,6 +19,7 @@ import { MenuEnhancer } from './11-menu-enhancer.ts';
 import { Dialog, Toast } from './08-toast-dialog.ts';
 import { BlockListManager } from './12-block-list-manager.ts';
 import { parseManagerImport, persistManagerImport } from './12c-manager-export.ts';
+import { saveManagerLoggingSettings } from './12b-manager-settings.ts';
 import { App } from './13-app.ts';
 import { Logger } from './15-logger.ts';
 
@@ -41,6 +42,7 @@ const TEST_HOOK = typeof window === 'object' ? window.__YT_BLOCK_TEST_HOOK__ || 
 			BlockListManager,
 			parseManagerImport,
 			persistManagerImport,
+			saveManagerLoggingSettings,
 			App,
 			Logger,
 			t,

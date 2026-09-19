@@ -22,3 +22,18 @@ export const createManagerApiController = (): ManagerApiController => {
 export const refreshSettingsUi = (context: SettingsManagerContext): void => {
 	context.app?.refreshUiOnly?.();
 };
+
+export type ManagerLoggingSaveResult = { ok: boolean; persistenceFailed?: boolean; validationError?: string };
+
+export function saveManagerLoggingSettings(settings: any, logger: any, config: any): ManagerLoggingSaveResult {
+	const saved = settings.setLogging(config);
+	if (!saved) {
+		if (settings.getLastSaveError?.()) return { ok: false, persistenceFailed: true };
+		return {
+			ok: false,
+			validationError: settings.getLoggingValidationError?.({ ...settings.getLogging(), ...config }) || ''
+		};
+	}
+	if (logger?.trimToRetention && !logger.trimToRetention(Number(config.retention))) return { ok: false, persistenceFailed: true };
+	return { ok: true };
+}
