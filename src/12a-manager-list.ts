@@ -1,4 +1,4 @@
-import { t } from './02-utils-i18n.ts';
+import { getItemKey, t, type BlockItem } from './02-utils-i18n.ts';
 
 export type ManagerListState = {
 	selection: Set<string>;
@@ -76,4 +76,47 @@ export function renderManagerPagination(container: HTMLElement, page: number, to
 	container.className = 'tm-inline-actions tm-pagination';
 	container.replaceChildren(previous, status, next);
 	return page;
+}
+
+export function createManagerListCacheController(state: ManagerListState, persistViewState: () => void, getCurrentItems: () => BlockItem[]) {
+	const markSelectionChanged = () => {
+		state.selectionVersion += 1;
+		state.viewStateCache = null;
+		persistViewState();
+	};
+	return {
+		markSelectionChanged,
+		setSelectionValue(key: string | null, selected: boolean) {
+			if (!key) return false;
+			if (selected) {
+				if (state.selection.has(key)) return false;
+				state.selection.add(key);
+				markSelectionChanged();
+				return true;
+			}
+			if (!state.selection.has(key)) return false;
+			state.selection.delete(key);
+			markSelectionChanged();
+			return true;
+		},
+		invalidate({ clearRegex = false }: { clearRegex?: boolean } = {}) {
+			state.baseViewStateCache = null;
+			state.viewStateCache = null;
+			state.rowRefs.clear();
+			if (clearRegex) state.regexMatchCache.clear();
+		},
+		pruneSelection(keyedItems?: Map<string, BlockItem>) {
+			const valid = keyedItems || new Map(getCurrentItems()
+				.map((item: BlockItem): [string | null, BlockItem] => [getItemKey(item), item])
+				.filter((entry: [string | null, BlockItem]): entry is [string, BlockItem] => !!entry[0]));
+			let changed = false;
+			for (const key of Array.from(state.selection)) {
+				if (!valid.has(key)) {
+					state.selection.delete(key);
+					changed = true;
+				}
+			}
+			if (changed) markSelectionChanged();
+		}
+	};
 }

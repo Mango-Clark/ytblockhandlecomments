@@ -21,7 +21,7 @@ import {
 	type PairRunStats
 } from './02-utils-i18n.ts';
 import { Dialog, Toast } from './08-toast-dialog.ts';
-import { createManagerListController, getManagerPageSize, renderManagerPagination } from './12a-manager-list.ts';
+import { createManagerListCacheController, createManagerListController, getManagerPageSize, renderManagerPagination } from './12a-manager-list.ts';
 import { createManagerApiController, refreshSettingsUi, saveManagerLoggingSettings } from './12b-manager-settings.ts';
 import { createManagerExport, downloadManagerExport, parseManagerImport, persistManagerImport } from './12c-manager-export.ts';
 import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel, getPairResultItems, renderManagerPairResultList, showManagerPairResultDialog } from './12d-manager-pairing.ts';
@@ -1505,33 +1505,11 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 				};
 			};
 			const getCurrentItems = () => this.app.storage.all();
+			const listCache = createManagerListCacheController(listState, persistViewState, getCurrentItems);
 			const getStatusCode = (item: BlockItem, blockedIds: Set<string> | null = null) => item.type === 'handle'
 				? this.app.pairService.getHandleStatus(item.value, blockedIds).code
 				: null;
-			const markSelectionChanged = () => {
-				listState.selectionVersion += 1;
-				listState.viewStateCache = null;
-				persistViewState();
-			};
-			const setSelectionValue = (key: string | null, selected: boolean) => {
-				if (!key) return false;
-				if (selected) {
-					if (listState.selection.has(key)) return false;
-					listState.selection.add(key);
-					markSelectionChanged();
-					return true;
-				}
-				if (!listState.selection.has(key)) return false;
-				listState.selection.delete(key);
-				markSelectionChanged();
-				return true;
-			};
-			const invalidateViewState = ({ clearRegex = false } = {}) => {
-				listState.baseViewStateCache = null;
-				listState.viewStateCache = null;
-				listState.rowRefs.clear();
-				if (clearRegex) listState.regexMatchCache.clear();
-			};
+			const { markSelectionChanged, setSelectionValue, invalidate: invalidateViewState, pruneSelection } = listCache;
 			const getItemsRevision = (items: BlockItem[]) => this.app.storage._revision !== undefined ? String(this.app.storage._revision) : (items || [])
 				.map(item => `${item.type}:${item.value}:${item.flags || ''}`)
 				.join('\u001f');
@@ -1551,19 +1529,6 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 					].join(':');
 				})
 				.join('\u001e');
-			const pruneSelection = (keyedItems?: Map<string, BlockItem>) => {
-				const valid = keyedItems || new Map(getCurrentItems()
-					.map((item: BlockItem): [string | null, BlockItem] => [getItemKey(item), item])
-					.filter((entry: [string | null, BlockItem]): entry is [string, BlockItem] => !!entry[0]));
-				let changed = false;
-				for (const key of Array.from(listState.selection)) {
-					if (!valid.has(key)) {
-						listState.selection.delete(key);
-						changed = true;
-					}
-				}
-				if (changed) markSelectionChanged();
-			};
 			const buildBaseViewState = (): BlockListBaseViewState => {
 				const allItems = getCurrentItems();
 				const itemsRevision = getItemsRevision(allItems);

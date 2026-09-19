@@ -118,6 +118,25 @@ test('i18n dictionaries provide Korean and English labels', () => {
 	assert.equal(api.t('loggingOutputTitle'), 'Output destinations');
 });
 
+test('manager list cache controller invalidates selection and row caches', () => {
+	const { api } = loadUserscript();
+	const state = api.createManagerListController({}, new Set(['handle-only']));
+	state.rowRefs.set('h:@old', { checkbox: {} });
+	state.regexMatchCache.set('regex', {});
+	let persisted = 0;
+	const controller = api.createManagerListCacheController(state, () => { persisted += 1; }, () => [{ type: 'handle', value: '@valid' }]);
+	assert.equal(controller.setSelectionValue('h:@valid', true), true);
+	assert.equal(persisted, 1);
+	controller.pruneSelection(new Map([['h:@valid', { type: 'handle', value: '@valid' }]]));
+	assert.equal(state.selection.has('h:@valid'), true);
+	controller.invalidate({ clearRegex: true });
+	assert.equal(state.rowRefs.size, 0);
+	assert.equal(state.regexMatchCache.size, 0);
+	controller.pruneSelection(new Map());
+	assert.equal(state.selection.size, 0);
+	assert.equal(persisted, 2);
+});
+
 test('pair result rendering keeps manager wrapper overrides', () => {
 	const { api, document } = loadUserscript();
 	const manager = new api.BlockListManager({});

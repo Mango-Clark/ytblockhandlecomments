@@ -17,6 +17,7 @@
 
 ### Changed
 
+- 목록 rendering 동작은 유지하면서 manager selection과 view cache 무효화를 `12a` list 경계 뒤로 이동.
 - manager runtime의 open-ended index signature를 제거하고 app·보존 view state 필드를 명시적으로 선언.
 - logging 설정의 validation·저장·retention 정리 결과를 `12b` 기능 경계 뒤로 이동하고 runtime의 표시·메시지 동작은 유지.
 - 공개 manager wrapper와 기존 lifecycle 동작은 유지하면서 pair 결과 목록·다이얼로그 표시를 `12d` 기능 경계 뒤로 이동.
