@@ -8,21 +8,23 @@ import { I18N_KO } from './i18n/ko.ts';
 	export type BlockItemType = 'handle' | 'id' | 'regex';
 	export type BlockItem = { type: BlockItemType; value: string; flags?: string };
 	export type PairStatus = 'verified' | 'stale' | 'mismatch' | 'unverified';
+	export type PairLookupStage = 'create' | 'update' | 'onBlock';
+	export type PairLookupMethod = 'page' | 'api' | 'page-api';
 	export type PairRecord = {
 		handle: string;
-		uid: string;
+		ucid: string;
 		verifiedAt: number | null;
 		status: PairStatus;
 		source: string;
-		lastResolvedUid: string | null;
+		lastResolvedUcid: string | null;
 		lastError: string | null;
 	};
 	export type PairOutcome = 'created' | 'updated' | 'mismatch' | 'failed' | 'skipped';
 	export type PairRunItem = {
 		handle: string;
 		outcome: PairOutcome;
-		uid?: string;
-		resolvedUid?: string;
+		ucid?: string;
+		resolvedUcid?: string;
 		message?: string;
 		reason?: 'timeout' | 'cancelled' | 'network';
 	};

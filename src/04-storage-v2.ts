@@ -233,6 +233,24 @@ import {
 			return this._saveV2([...this._loadV1(v1.value), ...this._loadLegacy(legacy.value)]);
 		}
 		all(): BlockItem[] { return this._items.slice(); }
+		refreshFromStorage(): boolean {
+			const result = this._readGM<any>(this.KEY_V2, null);
+			if (result.status === 'failed') return false;
+			this._lastSaveError = null;
+			if (result.status === 'present') {
+				if (!result.value || result.value.version !== 2 || !Array.isArray(result.value.items)) return false;
+				this.mergeRemote(result.value);
+			}
+			return !this.getLastSaveError();
+		}
+		restoreTouchedItems(previousItems: BlockItem[], expected: Map<string, string>): PersistenceResult<BlockItem[]> {
+			if (!this.refreshFromStorage()) return { ok: false, value: this.all(), error: new Error('Unable to refresh block rules before rollback') };
+			const keys = new Set(Array.from(expected).filter(([key, entry]) => JSON.stringify(this._entries[key]) === entry).map(([key]) => key));
+			return this.setAllResult([
+				...this.all().filter(item => !keys.has(this._itemKey(item))),
+				...previousItems.filter(item => keys.has(this._itemKey(item)))
+			]);
+		}
 		setAll(items: any[]) { return this._saveV2(items); }
 		setAllResult(items: any[]): PersistenceResult<BlockItem[]> {
 			const normalized = this._normalizeItems(items);

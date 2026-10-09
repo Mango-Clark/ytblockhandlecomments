@@ -1,5 +1,6 @@
 
 	import { GMBackedStore } from './03a-gm-backed-store.ts';
+	import type { PairLookupStage, PairLookupMethod } from './02-utils-i18n.ts';
 
 	/* ----------------------------------------------------------
 	 * 2. App settings storage
@@ -117,25 +118,23 @@
 		}
 		_normalizeState(raw: any) {
 			const src = raw && typeof raw === 'object' ? raw : {};
-			const pairUpdateUidCheck = !!src.pairUpdateUidCheck;
-			const pairUpdateHandleLookup = src.pairUpdateHandleLookup !== false;
+			const legacyMethod = src.handleLookupMethod === 'api' ? 'api' : src.handleLookupFallbackApi ? 'page-api' : 'page';
+			const lookup = src.pairLookup || {};
+			const normalizeMethod = (value: any): PairLookupMethod => ['page', 'api', 'page-api'].includes(value) ? value : legacyMethod;
 			const keywordFields = src.keywordFields && typeof src.keywordFields === 'object' ? src.keywordFields : {};
 			const keywordActions = src.keywordActions && typeof src.keywordActions === 'object' ? src.keywordActions : {};
 			const logging = src.logging && typeof src.logging === 'object' ? src.logging : {};
 			const themeMode = this.THEME_MODES.includes(src.themeMode) ? src.themeMode : 'system';
 			return {
-				version: 1,
+				version: 2,
 				lowPerformanceMode: src.lowPerformanceMode === true,
 				handleCaseSensitive: !!src.handleCaseSensitive,
 				autoAddRegexHandles: !!src.autoAddRegexHandles,
 				blockMatchMode: ['handle', 'pair'].includes(src.blockMatchMode) ? src.blockMatchMode : 'handle',
-				pairUpdateUidCheck,
-				pairUpdateHandleLookup: pairUpdateUidCheck || pairUpdateHandleLookup ? pairUpdateHandleLookup : true,
-				handleLookupMethod: src.handleLookupMethod === 'api' ? 'api' : 'scraper',
-				handleLookupFallbackApi: !!src.handleLookupFallbackApi,
-				handleLookupInterval: ['always', '60', '300', '600', '3600', '43200', '86400', '604800', '2592000', 'custom'].includes(String(src.handleLookupInterval)) ? String(src.handleLookupInterval) : '',
-				handleLookupCustomSeconds: Number.isInteger(Number(src.handleLookupCustomSeconds)) && Number(src.handleLookupCustomSeconds) >= 1 ? Number(src.handleLookupCustomSeconds) : 600,
-				handleLookupOnAdd: src.handleLookupOnAdd !== false,
+				pairLookup: { create: normalizeMethod(lookup.create), update: normalizeMethod(lookup.update), onBlock: normalizeMethod(lookup.onBlock) },
+				pairRefreshInterval: ['always', '60', '300', '600', '3600', '43200', '86400', '604800', '2592000', 'custom'].includes(String(src.pairRefreshInterval ?? src.handleLookupInterval)) ? String(src.pairRefreshInterval ?? src.handleLookupInterval) : '',
+				pairRefreshCustomSeconds: Number.isInteger(Number(src.pairRefreshCustomSeconds ?? src.handleLookupCustomSeconds)) && Number(src.pairRefreshCustomSeconds ?? src.handleLookupCustomSeconds) >= 1 ? Number(src.pairRefreshCustomSeconds ?? src.handleLookupCustomSeconds) : 600,
+				pairOnBlock: (src.pairOnBlock ?? src.handleLookupOnAdd) !== false,
 				keywordAutomationEnabled: src.keywordAutomationEnabled !== false,
 				themeMode,
 				themeCustom: this._normalizeThemeCustom(src.themeCustom),
@@ -283,7 +282,9 @@
 		_init() {
 			const result = this._readGM(this.KEY, null);
 			if (result.status === 'present' && (!result.value || typeof result.value !== 'object' || Array.isArray(result.value))) this._markGMReadInvalid(this.KEY, result.value);
-			return this._normalizeState(result.value);
+			const state = this._normalizeState(result.value);
+			if (result.status === 'present' && result.value && typeof result.value === 'object' && !Array.isArray(result.value) && (result.value as any).version !== 2) this._setGM(this.KEY, state);
+			return state;
 		}
 		getState() {
 			return { ...this._state };
@@ -317,13 +318,10 @@
 				this._state.lowPerformanceMode === normalized.lowPerformanceMode &&
 				this._state.autoAddRegexHandles === normalized.autoAddRegexHandles &&
 				this._state.blockMatchMode === normalized.blockMatchMode &&
-				this._state.pairUpdateUidCheck === normalized.pairUpdateUidCheck &&
-				this._state.pairUpdateHandleLookup === normalized.pairUpdateHandleLookup &&
-				this._state.handleLookupMethod === normalized.handleLookupMethod &&
-				this._state.handleLookupFallbackApi === normalized.handleLookupFallbackApi &&
-				this._state.handleLookupInterval === normalized.handleLookupInterval &&
-				this._state.handleLookupCustomSeconds === normalized.handleLookupCustomSeconds &&
-				this._state.handleLookupOnAdd === normalized.handleLookupOnAdd &&
+				JSON.stringify(this._state.pairLookup) === JSON.stringify(normalized.pairLookup) &&
+				this._state.pairRefreshInterval === normalized.pairRefreshInterval &&
+				this._state.pairRefreshCustomSeconds === normalized.pairRefreshCustomSeconds &&
+				this._state.pairOnBlock === normalized.pairOnBlock &&
 				this._state.keywordAutomationEnabled === normalized.keywordAutomationEnabled &&
 				this._state.themeMode === normalized.themeMode &&
 				JSON.stringify(this._state.themeCustom) === JSON.stringify(normalized.themeCustom) &&
@@ -368,34 +366,21 @@
 		setBlockMatchMode(mode: any) {
 			return this._saveState({ ...this._state, blockMatchMode: mode });
 		}
-		isPairUpdateUidCheckEnabled() {
-			return !!this._state.pairUpdateUidCheck;
+		getPairLookupMethod(stage: PairLookupStage): PairLookupMethod { return this._state.pairLookup[stage]; }
+		setPairLookupMethod(stage: PairLookupStage, method: PairLookupMethod) {
+			return this._saveState({ ...this._state, pairLookup: { ...this._state.pairLookup, [stage]: method } });
 		}
-		setPairUpdateUidCheckEnabled(enabled: any) {
-			return this._saveState({ ...this._state, pairUpdateUidCheck: !!enabled });
-		}
-		isPairUpdateHandleLookupEnabled() {
-			return this._state.pairUpdateHandleLookup !== false;
-		}
-		getHandleLookupMethod() { return this._state.handleLookupMethod || 'scraper'; }
 		isLowPerformanceMode() { return this._state.lowPerformanceMode === true; }
 		setLowPerformanceMode(enabled: boolean) { return this._saveState({ ...this._state, lowPerformanceMode: enabled }); }
-		setHandleLookupMethod(method: any) { return this._saveState({ ...this._state, handleLookupMethod: method === 'api' ? 'api' : 'scraper' }); }
-			isHandleLookupFallbackApiEnabled() { return !!this._state.handleLookupFallbackApi; }
-			setHandleLookupFallbackApiEnabled(enabled: any) { return this._saveState({ ...this._state, handleLookupFallbackApi: !!enabled }); }
-			getHandleLookupIntervalSeconds() {
-				const value = this._state.handleLookupInterval || (this.getHandleLookupMethod() === 'api' ? '604800' : '600');
-				if (value === 'always') return 0;
-				return value === 'custom' ? this._state.handleLookupCustomSeconds : Number(value);
-			}
-			setHandleLookupInterval(value: any, customSeconds: any = this._state.handleLookupCustomSeconds) {
-				return this._saveState({ ...this._state, handleLookupInterval: value, handleLookupCustomSeconds: customSeconds });
-			}
-			isHandleLookupOnAddEnabled() { return this._state.handleLookupOnAdd !== false; }
-			setHandleLookupOnAddEnabled(enabled: any) { return this._saveState({ ...this._state, handleLookupOnAdd: !!enabled }); }
-		setPairUpdateHandleLookupEnabled(enabled: any) {
-			return this._saveState({ ...this._state, pairUpdateHandleLookup: !!enabled });
+		getPairRefreshIntervalSeconds() {
+			const value = this._state.pairRefreshInterval || (this.getPairLookupMethod('update') === 'api' ? '604800' : '600');
+			return value === 'always' ? 0 : value === 'custom' ? this._state.pairRefreshCustomSeconds : Number(value);
 		}
+		setPairRefreshInterval(value: any, customSeconds: any = this._state.pairRefreshCustomSeconds) {
+			return this._saveState({ ...this._state, pairRefreshInterval: value, pairRefreshCustomSeconds: customSeconds });
+		}
+		isPairOnBlockEnabled() { return this._state.pairOnBlock; }
+		setPairOnBlockEnabled(enabled: boolean) { return this._saveState({ ...this._state, pairOnBlock: enabled }); }
 		isKeywordAutomationEnabled() {
 			return this._state.keywordAutomationEnabled !== false;
 		}

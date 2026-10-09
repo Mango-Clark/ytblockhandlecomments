@@ -76,7 +76,7 @@ page 동기화: `yt-navigate-finish`, `yt-page-data-updated`, `popstate`, `histo
 
 자동 처리는 channel ID, handle, 본문, 고정 문구 기반 identity 사용. 재사용 comment element identity 변경 시 새 댓글 metadata와 1회 keyword/dislike/차단 표시 상태 무효화.
 
-키워드 검사는 댓글 본문, 작성자 handle, 고정 표시 문구 대상. 대소문자 무시. 싫어요, handle 차단 목록 등록, handle 등록 후 UID pair 생성 중 선택 동작만 실행.
+키워드 검사는 댓글 본문, 작성자 handle, 고정 표시 문구 대상. 대소문자 무시. 싫어요, handle 차단 목록 등록, handle 등록 후 UCID pair 생성 중 선택 동작만 실행.
 
 로그: 다운로드용 로컬 보관/브라우저 console 출력 개별 설정. 앱 시작, API 테스트, pair 실행 등 저빈도 이벤트만 기록.
 
@@ -100,17 +100,17 @@ Pair 메타데이터:
 
 ```ts
 {
-  version: 1,
-  enableUidDetection: boolean,
+  version: 2,
+  enableUcidDetection: boolean,
   lastPairCheckAt: number | null,
   pairNotificationDismissedAt: number | null,
   pairs: Array<{
     handle: string,
-    uid: string,
+    ucid: string,
     verifiedAt: number | null,
     status: 'verified' | 'stale' | 'mismatch' | 'unverified',
     source: string,
-    lastResolvedUid?: string | null,
+    lastResolvedUcid?: string | null,
     lastError?: string | null
   }>
 }
@@ -120,18 +120,15 @@ Pair 메타데이터:
 
 ```ts
 {
-  version: 1,
+  version: 2,
   lowPerformanceMode: boolean,
   handleCaseSensitive: boolean,
   autoAddRegexHandles: boolean,
   blockMatchMode: 'handle' | 'pair',
-  pairUpdateUidCheck: boolean,
-  pairUpdateHandleLookup: boolean,
-  handleLookupMethod: 'scraper' | 'api',
-  handleLookupFallbackApi: boolean,
-  handleLookupInterval: 'always' | '60' | '300' | '600' | '3600' | '43200' | '86400' | '604800' | '2592000' | 'custom',
-  handleLookupCustomSeconds: number,
-  handleLookupOnAdd: boolean,
+  pairLookup: { create: 'page' | 'api' | 'page-api', update: 'page' | 'api' | 'page-api', onBlock: 'page' | 'api' | 'page-api' },
+  pairRefreshInterval: 'always' | '60' | '300' | '600' | '3600' | '43200' | '86400' | '604800' | '2592000' | 'custom',
+  pairRefreshCustomSeconds: number,
+  pairOnBlock: boolean,
   keywordAutomationEnabled: boolean,
   themeMode: 'light' | 'dark' | 'system' | 'system-inverted' | 'youtube' | 'youtube-inverted' | 'custom',
   themeCustom: { background: string, surface: string, text: string, muted: string, border: string, primary: string, danger: string },
@@ -195,12 +192,10 @@ API 설정:
 
 - 유효한 `blocked_v2` 없을 때만 레거시 `blockedHandles`, `blockedHandles_v1` 자동 migration. 이후 삭제/전체 초기화 시 legacy 복원 안 함.
 - 탭 간 `blocked_v2` 변경에 선택적 항목별 revision, tombstone, clear revision 저장. 동시 추가 병합. 추가/삭제/전체 초기화 충돌은 높은 revision 기준, echo write 없이 수렴.
-- 탭 간 `pair_meta_v1` 변경은 handle별 revision과 삭제 tombstone을 저장. 전체 초기화는 clear 시점보다 오래된 pair를 숨기고 이후 추가는 유지. UID 감지는 revision 순서, 검사 시각과 알림 dismiss 시각은 더 큰 timestamp가 승리하여 뒤로 가지 않음. 같은 remote 전달은 멱등 처리.
+- 탭 간 `pair_meta_v1` 변경은 handle별 revision과 삭제 tombstone을 저장. 전체 초기화는 clear 시점보다 오래된 pair를 숨기고 이후 추가는 유지. UCID 감지는 revision 순서, 검사 시각과 알림 dismiss 시각은 더 큰 timestamp가 승리하여 뒤로 가지 않음. 같은 remote 전달은 멱등 처리.
 - 기본 `app_settings_v1.dislikeMode`: `none`.
 - 기본 `app_settings_v1.commentBlockMode`: `hide`.
 - 기본 `app_settings_v1.blockMatchMode`: `handle`.
-- `app_settings_v1.pairUpdateUidCheck`/`pairUpdateHandleLookup` 중 하나 항상 켬. 기본은 handle 재조회.
-- `handleLookupMethod` 기본 `scraper`; `api`는 명시 선택. `handleLookupFallbackApi` 기본 `false`, `handleLookupOnAdd` 기본 `true`.
 - 기존 동작 유지 위해 키워드 자동 처리 기본 켬. 꺼도 대소문자 무시 규칙/검사 대상/동작 설정 보존. 기본 검사 대상은 댓글 본문, 동작은 모두 꺼짐.
 - `app_settings_v1.themeMode` 기본 `system`. 기기설정/yt설정은 현재 다크 설정 추종, 반대 모드는 결과 반전. 커스텀 색상 저장 전 여섯 자리 hex 검증.
 - 테마 스타일은 userscript dialog/패널/목록/알림에만 적용. YouTube UI 제외.
@@ -222,7 +217,7 @@ API 설정:
 
 - `app_settings_v1.blockMatchMode`: 활성 신원 규칙 타입 선택.
 - `handle`: 기본. 저장된 `handle` 규칙 매칭.
-- `pair`: UID 감지 후 저장된 `id` 규칙 매칭.
+- `pair`: UCID 감지 후 저장된 `id` 규칙 매칭.
 - regex는 추출된 handle 텍스트에만 적용.
 - regex pattern은 입력 기준 256자, 중복 없는 `gimsuy` flag로 제한하며 handle의 앞 128자만 매칭합니다. 실행 시에는 `RegExp.source`가 escape한 literal 슬래시·줄바꿈 문자를 복원한 후 길이를 검사하여 엔진이 추가한 escape 때문에 허용된 규칙이 비활성화되지 않도록 합니다.
 - 중첩 그룹·대안·연속 반복의 구조 복잡도를 native 매칭 전에 제한하여 [ReDoS](https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS)를 방지합니다. 매칭 후 5ms 검사는 결과 필터이며 실행을 중단하는 timeout이 아닙니다.
@@ -237,12 +232,12 @@ API 설정:
 - `true`: exact handle 비교.
 - 과거 소문자 저장 handle은 strict exact 비교 위해 재저장 필요 가능.
 
-선택적 UID 동작:
+선택적 UCID 동작:
 
-- `app_settings_v1.blockMatchMode` + `pair_meta_v1.enableUidDetection` 사용.
-- `id` 규칙은 `pair` 방식과 UID 감지 모두 켤 때만 매칭.
-- UID 감지를 꺼도 저장된 `id` 규칙/pair 메타데이터 유지.
-- 런타임 UID 매칭은 저장된 `id` 규칙과 댓글 DOM channel ID를 로컬 비교. YouTube Data API 호출 없음.
+- `app_settings_v1.blockMatchMode` + `pair_meta_v1.enableUcidDetection` 사용.
+- `id` 규칙은 `pair` 방식과 UCID 감지 모두 켤 때만 매칭.
+- UCID 감지를 꺼도 저장된 `id` 규칙/pair 메타데이터 유지.
+- 런타임 UCID 매칭은 저장된 `id` 규칙과 댓글 DOM channel ID를 로컬 비교. YouTube Data API 호출 없음.
 - regex 자동 추가 시 매칭 handle을 `handle` 규칙으로 저장. 같은 채널 다음 댓글은 regex 전 handle 확인.
 - channel ID 읽기 순서: `/channel/UC...` link → `data-channel-id` → `channel-id` attribute. pair mode에서 handle은 있으나 channel ID 없으면 `window.__ytCommentBlockerPerf.missingChannelIds` counter 증가.
 
@@ -260,53 +255,26 @@ API 설정:
 
 ## 5. Pair 및 API 흐름
 
-channel ID 조회:
-
-1. 기본: userscript의 YouTube origin에서 `https://www.youtube.com/@<url-encoded-handle>`를 요청.
-2. 공개 채널 HTML에서 `externalId`, `channelId`, `itemprop="channelId"` 순으로 읽음.
-3. undocumented parser라 YouTube HTML 변경 시 실패 가능. HTTP/channel ID 미검출 시 기존 pair 유지, 재시도/API fallback 안내.
-4. 페이지/API 조회에는 제한 시간이 있습니다. 시간 초과는 일반 네트워크 실패와 별도 category로 기록하고, 명시적 작업 취소는 `cancelled`로 구분합니다.
-5. 명시적 API 방식: `GET https://www.googleapis.com/youtube/v3/channels`에 `part=id`, `forHandle=@handle`, `key=<apiKey>` 전송.
-
-저장 UID 확인:
-
-1. 같은 endpoint에 `part=id`, `id=<저장 UID>` 전송.
-2. 저장 channel ID가 계속 조회되면 verified 유지.
-3. 선택적으로 독립 handle 재조회해 UID 교체 확인.
-
-API 키 테스트:
-
-1. 저장 API 키 사용.
-2. 같은 API 계열에 `part=id&id=UC_x5XG1OV2P6uZZ5FSM9Ttw` probe 전송.
-3. 최신 결과를 `lastTestResult`에 저장.
-4. 관리자에 category/메시지 표시.
-
-Fallback 동작:
-
-- channel ID 조회 실패해도 handle 방식 동작. pair 방식은 verified `id` 규칙 필요.
-- 실패 pair는 `unverified`/`stale` 유지.
-- 조회 실패만으로 기존 pair 삭제 금지.
-- pair update에서 다른 UID 조회 시 pair와 `id` 규칙을 최신 UID로 교체. stale ID의 이전 채널 오매칭 방지.
-- API fallback 기본 off. 저장 API 키와 함께 켜면 페이지 조회 실패 후만 실행. off면 API 요청 없음.
-
-API 호출 최소화:
-
-- `Create Pair`: missing/unverified handle pair만 조회.
-- pair 결과는 pair metadata/페이지 메모리에 cache. 기본 갱신: 페이지 조회 10분, API 조회 1주. 선택 handle `Update Pair`는 강제 갱신.
-- 주기: handle 갱신마다, 1분, 5분, 10분, 1시간, 12시간, 1일, 1주, 1개월, 검증된 직접 초 입력.
-- 새 handle 추가 즉시 조회가 기본. Settings에서 비활성화 가능.
-- pair 갱신에서 저장 UID 확인/handle 재조회 각각 선택. 하나는 항상 켬.
-- 선택 handle bulk `Update Pair`는 명시적 사용자 요청. fresh여도 재조회.
-- bulk pair 실행은 handle 조회를 최대 8개까지 동시에 처리하고 결과 목록의 입력 순서를 유지.
-- 공유 pair 작업을 취소하면 실행 중인 요청을 중단하고 대기 중인 handle을 건너뛰며 취소 fallback 상태를 저장하지 않습니다. 관리자 창을 닫으면 해당 UI 세대만 분리되고 다른 호출자가 공유하는 app 작업은 계속됩니다.
-- watch pair 검토 알림은 `나중에` 선택 또는 최근 pair 검사 후 같은 stale 주기 동안 숨김.
+- 최초 생성은 차단된 handle에서 UCID를 조회합니다. 갱신은 저장된 UCID에서 최신 handle을 조회하며 이전 handle을 기준으로 UCID를 교체하지 않습니다.
+- 최초 생성·갱신·차단 즉시 생성은 각각 `page`, `api`, `page-api`를 선택합니다. 신규 설치 기본은 페이지 전용이며 기존 조회방식·fallback을 세 정책에 이관합니다.
+- 페이지 조회는 handle 또는 `/channel/<UCID>` 페이지에서 `ytInitialData.metadata.channelMetadataRenderer`만 읽습니다. 추천 채널의 식별자는 사용하지 않습니다.
+- API 생성은 `channels.list?part=id&forHandle=@handle`, 갱신은 `part=id,snippet&id=<UCID>`를 사용합니다. 갱신은 반환 ID가 일치하고 `snippet.customUrl`이 `@handle` 형식일 때 성공합니다.
+- 페이지 우선 API fallback은 저장 키가 있고 페이지 조회가 실패했을 때만 실행합니다. 취소 시 fallback하지 않습니다. API 전용 조회·키 테스트에는 키가 필요하며 페이지 조회는 키 없이 가능합니다.
+- handle 차단은 즉시 적용하고 `pairOnBlock`이 켜져 있으면 비동기로 페어를 생성합니다(기본 켜짐). 실패 시 기존 차단을 보존합니다. 키워드 페어 생성은 최초 생성 정책을 사용합니다.
+- handle 변경 시 이전 handle 규칙·메타데이터를 최신 handle로 교체하고 UCID 규칙은 유지합니다. 다른 UCID와 연결된 대상 handle은 거부합니다. 조회 실패 시 기존 연결을 보존합니다.
+- 저장 직전 공유 저장소를 다시 읽고 원본 규칙·페어 리비전을 확인합니다. 해제·변경된 차단은 건너뜁니다. 부분 실패 복구는 변경되지 않은 관련 규칙만 되돌려 다른 변경을 보존합니다.
+- 전체 갱신은 주기를 적용하고 선택 갱신은 강제 조회합니다. 기본 주기는 페이지·페이지 우선 10분, API 1주입니다. 기존 명시적 주기·직접 입력 초는 유지합니다.
+- 캐시는 작업·방향·조회방식별로 분리하고 정책·키 변경 시 무효화합니다. 최대 8개 동시 조회이며 저성능 모드는 자동 작업 중단·수동 작업 직렬 처리입니다. 대기 중 이미 생성된 페어는 재조회하지 않습니다.
+- 요청·응답 본문에 제한 시간을 둡니다. 수동 호출자는 app 실행을 공유하며 창을 닫아도 해당 UI만 분리합니다. 결과는 입력 순서를 유지합니다.
+- API 키 테스트는 `part=id&id=UC_x5XG1OV2P6uZZ5FSM9Ttw`를 사용하고 분류된 진단·quota 안내를 유지합니다.
+- 페어·설정 payload는 기존 저장소 키에서 version 2를 사용합니다. 레거시 `uid`, `lastResolvedUid`, `enableUidDetection`을 동기화 항목·스칼라를 포함해 UCID 필드로 변환하고 리비전·삭제 표식을 보존합니다. 새 필드가 우선하며 변환 저장 실패 시 기존 데이터를 보존합니다. 업데이트 후 기존 탭을 새로고침하세요.
 
 ## 6. 관리자 대화상자
 
 섹션:
 
 - 현재 userscript 버전 표시 script info
-- 매칭/API 키/UID pair/이동 버튼 제어
+- 설정 이동, 페어 실행·상태·결과. 설정 편집기는 설정 창에 통합.
 - regex 추가
 - 규칙 목록
 
@@ -344,7 +312,7 @@ Pair 결과:
 
 삭제 동작:
 
-- `handle` 규칙 삭제 시 paired UID 규칙/pair 메타데이터도 삭제.
+- `handle` 규칙 삭제 시 paired UCID 규칙/pair 메타데이터도 삭제.
 - `Clear block list`: 규칙/pair 메타데이터 모두 비움.
 
 ### 성능 및 저성능 모드
@@ -352,7 +320,7 @@ Pair 결과:
 - 설정 → **저성능 모드**는 기본 꺼짐이며 `app_settings_v1.lowPerformanceMode`에 저장됩니다. 탭 간 동기화와 설정 초기화를 지원하며, 해당 필드가 없는 기존 저장소는 일반 모드를 유지합니다.
 - 차단 목록·페어 결과는 일반 모드에서 페이지당 100개, 저성능 모드에서 50개를 표시합니다. 검색·필터·전체 선택은 모든 페이지의 일치 항목에 적용됩니다. 인접 대화상자를 오가도 페이지·선택을 보존하며 필터 변경 시 첫 페이지로 돌아갑니다.
 - 저성능 모드는 검색 입력을 200ms 지연하고 차단 추가 시 자동 채널 조회·키워드 기반 자동 페어 생성을 중단합니다. 기존 자동화 설정값은 보존합니다. 수동 페어 생성·갱신은 유지하며 동시 요청을 8개에서 1개로 줄입니다. 시작된 요청은 완료시키고 대기 중인 자동 작업은 건너뜁니다. 모드를 꺼도 건너뛴 조회를 일괄 실행하지 않습니다.
-- 기존 handle/UID/정규식 매칭·키워드 차단·싫어요 동작은 유지합니다. 페어 차단 방식에서는 저성능 모드 사용 중 새 UID 연결을 수동으로 생성해야 합니다.
+- 기존 handle/UCID/정규식 매칭·키워드 차단·싫어요 동작은 유지합니다. 페어 차단 방식에서는 저성능 모드 사용 중 새 UCID 연결을 수동으로 생성해야 합니다.
 - 댓글 작업은 일반 모드에서 50개 또는 8ms, 저성능 모드에서 20개 또는 4ms마다 나눠 처리합니다. 후속 작업은 일반 모드에서 다음 animation frame, 저성능 모드에서 50ms 뒤에 실행합니다. 단일 댓글 처리는 이 시간 예산을 초과할 수 있습니다. host·페이지 전환 초기화 시 대기 작업을 해제합니다.
 - 설정·목록 초기 렌더링은 한 번 수행합니다. 페어 요약은 데이터나 만료 상태가 바뀔 때 재계산하며 상태 조회마다 전체 페어를 정규화하지 않습니다. 로그 상태 조회는 전체 항목 복사·강제 저장을 하지 않습니다. 저장 데이터 갱신 시 미저장 설정 입력을 보존합니다.
 - 성능 테스트는 규칙 100/500/1,000개, 표시 행·작업 묶음 상한, 정리, 저장 실패 복구, 탭 간 동작을 검증합니다. 실제 Chrome 메모리·종료 증상 개선은 해당 브라우저에서 확인해야 하며 자동 DOM 테스트만으로 RAM 감소율을 확정하지 않습니다.
@@ -361,7 +329,7 @@ Pair 결과:
 
 설정 dialog:
 
-- `GM_setting` 참고 카테고리 목록 레이아웃. 작업 그룹별 제목/컨트롤/짧은 도움말.
+- 왼쪽 메뉴로 차단 방식·댓글·자동화·페어링·API 키·표시/테마·로그/진단·초기화 이동. 좁은 화면은 상단 메뉴. 섹션 이동 시 입력을, 목록 복귀 시 필터·선택·페이지를 보존.
 - 중첩 dialog의 Escape/Enter/Tab/backdrop은 최상위 dialog만 처리. 닫을 때 이전 element로 focus 복원.
 - API test/pair 작업은 `finally`로 loading control 복구하고 조회에 제한 시간을 둡니다. 동시 수동 요청은 현재 실행을 공유하고, 자동 요청은 건너뛰지 않고 실행 종료까지 대기합니다. 창을 닫으면 UI만 분리되고 공유 app 작업은 취소하지 않습니다.
 - debug metrics: page mode, comments host·extraction failure counter, 최근 selector reason. 댓글 본문/URL/API 키/계정 정보 제외.
@@ -369,7 +337,7 @@ Pair 결과:
 - 컨트롤 구분: 매칭, 댓글 표시, 키워드 자동 처리, 로그, 표시 크기, 유지보수.
 - 기본 선택지에 회색 `(기본)` 표시.
 - handle 대소문자 설정.
-- 신원 차단: `handle` 규칙 또는 UID pair `id` 규칙.
+- 신원 차단: `handle` 규칙 또는 UCID pair `id` 규칙.
 - regex 매칭 handle 자동 추가.
 - 자동 싫어요 mode.
 - 키워드 전체 토글. 정규식 편집기/키워드 규칙/검사 대상/일치 동작은 차단 및 키워드 자동 처리 창으로 이동.
@@ -383,8 +351,7 @@ Pair 결과:
 - 차단 목록/설정/차단 및 키워드 자동 처리 창 이동 버튼.
 - 앱 표시/매칭 설정 초기화 전 빨간 파괴적 버튼 + 확인 dialog.
 - YouTube Data API v3 키/테스트.
-- 저장 UID 확인/handle 재조회 pair 갱신 검사.
-- UID detection, pair 요약/action.
+- UCID 감지·작업별 페어링 정책. 실행·결과는 차단목록에 통합.
 - API 응답 대기 중 loading bar.
 - `window.__ytCommentBlockerPerf` 기반 debug counter.
 
@@ -429,7 +396,7 @@ Pair 결과:
 
 lookup cache, 열린 UI, watch 배너도 다시 그림.
 
-pair metadata는 handle별 last-writer revision으로 병합하고 삭제는 tombstone, 전체 삭제는 clear revision으로 보존합니다. UID 감지 설정은 revision 순서로 충돌을 해결하며 `lastPairCheckAt`과 `pairNotificationDismissedAt`은 절대 감소하지 않습니다. 최신 상태를 추가하는 경우에만 병합 snapshot을 다시 저장하고, 저장 거부 시 로컬 상태를 복구합니다.
+pair metadata는 handle별 last-writer revision으로 병합하고 삭제는 tombstone, 전체 삭제는 clear revision으로 보존합니다. UCID 감지 설정은 revision 순서로 충돌을 해결하며 `lastPairCheckAt`과 `pairNotificationDismissedAt`은 절대 감소하지 않습니다. 최신 상태를 추가하는 경우에만 병합 snapshot을 다시 저장하고, 저장 거부 시 로컬 상태를 복구합니다.
 
 ## 9. 가져오기 및 내보내기
 
@@ -457,7 +424,7 @@ JSON 형태:
 
 1. watch/Shorts 페이지인지 확인.
 2. 관리자 규칙 확인.
-3. UID 매칭이면 `UID Detection` 확인.
+3. UCID 매칭이면 `UCID Detection` 확인.
 4. pair 없음/`unverified`면 `Create Pair` 또는 `Update Pair` 실행.
 5. API 조회 또는 fallback을 켰다면 API 키 저장·테스트 확인.
 

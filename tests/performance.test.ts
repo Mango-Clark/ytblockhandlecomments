@@ -87,12 +87,13 @@ test('manual pair lookups run serially in low mode and skip queued automatic wor
 	let active = 0;
 	let maximum = 0;
 	let calls = 0;
-	app.pairService.resolveHandle = async () => {
+	app.pairService.resolveHandleToUcid = async () => {
 		active++; calls++; maximum = Math.max(maximum, active);
 		await Promise.resolve();
 		active--;
-		return { uid: 'UC1234567890', source: 'test' };
+		return { ucid: 'UC1234567890', source: 'test' };
 	};
+	for (const handle of ['@one', '@two', '@three']) app.storage.addHandle(handle);
 	const manual = app.pairService.createPairsForHandles(['@one', '@two', '@three']);
 	const automatic = app.pairService.createPairsForHandles(['@skip'], { automatic: true });
 	assert.equal((await manual).created, 3);
@@ -206,11 +207,12 @@ test('enabling low mode during a manual run finishes existing requests and seria
 	const { app } = createApp();
 	const pending: Array<() => void> = [];
 	let calls = 0;
-	app.pairService.resolveHandle = async () => {
+	app.pairService.resolveHandleToUcid = async () => {
 		calls++;
 		await new Promise<void>(resolve => pending.push(resolve));
-		return { uid: 'UC1234567890', source: 'test' };
+		return { ucid: 'UC1234567890', source: 'test' };
 	};
+	for (let i = 0; i < 12; i++) app.storage.addHandle(`@user${i}`);
 	const run = app.pairService.createPairsForHandles(Array.from({ length: 12 }, (_: unknown, i: number) => `@user${i}`));
 	assert.equal(calls, 8);
 	app.settings.setLowPerformanceMode(true);
@@ -224,37 +226,12 @@ test('enabling low mode during a manual run finishes existing requests and seria
 	assert.equal((await run).created, 12);
 });
 
-test('mode changes also limit the handle lookup after an in-flight UID check', async () => {
-	const { app } = createApp();
-	app.settings.setPairUpdateUidCheckEnabled(true);
-	const handles = ['@one', '@two', '@three'];
-	for (const handle of handles) app.pairStore.upsertPair({ handle, uid: 'UC1234567890', status: 'verified', verifiedAt: Date.now(), source: 'test' });
-	const uidChecks: Array<() => void> = [];
-	const handleChecks: Array<() => void> = [];
-	app.pairService.resolveUid = async () => { await new Promise<void>(resolve => uidChecks.push(resolve)); };
-	app.pairService.resolveHandle = async () => {
-		await new Promise<void>(resolve => handleChecks.push(resolve));
-		return { uid: 'UC1234567890', source: 'test' };
-	};
-	const run = app.pairService.updatePairsForHandles(handles);
-	assert.equal(uidChecks.length, 3);
-	app.settings.setLowPerformanceMode(true);
-	uidChecks.forEach(resolve => resolve());
-	for (let i = 0; i < 100; i++) {
-		await Promise.resolve();
-		assert.ok(handleChecks.length <= 1);
-		handleChecks.shift()?.();
-	}
-	assert.equal((await run).refreshed, 3);
-	assert.equal(app.pairService._lookupWaiters.length, 0);
-});
-
 test('cached pair summary expires when a verified pair becomes stale', () => {
 	const { app, context } = createApp();
 	let now = 1000000000;
 	context.Date = class extends Date { static now() { return now; } };
 	app.storage.setAll([{ type: 'handle', value: '@one' }, { type: 'id', value: 'UC1234567890' }]);
-	app.pairStore.upsertPair({ handle: '@one', uid: 'UC1234567890', status: 'verified', verifiedAt: now, source: 'test' });
+	app.pairStore.upsertPair({ handle: '@one', ucid: 'UC1234567890', status: 'verified', verifiedAt: now, source: 'test' });
 	assert.equal(app.pairService.getSummary().paired, 1);
 	now += 7 * 24 * 60 * 60 * 1000;
 	assert.equal(app.pairService.getSummary().stale, 1);

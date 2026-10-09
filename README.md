@@ -44,7 +44,7 @@ Source layout:
 - Add `Hide comments from this channel` to comment `⋯` menu.
 - Hide matches live on watch pages and Shorts.
 - Store `handle`, `id`, `regex` rules in `blocked_v2`.
-- Choose `handle` matching or UID-pair `id` matching; regex remains independent.
+- Choose `handle` matching or UCID-pair `id` matching; regex remains independent.
 - Optional case-sensitive handle matching.
 
 ### Comment automation
@@ -52,13 +52,13 @@ Source layout:
 - Choose hidden, gray placeholder, or click-to-reveal comments.
 - Auto-dislike modes: off, newly hidden only, always while hidden.
 - Reapply keyword/auto-dislike actions when YouTube reuses comment DOM nodes.
-- Configure regex, keyword fields, dislike, handle-block, UID-pair actions in one dialog.
+- Configure regex, keyword fields, dislike, handle-block, UCID-pair actions in one dialog.
 - Validate regex length, flags, and conservative structural complexity before storage/matching; limit matching targets to 128 characters.
 - Auto-save handles first hidden by regex for later handle matching.
 
 ### Settings and themes
 
-- Separate settings dialog for API, UID, regex auto-add, display sizing, debug counters.
+- Separate settings dialog for API, UCID, regex auto-add, display sizing, debug counters.
 - Settings grouped by matching, comment display, keyword automation, logging, display size, maintenance.
 - Auto-save; mark defaults with `(Default)`.
 - Reset display/matching settings after confirmation.
@@ -80,7 +80,7 @@ Source layout:
 - Detect optional channel IDs; store handle-channel-ID metadata in `pair_meta_v1`.
 - Extract comment channel IDs from links/stable channel-ID attributes.
 - Default handle resolution from public channel pages; cached YouTube Data API v3 lookup/fallback.
-- Create/update UID pairs; show handle-level results.
+- Create/update UCID pairs; show handle-level results.
 - Filter/sort pair results; copy/export failures.
 - Loading bars for API-key tests/pair actions.
 - Structured quota guidance after repeated API-key quota failures.
@@ -145,17 +145,17 @@ Pair metadata:
 
 ```ts
 {
-  version: 1,
-  enableUidDetection: boolean,
+  version: 2,
+  enableUcidDetection: boolean,
   lastPairCheckAt: number | null,
   pairNotificationDismissedAt: number | null,
   pairs: Array<{
     handle: string,
-    uid: string,
+    ucid: string,
     verifiedAt: number | null,
     status: 'verified' | 'stale' | 'mismatch' | 'unverified',
     source: string,
-    lastResolvedUid?: string | null,
+    lastResolvedUcid?: string | null,
     lastError?: string | null
   }>
 }
@@ -165,18 +165,15 @@ App settings:
 
 ```ts
 {
-	version: 1,
+	version: 2,
 	lowPerformanceMode: boolean,
 	handleCaseSensitive: boolean,
 	autoAddRegexHandles: boolean,
 	blockMatchMode: 'handle' | 'pair',
-	pairUpdateUidCheck: boolean,
-	pairUpdateHandleLookup: boolean,
-	handleLookupMethod: 'scraper' | 'api',
-	handleLookupFallbackApi: boolean,
-	handleLookupInterval: 'always' | '60' | '300' | '600' | '3600' | '43200' | '86400' | '604800' | '2592000' | 'custom',
-	handleLookupCustomSeconds: number,
-	handleLookupOnAdd: boolean,
+	pairLookup: { create: 'page' | 'api' | 'page-api', update: 'page' | 'api' | 'page-api', onBlock: 'page' | 'api' | 'page-api' },
+	pairRefreshInterval: 'always' | '60' | '300' | '600' | '3600' | '43200' | '86400' | '604800' | '2592000' | 'custom',
+	pairRefreshCustomSeconds: number,
+	pairOnBlock: boolean,
 	keywordAutomationEnabled: boolean,
 	themeMode: 'light' | 'dark' | 'system' | 'system-inverted' | 'youtube' | 'youtube-inverted' | 'custom',
 	themeCustom: { background: string, surface: string, text: string, muted: string, border: string, primary: string, danger: string },
@@ -220,12 +217,10 @@ Notes:
 - Cross-tab `blocked_v2` sync uses per-entry revisions/tombstones; concurrent additions merge, conflicts converge deterministically.
 - Default `dislikeMode`: `none`
 - Default `commentBlockMode`: `hide`
-- Default `blockMatchMode`: `handle`; `pair` requires UID Detection and stored `id` rules
-- Default channel-ID lookup fetches same-origin public channel page at `https://www.youtube.com/@<handle>` and parses `externalId`, `channelId`, then `itemprop="channelId"`. Undocumented HTML path may change.
+- Default `blockMatchMode`: `handle`; `pair` requires UCID Detection and stored `id` rules
 - Lookup results cached in pair metadata/memory. Default refresh: 10 minutes page lookup, one week API lookup. Explicit selected-handle update bypasses cache.
 - Page lookup failures preserve data; prompt retry or tested API fallback. API lookup needs saved key; costs one quota unit/request.
-- At least one pair update check remains enabled; default re-resolves handles.
-- Missing/unverified pair: use `handle` mode until UID rule created.
+- Missing/unverified pair: use `handle` mode until UCID rule created.
 - Keyword matching case-insensitive; checks comment text by default; no actions until enabled.
 - Logging off by default. Saved logs remain in Tampermonkey storage; downloadable as text. Browser controls download location.
 - Console timestamps support calendar (`iso`, `iso-date`, `iso-basic-date`), week (`iso-week-date`), ordinal (`iso-ordinal-date`) dates. Custom formats combine `yyyy`, `MM`, `dd`, `DDD`, `ww`, `e`, `HH`, `mm`, `ss`, `SSS`, `X`, `XXX`, `Z`, `T`, `W` for ISO basic/extended time/timezone forms.
@@ -248,13 +243,15 @@ The default verification suite intentionally stays dependency-free and determini
 
 ## Notes
 
-- `handle` default identity method; `pair` matches `id` rules only with `UID Detection` enabled.
-- Pair creation/handle re-checks use the selected lookup method: the public YouTube channel page by default, or YouTube Data API v3 `channels.list` with `forHandle` when API lookup is selected.
-- Optional stored-UID verification uses `channels.list` with saved channel ID.
-- UID matching local after pair data exists; API calls only during pair actions.
+- Create pairs from handle → UCID; update current handles from stable UCID → handle. Previous handle rules are replaced after a rename.
+- Configure creation, updates, and immediate pairing independently: page only, API only, or page first with API fallback. Blocking applies immediately; lookup failure preserves existing rules.
+- Settings has section navigation and contains policies/API keys; the block list contains pair operations and results. Returning preserves list state.
+- Existing UID fields/settings migrate to UCID payloads without changing storage keys; refresh older tabs after updating.
+
+- `handle` default identity method; `pair` matches `id` rules only with `UCID Detection` enabled.
+- UCID matching local after pair data exists; API calls only during pair actions.
 - `Update Pair` skips fresh verified pairs until stale; selected-handle bulk updates force lookup.
 - Watch-page pair review banner stays quiet during stale interval after `Later` or recent pair check.
-- Different resolved UID replaces old `id` rule, preventing stale-ID matches.
 - API-key test uses same API family with fixed public channel probe.
 - Search manager-only; comment-hide hot path uses cached sets.
 - Regex auto-add stores matched handle as `handle`, avoiding later regex pass.

@@ -59,6 +59,7 @@ import { Logger } from './15-logger.ts';
 			this._registerMenu();
 			this._schedulePageSync();
 			if ([this.settings, this.logger, this.storage, this.pairStore, this.apiConfig].some((store: any) => !store.getReadStatus?.().ok)) Toast.show(t('storageReadFailed'), 6000);
+			if ([this.settings, this.pairStore].some(store => store.getLastSaveError())) Toast.show(t('storageSaveFailed'), 6000);
 			this.logger.info('Application started');
 		}
 
@@ -82,11 +83,11 @@ import { Logger } from './15-logger.ts';
 		_resolveAddedHandle(handle: any) {
 			if (this.settings.isLowPerformanceMode?.()) return;
 			const normalized = sanitizeHandle(handle);
-			if (!normalized || !this.settings.isHandleLookupOnAddEnabled() || this.pairStore.getPair(normalized)) return;
+			if (!normalized || !this.settings.isPairOnBlockEnabled() || this.pairStore.getPair(normalized)) return;
 			const key = this.settings.isHandleCaseSensitive() ? normalized : normalized.toLocaleLowerCase();
 			if (this._keywordPairInFlight.has(key)) return;
 			this._keywordPairInFlight.add(key);
-			void this.pairService.createPairsForHandles([normalized], { automatic: true })
+			void this.pairService.createPairsForHandles([normalized], { automatic: true, stage: 'onBlock' })
 				.then((stats: PairRunStats) => { this._lastPairRunResult = stats; })
 				.catch(() => { })
 				.finally(() => {
@@ -216,7 +217,7 @@ import { Logger } from './15-logger.ts';
 				this.logger.info('Keyword action added a block rule', { handle, createPair: !!actions.createPair });
 				this.hider.rebuildLookup();
 				this._scheduleKeywordRefresh();
-				this._resolveAddedHandle(handle);
+				if (!actions.createPair) this._resolveAddedHandle(handle);
 			}
 			if (this.settings.isLowPerformanceMode?.() || !actions.createPair || this.pairStore.getPair(handle)) return;
 			const key = this.settings.isHandleCaseSensitive() ? handle : handle.toLocaleLowerCase();
@@ -580,7 +581,7 @@ import { Logger } from './15-logger.ts';
 				});
 				GM_addValueChangeListener('pair_meta_v1', (_k, _old, val, remote) => {
 					if (!remote) return;
-					if (!val || (val.version != null && val.version !== 1) || !Array.isArray(val.pairs)) return;
+					if (!val || (val.version != null && ![1, 2].includes(val.version)) || !Array.isArray(val.pairs)) return;
 					const changed = this.pairStore.mergeRemote
 						? this.pairStore.mergeRemote(val)
 						: (this.pairStore.setAllLocal(val), true);

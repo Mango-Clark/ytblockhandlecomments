@@ -68,7 +68,7 @@ import { Extractor } from './09-extractor.ts';
 			this._idSet.clear(); this._handleSet.clear(); this._regexes = [];
 			const blockMatchMode = this.settings?.getBlockMatchMode?.() || 'handle';
 			this._blockMatchMode = blockMatchMode;
-			const useUidDetection = blockMatchMode === 'pair' && this.pairStore.isUidDetectionEnabled();
+			const useUcidDetection = blockMatchMode === 'pair' && this.pairStore.isUcidDetectionEnabled();
 			const useHandleMatching = blockMatchMode === 'handle';
 			const caseSensitive = this.settings?.isHandleCaseSensitive?.() || false;
 			this._caseSensitive = caseSensitive;
@@ -84,7 +84,7 @@ import { Extractor } from './09-extractor.ts';
 			};
 			for (const it of this.storage.all()) {
 				if (it.type === 'id') {
-					if (useUidDetection) this._idSet.add(it.value);
+					if (useUcidDetection) this._idSet.add(it.value);
 				}
 				else if (it.type === 'handle') {
 					if (!useHandleMatching) continue;

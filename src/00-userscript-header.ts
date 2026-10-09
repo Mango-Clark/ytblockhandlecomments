@@ -2,7 +2,7 @@
 // @name         YouTube Comment Blocker
 // @namespace    YouTube_Comment_Blocker
 // @version      {{version}}
-// @description  Block/unblock comment handles via right-click. Optional UID pairing via YouTube Data API, real-time hiding, custom popup, and block list management.
+// @description  Block/unblock comment handles via right-click. Optional UCID pairing via channel pages or YouTube Data API, real-time hiding, custom popup, and block list management.
 // @homepage     https://github.com/Mango-Clark/ytblockhandlecomments/
 // @updateURL    https://raw.githubusercontent.com/Mango-Clark/ytblockhandlecomments/refs/heads/master/ytblockhandlecomments.js
 // @downloadURL  https://raw.githubusercontent.com/Mango-Clark/ytblockhandlecomments/refs/heads/master/ytblockhandlecomments.js

@@ -130,8 +130,8 @@ export function renderManagerPairResultList(container: HTMLElement, stats: PairR
 		handle.textContent = ` ${item.handle}`;
 		title.append(outcome, handle);
 		li.appendChild(title);
-		if (item.uid) li.appendChild(context.createMetaLine(t('metaUid', item.uid)));
-		if (item.resolvedUid && item.resolvedUid !== item.uid) li.appendChild(context.createMetaLine(t('metaResolvedUid', item.resolvedUid)));
+		if (item.ucid) li.appendChild(context.createMetaLine(t('metaUcid', item.ucid)));
+		if (item.resolvedUcid && item.resolvedUcid !== item.ucid) li.appendChild(context.createMetaLine(t('metaResolvedUcid', item.resolvedUcid)));
 		if (item.message) li.appendChild(context.createMetaLine(item.message));
 		list.appendChild(li);
 	}

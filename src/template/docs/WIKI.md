@@ -75,7 +75,7 @@ Comment matching intentionally limited to watch/Shorts comments. Matches can be 
 
 Comment automation identity derives channel ID, handle, body, and pinned label. Reused element identity changes invalidate cached metadata and one-time keyword, dislike, and blocked-display state.
 
-Keyword automation checks comment text, author handles, and pinned labels. Case-insensitive; runs selected actions only: dislike, block author handle, or create UID pair after adding handle.
+Keyword automation checks comment text, author handles, and pinned labels. Case-insensitive; runs selected actions only: dislike, block author handle, or create UCID pair after adding handle.
 
 Logging independently supports local download entries and browser console. Records only low-frequency app, API-test, and pair-operation events.
 
@@ -99,17 +99,17 @@ Pair metadata:
 
 ```ts
 {
-  version: 1,
-  enableUidDetection: boolean,
+  version: 2,
+  enableUcidDetection: boolean,
   lastPairCheckAt: number | null,
   pairNotificationDismissedAt: number | null,
   pairs: Array<{
     handle: string,
-    uid: string,
+    ucid: string,
     verifiedAt: number | null,
     status: 'verified' | 'stale' | 'mismatch' | 'unverified',
     source: string,
-    lastResolvedUid?: string | null,
+    lastResolvedUcid?: string | null,
     lastError?: string | null
   }>
 }
@@ -119,18 +119,15 @@ App settings:
 
 ```ts
 {
-  version: 1,
+  version: 2,
   lowPerformanceMode: boolean,
   handleCaseSensitive: boolean,
   autoAddRegexHandles: boolean,
   blockMatchMode: 'handle' | 'pair',
-  pairUpdateUidCheck: boolean,
-  pairUpdateHandleLookup: boolean,
-  handleLookupMethod: 'scraper' | 'api',
-  handleLookupFallbackApi: boolean,
-  handleLookupInterval: 'always' | '60' | '300' | '600' | '3600' | '43200' | '86400' | '604800' | '2592000' | 'custom',
-  handleLookupCustomSeconds: number,
-  handleLookupOnAdd: boolean,
+  pairLookup: { create: 'page' | 'api' | 'page-api', update: 'page' | 'api' | 'page-api', onBlock: 'page' | 'api' | 'page-api' },
+  pairRefreshInterval: 'always' | '60' | '300' | '600' | '3600' | '43200' | '86400' | '604800' | '2592000' | 'custom',
+  pairRefreshCustomSeconds: number,
+  pairOnBlock: boolean,
   keywordAutomationEnabled: boolean,
   themeMode: 'light' | 'dark' | 'system' | 'system-inverted' | 'youtube' | 'youtube-inverted' | 'custom',
   themeCustom: { background: string, surface: string, text: string, muted: string, border: string, primary: string, danger: string },
@@ -194,12 +191,10 @@ Notes:
 
 - Legacy `blockedHandles` and `blockedHandles_v1` migrate only if valid `blocked_v2` absent; later delete/clear never restores legacy entries
 - Cross-tab `blocked_v2` changes carry optional entry revisions, tombstones, and clear revision. Concurrent additions merge; highest revision resolves add/delete/clear conflicts without echo writes.
-- Cross-tab `pair_meta_v1` changes carry per-handle revisions and deletion tombstones. Clear uses a revision that suppresses older pairs; later additions remain visible. UID detection uses revision ordering, while check and notification timestamps merge monotonically by the greatest timestamp. Repeated remote delivery is idempotent.
+- Cross-tab `pair_meta_v1` changes carry per-handle revisions and deletion tombstones. Clear uses a revision that suppresses older pairs; later additions remain visible. UCID detection uses revision ordering, while check and notification timestamps merge monotonically by the greatest timestamp. Repeated remote delivery is idempotent.
 - Default `app_settings_v1.dislikeMode`: `none`
 - Default `app_settings_v1.commentBlockMode`: `hide`
 - Default `app_settings_v1.blockMatchMode`: `handle`
-- At least one of `app_settings_v1.pairUpdateUidCheck` and `pairUpdateHandleLookup` remains enabled; handle lookup default
-- `handleLookupMethod` defaults to `scraper`; `api` opt-in. `handleLookupFallbackApi` defaults to `false`; `handleLookupOnAdd` to `true`.
 - Keyword automation enabled by default for existing behavior. Disable without deleting case-insensitive rules, fields, or actions. Default matching: comment text; no default enabled action.
 - `app_settings_v1.themeMode` defaults to `system`. System/YouTube modes follow respective current dark setting; inverted modes use opposite. Custom colors require validated six-digit hex.
 - Theme styles affect userscript dialogs, panels, lists, notices only; never YouTube UI.
@@ -221,7 +216,7 @@ Identity matching:
 
 - `app_settings_v1.blockMatchMode` selects active identity rule type
 - `handle` default; matches stored `handle` rules
-- `pair` matches stored `id` rules after UID Detection enabled
+- `pair` matches stored `id` rules after UCID Detection enabled
 - Regex tests extracted handle text only
 - Regex patterns are limited to 256 input characters with unique `gimsuy` flags; matching uses the first 128 characters of a handle. Runtime validation restores literal slashes and line terminators escaped by `RegExp.source` before checking length, so engine-added escaping does not disable an accepted rule.
 - Structural validation bounds nested groups, alternatives, and consecutive repetitions before native matching to prevent [ReDoS](https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS). The 5 ms check after matching is only a result filter, not an execution timeout.
@@ -236,12 +231,12 @@ Case sensitivity:
 - `true`: exact handle comparison
 - Older lowercase-only handles may require re-saving for strict matching
 
-Optional UID behavior:
+Optional UCID behavior:
 
-- Controlled by `app_settings_v1.blockMatchMode` + `pair_meta_v1.enableUidDetection`
-- `id` rules active only in `pair` mode with UID detection enabled
-- Disabling UID detection preserves stored `id` rules and pair metadata
-- Runtime UID matching compares stored `id` rules with channel IDs already in comment DOM; no YouTube Data API call
+- Controlled by `app_settings_v1.blockMatchMode` + `pair_meta_v1.enableUcidDetection`
+- `id` rules active only in `pair` mode with UCID detection enabled
+- Disabling UCID detection preserves stored `id` rules and pair metadata
+- Runtime UCID matching compares stored `id` rules with channel IDs already in comment DOM; no YouTube Data API call
 - Optional regex auto-add stores matched handle as `handle`, enabling handle check before regex on later comments
 - Channel IDs read first from `/channel/UC...` links, then `data-channel-id` and `channel-id` attributes. In pair mode, handle without channel ID increments `window.__ytCommentBlockerPerf.missingChannelIds`.
 
@@ -259,53 +254,26 @@ Keyword automation:
 
 ## 5. Pair And API Flow
 
-Channel ID lookup:
-
-1. Default: fetch `https://www.youtube.com/@<url-encoded-handle>` from userscript YouTube origin.
-2. Parse `externalId`, `channelId`, then `itemprop="channelId"` from public channel HTML.
-3. Undocumented parser may break with YouTube HTML changes. HTTP/no-channel-ID failures preserve pair data and show retry/API-fallback guidance.
-4. Page and API lookups have a bounded timeout. Timeout results are classified separately from ordinary network failures, and explicit run cancellation is reported separately as cancelled.
-5. Explicit API mode calls `GET https://www.googleapis.com/youtube/v3/channels` with `part=id`, `forHandle=@handle`, and `key=<apiKey>`.
-
-Stored UID verification:
-
-1. Call same endpoint with `part=id` and `id=<stored UID>`
-2. Keep pair verified while stored channel ID resolves
-3. Optionally independently re-resolve handle to detect replacement UID
-
-API-key test:
-
-1. Use saved API key
-2. Call same API family with `part=id&id=UC_x5XG1OV2P6uZZ5FSM9Ttw`
-3. Save latest result in `lastTestResult`
-4. Show categorized manager diagnostics
-
-Fallback behavior:
-
-- Handle mode works after channel-ID lookup failure; pair mode requires existing verified `id` rule
-- Failed pairs remain `unverified` or `stale`
-- Lookup failure never silently removes pair data
-- Different resolved UID replaces stored pair and `id` rule, preventing stale ID matching
-- API fallback defaults off. When enabled with saved key, runs only after page lookup failure; when disabled, makes no API request.
-
-API minimization:
-
-- `Create Pair` looks up missing/unverified handle pairs only
-- Pair results cached in metadata and per-page memory. Default refresh: 10 minutes for page lookup, one week for API lookup; selected-handle `Update Pair` forces refresh.
-- Intervals: every handle update, 1m, 5m, 10m, 1h, 12h, 1d, 1w, 1M, or validated custom seconds.
-- New handles resolve immediately by default; Settings can disable.
-- Pair update independently supports stored UID verification and handle re-resolution; at least one always enabled.
-- Selected-handle bulk `Update Pair` explicitly refreshes selected handles even when fresh.
-- Bulk pair runs process up to eight handle lookups concurrently while preserving input order in the result list.
-- Cancelling a shared pair run aborts active requests, stops queued handles, and avoids writing cancellation fallback records. Closing a manager dialog detaches its UI generation while the shared app run continues for other callers.
-- Watch-page pair review prompts suppressed for same stale interval after `Later` or recent pair check.
+- Creation resolves a blocked handle to UCID. Updates resolve the stored UCID to its current handle; they never reassign the UCID based on the previous handle.
+- Creation, updates, and immediate pairing each select `page`, `api`, or `page-api`. New installs default to page-only; old lookup/fallback choices migrate to all three policies.
+- Page lookup fetches the handle or `/channel/<UCID>` page and reads only `ytInitialData.metadata.channelMetadataRenderer`. Recommendations are not channel identity evidence.
+- API creation uses `channels.list?part=id&forHandle=@handle`; updates use `part=id,snippet&id=<UCID>`. Updates require the returned ID to match and `snippet.customUrl` to contain an `@handle`.
+- Page-first API fallback requires a saved key and runs only after page failure. Cancellation never starts fallback. API-only and API-key tests require a key; page lookup remains available without one.
+- Blocking applies the handle rule immediately, then creates a pair asynchronously when `pairOnBlock` is enabled (default). Failure preserves existing blocking. Keyword pair actions use the creation policy.
+- A renamed handle replaces the previous handle rule and metadata while preserving the UCID rule. A destination paired with another UCID is rejected. Lookup failure preserves the previous association.
+- Before writes, reread shared storage and check the original rule/pair revisions. Removed or changed blocks are skipped. Partial-write rollback restores only unchanged touched rules, preserving unrelated changes.
+- Full updates honor the refresh interval; selected updates force lookup. Default intervals are 10 minutes for page/page-first and one week for API. Existing explicit intervals and custom seconds are retained.
+- Cache entries are separated by operation, direction, and method and invalidated on policy or key changes. At most eight requests run concurrently; low-performance mode pauses automatic work and serializes manual work. Queued creation skips pairs already completed by another request.
+- Requests and response bodies have timeouts. Manual callers share the active app run; closing a dialog detaches its UI without cancelling that shared run. Results retain input order.
+- The API-key test uses `part=id&id=UC_x5XG1OV2P6uZZ5FSM9Ttw`, saves categorized diagnostics, and retains quota guidance.
+- Pair and settings payloads are version 2 under their existing storage keys. Legacy `uid`, `lastResolvedUid`, and `enableUidDetection` migrate to UCID fields, including sync entries/scalars; revisions and deletion tombstones survive. New fields take precedence. A failed migration leaves stored legacy data intact. Refresh older tabs after updating.
 
 ## 6. Manager Dialog
 
 Sections:
 
 - Script info with current userscript version
-- Matching, API key, UID pair, navigation controls
+- Settings navigation, pair operations/status/results; configuration editors live in Settings
 - Regex add
 - Rule list
 
@@ -343,7 +311,7 @@ Pair results:
 
 Removal behavior:
 
-- Removing `handle` also removes paired UID rule and metadata
+- Removing `handle` also removes paired UCID rule and metadata
 - `Clear block list` clears rules and pair metadata
 
 ### Performance And Low-Performance Mode
@@ -351,7 +319,7 @@ Removal behavior:
 - Settings → **Low-performance mode** is off by default, saved as `app_settings_v1.lowPerformanceMode`, synchronized across tabs, and cleared by settings reset. Existing stores without this field retain normal mode.
 - Normal mode renders 100 block-list/pair-result rows per page; low mode renders 50. Search/filtering and select-all operate on all matching entries across pages. Page and selection survive adjacent-dialog navigation; filter changes return to page one.
 - Low mode debounces search by 200ms and pauses automatic channel lookup on block addition and keyword-triggered pair creation. Saved automation preferences remain unchanged. Manual pair creation/update remains available with one concurrent request instead of eight. Requests already started finish; queued automatic work is skipped. Disabling low mode does not replay skipped lookups.
-- Existing handle/UID/regex matching, keyword blocking, and dislike actions remain available. With pair matching, new UID links require manual pair creation while low mode is enabled.
+- Existing handle/UCID/regex matching, keyword blocking, and dislike actions remain available. With pair matching, new UCID links require manual pair creation while low mode is enabled.
 - Comment work yields after 50 nodes or 8ms in normal mode, or 20 nodes or 4ms in low mode. Low-mode continuation waits 50ms; normal continuation uses the next animation frame. A single comment operation can exceed the cooperative time budget. Pending work is discarded on host/navigation reset.
 - Settings/list initialization renders once. Pair summaries are cached until data or expiry changes; status reads do not repeatedly normalize the entire pair store. Log status reads avoid copying all entries or flushing writes. Storage-only refreshes preserve unsaved settings inputs.
 - Performance tests cover 100/500/1,000 rules, bounded row counts and batches, cleanup, save rollback, and cross-tab behavior. Actual Chrome memory/crash improvement must be checked in the affected browser; automated DOM tests do not establish a RAM reduction percentage.
@@ -360,7 +328,7 @@ Removal behavior:
 
 Settings dialog:
 
-- Category-list layout inspired by `GM_setting`: task groups have title, controls, brief help
+- Left navigation jumps to matching, comments, automation, pairing, API key, display/theme, logs/diagnostics, and reset; narrow screens use a top menu. Section changes preserve drafts; returning to the list preserves filters, selection, and page.
 - Nested dialogs route Escape, Enter, Tab, and backdrop actions to top dialog only; close restores opener focus
 - API tests/pair actions use `finally` cleanup. Requests have bounded timeouts. Concurrent manual requests share the active run; automatic requests wait for it instead of being skipped. Closing a dialog detaches the view; it does not cancel the shared app run.
 - Debug metrics include page mode, comments-host/extraction failure counters, latest selector reason; exclude comment text, URLs, API keys, account data
@@ -368,7 +336,7 @@ Settings dialog:
 - Groups: matching, comment display, keyword automation, logging, display size, maintenance
 - Default choices marked with muted `(Default)`
 - Handle case sensitivity
-- Identity method: `handle` rules or UID pair `id` rules
+- Identity method: `handle` rules or UCID pair `id` rules
 - Regex matched-handle auto-add
 - Auto-dislike mode
 - Master keyword-automation toggle; regex editor, keyword rules, inputs, actions in block/keyword automation dialog
@@ -382,8 +350,8 @@ Settings dialog:
 - Navigation among block list, settings, block/keyword automation dialog
 - Red destructive reset + confirmation for display/matching settings
 - YouTube Data API v3 key/test controls
-- UID detection, pair summary/actions
-- Pair checks: stored UID verification + handle re-resolution
+- UCID detection and independent pairing policies; operations/results live in the block list
+- Pair updates resolve current handles from stable UCIDs.
 - Loading bars during API key tests/pair actions
 - Debug counters from `window.__ytCommentBlockerPerf`
 
@@ -428,7 +396,7 @@ Remote Tampermonkey changes refresh local state for:
 
 Refresh updates lookup caches, open UI, and watch-page banner.
 
-Pair metadata uses per-handle last-writer revisions with tombstones for deletes and a clear revision for full clears. Scalar UID-detection changes use revision ordering; `lastPairCheckAt` and `pairNotificationDismissedAt` never move backward. A merged snapshot is written back only when it adds newer state, and a rejected merge write restores the local state.
+Pair metadata uses per-handle last-writer revisions with tombstones for deletes and a clear revision for full clears. Scalar UCID-detection changes use revision ordering; `lastPairCheckAt` and `pairNotificationDismissedAt` never move backward. A merged snapshot is written back only when it adds newer state, and a rejected merge write restores the local state.
 
 ## 9. Import And Export
 
@@ -456,7 +424,7 @@ If comments are not hiding:
 
 1. Confirm watch or Shorts page.
 2. Confirm rule exists in manager.
-3. For UID matching, confirm `UID Detection` on.
+3. For UCID matching, confirm `UCID Detection` on.
 4. If pair missing or `unverified`, run `Create Pair` or `Update Pair`.
 5. If API lookup or fallback is enabled, confirm an API key is saved and tested.
 

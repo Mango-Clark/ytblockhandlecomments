@@ -70,25 +70,25 @@ test('stored pair metadata drops invalid records and normalizes duplicate handle
 		gmStore: {
 			pair_meta_v1: {
 				version: 1,
-				enableUidDetection: 1,
+				enableUcidDetection: 1,
 				pairs: [
-					{ handle: '', uid: CHANNEL_ID },
-					{ handle: '@Alpha', uid: CHANNEL_ID, status: 'verified', verifiedAt: null },
-					{ handle: '@alpha', uid: 'invalid', status: 'verified', source: ' cache ' }
+					{ handle: '', ucid: CHANNEL_ID },
+					{ handle: '@Alpha', ucid: CHANNEL_ID, status: 'verified', verifiedAt: null },
+					{ handle: '@alpha', ucid: 'invalid', status: 'verified', source: ' cache ' }
 				]
 			}
 		}
 	});
 	const pairs = new api.PairMetaStorage(new api.AppSettingsStorage());
 
-	assert.equal(pairs.isUidDetectionEnabled(), true);
+	assert.equal(pairs.isUcidDetectionEnabled(), true);
 	assert.deepEqual(Array.from(pairs.allPairs(), (pair: any) => ({ ...pair })), [{
 		handle: '@alpha',
-		uid: '',
+		ucid: '',
 		verifiedAt: null,
 		status: 'unverified',
 		source: 'cache',
-		lastResolvedUid: null,
+		lastResolvedUcid: null,
 		lastError: null
 	}]);
 });

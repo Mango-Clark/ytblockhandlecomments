@@ -20,7 +20,7 @@ import {
 } from './02-utils-i18n.ts';
 import { Dialog, Toast } from './08-toast-dialog.ts';
 import { createManagerListCacheController, createManagerListController, getManagerPageSize, renderManagerListRows, renderManagerPagination } from './12a-manager-list.ts';
-import { createManagerApiController, refreshSettingsUi, saveManagerLoggingSettings } from './12b-manager-settings.ts';
+import { refreshSettingsUi, saveManagerLoggingSettings } from './12b-manager-settings.ts';
 import { createManagerExport, downloadManagerExport, parseManagerImport, persistManagerImport } from './12c-manager-export.ts';
 import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel, getPairResultItems, renderManagerPairResultList, showManagerPairResultDialog } from './12d-manager-pairing.ts';
 
@@ -47,8 +47,8 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 		_makeBadge(code: string) {
 			const badge = document.createElement('span');
 			badge.className = `tm-badge ${code}`;
-			const key = code === 'uid'
-				? 'badgeUid'
+			const key = code === 'ucid'
+				? 'badgeUcid'
 				: code === 'regex'
 					? 'badgeRegex'
 					: code === 'paired'
@@ -393,7 +393,7 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 				this._refreshUiOnly();
 			});
 		}
-		openSettings() {
+		openSettings(section = 'matching', returnToList = false) {
 			const markDefaultOption = (select: HTMLSelectElement, value: string | number) => {
 				const option = Array.from(select.options).find(item => item.value === String(value));
 				option?.classList.add('tm-default-option');
@@ -401,6 +401,7 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 			const defaultOptionText = (option: HTMLOptionElement, label: string) =>
 				option.classList.contains('tm-default-option') ? `${label} ${t('defaultOption')}` : label;
 			const body = document.createElement('div');
+			body.className = 'tm-settings-layout';
 			const settingsSection = document.createElement('section');
 			settingsSection.className = 'tm-section tm-settings-panel';
 			const settingsTitle = document.createElement('h3');
@@ -711,68 +712,33 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 			pairSection.className = 'tm-section';
 			const pairTitle = document.createElement('h3');
 			const toggleLabel = document.createElement('label');
-			const uidToggle = document.createElement('input');
-			uidToggle.type = 'checkbox';
-			const uidText = document.createElement('span');
-			toggleLabel.append(uidToggle, uidText);
+			const ucidToggle = document.createElement('input');
+			ucidToggle.type = 'checkbox';
+			const ucidText = document.createElement('span');
+			toggleLabel.append(ucidToggle, ucidText);
 			const toggleHelp = document.createElement('p');
 			const handleLookupTitle = document.createElement('h4');
-			const handleLookupMethodLabel = document.createElement('label');
-			const handleLookupMethodText = document.createElement('span');
-			const handleLookupMethodSelect = document.createElement('select');
-			['scraper', 'api'].forEach(value => { const option = document.createElement('option'); option.value = value; handleLookupMethodSelect.appendChild(option); });
-			handleLookupMethodLabel.append(handleLookupMethodText, handleLookupMethodSelect);
+			const lookupControls = (['create', 'update', 'onBlock'] as const).map(stage => {
+				const label = document.createElement('label');
+				const text = document.createElement('span');
+				const select = document.createElement('select');
+				select.dataset.setting = 'pair-lookup-' + stage;
+				for (const value of ['page', 'api', 'page-api']) select.appendChild(Object.assign(document.createElement('option'), { value }));
+				markDefaultOption(select, 'page');
+				label.append(text, select);
+				return { stage, label, text, select };
+			});
 			const handleLookupIntervalLabel = document.createElement('label');
 			const handleLookupIntervalText = document.createElement('span');
 			const handleLookupIntervalSelect = document.createElement('select');
 			handleLookupIntervalSelect.dataset.setting = 'handle-lookup-interval';
 			['always', '60', '300', '600', '3600', '43200', '86400', '604800', '2592000', 'custom'].forEach(value => { const option = document.createElement('option'); option.value = value; handleLookupIntervalSelect.appendChild(option); });
-			markDefaultOption(handleLookupMethodSelect, 'scraper');
 			handleLookupIntervalLabel.append(handleLookupIntervalText, handleLookupIntervalSelect);
 			const handleLookupCustomInput = document.createElement('input'); handleLookupCustomInput.type = 'number'; handleLookupCustomInput.min = '1';
 			const handleLookupOnAddLabel = document.createElement('label'); const handleLookupOnAddToggle = document.createElement('input'); handleLookupOnAddToggle.type = 'checkbox'; const handleLookupOnAddText = document.createElement('span'); handleLookupOnAddLabel.append(handleLookupOnAddToggle, handleLookupOnAddText);
-			const handleLookupFallbackLabel = document.createElement('label'); const handleLookupFallbackToggle = document.createElement('input'); handleLookupFallbackToggle.type = 'checkbox'; const handleLookupFallbackText = document.createElement('span'); handleLookupFallbackLabel.append(handleLookupFallbackToggle, handleLookupFallbackText);
 			const handleLookupHelp = document.createElement('p');
-			const pairUpdateTitle = document.createElement('h4');
-			const pairUpdateUidLabel = document.createElement('label');
-			const pairUpdateUidToggle = document.createElement('input');
-			pairUpdateUidToggle.type = 'checkbox';
-			const pairUpdateUidText = document.createElement('span');
-			pairUpdateUidLabel.append(pairUpdateUidToggle, pairUpdateUidText);
-			const pairUpdateHandleLabel = document.createElement('label');
-			const pairUpdateHandleToggle = document.createElement('input');
-			pairUpdateHandleToggle.type = 'checkbox';
-			const pairUpdateHandleText = document.createElement('span');
-			pairUpdateHandleLabel.append(pairUpdateHandleToggle, pairUpdateHandleText);
-			const pairUpdateHelp = document.createElement('p');
-			const pairActions = document.createElement('div');
-			pairActions.className = 'tm-inline-actions';
-			const createBtn = Object.assign(document.createElement('button'), { className: 'secondary' });
-			const updateBtn = Object.assign(document.createElement('button'), { className: 'primary' });
-			pairActions.append(createBtn, updateBtn);
-			const lastCheck = document.createElement('div');
-			lastCheck.className = 'tm-muted';
-			const summaryGrid = document.createElement('div');
-			summaryGrid.className = 'tm-summary-grid';
-			const pairProgress = document.createElement('div');
-			pairProgress.className = 'tm-progress';
-			pairProgress.hidden = true;
-			const pairResultPanel = document.createElement('div');
-			pairSection.append(
-				pairTitle,
-				toggleLabel,
-				toggleHelp,
-				handleLookupTitle, handleLookupMethodLabel, handleLookupIntervalLabel, handleLookupCustomInput, handleLookupOnAddLabel, handleLookupFallbackLabel, handleLookupHelp,
-				pairUpdateTitle,
-				pairUpdateUidLabel,
-				pairUpdateHandleLabel,
-				pairUpdateHelp,
-				pairActions,
-				lastCheck,
-				summaryGrid,
-				pairProgress,
-				pairResultPanel
-			);
+			const openPairListBtn = Object.assign(document.createElement('button'), { className: 'secondary' });
+			pairSection.append(pairTitle, toggleLabel, toggleHelp, handleLookupTitle, ...lookupControls.map(control => control.label), handleLookupIntervalLabel, handleLookupCustomInput, handleLookupOnAddLabel, handleLookupHelp, openPairListBtn);
 
 			const debugSection = document.createElement('section');
 			debugSection.className = 'tm-section';
@@ -780,10 +746,48 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 			const debugList = document.createElement('div');
 			debugList.className = 'tm-inline-note';
 			debugSection.append(debugTitle, debugList);
-			body.append(settingsSection, apiSection, pairSection, debugSection);
+			const pairingGroup = document.createElement('li'); pairingGroup.append(pairSection);
+			const apiGroup = document.createElement('li'); apiGroup.append(apiSection);
+			settingsList.append(matchingGroup, commentGroup, keywordGroup, pairingGroup, apiGroup, displayGroup, themeGroup, loggingGroup, maintenanceGroup);
+			loggingControls.append(debugSection);
+			const navigation = document.createElement('nav'); navigation.className = 'tm-settings-nav';
+			const main = document.createElement('div'); main.className = 'tm-settings-main'; main.append(settingsSection);
+			const sections = [
+				{ id: 'matching', target: matchingGroup, label: 'settingsMatchingTitle' },
+				{ id: 'comments', target: commentGroup, label: 'settingsCommentTitle' },
+				{ id: 'automation', target: keywordGroup, label: 'keywordAutomationTitle' },
+				{ id: 'pairing', target: pairingGroup, label: 'pairLookupTitle' },
+				{ id: 'api', target: apiGroup, label: 'apiKeyTitle' },
+				{ id: 'display', target: displayGroup, label: 'settingsDisplayThemeTitle' },
+				{ id: 'logging', target: loggingGroup, label: 'settingsLogsDiagnosticsTitle' },
+				{ id: 'reset', target: maintenanceGroup, label: 'resetSettings' }
+			];
+			let activeSection = sections.find(item => item.id === section) || sections[0];
+			const markActive = (id: string) => { for (const item of navItems) { if (item.id === id) item.button.setAttribute('aria-current', 'location'); else item.button.removeAttribute('aria-current'); } };
+			const navItems = sections.map(item => {
+				item.target.id = 'tm-settings-' + item.id; item.target.tabIndex = -1;
+				const button = Object.assign(document.createElement('button'), { type: 'button', className: 'secondary' });
+				button.dataset.section = item.id;
+				button.setAttribute('aria-controls', item.target.id);
+				button.addEventListener('click', event => { event.stopPropagation(); activeSection = item; item.target.scrollIntoView?.({ block: 'start' }); item.target.focus?.({ preventScroll: true }); markActive(item.id); });
+				button.addEventListener('keydown', event => { if (event.key === 'Enter') event.stopPropagation(); });
+				navigation.append(button);
+				return { ...item, button };
+			});
+			body.append(navigation, main);
+			let scrollContent: HTMLElement | null = null;
+			const syncNavigation = () => {
+				if (!scrollContent) return;
+				const top = scrollContent.getBoundingClientRect().top;
+				const visible = sections.filter(item => item.target.getBoundingClientRect().top <= top + 64).at(-1);
+				if (visible) { activeSection = visible; markActive(visible.id); }
+			};
+			const drafts = new Map<HTMLInputElement | HTMLSelectElement, { value: string; hidden: boolean }>();
+			const draftInputs = [apiInput, consolePrefixInput, consoleFormatInput, consoleTimezoneInput, consoleFormatSelect, consoleTimezoneSelect, handleLookupCustomInput];
+			for (const input of draftInputs) input.addEventListener('input', () => drafts.set(input, { value: input.value, hidden: !!input.hidden }));
+			openPairListBtn.addEventListener('click', () => { Dialog.closeAll('navigate'); this.openList(); });
 
 			let apiTestBusy = false;
-			let pairBusy = false;
 			let disposed = false;
 			let operationGeneration = 0;
 			const renderApiStatus = () => {
@@ -795,31 +799,6 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 				this._renderApiTestStatus(apiTestStatus, this.app.apiConfig.getLastTestResult(), apiTestBusy);
 				testApiBtn.disabled = apiTestBusy || !hasKey;
 				testApiBtn.textContent = apiTestBusy ? t('apiKeyTestRunning') : t('apiKeyTest');
-				createBtn.disabled = pairBusy || !hasKey;
-				updateBtn.disabled = pairBusy || !hasKey;
-			};
-			const renderPairSummary = () => {
-				const summary = this.app.pairService.getSummary();
-				const cards = [
-					{ label: t('pairSummaryHandles'), value: summary.handles },
-					{ label: t('pairSummaryPaired'), value: summary.paired },
-					{ label: t('pairSummaryNeeded'), value: summary.pairNeeded },
-					{ label: t('pairSummaryStale'), value: summary.stale },
-					{ label: t('pairSummaryMismatch'), value: summary.mismatch },
-					{ label: t('pairSummaryUnverified'), value: summary.unverified }
-				];
-				summaryGrid.replaceChildren(...cards.map(card => {
-					const box = document.createElement('div');
-					box.className = 'tm-summary-card';
-					const strong = document.createElement('strong');
-					strong.textContent = String(card.value);
-					const span = document.createElement('span');
-					span.textContent = card.label;
-					box.append(strong, span);
-					return box;
-				}));
-				lastCheck.textContent = t('pairLastCheck', formatDateTime(this.app.pairStore.getLastPairCheckAt()));
-				this._renderPairResultList(pairResultPanel, this.app.getLastPairRunResult());
 			};
 			const renderDebug = () => {
 				const metrics = window.__ytCommentBlockerPerf || {};
@@ -875,24 +854,20 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 				fontSizeSelect.value = String(this.app.settings.getFontSizeLevel());
 				uiScaleSelect.value = String(this.app.settings.getUiScaleLevel());
 				themeModeSelect.value = this.app.settings.getThemeMode();
-				uidToggle.checked = this.app.pairStore.isUidDetectionEnabled();
-				pairUpdateUidToggle.checked = this.app.settings.isPairUpdateUidCheckEnabled();
-				pairUpdateHandleToggle.checked = this.app.settings.isPairUpdateHandleLookupEnabled();
-				handleLookupMethodSelect.value = this.app.settings.getHandleLookupMethod();
-				const interval = this.app.settings._state.handleLookupInterval || (handleLookupMethodSelect.value === 'api' ? '604800' : '600');
+				ucidToggle.checked = this.app.pairStore.isUcidDetectionEnabled();
+				for (const control of lookupControls) control.select.value = this.app.settings.getPairLookupMethod(control.stage);
+				const interval = this.app.settings._state.pairRefreshInterval || (this.app.settings.getPairLookupMethod('update') === 'api' ? '604800' : '600');
 				handleLookupIntervalSelect.value = interval;
 				Array.from(handleLookupIntervalSelect.options).forEach(option => option.classList.remove('tm-default-option'));
-				markDefaultOption(handleLookupIntervalSelect, handleLookupMethodSelect.value === 'api' ? '604800' : '600');
-				handleLookupCustomInput.value = String(this.app.settings._state.handleLookupCustomSeconds || 600);
+				markDefaultOption(handleLookupIntervalSelect, this.app.settings.getPairLookupMethod('update') === 'api' ? '604800' : '600');
+				handleLookupCustomInput.value = String(this.app.settings._state.pairRefreshCustomSeconds);
 				handleLookupCustomInput.hidden = interval !== 'custom';
-				handleLookupOnAddToggle.checked = this.app.settings.isHandleLookupOnAddEnabled();
+				handleLookupOnAddToggle.checked = this.app.settings.isPairOnBlockEnabled();
 				handleLookupOnAddToggle.disabled = this.app.settings.isLowPerformanceMode();
-				handleLookupFallbackToggle.checked = this.app.settings.isHandleLookupFallbackApiEnabled();
 				apiProgress.hidden = !apiTestBusy;
-				pairProgress.hidden = !pairBusy;
 				renderApiStatus();
-				renderPairSummary();
 				renderDebug();
+				for (const [input, draft] of drafts) { input.value = draft.value; input.hidden = draft.hidden; }
 			};
 			const applyLanguage = () => {
 				settingsTitle.textContent = t('settingsTitle');
@@ -980,16 +955,17 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 				apiHelp.textContent = t('apiKeyHelp');
 				saveApiBtn.textContent = t('apiKeySave');
 				clearApiBtn.textContent = t('apiKeyClear');
-				pairTitle.textContent = t('uidDetectionLabel');
-				uidText.textContent = t('uidDetectionLabel');
-				toggleHelp.textContent = t('uidDetectionHelp');
-				pairUpdateTitle.textContent = t('pairUpdatePolicyTitle');
-				pairUpdateUidText.textContent = t('pairUpdateUidCheckLabel');
-				pairUpdateHandleText.textContent = t('pairUpdateHandleLookupLabel');
-				pairUpdateHelp.textContent = t('pairUpdatePolicyHelp');
-				handleLookupTitle.textContent = t('handleLookupTitle');
-				handleLookupMethodText.textContent = t('handleLookupMethodLabel') + ': ';
-				handleLookupMethodSelect.options[0].textContent = defaultOptionText(handleLookupMethodSelect.options[0], t('handleLookupMethodScraper')); handleLookupMethodSelect.options[1].textContent = t('handleLookupMethodApi');
+				pairTitle.textContent = t('ucidDetectionLabel');
+				ucidText.textContent = t('ucidDetectionLabel');
+				toggleHelp.textContent = t('ucidDetectionHelp');
+				handleLookupTitle.textContent = t('pairLookupTitle');
+				for (const control of lookupControls) {
+					control.text.textContent = t('pairLookupStage' + control.stage) + ': ';
+					for (const option of Array.from(control.select.options)) option.textContent = defaultOptionText(option, t('pairLookupMethod' + option.value));
+				}
+				openPairListBtn.textContent = t('openBlockList');
+				for (const item of navItems) item.button.textContent = t(item.label);
+				navigation.setAttribute('aria-label', t('settingsNavigation'));
 				handleLookupIntervalText.textContent = t('handleLookupIntervalLabel') + ': ';
 				const korean = getLang() === 'ko';
 				const intervalLabels: Record<string, string> = {
@@ -1005,9 +981,7 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 					custom: t('handleLookupCustomLabel')
 				};
 				Array.from(handleLookupIntervalSelect.options).forEach(option => { option.textContent = defaultOptionText(option, intervalLabels[option.value]); });
-				handleLookupOnAddText.textContent = t('handleLookupOnAddLabel'); handleLookupFallbackText.textContent = t('handleLookupFallbackLabel'); handleLookupCustomInput.placeholder = t('handleLookupCustomLabel'); handleLookupHelp.textContent = t('handleLookupHelp');
-				createBtn.textContent = pairBusy ? t('pairWorking') : t('pairCreate');
-				updateBtn.textContent = pairBusy ? t('pairWorking') : t('pairUpdate');
+				handleLookupOnAddText.textContent = t('handleLookupOnAddLabel'); handleLookupCustomInput.placeholder = t('handleLookupCustomLabel'); handleLookupHelp.textContent = t('handleLookupHelp');
 				debugTitle.textContent = t('debugTitle');
 			};
 			lowModeToggle.addEventListener('change', () => {
@@ -1058,6 +1032,7 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 					consoleLoggingStatus.textContent = t('consoleLoggingInvalid', field);
 					return;
 				}
+				for (const input of [consolePrefixInput, consoleFormatInput, consoleTimezoneInput, consoleFormatSelect, consoleTimezoneSelect]) drafts.delete(input);
 				renderAll();
 			};
 			logFileToggle.addEventListener('change', saveLogging);
@@ -1153,34 +1128,29 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 				}).then(ok => {
 					if (!ok) return;
 					this.app.settings.resetSettings();
+					if (!this.app.settings.getLastSaveError()) drafts.clear();
 					this.app.refreshAfterStorageChange();
 					renderAll();
 					Toast.show(this.app.settings.getLastSaveError() ? t('storageSaveFailed') : t('settingsReset'));
 				});
 			});
-			uidToggle.addEventListener('change', () => {
-				const result = this.app.pairStore.setUidDetectionEnabled(uidToggle.checked);
+			ucidToggle.addEventListener('change', () => {
+				const result = this.app.pairStore.setUcidDetectionEnabled(ucidToggle.checked);
 				this.app.refreshAfterStorageChange();
 				renderAll();
 				if (!result.ok) Toast.show(t('storageSaveFailed'));
 			});
-			pairUpdateUidToggle.addEventListener('change', () => {
-				this.app.settings.setPairUpdateUidCheckEnabled(pairUpdateUidToggle.checked);
-				this._refreshUiOnly();
+			for (const control of lookupControls) control.select.addEventListener('change', () => {
+				this.app.settings.setPairLookupMethod(control.stage, control.select.value);
+				if (this.app.settings.getLastSaveError()) Toast.show(t('storageSaveFailed'));
 				renderAll();
 			});
-			pairUpdateHandleToggle.addEventListener('change', () => {
-				this.app.settings.setPairUpdateHandleLookupEnabled(pairUpdateHandleToggle.checked);
-				this._refreshUiOnly();
-				renderAll();
-			});
-			handleLookupMethodSelect.addEventListener('change', () => { this.app.settings.setHandleLookupMethod(handleLookupMethodSelect.value); renderAll(); });
-			handleLookupIntervalSelect.addEventListener('change', () => { handleLookupCustomInput.hidden = handleLookupIntervalSelect.value !== 'custom'; this.app.settings.setHandleLookupInterval(handleLookupIntervalSelect.value, handleLookupCustomInput.value); renderAll(); });
-			handleLookupCustomInput.addEventListener('change', () => { if (Number(handleLookupCustomInput.value) < 1) { Toast.show(t('handleLookupInvalidInterval')); return; } this.app.settings.setHandleLookupInterval('custom', handleLookupCustomInput.value); renderAll(); });
-			handleLookupOnAddToggle.addEventListener('change', () => { this.app.settings.setHandleLookupOnAddEnabled(handleLookupOnAddToggle.checked); renderAll(); });
-			handleLookupFallbackToggle.addEventListener('change', () => { this.app.settings.setHandleLookupFallbackApiEnabled(handleLookupFallbackToggle.checked); renderAll(); });
+			handleLookupIntervalSelect.addEventListener('change', () => { handleLookupCustomInput.hidden = handleLookupIntervalSelect.value !== 'custom'; this.app.settings.setPairRefreshInterval(handleLookupIntervalSelect.value, handleLookupCustomInput.value); renderAll(); });
+			handleLookupCustomInput.addEventListener('change', () => { if (Number(handleLookupCustomInput.value) < 1) { Toast.show(t('handleLookupInvalidInterval')); return; } this.app.settings.setPairRefreshInterval('custom', handleLookupCustomInput.value); renderAll(); });
+			handleLookupOnAddToggle.addEventListener('change', () => { this.app.settings.setPairOnBlockEnabled(handleLookupOnAddToggle.checked); renderAll(); });
 			saveApiBtn.addEventListener('click', () => {
 				const result = this.app.apiConfig.setApiKey(apiInput.value);
+				if (result.ok) drafts.delete(apiInput);
 				this._refreshUiOnly();
 				renderAll();
 				Toast.show(result.ok ? t('apiKeySaved') : t('storageSaveFailed'));
@@ -1203,33 +1173,18 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 			});
 			clearApiBtn.addEventListener('click', () => {
 				const result = this.app.apiConfig.clearApiKey();
+				if (result.ok) drafts.delete(apiInput);
 				this._refreshUiOnly();
 				renderAll();
 				Toast.show(result.ok ? t('apiKeyCleared') : t('storageSaveFailed'));
 			});
-			const runPair = async (mode: string) => {
-				const operationId = ++operationGeneration;
-				pairBusy = true;
-				applyLanguage();
-				try {
-					const stats = await this.app.runPairUpdate(mode);
-					if (!disposed && operationGeneration === operationId) Toast.show(t('pairResult', stats), 3200);
-				} catch (error) {
-					if (!disposed && operationGeneration === operationId) Toast.show(t('operationFailed', error instanceof Error ? error.message : String(error)), 3200);
-				} finally {
-					if (!disposed && operationGeneration === operationId) { pairBusy = false; applyLanguage(); }
-				}
-			};
-			createBtn.addEventListener('click', () => runPair('create'));
-			updateBtn.addEventListener('click', () => runPair('update'));
 			const settingsDialog = Dialog.show({
 				title: t('settingsTitle'),
 				body,
-				buttons: [{ label: t('close'), value: false, primary: true }],
+				buttons: [{ label: t(returnToList ? 'backToList' : 'close'), value: returnToList ? 'list' : false, primary: true }],
 					onRefresh: (ctx: DialogRefreshContext) => {
-					if (ctx.reason === 'storage') { renderPairSummary(); return; }
 					ctx.setTitle(t('settingsTitle'));
-					ctx.buttons[0].textContent = t('close');
+					ctx.buttons[0].textContent = t(returnToList ? 'backToList' : 'close');
 					applyLanguage();
 				},
 				onBeforeClose: (value: any) => {
@@ -1238,8 +1193,12 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 					return value;
 				}
 			});
+			scrollContent = body.parentElement;
+			scrollContent?.addEventListener('scroll', syncNavigation, { passive: true });
+			markActive(activeSection.id);
+			if (section !== 'matching') activeSection.target.scrollIntoView?.({ block: 'start' });
 			const unsubscribeLogging = this.app.logger?.subscribe?.(renderLoggingState) || (() => {});
-			settingsDialog.then(() => unsubscribeLogging());
+			settingsDialog.then(value => { unsubscribeLogging(); scrollContent?.removeEventListener('scroll', syncNavigation); if (value === 'list') this.openList(); });
 		}
 		openList() {
 			this.app.pairStore.refreshStatuses();
@@ -1247,7 +1206,6 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 			const validTypeFilters = new Set(['all', 'handle', 'id', 'regex']);
 			const validTagFilters = new Set(['handle-only', 'paired', 'stale', 'mismatch', 'unverified']);
 			const listState = createManagerListController(savedViewState, validTagFilters);
-			const apiState = createManagerApiController();
 			const pairState = createManagerPairController();
 			const wrap = document.createElement('div');
 			const isBusy = () => pairState.busy;
@@ -1259,85 +1217,15 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 			versionText.className = 'tm-muted';
 			versionSection.append(versionTitle, versionText);
 
-			const settingsSection = document.createElement('section');
-			settingsSection.className = 'tm-section';
-			const settingsTitle = document.createElement('h3');
-			const settingsRow = document.createElement('div');
-			settingsRow.className = 'tm-toggle-row';
-			const settingsBox = document.createElement('div');
-			const caseLabel = document.createElement('label');
-			const caseToggle = document.createElement('input');
-			caseToggle.type = 'checkbox';
-			caseToggle.checked = this.app.settings.isHandleCaseSensitive();
-			const caseText = document.createElement('span');
-			caseText.textContent = t('handleCaseLabel');
-			caseLabel.append(caseToggle, caseText);
-			const caseHelp = document.createElement('p');
-			caseHelp.textContent = t('handleCaseHelp');
-			const caseLegacy = document.createElement('p');
-			caseLegacy.textContent = t('handleCaseLegacy');
-			const settingsActions = document.createElement('div');
-			settingsActions.className = 'tm-inline-actions';
+			const settingsActions = document.createElement('div'); settingsActions.className = 'tm-inline-actions';
 			const openSettingsBtn = Object.assign(document.createElement('button'), { className: 'secondary' });
 			settingsActions.append(openSettingsBtn);
-			settingsBox.append(caseLabel, caseHelp, caseLegacy);
-			settingsRow.append(settingsBox, settingsActions);
-			settingsSection.append(settingsTitle, settingsRow);
-
-			const apiSection = document.createElement('section');
-			apiSection.className = 'tm-section';
-			const apiTitle = document.createElement('h3');
-			apiTitle.textContent = t('apiKeyTitle');
-			const apiRow = document.createElement('div');
-			apiRow.className = 'tm-toggle-row';
-			const apiBox = document.createElement('div');
-			const apiLabel = document.createElement('label');
-			const apiInput = document.createElement('input');
-			apiInput.type = 'password';
-			apiInput.style.minWidth = '280px';
-			apiInput.style.width = 'min(420px, 100%)';
-			apiInput.value = this.app.apiConfig.getApiKey();
-			const apiHelp = document.createElement('p');
-			const apiStatus = document.createElement('div');
-			apiStatus.className = 'tm-muted';
-			const apiTestStatus = document.createElement('div');
-			apiTestStatus.className = 'tm-inline-note';
-			const apiProgress = document.createElement('div');
-			apiProgress.className = 'tm-progress';
-			apiProgress.hidden = true;
-			apiBox.append(apiLabel, apiInput, apiHelp, apiStatus);
-			apiBox.appendChild(apiTestStatus);
-			apiBox.appendChild(apiProgress);
-			const apiActions = document.createElement('div');
-			apiActions.className = 'tm-inline-actions';
-			const saveApiBtn = Object.assign(document.createElement('button'), {
-				className: 'primary'
-			});
-			const testApiBtn = Object.assign(document.createElement('button'), {
-				className: 'secondary'
-			});
-			const clearApiBtn = Object.assign(document.createElement('button'), {
-				className: 'secondary'
-			});
-			apiActions.append(saveApiBtn, testApiBtn, clearApiBtn);
-			apiRow.append(apiBox, apiActions);
-			apiSection.append(apiTitle, apiRow);
 
 			const pairSection = document.createElement('section');
 			pairSection.className = 'tm-section';
 			const pairTitle = document.createElement('h3');
 			const toggleRow = document.createElement('div');
 			toggleRow.className = 'tm-toggle-row';
-			const toggleBox = document.createElement('div');
-			const toggleLabel = document.createElement('label');
-			const toggle = document.createElement('input');
-			toggle.type = 'checkbox';
-			toggle.checked = this.app.pairStore.isUidDetectionEnabled();
-			const toggleText = document.createElement('span');
-			toggleText.textContent = t('uidDetectionLabel');
-			toggleLabel.append(toggle, toggleText);
-			const toggleHelp = document.createElement('p');
-			toggleBox.append(toggleLabel, toggleHelp);
 			const pairActions = document.createElement('div');
 			pairActions.className = 'tm-inline-actions';
 			const createBtn = Object.assign(document.createElement('button'), {
@@ -1347,7 +1235,7 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 				className: 'primary'
 			});
 			pairActions.append(createBtn, updateBtn);
-			toggleRow.append(toggleBox, pairActions);
+			toggleRow.append(pairActions);
 			const summaryTitle = document.createElement('h3');
 			const lastCheck = document.createElement('div');
 			lastCheck.className = 'tm-muted';
@@ -1491,7 +1379,7 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 			const list = Object.assign(document.createElement('ul'), { className: 'tm-block-list' });
 			const pagination = document.createElement('div');
 			listSection.append(listTitle, toolbar, list, pagination);
-			wrap.append(versionSection, settingsSection, apiSection, pairSection, form, listSection);
+			wrap.append(versionSection, settingsActions, pairSection, form, listSection);
 			const persistViewState = (scrollTop = this._listViewState?.scrollTop || 0) => {
 				this._listViewState = {
 					searchQuery: listState.searchQuery,
@@ -1519,9 +1407,9 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 					return [
 						getItemKey(item),
 						status?.code || '',
-						pair?.uid || '',
+						pair?.ucid || '',
 						pair?.verifiedAt || '',
-						pair?.lastResolvedUid || '',
+						pair?.lastResolvedUcid || '',
 						pair?.lastError || '',
 						pair?.source || ''
 					].join(':');
@@ -1651,28 +1539,17 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 					if (refs?.checkbox) refs.checkbox.checked = listState.selection.has(itemKey);
 				}
 			};
-			const syncApiStatus = () => {
-				apiInput.value = this.app.apiConfig.getApiKey();
-				apiStatus.textContent = this.app.apiConfig.hasApiKey()
-					? t('apiKeyStatusSaved', this.app.apiConfig.getMaskedApiKey())
-					: t('apiKeyStatusMissing');
-				this._renderApiTestStatus(apiTestStatus, this.app.apiConfig.getLastTestResult(), apiState.busy);
-				apiProgress.hidden = !apiState.busy;
-			};
 			const syncActionState = (viewState = computeViewState()) => {
-				const hasKey = this.app.apiConfig.hasApiKey();
 				const pairBulk = bulkSelect.value === 'create' || bulkSelect.value === 'update';
-				createBtn.disabled = pairState.busy || !hasKey;
-				updateBtn.disabled = pairState.busy || !hasKey;
+				createBtn.disabled = pairState.busy;
+				updateBtn.disabled = pairState.busy;
 				createBtn.textContent = pairState.busy ? t('pairWorking') : t('pairCreate');
 				updateBtn.textContent = pairState.busy ? t('pairWorking') : t('pairUpdate');
 				pairProgress.hidden = !pairState.busy;
-				testApiBtn.disabled = apiState.busy || !hasKey;
-				testApiBtn.textContent = apiState.busy ? t('apiKeyTestRunning') : t('apiKeyTest');
 				masterToggle.disabled = pairState.busy || !viewState.visibleKeys.length;
 				masterToggle.checked = !!viewState.visibleKeys.length && viewState.selectedVisibleCount === viewState.visibleKeys.length;
 				masterToggle.indeterminate = viewState.selectedVisibleCount > 0 && viewState.selectedVisibleCount < viewState.visibleKeys.length;
-				executeBtn.disabled = pairState.busy || !listState.selection.size || (pairBulk && (!hasKey || !viewState.selectedHandleCount));
+				executeBtn.disabled = pairState.busy || !listState.selection.size || (pairBulk && !viewState.selectedHandleCount);
 				clearSelectionBtn.disabled = pairState.busy || !listState.selection.size;
 				bulkSelect.disabled = pairState.busy;
 				counter.textContent = t('pairResultSummary', {
@@ -1702,9 +1579,6 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 					return box;
 				}));
 				lastCheck.textContent = t('pairLastCheck', formatDateTime(this.app.pairStore.getLastPairCheckAt()));
-				toggle.checked = this.app.pairStore.isUidDetectionEnabled();
-				caseToggle.checked = this.app.settings.isHandleCaseSensitive();
-				syncApiStatus();
 				this._renderPairResultList(pairResultPanel, this.app.getLastPairRunResult());
 				syncActionState(computeViewState());
 			};
@@ -1761,20 +1635,8 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 			const applyLanguage = () => {
 				versionTitle.textContent = t('versionTitle');
 				versionText.textContent = t('versionValue', getScriptVersion());
-				settingsTitle.textContent = t('handleCaseLabel');
-				caseText.textContent = t('handleCaseLabel');
-				caseHelp.textContent = t('handleCaseHelp');
-				caseLegacy.textContent = t('handleCaseLegacy');
 				openSettingsBtn.textContent = t('openSettings');
-				apiTitle.textContent = t('apiKeyTitle');
-				apiLabel.textContent = t('apiKeyLabel');
-				apiInput.placeholder = t('apiKeyPlaceholder');
-				apiHelp.textContent = t('apiKeyHelp');
-				saveApiBtn.textContent = t('apiKeySave');
-				clearApiBtn.textContent = t('apiKeyClear');
-				pairTitle.textContent = t('uidDetectionLabel');
-				toggleText.textContent = t('uidDetectionLabel');
-				toggleHelp.textContent = t('uidDetectionHelp');
+				pairTitle.textContent = t('pairSummary');
 				createBtn.textContent = t('pairCreate');
 				updateBtn.textContent = t('pairUpdate');
 				summaryTitle.textContent = t('pairSummary');
@@ -1806,20 +1668,9 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 				renderSummary();
 			};
 
-			caseToggle.addEventListener('change', () => {
-				this.app.settings.setHandleCaseSensitive(caseToggle.checked);
-				this.app.refreshAfterStorageChange();
-				renderAll();
-			});
 			openSettingsBtn.addEventListener('click', () => {
 				Dialog.closeAll('navigate');
-				this.openSettings();
-			});
-			toggle.addEventListener('change', () => {
-				const result = this.app.pairStore.setUidDetectionEnabled(toggle.checked);
-				this.app.refreshAfterStorageChange();
-				renderAll();
-				if (!result.ok) Toast.show(t('storageSaveFailed'));
+				this.openSettings('pairing', true);
 			});
 			searchInput.addEventListener('input', () => {
 				listState.searchQuery = searchInput.value || '';
@@ -1887,33 +1738,6 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 				markSelectionChanged();
 				syncVisibleSelection();
 				syncActionState();
-			});
-			saveApiBtn.addEventListener('click', () => {
-				const result = this.app.apiConfig.setApiKey(apiInput.value);
-				this._refreshUiOnly();
-				renderAll();
-				Toast.show(result.ok ? t('apiKeySaved') : t('storageSaveFailed'));
-			});
-			testApiBtn.addEventListener('click', async () => {
-				const operation = apiState.begin();
-				apiState.busy = true;
-				renderSummary();
-				try {
-					const result = await this.app.testApiKey();
-					if (apiState.isCurrent(operation)) Toast.show(result.ok
-						? t('apiKeyTestResult', getApiTestCategoryLabel(result.result.category), result.result.message, result.result.httpStatus ? String(result.result.httpStatus) : '')
-						: t('storageSaveFailed'), 3200);
-				} catch (error) {
-					if (apiState.isCurrent(operation)) Toast.show(t('operationFailed', error instanceof Error ? error.message : String(error)), 3200);
-				} finally {
-					if (apiState.isCurrent(operation)) { apiState.busy = false; renderSummary(); }
-				}
-			});
-			clearApiBtn.addEventListener('click', () => {
-				const result = this.app.apiConfig.clearApiKey();
-				this._refreshUiOnly();
-				renderAll();
-				Toast.show(result.ok ? t('apiKeyCleared') : t('storageSaveFailed'));
 			});
 			createBtn.addEventListener('click', async () => {
 				const operation = pairState.begin();
@@ -1984,7 +1808,6 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 				},
 					onBeforeClose: (value, dialog) => {
 						persistViewState(dialog.querySelector('.tm-content')?.scrollTop || 0);
-						apiState.dispose();
 						pairState.dispose();
 						listState.dispose();
 					return value;

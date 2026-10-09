@@ -11,11 +11,13 @@
 
 ### Added
 
-- 없음
+- 최초 생성·갱신·차단 즉시 생성의 독립 조회 정책과 설정 섹션 이동 메뉴.
 
 ### Changed
 
-- 없음
+- 고정 UCID에서 최신 handle을 조회해 이전 handle 규칙을 교체합니다. UID 명칭·저장 및 동기화 메타데이터를 UCID 필드로 변환하며 리비전·삭제 표식을 보존합니다.
+- 설정에 정책·API 키, 차단목록에 페어 실행·상태·결과를 통합하고 입력·목록 상태를 보존합니다.
+- 양방향 조회·변환·충돌·취소·부분 저장 복구의 회귀 케이스를 작성했습니다. 이번 변경에서는 테스트를 실행하지 않았습니다.
 
 ### Deprecated
 
@@ -23,11 +25,11 @@
 
 ### Removed
 
-- 없음
+- 별도 저장 UID 존재 확인·이전 handle 재조회·갱신 검사 강제 토글·페이지 조회의 API 키 필수 조건.
 
 ### Fixed
 
-- 없음
+- 대기 중 완료된 페어의 재조회를 방지하고 일시 저장 실패 후 재시도와 관련 규칙만 복구하는 경로를 보완했습니다.
 
 ### Security
 
@@ -167,7 +169,7 @@
 
 ### Fixed
 
-- 다른 pair 작업 실행 중 자동 UID pair 생성 요청이 건너뛰어지는 문제 수정.
+- 다른 pair 작업 실행 중 자동 UCID pair 생성 요청이 건너뛰어지는 문제 수정.
 
 ### Security
 
@@ -299,13 +301,13 @@
 
 ### Added
 
-- 기본 `handle` 규칙/UID pair `id` 규칙 선택 신원 차단 방식.
-- 저장 UID 확인/handle 재조회 선택 pair 갱신 검사.
+- 기본 `handle` 규칙/UCID pair `id` 규칙 선택 신원 차단 방식.
+- 저장 UCID 확인/handle 재조회 선택 pair 갱신 검사.
 - 댓글 본문, 작성자 handle, 고정 표시 문구용 키워드 자동 처리.
 
 ### Changed
 
-- pair 최초 생성은 갱신 검사 설정과 무관하게 handle에서 UID 조회.
+- pair 최초 생성은 갱신 검사 설정과 무관하게 handle에서 UCID 조회.
 - 키워드 동작의 댓글별 중복 실행, 차단 목록·pair 요청 중복 방지.
 
 ### Deprecated
@@ -467,7 +469,7 @@
 
 ### Added
 
-- API, UID detection, regex 자동 추가, debug counter용 별도 설정 dialog.
+- API, UCID detection, regex 자동 추가, debug counter용 별도 설정 dialog.
 - regex 매칭 handle 자동 추가 옵션. 같은 채널의 이후 댓글은 regex보다 handle 매칭 우선.
 
 ### Changed
@@ -484,7 +486,7 @@
 
 ### Fixed
 
-- 공유 UID 삭제 시 다른 pair가 같은 UID를 사용하면 관련 규칙 유지.
+- 공유 UCID 삭제 시 다른 pair가 같은 UCID를 사용하면 관련 규칙 유지.
 - 원격 `blocked_v2` 동기화 시 로컬 재정규화·중복 제거.
 - watch 페이지 pair 검토 배너를 `나중에` 또는 최근 pair 검사 후 stale 주기 동안 숨김.
 - 잘못된 import는 검증 실패 표시를 위해 열린 상태 유지.
@@ -535,7 +537,7 @@
 
 ### Changed
 
-- UID mismatch 시 오래된 저장 UID 규칙을 최신 조회 UID로 교체.
+- UCID mismatch 시 오래된 저장 UCID 규칙을 최신 조회 UCID로 교체.
 
 ### Deprecated
 
@@ -601,21 +603,21 @@
 
 - 댓글 DOM 텍스트와 `/@...` 링크에서 추출한 handle의 case-sensitive 모드용 exact casing 유지
 - 태그 필터 시 무관한 `id`/`regex` 행 노출 방지, 해당 handle만 표시
-- 새 `pair_meta_v1` 저장소 기반 선택적 UID 감지 토글
-- 관리자 대화상자에 handle↔UID pair 생성·갱신 액션
+- 새 `pair_meta_v1` 저장소 기반 선택적 UCID 감지 토글
+- 관리자 대화상자에 handle↔UCID pair 생성·갱신 액션
 - 차단 handle의 pair 상태 배지·메타데이터 표시
 - stale/mismatch 항목 시 pair 검토 유도 watch 페이지 배너
 - pair 메타데이터 탭 간 동기화
 - 관리자 대화상자에 로컬 전용 YouTube Data API v3 API 키 저장
 - pair 생성/갱신에 `channels.list`의 `forHandle` 필터 사용
-- 관리자 대화상자 UID 섹션, pair 요약 카드, pair 검사 시각 확장
-- UID 조회를 채널 페이지 스크래핑에서 사용자 제공 API 키 호출로 변경
-- `id` 규칙 매칭을 UID 감지 토글에 따라 동작하도록 변경
-- `handle` 규칙 제거 시 연결 UID 규칙·pair 메타데이터도 제거
+- 관리자 대화상자 UCID 섹션, pair 요약 카드, pair 검사 시각 확장
+- UCID 조회를 채널 페이지 스크래핑에서 사용자 제공 API 키 호출로 변경
+- `id` 규칙 매칭을 UCID 감지 토글에 따라 동작하도록 변경
+- `handle` 규칙 제거 시 연결 UCID 규칙·pair 메타데이터도 제거
 - API 키 저장 전 관리자 pair 액션 비활성화
-- 문서를 API 키 기반 UID 흐름·로컬 전용 키 저장 방식에 맞게 갱신
-- UID 조회/pair 검증 실패 시 handle-only 차단 fallback 유지
-- UID 조회의 YouTube 채널 페이지 HTML 구조 변화 내성 개선
+- 문서를 API 키 기반 UCID 흐름·로컬 전용 키 저장 방식에 맞게 갱신
+- UCID 조회/pair 검증 실패 시 handle-only 차단 fallback 유지
+- UCID 조회의 YouTube 채널 페이지 HTML 구조 변화 내성 개선
 - regex 행 선택 시 전체 목록 재렌더 방지, `Select matching handles` 지연 주원인 제거
 - 같은 상호작용 내 search/selection 상태 중복 계산 감소
 - watch-only page gating으로 누락된 Shorts 차단 댓글·대댓글 숨김 지원

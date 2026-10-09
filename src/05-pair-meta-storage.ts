@@ -45,8 +45,8 @@ import {
 		}
 		_defaultState(): LooseObject {
 			return {
-				version: 1,
-				enableUidDetection: false,
+				version: 2,
+				enableUcidDetection: false,
 				lastPairCheckAt: null,
 				pairNotificationDismissedAt: null,
 				pairs: []
@@ -55,7 +55,7 @@ import {
 		_normalizeStatus(pair: Partial<PairRecord>, now = Date.now()): PairStatus {
 			if (pair.status === 'mismatch') return 'mismatch';
 			if (pair.status === 'unverified') return 'unverified';
-			if (!pair.uid) return 'unverified';
+			if (!pair.ucid) return 'unverified';
 			const verifiedAt = pair.verifiedAt;
 			if (!Number.isFinite(verifiedAt) || !verifiedAt || verifiedAt <= 0) return 'unverified';
 			return now - verifiedAt >= PAIR_STALE_MS ? 'stale' : 'verified';
@@ -63,18 +63,20 @@ import {
 		_normalizePair(raw: any, now = Date.now()): PairRecord | null {
 			const handle = sanitizeHandle(raw?.handle);
 			if (!handle) return null;
-			const uid = isChannelId(raw?.uid) ? String(raw.uid).trim() : '';
+			const channelId = Object.prototype.hasOwnProperty.call(raw || {}, 'ucid') ? raw.ucid : raw?.uid;
+			const ucid = isChannelId(channelId) ? String(channelId).trim() : '';
 			const verifiedAt = Number.isFinite(raw?.verifiedAt) && raw.verifiedAt > 0 ? raw.verifiedAt : null;
 			const source = typeof raw?.source === 'string' && raw.source.trim() ? raw.source.trim() : 'unknown';
-			const lastResolvedUid = isChannelId(raw?.lastResolvedUid) ? String(raw.lastResolvedUid).trim() : null;
+			const resolvedId = Object.prototype.hasOwnProperty.call(raw || {}, 'lastResolvedUcid') ? raw.lastResolvedUcid : raw?.lastResolvedUid;
+			const lastResolvedUcid = isChannelId(resolvedId) ? String(resolvedId).trim() : null;
 			const lastError = typeof raw?.lastError === 'string' && raw.lastError.trim() ? raw.lastError.trim() : null;
 			const normalized: PairRecord = {
 				handle,
-				uid,
+				ucid,
 				verifiedAt,
-				status: raw?.status || (uid ? 'verified' : 'unverified'),
+				status: raw?.status || (ucid ? 'verified' : 'unverified'),
 				source,
-				lastResolvedUid,
+				lastResolvedUcid,
 				lastError
 			};
 			normalized.status = this._normalizeStatus(normalized, now);
@@ -84,8 +86,8 @@ import {
 			const src = raw && typeof raw === 'object' ? raw : {};
 			const caseSensitive = this.settings?.isHandleCaseSensitive?.() || false;
 			const next = {
-				version: 1,
-				enableUidDetection: !!src.enableUidDetection,
+				version: 2,
+				enableUcidDetection: !!(Object.prototype.hasOwnProperty.call(src, 'enableUcidDetection') ? src.enableUcidDetection : src.enableUidDetection),
 				lastPairCheckAt: Number.isFinite(src.lastPairCheckAt) ? src.lastPairCheckAt : null,
 				pairNotificationDismissedAt: Number.isFinite(src.pairNotificationDismissedAt)
 					? src.pairNotificationDismissedAt
@@ -101,12 +103,15 @@ import {
 			return next;
 		}
 		_init() {
-			const result = this._readGM(this.KEY, null);
+			const result = this._readGM<any>(this.KEY, null);
 			const raw = result.value;
 			if (result.status === 'present' && (!raw || typeof raw !== 'object' || Array.isArray(raw))) this._markGMReadInvalid(this.KEY, raw);
 			const state = this._normalizeState(raw);
 			this._hydrateSync(raw, state);
-			return state;
+			this._state = state;
+			this._rebuildFromSync();
+			if (raw && typeof raw === 'object' && Array.isArray(raw.pairs) && raw.version !== 2) this._setGM(this.KEY, this._snapshot());
+			return this._state;
 		}
 		_compareRevision(a: any, b: any) {
 			if (!a) return -1;
@@ -137,7 +142,7 @@ import {
 				this._pairEntries[key] = {
 					revision: this._normalizeRevision(entry?.revision, fallback),
 					deleted: !!entry?.deleted,
-					item: entry?.item
+					item: entry?.item ? this._normalizePair(entry.item) : undefined
 				};
 			}
 			for (const pair of state.pairs as PairRecord[]) {
@@ -146,8 +151,8 @@ import {
 				else if (!this._pairEntries[key].item) this._pairEntries[key].item = pair;
 			}
 			this._scalarEntries = {};
-			for (const name of ['enableUidDetection', 'lastPairCheckAt', 'pairNotificationDismissedAt']) {
-				const entry: any = sync.scalars?.[name];
+			for (const name of ['enableUcidDetection', 'lastPairCheckAt', 'pairNotificationDismissedAt']) {
+				const entry: any = sync.scalars?.[name] ?? (name === 'enableUcidDetection' ? sync.scalars?.enableUidDetection : undefined);
 				this._scalarEntries[name] = {
 					revision: this._normalizeRevision(entry?.revision, fallback),
 					value: entry && Object.prototype.hasOwnProperty.call(entry, 'value') ? entry.value : state[name]
@@ -159,8 +164,8 @@ import {
 		}
 		_snapshot() {
 			return {
-				version: 1,
-				enableUidDetection: !!this._state.enableUidDetection,
+				version: 2,
+				enableUcidDetection: !!this._state.enableUcidDetection,
 				lastPairCheckAt: this._state.lastPairCheckAt,
 				pairNotificationDismissedAt: this._state.pairNotificationDismissedAt,
 				pairs: this._state.pairs,
@@ -200,8 +205,8 @@ import {
 			const dedup = new Map<string, PairRecord>();
 			for (const pair of pairs) dedup.set(this._pairKey(pair.handle), pair);
 			const state = {
-				version: 1,
-				enableUidDetection: !!this._scalarEntries.enableUidDetection?.value,
+				version: 2,
+				enableUcidDetection: !!this._scalarEntries.enableUcidDetection?.value,
 				lastPairCheckAt: Number.isFinite(this._scalarEntries.lastPairCheckAt?.value) ? this._scalarEntries.lastPairCheckAt.value : null,
 				pairNotificationDismissedAt: Number.isFinite(this._scalarEntries.pairNotificationDismissedAt?.value)
 					? this._scalarEntries.pairNotificationDismissedAt.value
@@ -213,7 +218,7 @@ import {
 		_statesEqual(a: any, b: any) {
 			if (a === b) return true;
 			if (!a || !b) return false;
-			if (a.enableUidDetection !== b.enableUidDetection) return false;
+			if (a.enableUcidDetection !== b.enableUcidDetection) return false;
 			if ((a.lastPairCheckAt || null) !== (b.lastPairCheckAt || null)) return false;
 			if ((a.pairNotificationDismissedAt || null) !== (b.pairNotificationDismissedAt || null)) return false;
 			if (!Array.isArray(a.pairs) || !Array.isArray(b.pairs) || a.pairs.length !== b.pairs.length) return false;
@@ -223,11 +228,11 @@ import {
 				if (!A || !B) return false;
 				if (
 					A.handle !== B.handle ||
-					A.uid !== B.uid ||
+					A.ucid !== B.ucid ||
 					(A.verifiedAt || null) !== (B.verifiedAt || null) ||
 					A.status !== B.status ||
 					A.source !== B.source ||
-					(A.lastResolvedUid || null) !== (B.lastResolvedUid || null) ||
+					(A.lastResolvedUcid || null) !== (B.lastResolvedUcid || null) ||
 					(A.lastError || null) !== (B.lastError || null)
 				) return false;
 			}
@@ -283,7 +288,7 @@ import {
 		}
 		mergeRemote(raw: any) {
 			if (!this.getReadStatus().ok) return false;
-			if (!raw || (raw.version != null && raw.version !== 1) || !Array.isArray(raw.pairs)) return false;
+			if (!raw || (raw.version != null && ![1, 2].includes(raw.version)) || !Array.isArray(raw.pairs)) return false;
 			const localSnapshot = JSON.stringify(this._snapshot());
 			const localState = this._state;
 			const localRevision = this._revision;
@@ -309,7 +314,7 @@ import {
 				if (this._compareRevision((entry as any).revision, this._clearRevision) <= 0) delete this._pairEntries[key];
 			}
 			this._scalarEntries = {};
-			for (const name of ['enableUidDetection', 'lastPairCheckAt', 'pairNotificationDismissedAt']) {
+			for (const name of ['enableUcidDetection', 'lastPairCheckAt', 'pairNotificationDismissedAt']) {
 				const local = localScalars[name];
 				const remote = remoteScalars[name];
 				if (name === 'lastPairCheckAt' || name === 'pairNotificationDismissedAt') {
@@ -342,11 +347,11 @@ import {
 		_result(ok: boolean, error?: unknown): PersistenceResult<any> {
 			return { ok, value: this.getState(), ...(error ? { error } : {}) };
 		}
-		isUidDetectionEnabled() {
-			return !!this._state.enableUidDetection;
+		isUcidDetectionEnabled() {
+			return !!this._state.enableUcidDetection;
 		}
-		setUidDetectionEnabled(enabled: any) {
-			return this._saveState({ ...this._state, enableUidDetection: !!enabled }, { scalars: ['enableUidDetection'] });
+		setUcidDetectionEnabled(enabled: any) {
+			return this._saveState({ ...this._state, enableUcidDetection: !!enabled }, { scalars: ['enableUcidDetection'] });
 		}
 		getLastPairCheckAt() {
 			return this._state.lastPairCheckAt;
@@ -374,6 +379,25 @@ import {
 			const normalized = getHandleCompareKey(handle, caseSensitive);
 			if (!normalized) return null;
 			return this._pairIndex.get(normalized) || null;
+		}
+		refreshFromStorage(): boolean {
+			const result = this._readGM<any>(this.KEY, null);
+			if (result.status === 'failed') return false;
+			this._lastSaveError = null;
+			if (result.status === 'present') {
+				if (!result.value || !Array.isArray(result.value.pairs) || (result.value.version != null && ![1, 2].includes(result.value.version))) return false;
+				this.mergeRemote(result.value);
+			}
+			return !this.getLastSaveError();
+		}
+		replacePair(previousHandle: string, pair: PairRecord) {
+			const normalized = this._normalizePair(pair);
+			if (!normalized) return this._result(false, new Error('Invalid pair metadata'));
+			const previousKey = this._pairKey(previousHandle);
+			const nextKey = this._pairKey(normalized.handle);
+			const changes: Array<{ key: string; item?: PairRecord; deleted?: boolean }> = [{ key: nextKey, item: normalized }];
+			if (previousKey !== nextKey) changes.push({ key: previousKey, deleted: true });
+			return this._saveState({ ...this._state, pairs: this._state.pairs.filter((item: PairRecord) => ![previousKey, nextKey].includes(this._pairKey(item.handle))).concat(normalized) }, { pairChanges: changes });
 		}
 		upsertPair(pair: any) {
 			const normalized = this._normalizePair(pair);

@@ -32,7 +32,7 @@
     .tm-badge.stale{background:#ffe5cc;color:#a45100}
     .tm-badge.mismatch{background:#fde2e1;color:#b42318}
     .tm-badge.unverified{background:#ecebff;color:#5243aa}
-    .tm-badge.uid{background:#e4f0ff;color:#0b57d0}
+    .tm-badge.ucid{background:#e4f0ff;color:#0b57d0}
     .tm-badge.regex{background:#ececec;color:#444}
     .tm-block-meta{font-size:12px;line-height:1.5;color:#5f6368}
     .tm-section{border:1px solid #e5e5e5;border-radius:12px;padding:14px 16px;margin-bottom:14px}
@@ -41,6 +41,15 @@
     .tm-settings-panel > h3{padding:14px 16px 0 16px}
     .tm-settings-intro{padding:0 16px 12px 16px;margin:0;border-bottom:1px solid #ececec}
     .tm-settings-list{list-style:none;margin:0;padding:0}
+    .tm-settings-layout{display:grid;grid-template-columns:170px minmax(0,1fr);gap:16px;align-items:start}
+    .tm-settings-main{min-width:0}
+    .tm-settings-nav{position:sticky;top:0;display:flex;flex-direction:column;gap:6px;padding:8px 0;background:var(--tm-theme-surface);z-index:2}
+    .tm-settings-nav button{text-align:left;overflow-wrap:anywhere}
+    .tm-settings-nav button[aria-current="location"]{outline:2px solid var(--tm-theme-primary);outline-offset:-2px}
+    .tm-settings-list > li{scroll-margin-top:12px}
+    .tm-settings-list > li > .tm-section{margin:0;border-radius:0;border-width:1px 0 0}
+    .tm-settings-main [tabindex="-1"]:focus{outline:2px solid var(--tm-theme-primary);outline-offset:-2px}
+    @media(max-width:700px){.tm-settings-layout{grid-template-columns:minmax(0,1fr)}.tm-settings-nav{flex-direction:row;flex-wrap:wrap;gap:4px}.tm-settings-nav button{padding:7px 9px;font-size:12px}.tm-settings-list > li{scroll-margin-top:120px}}
     .tm-settings-list > .tm-setting-group{display:grid;grid-template-columns:minmax(130px,.7fr) minmax(0,2fr);gap:12px;border-top:1px solid #ececec;padding:14px 16px;margin:0}
     .tm-settings-list > .tm-setting-group:first-child{border-top:none}
     .tm-settings-list > .tm-setting-group.tm-setting-group-matching{margin-top:8px}
@@ -145,7 +154,7 @@
       .tm-badge.stale{background:#4b2c00;color:#ffbe76}
       .tm-badge.mismatch{background:#4a1e1e;color:#ff8a80}
       .tm-badge.unverified{background:#2e2559;color:#c7b9ff}
-      .tm-badge.uid{background:#16325c;color:#9bc2ff}
+      .tm-badge.ucid{background:#16325c;color:#9bc2ff}
       .tm-banner{background:#2a2416;color:#ffe8ad;border-color:#8e6c25}
       .tm-banner .actions .secondary{background:#2a2416;color:#ffe8ad;border-color:#8e6c25}
       .tm-result-panel details,.tm-regex-match-list li{background:#2a2a2a;border-color:#444}

@@ -1,6 +1,5 @@
 import {
 	PAIR_NOTICE_COOLDOWN_MS,
-	PAIR_STALE_MS,
 	getHandleCompareKey,
 	getLang,
 	isChannelId,
@@ -9,6 +8,8 @@ import {
 	type ApiConfigLike,
 	type BlockItem,
 	type PairRecord,
+	type PairLookupStage,
+	type PairLookupMethod,
 	type PairRunItem,
 	type PairRunStats,
 	type PairStoreLike,
@@ -33,7 +34,7 @@ const PAIR_LOOKUP_TIMEOUT_MS = 15000;
 			this.logger = logger;
 			this._busy = false;
 			this._idlePromise = null;
-			this._handleLookupCache = new Map();
+			this._lookupCache = new Map();
 			this._activeLookups = 0;
 			this._lookupWaiters = [];
 			this._lookupTimeoutMs = PAIR_LOOKUP_TIMEOUT_MS;
@@ -44,25 +45,25 @@ const PAIR_LOOKUP_TIMEOUT_MS = 15000;
 		getBlockedIdSet(items: BlockItem[] = this.storage.all()): Set<string> {
 			return new Set((items || []).filter((item: BlockItem) => item.type === 'id').map((item: BlockItem) => item.value));
 		}
-		hasBlockedId(uid: any, blockedIds: Set<string> | null = null): boolean {
-			return blockedIds ? blockedIds.has(uid) : this.storage.all().some((item: BlockItem) => item.type === 'id' && item.value === uid);
+		hasBlockedId(ucid: any, blockedIds: Set<string> | null = null): boolean {
+			return blockedIds ? blockedIds.has(ucid) : this.storage.all().some((item: BlockItem) => item.type === 'id' && item.value === ucid);
 		}
-		_uidUsedByOtherPair(uid: any, excludedHandles: any[] = []): boolean {
-			if (!isChannelId(uid)) return false;
+		_ucidUsedByOtherPair(ucid: any, excludedHandles: any[] = []): boolean {
+			if (!isChannelId(ucid)) return false;
 			const caseSensitive = this.settings?.isHandleCaseSensitive?.() || false;
 			const excluded = new Set((excludedHandles || [])
 				.map(handle => getHandleCompareKey(handle, caseSensitive))
 				.filter(Boolean));
 			return this.pairStore.allPairs().some((pair: PairRecord) =>
-				pair.uid === uid && !excluded.has(getHandleCompareKey(pair.handle, caseSensitive))
+				pair.ucid === ucid && !excluded.has(getHandleCompareKey(pair.handle, caseSensitive))
 			);
 		}
 		getHandleStatus(handle: any, blockedIds: Set<string> | null = null) {
 			const pair = this.pairStore.getPair(handle);
 			if (!pair) return { code: 'handle-only', pair: null };
 			if (pair.status === 'mismatch') return { code: 'mismatch', pair };
-			if (pair.status === 'unverified' || !pair.uid) return { code: 'unverified', pair };
-			if (!this.hasBlockedId(pair.uid, blockedIds)) return { code: 'handle-only', pair };
+			if (pair.status === 'unverified' || !pair.ucid) return { code: 'unverified', pair };
+			if (!this.hasBlockedId(pair.ucid, blockedIds)) return { code: 'handle-only', pair };
 			if (pair.status === 'stale') return { code: 'stale', pair };
 			return { code: 'paired', pair };
 		}
@@ -99,7 +100,7 @@ const PAIR_LOOKUP_TIMEOUT_MS = 15000;
 			return summary;
 		}
 		shouldNotify(summary = this.getSummary()) {
-			if (!this.pairStore.isUidDetectionEnabled()) return false;
+			if (!this.pairStore.isUcidDetectionEnabled()) return false;
 			if (!summary.stale && !summary.mismatch) return false;
 			const lastCheckAt = this.pairStore.getLastPairCheckAt();
 			if (lastCheckAt && (Date.now() - lastCheckAt) < PAIR_NOTICE_COOLDOWN_MS) return false;
@@ -111,8 +112,8 @@ const PAIR_LOOKUP_TIMEOUT_MS = 15000;
 		}
 		removeHandleArtifacts(handle: any) {
 			const pair = this.pairStore.getPair(handle);
-			if (pair?.uid && !this._uidUsedByOtherPair(pair.uid, [handle])) {
-				this.storage.remove({ type: 'id', value: pair.uid });
+			if (pair?.ucid && !this._ucidUsedByOtherPair(pair.ucid, [handle])) {
+				this.storage.remove({ type: 'id', value: pair.ucid });
 			}
 			this.pairStore.removePair(handle);
 		}
@@ -121,7 +122,7 @@ const PAIR_LOOKUP_TIMEOUT_MS = 15000;
 			const excludedHandles = handles || [];
 			for (const handle of handles || []) {
 				const pair = this.pairStore.getPair(handle);
-				if (pair?.uid && !this._uidUsedByOtherPair(pair.uid, excludedHandles)) ids.add(pair.uid);
+				if (pair?.ucid && !this._ucidUsedByOtherPair(pair.ucid, excludedHandles)) ids.add(pair.ucid);
 			}
 			return ids;
 		}
@@ -138,16 +139,16 @@ const PAIR_LOOKUP_TIMEOUT_MS = 15000;
 			});
 			return this._processHandles(handles, options);
 		}
-		async createPairsForHandles(handles: any[], { automatic = false, signal = null }: { automatic?: boolean; signal?: AbortSignal | null } = {}) {
+		async createPairsForHandles(handles: any[], { automatic = false, stage = 'create', signal = null }: { automatic?: boolean; stage?: 'create' | 'onBlock'; signal?: AbortSignal | null } = {}) {
 			const filtered = (handles || []).filter(handle => {
 				const code = this.getHandleStatus(handle).code;
 				return code === 'handle-only' || code === 'unverified';
 			});
-			return this._processHandles(filtered, { automatic, signal });
+			return this._processHandles(filtered, { automatic, stage, signal });
 		}
 		_shouldRefreshHandle(handle: any, { includeMissing = true } = {}) {
 			const existing = this.pairStore.getPair(handle);
-			const intervalSeconds = this.settings?.getHandleLookupIntervalSeconds?.() ?? 600;
+			const intervalSeconds = this.settings?.getPairRefreshIntervalSeconds?.() ?? 600;
 			if (existing?.verifiedAt && intervalSeconds > 0 && Date.now() - existing.verifiedAt < intervalSeconds * 1000) return false;
 			const status = this.getHandleStatus(handle).code;
 			if (status === 'paired') return true;
@@ -284,9 +285,6 @@ const PAIR_LOOKUP_TIMEOUT_MS = 15000;
 				for (const resume of this._lookupWaiters.splice(0)) resume();
 			}
 		}
-		_asPersistenceResult(result: any) {
-			return result && typeof result.ok === 'boolean' ? result : { ok: true, value: result };
-		}
 		_recordPersistenceFailure(stats: PairRunStats, handle: string | null, error: unknown) {
 			stats.persistenceFailures = (stats.persistenceFailures || 0) + 1;
 			stats.failed += 1;
@@ -296,250 +294,122 @@ const PAIR_LOOKUP_TIMEOUT_MS = 15000;
 			stats.persistenceFailures = (stats.persistenceFailures || 0) + 1;
 			this.logger?.warn?.('Pair rollback failed', { error: error instanceof Error ? error.message : String(error) });
 		}
-		_rollbackPair(stats: PairRunStats, existing: PairRecord | null, handle: string) {
-			const result = this._asPersistenceResult(existing
-				? this.pairStore.upsertPair(existing)
-				: this.pairStore.removePair(handle));
-			if (!result.ok) this._recordRollbackFailure(stats, result.error || 'Pair rollback failed.');
+		_saveResolvedPair(stats: PairRunStats, handle: string, existing: PairRecord | null, next: PairRecord, pairRevision: string | undefined, ruleRevision: string | undefined) {
+			if (!this.storage.refreshFromStorage() || !this.pairStore.refreshFromStorage()) {
+				this._recordPersistenceFailure(stats, handle, 'Unable to refresh pairing storage.');
+				return false;
+			}
+			const key = getHandleCompareKey(handle, this.settings.isHandleCaseSensitive()) || '';
+			const current = this.pairStore.getPair(handle);
+			if (!this.getBlockedHandles().some((value: string) => getHandleCompareKey(value, this.settings.isHandleCaseSensitive()) === key)
+				|| JSON.stringify(this.pairStore._pairEntries[key]) !== pairRevision
+				|| JSON.stringify(this.storage._entries['h:' + key]) !== ruleRevision
+				|| JSON.stringify(current) !== JSON.stringify(existing)) {
+				stats.skipped += 1;
+				stats.items.push({ handle, outcome: 'skipped', message: t('pairChangedDuringLookup') });
+				return false;
+			}
+			const nextKey = getHandleCompareKey(next.handle, this.settings.isHandleCaseSensitive()) || '';
+			const destination = this.pairStore.getPair(next.handle);
+			if (nextKey !== key && destination && destination.ucid !== next.ucid) throw new Error(t('pairHandleConflict'));
+			const previousItems = this.storage.all();
+			const nextItems = previousItems.map((item: BlockItem): BlockItem => item.type === 'handle' && getHandleCompareKey(item.value, this.settings.isHandleCaseSensitive()) === key ? { type: 'handle', value: next.handle } : item);
+			const addedId = !this.hasBlockedId(next.ucid);
+			if (addedId) nextItems.push({ type: 'id', value: next.ucid });
+			const blockWrite = this.storage.setAllResult(nextItems);
+			if (!blockWrite.ok) {
+				this._recordPersistenceFailure(stats, handle, blockWrite.error || 'Block list could not be saved.');
+				return false;
+			}
+			const touched = new Set(['h:' + key, 'h:' + nextKey, ...(addedId ? ['i:' + next.ucid] : [])]);
+			const expected = new Map(Array.from(touched, (value: string) => [value, JSON.stringify(this.storage._entries[value])]));
+			const pairWrite = this.pairStore.replacePair(handle, next);
+			if (!pairWrite.ok) {
+				const rollback = this.storage.restoreTouchedItems(previousItems, expected);
+				if (!rollback.ok) this._recordRollbackFailure(stats, rollback.error);
+				this._recordPersistenceFailure(stats, handle, pairWrite.error || 'Pair metadata could not be saved.');
+				return false;
+			}
+			if (addedId) stats.addedIds += 1;
+			return true;
 		}
-		_rollbackStorage(stats: PairRunStats, items: BlockItem[]) {
-			const result = this.storage.setAllResult
-				? this.storage.setAllResult(items)
-				: this._asPersistenceResult(this.storage.setAll(items));
-			if (!result.ok) this._recordRollbackFailure(stats, result.error || 'Block list rollback failed.');
-		}
-		async _processHandles(handles: any[], { update = false, automatic = false, signal = null }: { update?: boolean; automatic?: boolean; signal?: AbortSignal | null } = {}): Promise<PairRunStats> {
+		async _processHandles(handles: any[], { update = false, automatic = false, stage = 'create', signal = null }: { update?: boolean; automatic?: boolean; stage?: 'create' | 'onBlock'; signal?: AbortSignal | null } = {}): Promise<PairRunStats> {
 			while (this._busy) {
-				if (signal?.aborted) return { created: 0, refreshed: 0, mismatches: 0, failed: 0, addedIds: 0, skipped: 0, items: [] };
+				if (signal?.aborted) throw this._lookupError('cancelled');
 				if (!signal) await this._idlePromise;
 				else await new Promise<void>((resolve, reject) => {
-					let removeAbortListener = () => {};
-					const finish = () => { removeAbortListener(); resolve(); };
-					const abort = () => { removeAbortListener(); reject(this._lookupError('cancelled')); };
+					const abort = () => { signal.removeEventListener('abort', abort); reject(this._lookupError('cancelled')); };
 					signal.addEventListener('abort', abort, { once: true });
-					removeAbortListener = () => signal.removeEventListener('abort', abort);
-					this._idlePromise.then(finish);
+					this._idlePromise.then(() => { signal.removeEventListener('abort', abort); resolve(); });
 				});
 			}
-			if (signal?.aborted) return { created: 0, refreshed: 0, mismatches: 0, failed: 0, addedIds: 0, skipped: 0, items: [] };
+			if (signal?.aborted) throw this._lookupError('cancelled');
 			this._busy = true;
 			let resolveIdle: () => void = () => {};
 			this._idlePromise = new Promise<void>(resolve => { resolveIdle = resolve; });
-			const stats: PairRunStats = {
-				created: 0,
-				refreshed: 0,
-				mismatches: 0,
-				failed: 0,
-				addedIds: 0,
-				skipped: 0,
-				items: [],
-				persistenceFailures: 0
-			};
+			const stats: PairRunStats = { created: 0, refreshed: 0, mismatches: 0, failed: 0, addedIds: 0, skipped: 0, items: [], persistenceFailures: 0 };
 			const uniqueHandles: string[] = [];
 			const seen = new Set<string>();
-			const caseSensitive = this.settings?.isHandleCaseSensitive?.() || false;
+			const caseSensitive = this.settings.isHandleCaseSensitive();
 			for (const handle of handles || []) {
-				const key = getHandleCompareKey(handle, caseSensitive);
 				const value = sanitizeHandle(handle);
-				if (!key || !value || seen.has(key)) continue;
+				const key = getHandleCompareKey(value, caseSensitive);
+				if (!value || !key || seen.has(key)) continue;
 				seen.add(key);
 				uniqueHandles.push(value);
 			}
 			try {
-				let nextHandleIndex = 0;
-				const itemOrder = new Map(uniqueHandles.map((handle, index) => [
-					getHandleCompareKey(handle, caseSensitive),
-					index
-				]));
-				const processNextHandle = async (worker: number) => {
-					while (nextHandleIndex < uniqueHandles.length) {
-						if (signal?.aborted) return;
-						// Running requests finish, but only worker zero may start another in low mode.
-						if ((worker > 0 || automatic) && this.settings?.isLowPerformanceMode?.()) return;
-						const handle = uniqueHandles[nextHandleIndex++];
-					const existing = this.pairStore.getPair(handle);
-					const checkStoredUid = update && !!existing?.uid && !!this.settings?.isPairUpdateUidCheckEnabled?.();
-					const lookupHandle = !update || !existing?.uid || this.settings?.isPairUpdateHandleLookupEnabled?.() !== false;
-					let uidVerified = false;
-					let uidError = '';
-					let uidErrorCode = 'network';
-					let handleError = '';
-					let handleErrorCode = 'network';
-					let handleResolved = false;
-					if (checkStoredUid) {
+				let nextIndex = 0;
+				const processNext = async (worker: number) => {
+					while (nextIndex < uniqueHandles.length) {
+						if (signal?.aborted || ((worker > 0 || automatic) && this.settings.isLowPerformanceMode())) return;
+						const handle = uniqueHandles[nextIndex++];
+						if (!this.storage.refreshFromStorage() || !this.pairStore.refreshFromStorage()) {
+							this._recordPersistenceFailure(stats, handle, 'Unable to refresh pairing storage.');
+							continue;
+						}
+						const existing = this.pairStore.getPair(handle);
+						const key = getHandleCompareKey(handle, this.settings.isHandleCaseSensitive()) || '';
+						if (!this.getBlockedHandles().some((value: string) => getHandleCompareKey(value, this.settings.isHandleCaseSensitive()) === key)
+							|| (!update && ['paired', 'stale', 'mismatch'].includes(this.getHandleStatus(handle).code))) {
+							stats.skipped += 1;
+							stats.items.push({ handle, outcome: 'skipped', message: t('pairChangedDuringLookup') });
+							continue;
+						}
+						const pairRevision = JSON.stringify(this.pairStore._pairEntries[key]);
+						const ruleRevision = JSON.stringify(this.storage._entries['h:' + key]);
 						try {
-							await this._withLookupSlot(() => this.resolveUid(existing.uid, { signal }), signal);
-							uidVerified = true;
+							const refresh = !!existing?.ucid;
+							const resolved = await this._withLookupSlot(() => refresh
+								? this.resolveUcidToHandle(existing.ucid, { force: true, signal })
+								: this.resolveHandleToUcid(handle, { force: update, stage: update ? 'create' : stage, signal }), signal);
+							if (signal?.aborted) throw this._lookupError('cancelled');
+							const next: PairRecord = { handle: refresh ? resolved.handle : handle, ucid: refresh ? existing.ucid : resolved.ucid, verifiedAt: Date.now(), status: 'verified', source: resolved.source, lastResolvedUcid: resolved.ucid, lastError: null };
+							if (!isChannelId(next.ucid) || !sanitizeHandle(next.handle) || (refresh && resolved.ucid !== existing.ucid)) throw new Error(t('pairLookupFailed'));
+							if (!this._saveResolvedPair(stats, handle, existing, next, pairRevision, ruleRevision)) continue;
+							if (existing?.ucid) stats.refreshed += 1;
+							else stats.created += 1;
+							stats.items.push({ handle, outcome: existing?.ucid ? 'updated' : 'created', ucid: next.ucid });
 						} catch (error) {
-							uidError = error instanceof Error ? error.message : String(error);
-							uidErrorCode = (error as any)?.code || 'network';
+							const code = (error as any)?.code;
+							stats.failed += 1;
+							stats.items.push({ handle, outcome: 'failed', ucid: existing?.ucid || undefined, message: error instanceof Error ? error.message : String(error), reason: code === 'timeout' || code === 'cancelled' ? code : 'network' });
+							if (code === 'cancelled') return;
 						}
-					}
-					if (lookupHandle) {
-						try {
-						const resolved = await this._withLookupSlot<any>(() => this.resolveHandle(handle, { force: update, signal }), signal);
-						if (existing?.uid && existing.uid !== resolved.uid) {
-							const previousItems = this.storage.all();
-							const pairWrite = this._asPersistenceResult(this.pairStore.upsertPair({
-								...existing,
-								handle,
-								uid: resolved.uid,
-								verifiedAt: Date.now(),
-								status: 'verified',
-								lastResolvedUid: resolved.uid,
-								lastError: null,
-								source: resolved.source || existing.source || 'youtube-data-api-v3'
-							}));
-							if (!pairWrite.ok) {
-								this._recordPersistenceFailure(stats, handle, pairWrite.error || 'Pair metadata could not be saved.');
-								continue;
-							}
-							if (this.hasBlockedId(existing.uid) && !this._uidUsedByOtherPair(existing.uid)) {
-								const removeResult = this.storage.removeResult
-									? this.storage.removeResult({ type: 'id', value: existing.uid })
-									: { ok: this.storage.remove({ type: 'id', value: existing.uid }), value: { removed: true } };
-								if (!removeResult.ok) {
-									this._rollbackPair(stats, existing, handle);
-									this._recordPersistenceFailure(stats, handle, removeResult.error || 'Block list could not be saved.');
-									continue;
-								}
-							}
-							if (!this.hasBlockedId(resolved.uid)) {
-								const addResult = this.storage.addIdResult
-									? this.storage.addIdResult(resolved.uid)
-									: { ok: this.storage.addId(resolved.uid), value: { added: true } };
-								if (!addResult.ok) {
-									this._rollbackStorage(stats, previousItems);
-									this._rollbackPair(stats, existing, handle);
-									this._recordPersistenceFailure(stats, handle, addResult.error || 'Block list could not be saved.');
-									continue;
-								}
-								if (addResult.value.added) stats.addedIds += 1;
-							}
-							stats.mismatches += 1;
-							stats.items.push({
-								handle,
-								outcome: 'mismatch',
-								uid: existing.uid,
-								resolvedUid: resolved.uid,
-								message: t('pairUidReplaced')
-							});
-							continue;
-						}
-						const pairWrite = this._asPersistenceResult(this.pairStore.upsertPair({
-							handle,
-							uid: resolved.uid,
-							verifiedAt: Date.now(),
-							status: 'verified',
-							source: resolved.source,
-							lastResolvedUid: resolved.uid,
-							lastError: null
-						}));
-						if (!pairWrite.ok) {
-							this._recordPersistenceFailure(stats, handle, pairWrite.error || 'Pair metadata could not be saved.');
-							continue;
-						}
-						if (!this.hasBlockedId(resolved.uid)) {
-							const addResult = this.storage.addIdResult
-								? this.storage.addIdResult(resolved.uid)
-								: { ok: this.storage.addId(resolved.uid), value: { added: true } };
-							if (!addResult.ok) {
-								this._rollbackPair(stats, existing, handle);
-								this._recordPersistenceFailure(stats, handle, addResult.error || 'Block list could not be saved.');
-								continue;
-							}
-							if (addResult.value.added) stats.addedIds += 1;
-						}
-						if (existing?.uid) {
-							stats.refreshed += 1;
-							stats.items.push({ handle, outcome: 'updated', uid: resolved.uid });
-						}
-							else {
-								stats.created += 1;
-								stats.items.push({ handle, outcome: 'created', uid: resolved.uid });
-							}
-							handleResolved = true;
-						} catch (error) {
-							handleError = error instanceof Error ? error.message : String(error);
-							handleErrorCode = (error as any)?.code || 'network';
-						}
-					}
-					if (handleResolved) continue;
-					if (signal?.aborted || handleErrorCode === 'cancelled' || uidErrorCode === 'cancelled') {
-						const message = handleError || uidError || t('pairLookupCancelled');
-						stats.failed += 1;
-						stats.items.push({ handle, outcome: 'failed', message, reason: 'cancelled' });
-						return;
-					}
-					if (uidVerified && existing?.uid) {
-						const pairWrite = this._asPersistenceResult(this.pairStore.upsertPair({
-							...existing,
-							handle,
-							verifiedAt: Date.now(),
-							status: 'verified',
-							source: existing.source || 'youtube-data-api-v3',
-							lastResolvedUid: existing.uid,
-							lastError: handleError || null
-						}));
-						if (!pairWrite.ok) {
-							this._recordPersistenceFailure(stats, handle, pairWrite.error || 'Pair metadata could not be saved.');
-							continue;
-						}
-						stats.refreshed += 1;
-						stats.items.push({ handle, outcome: 'updated', uid: existing.uid, message: handleError || undefined });
-						continue;
-					}
-					if (!lookupHandle) continue;
-					const message = handleError || uidError;
-					const fallbackStatus = existing?.uid
-						? (existing.status === 'mismatch'
-							? 'mismatch'
-							: (existing.verifiedAt && (Date.now() - existing.verifiedAt) >= PAIR_STALE_MS
-								? 'stale'
-								: 'unverified'))
-						: 'unverified';
-					const pairWrite = this._asPersistenceResult(this.pairStore.upsertPair({
-						...existing,
-						handle,
-						uid: existing?.uid || '',
-						verifiedAt: existing?.verifiedAt || null,
-						status: fallbackStatus,
-						source: existing?.source || 'youtube-data-api-v3',
-						lastResolvedUid: existing?.lastResolvedUid || null,
-						lastError: message
-					}));
-					if (!pairWrite.ok) {
-						this._recordPersistenceFailure(stats, handle, pairWrite.error || 'Pair metadata could not be saved.');
-						continue;
-					}
-					stats.failed += 1;
-					stats.items.push({
-						handle,
-						outcome: 'failed',
-						uid: existing?.uid || undefined,
-						resolvedUid: existing?.lastResolvedUid || undefined,
-						message,
-						reason: handleErrorCode === 'timeout' || handleErrorCode === 'cancelled' ? handleErrorCode : 'network'
-					});
 					}
 				};
-				await Promise.all(Array.from(
-					{ length: Math.min(this.settings?.isLowPerformanceMode?.() ? 1 : PAIR_LOOKUP_CONCURRENCY, uniqueHandles.length) },
-					(_: unknown, worker: number) => processNextHandle(worker)
-				));
-				stats.items.sort((a, b) => {
-					return (itemOrder.get(getHandleCompareKey(a.handle, caseSensitive)) ?? Number.MAX_SAFE_INTEGER)
-						- (itemOrder.get(getHandleCompareKey(b.handle, caseSensitive)) ?? Number.MAX_SAFE_INTEGER);
-				});
+				await Promise.all(Array.from({ length: Math.min(this.settings.isLowPerformanceMode() ? 1 : PAIR_LOOKUP_CONCURRENCY, uniqueHandles.length) }, (_: unknown, worker: number) => processNext(worker)));
+				const order = new Map(uniqueHandles.map((handle, index) => [handle, index]));
+				stats.items.sort((left, right) => (order.get(left.handle) ?? 0) - (order.get(right.handle) ?? 0));
 			} finally {
 				this._busy = false;
 				this._idlePromise = null;
 				resolveIdle();
 				if (!automatic || stats.items.length) {
-					const checkResult = this._asPersistenceResult(this.pairStore.setLastPairCheckAt(Date.now()));
-					if (!checkResult.ok) this._recordPersistenceFailure(stats, null, checkResult.error || 'Pair check time could not be saved.');
-					const refreshResult = this._asPersistenceResult(this.pairStore.refreshStatuses());
-					if (!refreshResult.ok) this._recordPersistenceFailure(stats, null, refreshResult.error || 'Pair status could not be saved.');
+					const result = this.pairStore.setLastPairCheckAt(Date.now());
+					if (!result.ok) this._recordPersistenceFailure(stats, null, result.error);
+					const statuses = this.pairStore.refreshStatuses();
+					if (!statuses.ok) this._recordPersistenceFailure(stats, null, statuses.error);
 				}
 			}
 			return stats;
@@ -599,95 +469,100 @@ const PAIR_LOOKUP_TIMEOUT_MS = 15000;
 				};
 			}
 		}
-		async resolveHandle(handle: string, { force = false, signal = null }: { force?: boolean; signal?: AbortSignal | null } = {}) {
-			const normalized = sanitizeHandle(handle);
-			if (!normalized) throw new Error(t('pairLookupNoUid'));
-			const key = getHandleCompareKey(normalized, this.settings?.isHandleCaseSensitive?.() || false);
-			const cached = this._handleLookupCache.get(key);
-			const intervalSeconds = this.settings?.getHandleLookupIntervalSeconds?.() ?? 600;
-			if (!force && cached && intervalSeconds > 0 && Date.now() - cached.checkedAt < intervalSeconds * 1000) {
-				this._handleLookupCache.delete(key);
-				this._handleLookupCache.set(key, cached);
-				return cached.result;
+		async _resolveChannel(identifier: string, stage: PairLookupStage, force: boolean, signal: AbortSignal | null): Promise<{ ucid: string; handle: string; source: string }> {
+			if (signal?.aborted) throw this._lookupError('cancelled');
+			const method: PairLookupMethod = this.settings.getPairLookupMethod(stage);
+			const signature = JSON.stringify([this.settings.getState().pairLookup, this.settings.getPairRefreshIntervalSeconds(), this.settings.isHandleCaseSensitive()]);
+			const apiKey = this.apiConfig.getApiKey();
+			if (signature !== this._lookupSignature || apiKey !== this._cachedApiKey) {
+				this._lookupCache.clear(); this._lookupSignature = signature; this._cachedApiKey = apiKey;
 			}
-			if (cached) this._handleLookupCache.delete(key);
+			const key = JSON.stringify([stage, method, stage === 'update' ? identifier : getHandleCompareKey(identifier, this.settings.isHandleCaseSensitive())]);
+			const cached = this._lookupCache.get(key);
+			const interval = this.settings.getPairRefreshIntervalSeconds();
+			if (!force && cached && interval > 0 && Date.now() - cached.checkedAt < interval * 1000) return cached.result;
 			let result;
-			if (this.settings?.getHandleLookupMethod?.() !== 'api') {
-				try { result = await this._resolveHandleFromPage(normalized, signal); }
+			if (method !== 'api') {
+				try { result = await this._resolveChannelFromPage(identifier, stage === 'update', signal); }
 				catch (error) {
-					if (!this.settings?.isHandleLookupFallbackApiEnabled?.() || !this.apiConfig.hasApiKey()) {
-						const message = error instanceof Error ? error.message : String(error);
-						const guidance = getLang() === 'ko'
-							? '다시 시도하거나, 테스트한 API 키로 API fallback을 켜세요.'
-							: 'Retry, or enable API fallback with a tested API key.';
-						const wrapped = new Error(`${message} ${guidance}`, { cause: error });
+					if ((error as any)?.code === 'cancelled' || signal?.aborted) throw this._lookupError('cancelled', error);
+					if (method !== 'page-api' || !apiKey) {
+						const wrapped = new Error((error instanceof Error ? error.message : String(error)) + ' ' + t('handleLookupRetryWithApi'), { cause: error });
 						if ((error as any)?.code) (wrapped as any).code = (error as any).code;
 						throw wrapped;
 					}
 				}
 			}
-			if (!result) result = await this._resolveHandleFromApi(normalized, signal);
-			this._handleLookupCache.set(key, { checkedAt: Date.now(), result });
-			while (this._handleLookupCache.size > PAIR_LOOKUP_CACHE_LIMIT) {
-				const oldestKey = this._handleLookupCache.keys().next().value;
-				if (oldestKey == null) break;
-				this._handleLookupCache.delete(oldestKey);
-			}
+			if (!result) result = await this._resolveChannelFromApi(identifier, stage === 'update', signal);
+			if (signal?.aborted) throw this._lookupError('cancelled');
+			this._lookupCache.delete(key);
+			this._lookupCache.set(key, { checkedAt: Date.now(), result });
+			while (this._lookupCache.size > PAIR_LOOKUP_CACHE_LIMIT) this._lookupCache.delete(this._lookupCache.keys().next().value);
 			return result;
 		}
-		async _resolveHandleFromPage(handle: string, signal: AbortSignal | null = null) {
-			const response = await this._fetchWithTimeout(`https://www.youtube.com/@${encodeURIComponent(handle.slice(1))}`, { cache: 'no-store', referrerPolicy: 'no-referrer' }, signal);
-			if (!response.ok) throw new Error(`${t('pairLookupFailed')} (${response.status})`);
-			const html = await this._readResponseBody(response, 'text', signal);
-			const patterns = [/"externalId":"(UC[0-9A-Za-z_-]{10,})"/, /"channelId":"(UC[0-9A-Za-z_-]{10,})"/, /itemprop="channelId"\s+content="(UC[0-9A-Za-z_-]{10,})"/];
-			const uid = patterns.map(pattern => pattern.exec(html)?.[1]).find(isChannelId);
-			if (!uid) throw new Error(t('pairLookupNoUid'));
-			return { uid, source: 'youtube-channel-page' };
+		async resolveHandleToUcid(handle: string, { force = false, stage = 'create', signal = null }: { force?: boolean; stage?: 'create' | 'onBlock'; signal?: AbortSignal | null } = {}) {
+			const normalized = sanitizeHandle(handle);
+			if (!normalized) throw new Error(t('pairLookupNoUcid'));
+			return this._resolveChannel(normalized, stage, force, signal);
 		}
-		async _resolveHandleFromApi(handle: string, signal: AbortSignal | null = null) {
+		async resolveUcidToHandle(ucid: string, { force = false, signal = null }: { force?: boolean; signal?: AbortSignal | null } = {}) {
+			if (!isChannelId(ucid)) throw new Error(t('pairLookupNoUcid'));
+			return this._resolveChannel(ucid, 'update', force, signal);
+		}
+		_readChannelMetadata(html: string) {
+			const assignment = /(?:var\s+)?ytInitialData\s*=\s*|window\["ytInitialData"\]\s*=\s*/g;
+			const match = assignment.exec(html);
+			if (!match) throw new Error(t('pairLookupFailed'));
+			const start = html.indexOf('{', assignment.lastIndex);
+			let depth = 0, quoted = false, escaped = false;
+			for (let index = start; index >= 0 && index < html.length; index++) {
+				const character = html[index];
+				if (quoted) {
+					if (escaped) escaped = false;
+					else if (character === '\\') escaped = true;
+					else if (character === '"') quoted = false;
+				} else if (character === '"') quoted = true;
+				else if (character === '{') depth++;
+				else if (character === '}' && --depth === 0) {
+					return JSON.parse(html.slice(start, index + 1))?.metadata?.channelMetadataRenderer;
+				}
+			}
+			throw new Error(t('pairLookupFailed'));
+		}
+		async _resolveChannelFromPage(identifier: string, reverse: boolean, signal: AbortSignal | null = null) {
+			const path = reverse ? '/channel/' + encodeURIComponent(identifier) : '/@' + encodeURIComponent(identifier.slice(1));
+			const response = await this._fetchWithTimeout('https://www.youtube.com' + path, { cache: 'no-store', referrerPolicy: 'no-referrer' }, signal);
+			if (!response.ok) throw new Error(t('pairLookupFailed') + ' (' + response.status + ')');
+			const metadata = this._readChannelMetadata(await this._readResponseBody(response, 'text', signal));
+			const ucid = metadata?.externalId;
+			const urls = [metadata?.vanityChannelUrl, ...(Array.isArray(metadata?.ownerUrls) ? metadata.ownerUrls : [])];
+			const handles = urls.flatMap((value: any) => {
+				try {
+					const url = new URL(value, 'https://www.youtube.com');
+					if (url.hostname !== 'www.youtube.com' && url.hostname !== 'youtube.com') return [];
+					const match = /^\/@([^/?#]+)\/?$/.exec(url.pathname);
+					return match ? ['@' + decodeURIComponent(match[1])] : [];
+				} catch { return []; }
+			});
+			const handle = handles[0];
+			if (!isChannelId(ucid) || (reverse && (ucid !== identifier || !sanitizeHandle(handle))) || (!reverse && (!handle || getHandleCompareKey(handle, false) !== getHandleCompareKey(identifier, false)))) throw new Error(t('pairLookupFailed'));
+			return { ucid, handle, source: 'youtube-channel-page' };
+		}
+		async _resolveChannelFromApi(identifier: string, reverse: boolean, signal: AbortSignal | null = null) {
 			const apiKey = this.apiConfig.getApiKey();
 			if (!apiKey) throw new Error(t('apiKeyRequired'));
-
 			const url = new URL('https://www.googleapis.com/youtube/v3/channels');
-			url.searchParams.set('part', 'id');
-			url.searchParams.set('forHandle', handle);
+			url.searchParams.set('part', reverse ? 'id,snippet' : 'id');
+			url.searchParams.set(reverse ? 'id' : 'forHandle', identifier);
 			url.searchParams.set('key', apiKey);
 			url.searchParams.set('hl', getLang() === 'ko' ? 'ko' : 'en');
-
 			const response = await this._fetchWithTimeout(url.toString(), { cache: 'no-store', referrerPolicy: 'no-referrer' }, signal);
-			let payload = null;
-			try { payload = await this._readResponseBody(response, 'json', signal); } catch (error) { if ((error as any)?.code) throw error; }
-
-			if (!response.ok) {
-				const message = payload?.error?.message || `${t('pairLookupFailed')} (${response.status})`;
-				throw new Error(message);
-			}
-
-			const uid = payload?.items?.[0]?.id;
-			if (!isChannelId(uid)) throw new Error(t('pairLookupNoUid'));
-			return { uid, source: 'youtube-data-api-v3' };
-		}
-		async resolveUid(uid: string, { signal = null }: { signal?: AbortSignal | null } = {}) {
-			const apiKey = this.apiConfig.getApiKey();
-			if (!apiKey) throw new Error(t('apiKeyRequired'));
-
-			const url = new URL('https://www.googleapis.com/youtube/v3/channels');
-			url.searchParams.set('part', 'id');
-			url.searchParams.set('id', uid);
-			url.searchParams.set('key', apiKey);
-			url.searchParams.set('hl', getLang() === 'ko' ? 'ko' : 'en');
-
-			const response = await this._fetchWithTimeout(url.toString(), { cache: 'no-store', referrerPolicy: 'no-referrer' }, signal);
-			let payload = null;
-			try { payload = await this._readResponseBody(response, 'json', signal); } catch (error) { if ((error as any)?.code) throw error; }
-
-			if (!response.ok) {
-				const message = payload?.error?.message || `${t('pairLookupFailed')} (${response.status})`;
-				throw new Error(message);
-			}
-			const resolvedUid = payload?.items?.[0]?.id;
-			if (!isChannelId(resolvedUid)) throw new Error(t('pairLookupNoUid'));
-			return { uid: resolvedUid, source: 'youtube-data-api-v3' };
+			const payload = await this._readResponseBody(response, 'json', signal);
+			if (!response.ok) throw new Error(payload?.error?.message || t('pairLookupFailed') + ' (' + response.status + ')');
+			const channel = payload?.items?.[0];
+			const ucid = channel?.id;
+			const handle = reverse ? sanitizeHandle(channel?.snippet?.customUrl) : identifier;
+			if (!isChannelId(ucid) || !handle || (reverse && ucid !== identifier)) throw new Error(t('pairLookupFailed'));
+			return { ucid, handle, source: 'youtube-data-api-v3' };
 		}
 	}
-

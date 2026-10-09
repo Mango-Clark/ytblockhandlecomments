@@ -239,7 +239,7 @@ export class Logger extends GMBackedStore {
 		return !!(config.fileEnabled || config.consoleEnabled) && LEVEL_WEIGHT[level] <= LEVEL_WEIGHT[configuredLevel];
 	}
 	_isSensitiveDetailKey(key: string) {
-		return /(api.?key|token|password|secret|authorization|cookie|url|account|comment|handle|channel.?id|uid|user(?:name|id)?|author|email)/i.test(key);
+		return /(api.?key|token|password|secret|authorization|cookie|url|account|comment|handle|channel.?id|ucid|uid|user(?:name|id)?|author|email)/i.test(key);
 	}
 	_isSensitiveDetailValue(value: string) {
 		if (/(?:https?:\/\/|@[\p{L}\p{N}_.-]+|\bUC[A-Za-z0-9_-]{20,}\b|\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b|\bBearer\s+\S+)/iu.test(value)) return true;

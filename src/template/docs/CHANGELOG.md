@@ -10,11 +10,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); projec
 
 ### Added
 
-- None
+- Independent lookup policies for creation, updates, and immediate pairing; settings section navigation.
 
 ### Changed
 
-- None
+- Pair updates follow stable UCIDs to current handles and replace previous handle rules. UID names and stored/synchronized metadata migrate to UCID fields while preserving revisions and deletions.
+- Configuration lives in Settings; pair operations/status/results live in the block list. Draft inputs and list state survive navigation.
+- Regression cases cover bidirectional lookup, migration, conflicts, cancellation, and partial-write recovery. Tests were not executed for this change.
 
 ### Deprecated
 
@@ -22,11 +24,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); projec
 
 ### Removed
 
-- None
+- Obsolete stored-UID existence checks, old-handle re-resolution, forced update-check toggles, and API-key requirements for page lookup.
 
 ### Fixed
 
-- None
+- Queued creation skips completed pairs; transient storage failures remain retryable, and rollback preserves unrelated rules.
 
 ### Security
 
@@ -166,7 +168,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); projec
 
 ### Fixed
 
-- Prevented automatic UID-pair creation from being skipped when another pair operation is running.
+- Prevented automatic UCID-pair creation from being skipped when another pair operation is running.
 
 ### Security
 
@@ -298,13 +300,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); projec
 
 ### Added
 
-- Selectable identity blocking with default `handle` rules or UID pair `id` rules.
-- Independent pair-update checks for stored UID verification and handle re-resolution.
+- Selectable identity blocking with default `handle` rules or UCID pair `id` rules.
+- Independent pair-update checks for stored UCID verification and handle re-resolution.
 - Configurable keyword automation for comment text, author handles, pinned labels.
 
 ### Changed
 
-- Pair creation still resolves `handle` to UID regardless of update-check settings.
+- Pair creation still resolves `handle` to UCID regardless of update-check settings.
 - Keyword actions deduplicate per comment; avoid duplicate block-list/pair requests.
 
 ### Deprecated
@@ -466,7 +468,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); projec
 
 ### Added
 
-- Separate settings dialog for API, UID detection, regex auto-add, debug counters.
+- Separate settings dialog for API, UCID detection, regex auto-add, debug counters.
 - Optional regex matched-handle auto-add; future channel comments use handle matching before regex.
 
 ### Changed
@@ -483,7 +485,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); projec
 
 ### Fixed
 
-- Shared UID deletion keeps matching rules while other pairs use same UID.
+- Shared UCID deletion keeps matching rules while other pairs use same UCID.
 - Remote `blocked_v2` sync normalizes/deduplicates items locally.
 - Watch-page pair review banner stays hidden for full stale interval after `Later` or recent pair check.
 - Invalid imports remain open, exposing validation failures.
@@ -534,7 +536,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); projec
 
 ### Changed
 
-- UID mismatch handling replaces stale stored UID rules with latest resolved UID instead of retaining old channel ID.
+- UCID mismatch handling replaces stale stored UCID rules with latest resolved UCID instead of retaining old channel ID.
 
 ### Deprecated
 
@@ -600,21 +602,21 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); projec
 
 - Comment DOM text and `/@...` links preserve exact handle casing for case-sensitive mode
 - Filtered tag views show only matching handle entries, excluding unrelated `id`/`regex` rows
-- Optional UID detection toggle backed by new `pair_meta_v1` storage
-- Handle↔UID pair creation/refresh actions in manager dialog
+- Optional UCID detection toggle backed by new `pair_meta_v1` storage
+- Handle↔UCID pair creation/refresh actions in manager dialog
 - Pair status badges and metadata for blocked handles
 - Watch-page banner prompts pair review for stale/mismatch items
 - Cross-tab pair-metadata synchronization
 - Local-only YouTube Data API v3 API key storage in manager dialog
 - Pair creation/update use `channels.list` with `forHandle` filter
-- Manager dialog gains UID section, pair summary cards, pair timestamps
-- UID resolution requires user API key instead of channel-page scraping
-- `id` rule matching controlled by UID detection toggle, not always active
-- Removing handle rule also removes paired UID rule and pair metadata
+- Manager dialog gains UCID section, pair summary cards, pair timestamps
+- UCID resolution requires user API key instead of channel-page scraping
+- `id` rule matching controlled by UCID detection toggle, not always active
+- Removing handle rule also removes paired UCID rule and pair metadata
 - Pair actions disabled until API key saved
-- Docs describe API-key UID flow and local-only key storage
-- Preserved handle-only blocking fallback when UID lookup fails or pair cannot be verified
-- Reduced reliance on fragile YouTube channel-page HTML for UID lookup
+- Docs describe API-key UCID flow and local-only key storage
+- Preserved handle-only blocking fallback when UCID lookup fails or pair cannot be verified
+- Reduced reliance on fragile YouTube channel-page HTML for UCID lookup
 - Removed main `Select matching handles` latency by avoiding whole-list rerenders on regex-row selection
 - Reduced repeated manager work rebuilding search/selection state within same interaction cycle
 - Blocked comments/replies now hide on supported Shorts pages instead of watch-only skipping

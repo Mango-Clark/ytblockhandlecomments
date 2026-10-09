@@ -172,13 +172,13 @@ export function renderManagerListRows(items: BlockItem[], context: ManagerListRo
 		if (item.type === 'handle') {
 			const status = context.getPairStatus(item.value, context.viewState.blockedIds);
 			badges.appendChild(context.makeBadge(status.code));
-			if (status.pair?.uid) meta.appendChild(context.createMetaLine(t('metaUid', status.pair.uid)));
+			if (status.pair?.ucid) meta.appendChild(context.createMetaLine(t('metaUcid', status.pair.ucid)));
 			if (status.pair?.verifiedAt) meta.appendChild(context.createMetaLine(t('metaVerifiedAt', context.formatDate(status.pair.verifiedAt))));
-			if (status.pair?.lastResolvedUid && status.pair.lastResolvedUid !== status.pair.uid) meta.appendChild(context.createMetaLine(t('metaResolvedUid', status.pair.lastResolvedUid)));
+			if (status.pair?.lastResolvedUcid && status.pair.lastResolvedUcid !== status.pair.ucid) meta.appendChild(context.createMetaLine(t('metaResolvedUcid', status.pair.lastResolvedUcid)));
 			if (status.pair?.source) meta.appendChild(context.createMetaLine(t('metaSource', status.pair.source)));
 			if (status.pair?.lastError) meta.appendChild(context.createMetaLine(t('metaError', status.pair.lastError)));
 		} else if (item.type === 'id') {
-			badges.appendChild(context.makeBadge('uid'));
+			badges.appendChild(context.makeBadge('ucid'));
 		} else if (item.type === 'regex') {
 			badges.appendChild(context.makeBadge('regex'));
 			const regexSummary = document.createElement('div');

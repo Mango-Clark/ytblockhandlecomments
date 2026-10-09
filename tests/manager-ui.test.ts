@@ -27,7 +27,7 @@ test('pair result details preserve collapsed state across rerender', () => {
 	const manager = new api.BlockListManager({});
 	const container = document.createElement('div');
 	const stats = {
-		items: [{ handle: '@alpha', outcome: 'created', uid: 'UC1234567890' }]
+		items: [{ handle: '@alpha', outcome: 'created', ucid: 'UC1234567890' }]
 	};
 
 	manager._renderPairResultList(container, stats);
@@ -147,7 +147,7 @@ test('manager list row renderer preserves selection and pair metadata', () => {
 		pageSize: 100,
 		pairBusy: false,
 		isBusy: () => false,
-		getPairStatus: () => ({ code: 'paired', pair: { uid: 'UC1234567890', source: 'manual' } }),
+		getPairStatus: () => ({ code: 'paired', pair: { ucid: 'UC1234567890', source: 'manual' } }),
 		formatDate: () => '2026-01-01',
 		makeBadge: (code: string) => Object.assign(document.createElement('span'), { textContent: code }),
 		createMetaLine: (text: string) => Object.assign(document.createElement('span'), { textContent: text }),
@@ -209,7 +209,7 @@ test('pair result rendering keeps manager wrapper overrides', () => {
 	const { api, document } = loadUserscript();
 	const manager = new api.BlockListManager({});
 	manager._getPairOutcomeLabel = () => 'Overridden outcome';
-	manager._getPairResultItems = () => [{ outcome: 'created', handle: '@wrapped', uid: 'UC1234567890' }];
+	manager._getPairResultItems = () => [{ outcome: 'created', handle: '@wrapped', ucid: 'UC1234567890' }];
 	manager._getFailedPairHandles = () => ['@wrapped-failed'];
 	manager._createMetaLine = (text: string) => Object.assign(document.createElement('div'), { textContent: `Overridden meta: ${text}` });
 	const container = document.createElement('div');
@@ -263,7 +263,7 @@ test('settings dialog groups related controls', () => {
 	manager.openSettings();
 	const titles = document.querySelectorAll('.tm-setting-group h4').map((node: any) => node.textContent);
 
-	assert.deepEqual(titles, ['매칭', '댓글 표시', '키워드 자동 처리', '로그', '표시 크기', '테마', '유지보수']);
+	assert.deepEqual(titles, ['매칭', '댓글 표시', '키워드 자동 처리', '표시 크기', '테마', '로그', '유지보수']);
 	assert.ok(document.querySelector('.tm-setting-group-matching'));
 	assert.equal(document.querySelectorAll('.tm-setting-group-matching').length, 1);
 	assert.match(document.querySelector('.tm-settings-panel').textContent, /키워드 매칭과 선택한 모든 동작을 한 번에 켜거나 끕니다/);
@@ -965,8 +965,6 @@ test('settings dialog confirms and resets app settings', async () => {
 	settings.setHandleCaseSensitive(true);
 	settings.setAutoAddRegexHandlesEnabled(true);
 	settings.setBlockMatchMode('pair');
-	settings.setPairUpdateUidCheckEnabled(true);
-	settings.setPairUpdateHandleLookupEnabled(false);
 	settings.setKeywordAutomation({
 		keywords: ['spam'],
 		fields: { commentText: false, handle: true, pinned: true },
@@ -991,8 +989,6 @@ test('settings dialog confirms and resets app settings', async () => {
 	assert.equal(settings.isHandleCaseSensitive(), false);
 	assert.equal(settings.isAutoAddRegexHandlesEnabled(), false);
 	assert.equal(settings.getBlockMatchMode(), 'handle');
-	assert.equal(settings.isPairUpdateUidCheckEnabled(), false);
-	assert.equal(settings.isPairUpdateHandleLookupEnabled(), true);
 	assert.deepEqual(Array.from(settings.getKeywordAutomation().keywords), []);
 	assert.equal(settings.getDislikeMode(), 'none');
 	assert.equal(settings.getCommentBlockMode(), 'hide');
@@ -1244,7 +1240,7 @@ test('api busy state shows a loading bar', () => {
 	resolveTest({ category: 'ok', message: 'ok', httpStatus: 200 });
 });
 
-test('closing the list invalidates a pending API result before reopening', async () => {
+test('closing settings invalidates a pending API result before reopening', async () => {
 	const { api, document } = loadUserscript();
 	const settings = new api.AppSettingsStorage();
 	const storage = new api.StorageV2(settings);
@@ -1262,14 +1258,14 @@ test('closing the list invalidates a pending API result before reopening', async
 		testApiKey: () => new Promise(resolve => { resolveTest = resolve; })
 	});
 
-	manager.openList();
+	manager.openSettings();
 	document.querySelectorAll('button').find((button: any) => button.textContent === 'API 키 테스트').click();
 	api.Dialog.closeAll('close');
 	resolveTest({ category: 'ok', message: 'late result', httpStatus: 200 });
 	await Promise.resolve();
 	await Promise.resolve();
 
-	manager.openList();
+	manager.openSettings();
 	const progress = document.querySelector('.tm-progress');
 	assert.equal(progress.hidden, true);
 	assert.equal(document.querySelectorAll('.tm-dialog').length, 1);

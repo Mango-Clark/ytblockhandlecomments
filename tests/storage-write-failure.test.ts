@@ -56,11 +56,11 @@ test('retries first block-list migration after a transient write failure', () =>
 test('preserves pair metadata when Tampermonkey rejects a write', () => {
 	const { api } = loadWithWriteFailure();
 	const store = new api.PairMetaStorage(new api.AppSettingsStorage());
-	const result = store.upsertPair({ handle: '@alpha', uid: 'UC1234567890', status: 'verified', verifiedAt: Date.now(), source: 'test' });
+	const result = store.upsertPair({ handle: '@alpha', ucid: 'UC1234567890', status: 'verified', verifiedAt: Date.now(), source: 'test' });
 	assert.equal(result.ok, false);
 	assert.equal(store.getPair('@alpha'), null);
-	store.setUidDetectionEnabled(true);
-	assert.equal(store.isUidDetectionEnabled(), false);
+	store.setUcidDetectionEnabled(true);
+	assert.equal(store.isUcidDetectionEnabled(), false);
 	assert.ok(store.getLastSaveError());
 });
 
@@ -183,12 +183,12 @@ test('reports failed imports without changing the block list', async () => {
 });
 
 test('pair updates report metadata persistence failures without success counts', async () => {
-	const { api } = loadWithWriteFailure();
+	const { api } = loadUserscript({ gmStore: { blocked_v2: { version: 2, updatedAt: 1, items: [{ type: 'handle', value: '@alpha' }] } }, gmSetValue: () => { throw new Error('quota exceeded'); } });
 	const settings = new api.AppSettingsStorage();
 	const storage = new api.StorageV2(settings);
 	const pairStore = new api.PairMetaStorage(settings);
 	const service = new api.PairService(storage, pairStore, new api.ApiConfigStorage(), settings);
-	service.resolveHandle = async () => ({ uid: 'UC1234567890', source: 'test' });
+	service.resolveHandleToUcid = async () => ({ ucid: 'UC1234567890', source: 'test' });
 
 	const stats = await service.createPairsForHandles(['@alpha']);
 	assert.equal(stats.created, 0);
@@ -203,24 +203,26 @@ test('pair updates report failed check timestamp persistence', async () => {
 	const storage = new api.StorageV2(settings);
 	const pairStore = new api.PairMetaStorage(settings);
 	const service = new api.PairService(storage, pairStore, new api.ApiConfigStorage(), settings);
-	service.resolveHandle = async () => ({ uid: 'UC1234567890', source: 'test' });
+	storage.addHandle('@alpha');
+	service.resolveHandleToUcid = async () => ({ ucid: 'UC1234567890', source: 'test' });
 	pairStore.setLastPairCheckAt = () => ({ ok: false, value: pairStore.getState(), error: new Error('quota exceeded') });
 
 	const stats = await service.createPairsForHandles(['@alpha']);
 	assert.equal(stats.created, 1);
 	assert.equal(stats.failed, 1);
 	assert.equal(stats.persistenceFailures, 1);
-	assert.equal(pairStore.getPair('@alpha')?.uid, 'UC1234567890');
+	assert.equal(pairStore.getPair('@alpha')?.ucid, 'UC1234567890');
 });
 
-test('pair updates roll back metadata when the UID block write fails', async () => {
+test('pair updates roll back metadata when the UCID block write fails', async () => {
 	const { api } = loadUserscript();
 	const settings = new api.AppSettingsStorage();
 	const storage = new api.StorageV2(settings);
 	const pairStore = new api.PairMetaStorage(settings);
 	const service = new api.PairService(storage, pairStore, new api.ApiConfigStorage(), settings);
-	service.resolveHandle = async () => ({ uid: 'UC1234567890', source: 'test' });
-	storage.addIdResult = () => ({ ok: false, value: { items: storage.all(), added: false }, error: new Error('quota exceeded') });
+	storage.addHandle('@alpha');
+	service.resolveHandleToUcid = async () => ({ ucid: 'UC1234567890', source: 'test' });
+	storage.setAllResult = () => ({ ok: false, value: storage.all(), error: new Error('quota exceeded') });
 
 	const stats = await service.createPairsForHandles(['@alpha']);
 	assert.equal(stats.created, 0);
@@ -235,14 +237,15 @@ test('pair updates report rollback persistence failures', async () => {
 	const storage = new api.StorageV2(settings);
 	const pairStore = new api.PairMetaStorage(settings);
 	const service = new api.PairService(storage, pairStore, new api.ApiConfigStorage(), settings);
-	service.resolveHandle = async () => ({ uid: 'UC1234567890', source: 'test' });
-	storage.addIdResult = () => ({ ok: false, value: { items: storage.all(), added: false }, error: new Error('quota exceeded') });
-	pairStore.removePair = () => ({ ok: false, value: pairStore.getState(), error: new Error('rollback quota exceeded') });
+	storage.addHandle('@alpha');
+	service.resolveHandleToUcid = async () => ({ ucid: 'UC1234567890', source: 'test' });
+	pairStore.replacePair = () => ({ ok: false, value: pairStore.getState(), error: new Error('rollback quota exceeded') });
 
+	storage.restoreTouchedItems = () => ({ ok: false, error: new Error('rollback failed') });
 	const stats = await service.createPairsForHandles(['@alpha']);
 	assert.equal(stats.created, 0);
 	assert.ok((stats.persistenceFailures || 0) >= 2);
-	assert.equal(pairStore.getPair('@alpha')?.uid, 'UC1234567890');
+	assert.equal(pairStore.getPair('@alpha'), null);
 });
 
 test('pair updates can retry after a transient metadata write failure', async () => {
@@ -251,64 +254,20 @@ test('pair updates can retry after a transient metadata write failure', async ()
 	const storage = new api.StorageV2(settings);
 	const pairStore = new api.PairMetaStorage(settings);
 	const service = new api.PairService(storage, pairStore, new api.ApiConfigStorage(), settings);
-	service.resolveHandle = async () => ({ uid: 'UC1234567890', source: 'test' });
+	storage.addHandle('@alpha');
+	service.resolveHandleToUcid = async () => ({ ucid: 'UC1234567890', source: 'test' });
 	let failed = true;
-	const upsertPair = pairStore.upsertPair.bind(pairStore);
-	pairStore.upsertPair = (pair: any) => {
+	const replacePair = pairStore.replacePair.bind(pairStore);
+	pairStore.replacePair = (handle: string, pair: any) => {
 		if (failed) { failed = false; return { ok: false, value: pairStore.getState(), error: new Error('quota exceeded') }; }
-		return upsertPair(pair);
+		return replacePair(handle, pair);
 	};
 
 	const first = await service.createPairsForHandles(['@alpha']);
 	const second = await service.createPairsForHandles(['@alpha']);
 	assert.equal(first.created, 0);
 	assert.equal(second.created, 1);
-	assert.equal(pairStore.getPair('@alpha')?.uid, 'UC1234567890');
-});
-
-test('pair mismatch rolls back both stores when the new UID write fails', async () => {
-	const { api } = loadUserscript();
-	const settings = new api.AppSettingsStorage();
-	const storage = new api.StorageV2(settings);
-	const pairStore = new api.PairMetaStorage(settings);
-	const service = new api.PairService(storage, pairStore, new api.ApiConfigStorage(), settings);
-	storage.addHandle('@alpha');
-	storage.addId('UC1111111111');
-	pairStore.upsertPair({ handle: '@alpha', uid: 'UC1111111111', status: 'verified', verifiedAt: Date.now(), source: 'test' });
-	service.resolveHandle = async () => ({ uid: 'UC2222222222', source: 'test' });
-	storage.addIdResult = () => ({ ok: false, value: { items: storage.all(), added: false }, error: new Error('quota exceeded') });
-
-	const stats = await service.updatePairsForHandles(['@alpha']);
-	assert.equal(stats.mismatches, 0);
-	assert.ok(stats.failed >= 1);
-	assert.equal(pairStore.getPair('@alpha')?.uid, 'UC1111111111');
-	assert.ok(storage.all().some((item: any) => item.type === 'id' && item.value === 'UC1111111111'));
-	assert.equal(storage.all().some((item: any) => item.type === 'id' && item.value === 'UC2222222222'), false);
-});
-
-test('pair mismatch reports rollback failure when restoration fails', async () => {
-	const { api } = loadUserscript();
-	const settings = new api.AppSettingsStorage();
-	const storage = new api.StorageV2(settings);
-	const pairStore = new api.PairMetaStorage(settings);
-	const service = new api.PairService(storage, pairStore, new api.ApiConfigStorage(), settings);
-	storage.addHandle('@alpha');
-	storage.addId('UC1111111111');
-	pairStore.upsertPair({ handle: '@alpha', uid: 'UC1111111111', status: 'verified', verifiedAt: Date.now(), source: 'test' });
-	service.resolveHandle = async () => ({ uid: 'UC2222222222', source: 'test' });
-	storage.addIdResult = () => ({ ok: false, value: { items: storage.all(), added: false }, error: new Error('quota exceeded') });
-	const upsertPair = pairStore.upsertPair.bind(pairStore);
-	let writes = 0;
-	pairStore.upsertPair = (pair: any) => {
-		writes += 1;
-		return writes === 1
-			? upsertPair(pair)
-			: { ok: false, value: pairStore.getState(), error: new Error('rollback quota exceeded') };
-	};
-
-	const stats = await service.updatePairsForHandles(['@alpha']);
-	assert.ok((stats.persistenceFailures || 0) >= 2);
-	assert.equal(pairStore.getPair('@alpha')?.uid, 'UC2222222222');
+	assert.equal(pairStore.getPair('@alpha')?.ucid, 'UC1234567890');
 });
 
 test('imports can retry after a failed persistence attempt', async () => {

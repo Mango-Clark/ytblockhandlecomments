@@ -33,20 +33,20 @@ test('pair lookup index stays synchronized with state changes', () => {
 	const settings = new api.AppSettingsStorage();
 	const pairStore = new api.PairMetaStorage(settings);
 	pairStore.upsertPair({
-		handle: '@alpha', uid: 'UC1234567890', verifiedAt: Date.now(), status: 'verified', source: 'test'
+		handle: '@alpha', ucid: 'UC1234567890', verifiedAt: Date.now(), status: 'verified', source: 'test'
 	});
-	assert.equal(pairStore.getPair('@ALPHA')?.uid, 'UC1234567890');
+	assert.equal(pairStore.getPair('@ALPHA')?.ucid, 'UC1234567890');
 
 	settings.setHandleCaseSensitive(true);
 	assert.equal(pairStore.getPair('@ALPHA'), null);
-	assert.equal(pairStore.getPair('@alpha')?.uid, 'UC1234567890');
+	assert.equal(pairStore.getPair('@alpha')?.ucid, 'UC1234567890');
 
 	pairStore.setAllLocal({
 		version: 1,
-		pairs: [{ handle: '@beta', uid: 'UC0987654321', verifiedAt: Date.now(), status: 'verified', source: 'test' }]
+		pairs: [{ handle: '@beta', ucid: 'UC0987654321', verifiedAt: Date.now(), status: 'verified', source: 'test' }]
 	});
 	assert.equal(pairStore.getPair('@alpha'), null);
-	assert.equal(pairStore.getPair('@beta')?.uid, 'UC0987654321');
+	assert.equal(pairStore.getPair('@beta')?.ucid, 'UC0987654321');
 	pairStore.removePair('@beta');
 	assert.equal(pairStore.getPair('@beta'), null);
 });
@@ -57,15 +57,15 @@ test('default pair update skips fresh verified pairs', async () => {
 	storage.addId('UC1234567890');
 	pairStore.upsertPair({
 		handle: '@alpha',
-		uid: 'UC1234567890',
+		ucid: 'UC1234567890',
 		verifiedAt: Date.now(),
 		status: 'verified',
 		source: 'youtube-data-api-v3'
 	});
 	let resolveCalls = 0;
-	service.resolveHandle = async () => {
+	service.resolveHandleToUcid = async () => {
 		resolveCalls += 1;
-		return { uid: 'UC1234567890', source: 'youtube-data-api-v3' };
+		return { ucid: 'UC1234567890', source: 'youtube-data-api-v3' };
 	};
 
 	const stats = await service.updatePairs({ includeMissing: true });
@@ -81,20 +81,20 @@ test('selected-handle pair update still forces refresh', async () => {
 	storage.addId('UC1234567890');
 	pairStore.upsertPair({
 		handle: '@alpha',
-		uid: 'UC1234567890',
+		ucid: 'UC1234567890',
 		verifiedAt: Date.now(),
 		status: 'verified',
 		source: 'youtube-data-api-v3'
 	});
 	const seen: string[] = [];
-	service.resolveHandle = async (handle: string) => {
+	service.resolveUcidToHandle = async (handle: string) => {
 		seen.push(handle);
-		return { uid: 'UC1234567890', source: 'youtube-data-api-v3' };
+		return { handle: '@alpha', ucid: 'UC1234567890', source: 'youtube-data-api-v3' };
 	};
 
 	const stats = await service.updatePairsForHandles(['@alpha']);
 
-	assert.deepEqual(seen, ['@alpha']);
+	assert.deepEqual(seen, ['UC1234567890']);
 	assert.equal(stats.refreshed, 1);
 });
 
@@ -104,15 +104,15 @@ test('pair update refreshes verified pairs after the configured interval', async
 	storage.addId('UC1234567890');
 	pairStore.upsertPair({
 		handle: '@alpha',
-		uid: 'UC1234567890',
+		ucid: 'UC1234567890',
 		verifiedAt: Date.now() - (11 * 60 * 1000),
 		status: 'verified',
 		source: 'youtube-channel-page'
 	});
 	let resolveCalls = 0;
-	service.resolveHandle = async () => {
+	service.resolveUcidToHandle = async () => {
 		resolveCalls += 1;
-		return { uid: 'UC1234567890', source: 'youtube-channel-page' };
+		return { handle: '@alpha', ucid: 'UC1234567890', source: 'youtube-channel-page' };
 	};
 
 	const stats = await service.updatePairs({ includeMissing: true });
@@ -126,13 +126,13 @@ test('always interval refreshes verified pairs during each full update', async (
 	storage.addHandle('@alpha');
 	storage.addId('UC1234567890');
 	pairStore.upsertPair({
-		handle: '@alpha', uid: 'UC1234567890', verifiedAt: Date.now(), status: 'verified', source: 'youtube-channel-page'
+		handle: '@alpha', ucid: 'UC1234567890', verifiedAt: Date.now(), status: 'verified', source: 'youtube-channel-page'
 	});
-	service.settings.setHandleLookupInterval('always');
+	service.settings.setPairRefreshInterval('always');
 	let resolveCalls = 0;
-	service.resolveHandle = async () => {
+	service.resolveUcidToHandle = async () => {
 		resolveCalls += 1;
-		return { uid: 'UC1234567890', source: 'youtube-channel-page' };
+		return { handle: '@alpha', ucid: 'UC1234567890', source: 'youtube-channel-page' };
 	};
 
 	await service.updatePairs({ includeMissing: true });
@@ -141,47 +141,13 @@ test('always interval refreshes verified pairs during each full update', async (
 	assert.equal(resolveCalls, 2);
 });
 
-test('UID-only pair updates verify the stored UID without handle lookup', async () => {
-	const { storage, pairStore, service } = createService();
-	storage.addHandle('@alpha');
-	storage.addId('UC1234567890');
-	pairStore.upsertPair({
-		handle: '@alpha',
-		uid: 'UC1234567890',
-		verifiedAt: Date.now() - (8 * 24 * 60 * 60 * 1000),
-		status: 'verified',
-		source: 'youtube-data-api-v3'
-	});
-	service.settings.setPairUpdateUidCheckEnabled(true);
-	service.settings.setPairUpdateHandleLookupEnabled(false);
-	let uidCalls = 0;
-	let handleCalls = 0;
-	service.resolveUid = async () => {
-		uidCalls += 1;
-		return { uid: 'UC1234567890', source: 'youtube-data-api-v3' };
-	};
-	service.resolveHandle = async () => {
-		handleCalls += 1;
-		return { uid: 'UC1234567890', source: 'youtube-data-api-v3' };
-	};
-
-	const stats = await service.updatePairsForHandles(['@alpha']);
-
-	assert.equal(uidCalls, 1);
-	assert.equal(handleCalls, 0);
-	assert.equal(stats.refreshed, 1);
-	assert.equal(pairStore.getPair('@alpha').status, 'verified');
-});
-
-test('pair creation always resolves handle to UID', async () => {
+test('pair creation always resolves handle to UCID', async () => {
 	const { storage, service } = createService();
 	storage.addHandle('@alpha');
-	service.settings.setPairUpdateUidCheckEnabled(true);
-	service.settings.setPairUpdateHandleLookupEnabled(false);
 	let handleCalls = 0;
-	service.resolveHandle = async () => {
+	service.resolveHandleToUcid = async () => {
 		handleCalls += 1;
-		return { uid: 'UC1234567890', source: 'youtube-data-api-v3' };
+		return { ucid: 'UC1234567890', source: 'youtube-data-api-v3' };
 	};
 
 	const stats = await service.createMissingPairs();
@@ -198,16 +164,16 @@ test('channel-page lookup normalizes and caches a handle result', async () => {
 		assert.equal(url, 'https://www.youtube.com/@alpha%20beta');
 		return {
 			ok: true,
-			text: async () => '<script>{"externalId":"UC1234567890"}</script>'
+			text: async () => '<script>var ytInitialData = {"metadata":{"channelMetadataRenderer":{"externalId":"UC1234567890","vanityChannelUrl":"https://www.youtube.com/@alpha%20beta"}}};</script>'
 		};
 	};
 
-	const first = await service.resolveHandle('@alpha beta');
-	const second = await service.resolveHandle('@alpha beta');
+	const first = await service.resolveHandleToUcid('@alpha beta');
+	const second = await service.resolveHandleToUcid('@alpha beta');
 
-	assert.equal(first.uid, 'UC1234567890');
+	assert.equal(first.ucid, 'UC1234567890');
 	assert.equal(first.source, 'youtube-channel-page');
-	assert.equal(second.uid, first.uid);
+	assert.equal(second.ucid, first.ucid);
 	assert.equal(second.source, first.source);
 	assert.equal(requests, 1);
 });
@@ -217,13 +183,13 @@ test('hung handle lookups time out with a distinct reason and can retry', async 
 	service._lookupTimeoutMs = 5;
 	context.fetch = async () => new Promise(() => {});
 	let error: any = null;
-	try { await service.resolveHandle('@alpha', { force: true }); } catch (reason) { error = reason; }
+	try { await service.resolveHandleToUcid('@alpha', { force: true }); } catch (reason) { error = reason; }
 	assert.equal(error?.code, 'timeout');
 	assert.match(error?.message, /시간이 초과|timed out/i);
 
-	context.fetch = async () => ({ ok: true, text: async () => '<script>{"externalId":"UC1234567890"}</script>' });
-	const result = await service.resolveHandle('@alpha', { force: true });
-	assert.equal(result.uid, 'UC1234567890');
+	context.fetch = async () => ({ ok: true, text: async () => '<script>var ytInitialData = {"metadata":{"channelMetadataRenderer":{"externalId":"UC1234567890","vanityChannelUrl":"https://www.youtube.com/@alpha"}}};</script>' });
+	const result = await service.resolveHandleToUcid('@alpha', { force: true });
+	assert.equal(result.ucid, 'UC1234567890');
 });
 
 test('stalled response bodies also respect the lookup timeout', async () => {
@@ -231,7 +197,7 @@ test('stalled response bodies also respect the lookup timeout', async () => {
 	service._lookupTimeoutMs = 5;
 	context.fetch = async () => ({ ok: true, text: async () => new Promise(() => {}) });
 	let error: any = null;
-	try { await service.resolveHandle('@alpha', { force: true }); } catch (reason) { error = reason; }
+	try { await service.resolveHandleToUcid('@alpha', { force: true }); } catch (reason) { error = reason; }
 	assert.equal(error?.code, 'timeout');
 });
 
@@ -261,13 +227,13 @@ test('cancelled pair runs stop queued lookups and report cancellation', async ()
 	storage.addHandle('@alpha');
 	storage.addHandle('@beta');
 	const controller = new AbortController();
-	service._resolveHandleFromPage = async (_handle: string, signal: AbortSignal) => {
+	service._resolveChannelFromPage = async (_handle: string, _reverse: boolean, signal: AbortSignal) => {
 		await new Promise<void>((_resolve, reject) => signal.addEventListener('abort', () => {
 			const error: any = new Error('cancelled');
 			error.code = 'cancelled';
 			reject(error);
 		}, { once: true }));
-		return { uid: 'UC1234567890', source: 'youtube-channel-page' };
+		return { ucid: 'UC1234567890', source: 'youtube-channel-page' };
 	};
 	const run = service.createPairsForHandles(['@alpha', '@beta'], { signal: controller.signal });
 	await Promise.resolve();
@@ -280,8 +246,8 @@ test('cancelled pair runs stop queued lookups and report cancellation', async ()
 test('concurrent pair additions converge without dropping either pair', () => {
 	const left = createPairStore();
 	const right = createPairStore();
-	left.store.upsertPair({ handle: '@alpha', uid: 'UC1234567890', verifiedAt: Date.now(), status: 'verified', source: 'left' });
-	right.store.upsertPair({ handle: '@beta', uid: 'UC0987654321', verifiedAt: Date.now(), status: 'verified', source: 'right' });
+	left.store.upsertPair({ handle: '@alpha', ucid: 'UC1234567890', verifiedAt: Date.now(), status: 'verified', source: 'left' });
+	right.store.upsertPair({ handle: '@beta', ucid: 'UC0987654321', verifiedAt: Date.now(), status: 'verified', source: 'right' });
 
 	right.store.mergeRemote(pairSnapshot(left.gmStore));
 	left.store.mergeRemote(pairSnapshot(right.gmStore));
@@ -293,12 +259,12 @@ test('concurrent pair additions converge without dropping either pair', () => {
 test('concurrent pair update and remove converge by revision', () => {
 	const initial = {
 		version: 1,
-		enableUidDetection: true,
-		pairs: [{ handle: '@alpha', uid: 'UC1234567890', verifiedAt: Date.now(), status: 'verified', source: 'initial' }]
+		enableUcidDetection: true,
+		pairs: [{ handle: '@alpha', ucid: 'UC1234567890', verifiedAt: Date.now(), status: 'verified', source: 'initial' }]
 	};
 	const left = createPairStore(initial);
 	const right = createPairStore(initial);
-	left.store.upsertPair({ handle: '@alpha', uid: 'UC0987654321', verifiedAt: Date.now(), status: 'verified', source: 'updated' });
+	left.store.upsertPair({ handle: '@alpha', ucid: 'UC0987654321', verifiedAt: Date.now(), status: 'verified', source: 'updated' });
 	right.store.removePair('@alpha');
 
 	left.store.mergeRemote(pairSnapshot(right.gmStore));
@@ -311,13 +277,13 @@ test('concurrent pair update and remove converge by revision', () => {
 test('pair clear wins over stale entries while later additions survive', () => {
 	const initial = {
 		version: 1,
-		pairs: [{ handle: '@old', uid: 'UC1234567890', verifiedAt: Date.now(), status: 'verified', source: 'initial' }]
+		pairs: [{ handle: '@old', ucid: 'UC1234567890', verifiedAt: Date.now(), status: 'verified', source: 'initial' }]
 	};
 	const clearer = createPairStore(initial);
 	const staleWriter = createPairStore(initial);
 	const staleSnapshot = pairSnapshot(staleWriter.gmStore);
 	clearer.store.clearPairs();
-	staleWriter.store.upsertPair({ handle: '@new', uid: 'UC0987654321', verifiedAt: Date.now(), status: 'verified', source: 'new' });
+	staleWriter.store.upsertPair({ handle: '@new', ucid: 'UC0987654321', verifiedAt: Date.now(), status: 'verified', source: 'new' });
 	clearer.store.mergeRemote(staleSnapshot);
 	clearer.store.mergeRemote(pairSnapshot(staleWriter.gmStore));
 
@@ -327,7 +293,7 @@ test('pair clear wins over stale entries while later additions survive', () => {
 test('empty remove and clear preserve tombstones against stale snapshots', () => {
 	const initial = {
 		version: 1,
-		pairs: [{ handle: '@alpha', uid: 'UC1234567890', verifiedAt: Date.now(), status: 'verified', source: 'initial' }]
+		pairs: [{ handle: '@alpha', ucid: 'UC1234567890', verifiedAt: Date.now(), status: 'verified', source: 'initial' }]
 	};
 	const stale = createPairStore(initial);
 	const staleSnapshot = pairSnapshot(stale.gmStore);
@@ -345,9 +311,9 @@ test('empty remove and clear preserve tombstones against stale snapshots', () =>
 test('pair metadata merge is idempotent and scalar revisions converge', () => {
 	const left = createPairStore();
 	const right = createPairStore();
-	left.store.setUidDetectionEnabled(true);
+	left.store.setUcidDetectionEnabled(true);
 	left.store.setLastPairCheckAt(100);
-	right.store.setUidDetectionEnabled(false);
+	right.store.setUcidDetectionEnabled(false);
 	right.store.setLastPairCheckAt(200);
 	const remote = pairSnapshot(left.gmStore);
 
@@ -382,15 +348,15 @@ test('pair timestamp scalars never move backward locally', () => {
 
 test('legacy pair snapshots merge without a version field', () => {
 	const left = createPairStore();
-	left.store.upsertPair({ handle: '@legacy', uid: 'UC1234567890', verifiedAt: Date.now(), status: 'verified', source: 'legacy' });
+	left.store.upsertPair({ handle: '@legacy', ucid: 'UC1234567890', verifiedAt: Date.now(), status: 'verified', source: 'legacy' });
 	const right = createPairStore();
 	assert.equal(right.store.mergeRemote({ pairs: (pairSnapshot(left.gmStore) as any).pairs }), true);
-	assert.equal(right.store.getPair('@legacy')?.uid, 'UC1234567890');
+	assert.equal(right.store.getPair('@legacy')?.ucid, 'UC1234567890');
 });
 
 test('pair metadata merge rolls back local state when the merged write fails', () => {
 	const left = createPairStore();
-	left.store.upsertPair({ handle: '@alpha', uid: 'UC1234567890', verifiedAt: Date.now(), status: 'verified', source: 'left' });
+	left.store.upsertPair({ handle: '@alpha', ucid: 'UC1234567890', verifiedAt: Date.now(), status: 'verified', source: 'left' });
 	const { api } = loadUserscript({ gmSetValue: () => { throw new Error('quota exceeded'); } });
 	const right = new api.PairMetaStorage(new api.AppSettingsStorage());
 
@@ -400,15 +366,15 @@ test('pair metadata merge rolls back local state when the merged write fails', (
 
 test('handle lookup cache retains only the most recent results', async () => {
 	const { service } = createService();
-	service._resolveHandleFromPage = async () => ({ uid: 'UC1234567890', source: 'test' });
+	service._resolveChannelFromPage = async () => ({ ucid: 'UC1234567890', source: 'test' });
 
 	for (let index = 0; index < 300; index += 1) {
-		await service.resolveHandle(`@user${index}`, { force: true });
+		await service.resolveHandleToUcid(`@user${index}`, { force: true });
 	}
 
-	assert.equal(service._handleLookupCache.size, 256);
-	assert.equal(service._handleLookupCache.has('@user0'), false);
-	assert.equal(service._handleLookupCache.has('@user299'), true);
+	assert.equal(service._lookupCache.size, 256);
+	assert.equal(service._lookupCache.has(JSON.stringify(['create', 'page', '@user0'])), false);
+	assert.equal(service._lookupCache.has(JSON.stringify(['create', 'page', '@user299'])), true);
 });
 
 test('channel-page lookup falls back to API only when explicitly enabled', async () => {
@@ -422,12 +388,12 @@ test('channel-page lookup falls back to API only when explicitly enabled', async
 	};
 
 	let error = '';
-	try { await service.resolveHandle('@alpha'); } catch (reason) { error = reason instanceof Error ? reason.message : String(reason); }
+	try { await service.resolveHandleToUcid('@alpha'); } catch (reason) { error = reason instanceof Error ? reason.message : String(reason); }
 	assert.match(error, /다시 시도/);
 	assert.equal(requested.length, 1);
 
-	service.settings.setHandleLookupFallbackApiEnabled(true);
-	const result = await service.resolveHandle('@alpha');
+	service.settings.setPairLookupMethod('create', 'page-api');
+	const result = await service.resolveHandleToUcid('@alpha');
 	assert.equal(result.source, 'youtube-data-api-v3');
 	assert.equal(requested.length, 3);
 });
@@ -438,7 +404,7 @@ test('new handle lookup respects the on-add setting', async () => {
 	const app = {
 		_keywordPairInFlight: new Set(),
 		_lastPairRunResult: null,
-		settings: { isHandleCaseSensitive: () => false, isHandleLookupOnAddEnabled: () => true },
+		settings: { isHandleCaseSensitive: () => false, isPairOnBlockEnabled: () => true },
 		pairStore: { getPair: () => null },
 		pairService: { createPairsForHandles: async (handles: string[]) => {
 		handled.push(handles);
@@ -452,7 +418,7 @@ test('new handle lookup respects the on-add setting', async () => {
 	assert.equal(handled.length, 1);
 	assert.equal(handled[0][0], '@alpha');
 
-	app.settings.isHandleLookupOnAddEnabled = () => false;
+	app.settings.isPairOnBlockEnabled = () => false;
 	api.App.prototype._resolveAddedHandle.call(app, '@beta');
 	await Promise.resolve();
 	assert.equal(handled.length, 1);
@@ -509,11 +475,11 @@ test('automatic pair requests wait for an in-flight pair run', async () => {
 	storage.addHandle('@beta');
 	let releaseFirst: () => void = () => {};
 	let resolveCalls = 0;
-	service.resolveHandle = async (handle: string) => {
+	service.resolveHandleToUcid = async (handle: string) => {
 		resolveCalls += 1;
 		if (handle === '@alpha') await new Promise<void>(resolve => { releaseFirst = resolve; });
 		return {
-			uid: handle === '@alpha' ? 'UC1234567890' : 'UC0987654321',
+			ucid: handle === '@alpha' ? 'UC1234567890' : 'UC0987654321',
 			source: 'youtube-channel-page'
 		};
 	};
@@ -527,7 +493,7 @@ test('automatic pair requests wait for an in-flight pair run', async () => {
 	assert.equal((await first).created, 1);
 	assert.equal((await second).created, 1);
 	assert.equal(resolveCalls, 2);
-	assert.equal(pairStore.getPair('@beta')?.uid, 'UC0987654321');
+	assert.equal(pairStore.getPair('@beta')?.ucid, 'UC0987654321');
 });
 
 test('bulk pair lookup limits concurrency and preserves handle order', async () => {
@@ -536,13 +502,13 @@ test('bulk pair lookup limits concurrency and preserves handle order', async () 
 	for (const handle of handles) storage.addHandle(handle);
 	let active = 0;
 	let maxActive = 0;
-	service.resolveHandle = async (handle: string) => {
+	service.resolveHandleToUcid = async (handle: string) => {
 		const index = handles.indexOf(handle);
 		active += 1;
 		maxActive = Math.max(maxActive, active);
 		await new Promise(resolve => setTimeout(resolve, handles.length - index));
 		active -= 1;
-		return { uid: `UC${String(index).padStart(10, '0')}`, source: 'youtube-data-api-v3' };
+		return { ucid: `UC${String(index).padStart(10, '0')}`, source: 'youtube-data-api-v3' };
 	};
 
 	const stats = await service.createPairsForHandles(handles);
@@ -585,10 +551,10 @@ test('pair notice stays dismissed for the stale interval', () => {
 	const dayMs = 24 * 60 * 60 * 1000;
 	storage.addHandle('@alpha');
 	storage.addId('UC1234567890');
-	pairStore.setUidDetectionEnabled(true);
+	pairStore.setUcidDetectionEnabled(true);
 	pairStore.upsertPair({
 		handle: '@alpha',
-		uid: 'UC1234567890',
+		ucid: 'UC1234567890',
 		verifiedAt: now - (8 * dayMs),
 		status: 'verified',
 		source: 'youtube-data-api-v3'
@@ -603,7 +569,7 @@ test('pair notice stays dismissed for the stale interval', () => {
 
 test('pair notice accepts a precomputed summary', () => {
 	const { pairStore, service } = createService();
-	pairStore.setUidDetectionEnabled(true);
+	pairStore.setUcidDetectionEnabled(true);
 	service.getSummary = () => { throw new Error('summary recomputed'); };
 
 	assert.equal(service.shouldNotify({ stale: 1, mismatch: 0 }), true);
@@ -615,10 +581,10 @@ test('pair notice waits after a recent pair check', () => {
 	const dayMs = 24 * 60 * 60 * 1000;
 	storage.addHandle('@alpha');
 	storage.addId('UC1234567890');
-	pairStore.setUidDetectionEnabled(true);
+	pairStore.setUcidDetectionEnabled(true);
 	pairStore.upsertPair({
 		handle: '@alpha',
-		uid: 'UC1234567890',
+		ucid: 'UC1234567890',
 		verifiedAt: now - (8 * dayMs),
 		status: 'verified',
 		source: 'youtube-data-api-v3'
