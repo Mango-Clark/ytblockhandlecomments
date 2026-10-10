@@ -5,7 +5,7 @@ Generated files carry a build notice; edit templates only. `docs/AGENTS.md` is d
 
 ## Common
 
-- English first; update the Korean pair immediately after.
+- English first; update the Korean pair and every configured README locale immediately after.
 - Keep paired structure, terminology, links, commands, dates, and versions aligned.
 - Preserve code blocks, inline code, paths, commands, dates, and versions exactly.
 - Keep paired section order identical.
@@ -14,7 +14,8 @@ Generated files carry a build notice; edit templates only. `docs/AGENTS.md` is d
 
 ## README
 
-- Edit `src/template/README.md`, then `src/template/README.ko.md`, then build.
+- Edit `src/template/README.md`, then its nine translated README templates, then build. Preserve existing English/Korean public paths.
+- UI and README support the ten locales in `i18n-mason.toml`; other docs retain their existing languages. Preserve shared language-link and contributor placeholders.
 - Feature descriptions must match implemented behavior.
 
 ## WIKI

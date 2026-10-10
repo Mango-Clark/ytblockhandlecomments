@@ -15,6 +15,15 @@
 
 ## Done
 
+- [x] (C) Localize UI and README in ten locales and update current documentation.
+  - (0) Baseline: `d0cd7a105bf9da440b951f6f37dfb12eee9ecb94`.
+  - (1) Support en-us, ko-kr, ja-jp, de-de, zh-cn, zh-tw, fr-fr, pt-br, ru-ru, and id-id with complete matching catalogs.
+  - (2) Preserve saved en/ko choices; select browser languages with regional/script matching and English fallback; provide a shared language picker.
+  - (3) Preserve drafts, focus, list state, and cross-tab updates; translate owned UI without changing storage or external protocols.
+  - (4) Generate ten complete README translations, shared language links, and translation credits; update existing-language guides and locale rules.
+  - (5) Author regression cases; run lint, Markdown lint, typecheck, build, generated-output check, and independent review. Do not run tests or full verify.
+  - (6) All allowed checks and independent static review passed. Local browser preview covered ten locales at 1366px/light and 320px/dark with maximum scale, plus menu/language changes preserving a draft. Live YouTube, tests, and full verify were not run.
+
 - [x] (A) Separate UCID pairing directions and lookup policies; simplify settings and redundant checks.
   - (0) Baseline: `388ab9082aac239f22156a8a73c3db1ae761d556`.
   - (1) Create handle-to-UCID pairs; update handles from stable UCIDs; preserve blocking on lookup or persistence failure.

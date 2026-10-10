@@ -1,5 +1,14 @@
 import { I18N_EN } from './i18n/en.ts';
 import { I18N_KO } from './i18n/ko.ts';
+import { I18N_JA_JP } from './i18n/ja-jp.ts';
+import { I18N_DE_DE } from './i18n/de-de.ts';
+import { I18N_ZH_CN } from './i18n/zh-cn.ts';
+import { I18N_ZH_TW } from './i18n/zh-tw.ts';
+import { I18N_FR_FR } from './i18n/fr-fr.ts';
+import { I18N_PT_BR } from './i18n/pt-br.ts';
+import { I18N_RU_RU } from './i18n/ru-ru.ts';
+import { I18N_ID_ID } from './i18n/id-id.ts';
+import { DEFAULT_LOCALE, LOCALES, matchBrowserLocale, matchSavedLocale, type Locale } from './i18n/locales.ts';
 
 	/* ----------------------------------------------------------
 	 * 1. Utilities and i18n
@@ -73,7 +82,8 @@ import { I18N_KO } from './i18n/ko.ts';
 		setBody: (nextBody: Node | string) => void;
 	};
 	export type I18nMessage = string | ((...args: any[]) => string);
-	export type I18nBundle = { [key: string]: I18nMessage };
+	export type I18nMessages = { [key: string]: I18nMessage };
+	export type I18nBundle = { [K in keyof typeof I18N_EN]: typeof I18N_EN[K] extends (...args: infer A) => string ? (...args: A) => string : string };
 	export type ManagerSearchRecord = {
 		index: number;
 		item: BlockItem;
@@ -281,22 +291,49 @@ import { I18N_KO } from './i18n/ko.ts';
 		return FALLBACK_SCRIPT_VERSION;
 	};
 
-	export const I18N: { ko: I18nBundle; en: I18nBundle } = {
-		ko: I18N_KO,
-		en: I18N_EN
+	export const I18N: Record<Locale, I18nBundle> = {
+		'en-us': I18N_EN, 'ko-kr': I18N_KO, 'ja-jp': I18N_JA_JP, 'de-de': I18N_DE_DE,
+		'zh-cn': I18N_ZH_CN, 'zh-tw': I18N_ZH_TW, 'fr-fr': I18N_FR_FR,
+		'pt-br': I18N_PT_BR, 'ru-ru': I18N_RU_RU, 'id-id': I18N_ID_ID
 	};
-	export const getLang = () => {
-		try { return (GM_getValue('lang') || navigator.language || 'ko').startsWith('ko') ? 'ko' : 'en'; } catch { return 'ko'; }
+	export const getLanguagePreference = (): Locale | 'auto' => {
+		try { return matchSavedLocale(GM_getValue('lang')) || 'auto'; } catch { return 'auto'; }
+	};
+	export const getLang = (): Locale => {
+		const saved = getLanguagePreference();
+		if (saved !== 'auto') return saved;
+		for (const preference of navigator.languages?.length ? navigator.languages : [navigator.language]) {
+			const locale = matchBrowserLocale(preference);
+			if (locale) return locale;
+		}
+		return DEFAULT_LOCALE;
+	};
+	export const setLanguagePreference = (value: string): boolean => {
+		if (value !== 'auto' && !matchSavedLocale(value)) return false;
+		try { GM_setValue('lang', value === 'auto' ? 'auto' : matchSavedLocale(value)); return true; } catch { return false; }
+	};
+	export const createLanguageSelect = (): HTMLSelectElement => {
+		const select = document.createElement('select');
+		select.dataset.setting = 'language';
+		for (const locale of [{ code: 'auto', name: t('languageAutomatic') }, ...LOCALES]) {
+			const option = document.createElement('option');
+			option.value = locale.code;
+			if (locale.code !== 'auto') option.lang = locale.code;
+			option.textContent = locale.name;
+			select.appendChild(option);
+		}
+		select.value = getLanguagePreference();
+		return select;
 	};
 	export const t = (key: string, ...args: any[]): string => {
 		const lang = getLang();
-		const val = I18N[lang][key];
+		const val = (I18N[lang] as I18nMessages)[key];
 		return typeof val === 'function' ? val(...args) : val;
 	};
 	export const formatDateTime = (ts: any): string | null => {
 		if (!Number.isFinite(ts) || ts <= 0) return null;
 		try {
-			return new Date(ts).toLocaleString(getLang() === 'ko' ? 'ko-KR' : 'en-US');
+			return new Date(ts).toLocaleString(getLang());
 		} catch {
 			return new Date(ts).toISOString();
 		}

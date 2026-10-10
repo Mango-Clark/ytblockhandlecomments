@@ -11,7 +11,7 @@ Userscript hides YouTube comments by channel identity on watch and Shorts pages.
 
 Source layout:
 
-- `src/`: role-based source slices; separate Korean/English i18n dictionaries.
+- `src/`: role-based source slices; ten typed i18n catalogs sharing the English message contract.
 - Numeric prefixes are a recommended reading order; ES module imports determine runtime order. Letter suffixes keep split modules beside their parent feature.
 - `03-app-settings-storage.ts`, `04-storage-v2.ts`, `05-pair-meta-storage.ts`, `06-api-config-storage.ts`, and `15-logger.ts` share the error-safe `03a-gm-backed-store.ts` adapter while retaining separate schemas and synchronization rules.
 - GM-backed stores record missing, present, invalid, and failed reads. A failed read keeps fallback state in memory, blocks writes, migrations, and remote merges until a later instance can read the storage successfully, and shows a reload diagnostic without exposing stored values or raw errors.
@@ -364,6 +364,11 @@ Security:
 
 Live i18n:
 
+- UI and README support `en-us`, `ko-kr`, `ja-jp`, `de-de`, `zh-cn`, `zh-tw`, `fr-fr`, `pt-br`, `ru-ru`, and `id-id`. Wiki/changelog remain English/Korean; other documents keep existing languages.
+- Settings → Display/theme and the Tampermonkey language menu use the same selector, including automatic mode. `lang` retains its storage key; legacy `en`/`ko` values remain valid. Explicit selection precedes ordered browser languages, then `en-us`.
+- Browser region variants map to the supported language. Chinese Hans/CN/SG and bare `zh` select `zh-cn`; Hant/TW/HK/MO select `zh-tw`, with an explicit script taking precedence over region.
+- Catalogs preserve message keys/parameters and external identifiers. User content, API response text, protocol values and machine logs remain unchanged; dates and dialog language metadata follow the UI locale.
+- `src/i18n/locales.ts` owns native names, README paths and translation credits. Build expands shared README links/credits and publishes all generated files transactionally. `i18n-mason.toml` records intended locale scope.
 - Menu commands unregister/re-register after language change
 - Open dialogs refresh labels in place via refresh hooks
 - Pair banner rerenders in place

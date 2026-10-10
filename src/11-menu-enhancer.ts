@@ -1,4 +1,5 @@
 import {
+	getLang,
 	t,
 	type AppLike,
 	type DialogRefreshContext
@@ -90,12 +91,14 @@ import { Extractor } from './09-extractor.ts';
 				role: 'menuitem'
 			});
 			item.setAttribute('data-tm-handle', handle);
+			item.setAttribute('lang', getLang());
 			item.setAttribute('data-tm-state', state);
 			const marker = document.createElement('span');
 			marker.className = 'tm-menu-script-mark';
 			marker.setAttribute('aria-hidden', 'true');
 			marker.textContent = 'CB';
 			const label = document.createElement('span');
+			label.className = 'tm-menu-script-label';
 			label.textContent = isBlocked ? t('menuUnhide') : t('menuHide');
 			item.append(marker, label);
 			item.addEventListener('click', async ev => {

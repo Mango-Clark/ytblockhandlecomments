@@ -430,7 +430,7 @@ const PAIR_LOOKUP_TIMEOUT_MS = 15000;
 				url.searchParams.set('part', 'id');
 				url.searchParams.set('id', 'UC_x5XG1OV2P6uZZ5FSM9Ttw');
 				url.searchParams.set('key', apiKey);
-				url.searchParams.set('hl', getLang() === 'ko' ? 'ko' : 'en');
+				url.searchParams.set('hl', getLang() === 'ko-kr' ? 'ko' : 'en');
 				const response = await this._fetchWithTimeout(url.toString(), { cache: 'no-store', referrerPolicy: 'no-referrer' }, signal);
 				let payload = null;
 				try { payload = await this._readResponseBody(response, 'json', signal); } catch (error) { if ((error as any)?.code) throw error; }
@@ -555,7 +555,7 @@ const PAIR_LOOKUP_TIMEOUT_MS = 15000;
 			url.searchParams.set('part', reverse ? 'id,snippet' : 'id');
 			url.searchParams.set(reverse ? 'id' : 'forHandle', identifier);
 			url.searchParams.set('key', apiKey);
-			url.searchParams.set('hl', getLang() === 'ko' ? 'ko' : 'en');
+			url.searchParams.set('hl', getLang() === 'ko-kr' ? 'ko' : 'en');
 			const response = await this._fetchWithTimeout(url.toString(), { cache: 'no-store', referrerPolicy: 'no-referrer' }, signal);
 			const payload = await this._readResponseBody(response, 'json', signal);
 			if (!response.ok) throw new Error(payload?.error?.message || t('pairLookupFailed') + ' (' + response.status + ')');

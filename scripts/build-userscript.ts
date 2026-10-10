@@ -1,6 +1,7 @@
 import * as esbuild from 'esbuild';
 import fs from 'node:fs';
 import path from 'node:path';
+import { LOCALES } from '../src/i18n/locales.ts';
 
 const __dirname = path.dirname(path.resolve(process.argv[1] || 'scripts/build-userscript.ts'));
 export const root = path.resolve(__dirname, '..');
@@ -12,8 +13,7 @@ const templateSourcePath = path.join(root, 'src', 'template');
 const generatedDocumentNotice = '<!-- Generated from src/template templates by npm run build. Edit the templates instead. -->\n';
 
 export const documentOutputs = [
-	'README.md',
-	'README.ko.md',
+	...LOCALES.map(locale => locale.readme),
 	'docs/ABOUT.md',
 	'docs/CHANGELOG.md',
 	'docs/CHANGELOG.ko.md',
@@ -232,7 +232,16 @@ export const readDocumentTemplates = (version: string): GeneratedFile[] => {
 	return documentOutputs.map(output => {
 	const template = templatePathFor(output);
 	if (!fs.existsSync(template)) throw new Error(`Missing document template: src/template/${output}`);
-	return { path: path.join(root, output), content: `${generatedDocumentNotice}${replaceVersionTokens(readRawSource(template), version)}\n` };
+	let content = replaceVersionTokens(readRawSource(template), version);
+	if (LOCALES.some(locale => locale.readme === output)) {
+		for (const token of ['{{language_links}}', '{{translation_contributors}}']) {
+			if (!content.includes(token)) throw new Error(`Missing ${token} in src/template/${output}`);
+		}
+		content = content.replaceAll('{{language_links}}', LOCALES.map(locale => `[${locale.name}](${locale.readme})`).join(' | '))
+			.replaceAll('{{translation_contributors}}', LOCALES.filter(locale => locale.contributors.length)
+				.map(locale => `- ${locale.name} - ${locale.contributors.join(', ')}`).join('\n'));
+	}
+	return { path: path.join(root, output), content: `${generatedDocumentNotice}${content}\n` };
 	});
 };
 

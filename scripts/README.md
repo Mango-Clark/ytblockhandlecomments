@@ -26,6 +26,8 @@ npm run typecheck
 
 ## Build Workflow
 
+Ten localized README outputs come from `src/i18n/locales.ts`. Build expands `{{language_links}}` and `{{translation_contributors}}` from that shared metadata, preserving the existing English/Korean filenames. The release script consumes the same output list, so localized templates and generated READMEs are included automatically. Other documents retain their current languages.
+
 `build-userscript.ts` reads the one-line `VERSION` file. It uses `src/14-bootstrap.ts` as bundle entry and replaces `{{version}}` in userscript source + `src/template/` Markdown templates. `src/template/README*.md` generates root README files; `src/template/docs/*.md` generates matching `docs/*.md` files. `docs/AGENTS.md` remains direct-managed.
 
 After source changes:

@@ -10,7 +10,7 @@ watch/Shorts 페이지 YouTube 댓글을 채널 식별자로 숨기는 사용자
 
 소스 구조:
 
-- `src/`: 역할별 소스 조각. 한국어/영어 i18n dictionary 별도 파일.
+- `src/`: 역할별 소스 조각. 영어 메시지 계약을 공유하는 10개 타입 지정 i18n 카탈로그.
 - 숫자 접두사는 권장 읽기 순서이며 실제 실행 순서는 ES module import가 결정. 문자 접미사는 분리한 module을 상위 기능 옆에 유지.
 - `03-app-settings-storage.ts`, `04-storage-v2.ts`, `05-pair-meta-storage.ts`, `06-api-config-storage.ts`, `15-logger.ts`는 오류 안전 `03a-gm-backed-store.ts` adapter를 공유하면서 각 schema·동기화 규칙은 분리 유지.
 - GM 저장소는 missing·present·invalid·failed 읽기 상태를 기록. 읽기 실패 시 메모리 fallback을 유지하되 정상 읽기 전까지 쓰기·migration·remote merge를 막고, 저장값이나 원문 오류를 노출하지 않는 새로고침 진단을 표시.
@@ -362,6 +362,11 @@ Pair 결과:
 
 실시간 i18n:
 
+- UI·README는 `en-us`, `ko-kr`, `ja-jp`, `de-de`, `zh-cn`, `zh-tw`, `fr-fr`, `pt-br`, `ru-ru`, `id-id`를 지원합니다. Wiki·changelog는 한영, 나머지 문서는 기존 언어를 유지합니다.
+- 설정 → 표시/테마와 Tampermonkey 언어 메뉴는 자동 항목을 포함한 공통 선택창을 사용합니다. 저장소 키 `lang`과 기존 `en`/`ko` 값을 유지하며, 명시 선택 → 브라우저 언어 순서 → `en-us`로 결정합니다.
+- 브라우저 지역 변형은 지원 언어로 연결합니다. 중국어 Hans/CN/SG와 지역 없는 `zh`는 `zh-cn`, Hant/TW/HK/MO는 `zh-tw`이며 문자 체계가 명시되면 지역보다 우선합니다.
+- 번역 키·매개변수·외부 식별자를 보존합니다. 사용자 내용·API 응답 원문·프로토콜 값·기계용 로그는 유지하고 날짜·대화상자 언어 정보는 UI 로케일을 따릅니다.
+- `src/i18n/locales.ts`가 언어명·README 경로·번역 기여자를 관리합니다. 빌드는 공통 링크·기여자 토큰을 치환하고 모든 생성물을 트랜잭션으로 반영합니다. `i18n-mason.toml`에 언어 범위를 기록합니다.
 - 언어 변경 시 menu command unregister 후 재register.
 - 열린 dialog는 refresh hook으로 label 즉시 갱신.
 - pair banner도 in-place 갱신.

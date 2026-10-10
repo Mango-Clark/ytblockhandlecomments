@@ -2,7 +2,9 @@ import {
 	formatDateTime,
 	getApiTestCategoryLabel,
 	getItemKey,
-	getLang,
+	createLanguageSelect,
+	getLanguagePreference,
+	setLanguagePreference,
 	getScriptVersion,
 	isNonNull,
 	parseRegexLiteral,
@@ -623,6 +625,21 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 			const displaySizeTitle = document.createElement('h5');
 			const displayControls = document.createElement('div');
 			displayControls.className = 'tm-setting-controls';
+			const languageLabel = document.createElement('label');
+			const languageText = document.createElement('span');
+			const languageSelect = createLanguageSelect();
+			const languageHelp = document.createElement('p');
+			languageLabel.append(languageText, languageSelect);
+			displayControls.append(makeSettingField(languageLabel, languageHelp));
+			languageSelect.addEventListener('change', () => {
+				if (!setLanguagePreference(languageSelect.value)) {
+					languageSelect.value = getLanguagePreference();
+					Toast.show(t('storageSaveFailed'));
+					return;
+				}
+				this.app.refreshLanguageUi();
+				Toast.show(t('languageChanged'));
+			});
 			const fontSizeLabel = document.createElement('label');
 			const fontSizeText = document.createElement('span');
 			const fontSizeSelect = document.createElement('select');
@@ -829,7 +846,7 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 					['lastDurationMs', metrics.lastDurationMs || 0],
 					['totalDurationMs', metrics.totalDurationMs || 0]
 				];
-				debugList.replaceChildren(...lines.map(([label, value]) => this._createMetaLine(t('debugMetric', label, value))));
+				debugList.replaceChildren(...lines.map(([label, value]) => this._createMetaLine(t('debugMetric', t('debug' + String(label)[0].toUpperCase() + String(label).slice(1)), value))));
 			};
 			const renderLoggingState = () => {
 				const logging = this.app.settings.getLogging();
@@ -886,6 +903,10 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 			};
 			const applyLanguage = () => {
 				settingsTitle.textContent = t('settingsTitle');
+				languageText.textContent = t('languageLabel');
+				languageHelp.textContent = t('languageHelp');
+				languageSelect.options[0].textContent = t('languageAutomatic');
+				languageSelect.value = getLanguagePreference();
 				lowModeText.textContent = t('lowPerformanceMode');
 				lowModeHelp.textContent = t('lowPerformanceHelp');
 				renderAll();
@@ -984,17 +1005,16 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 				for (const item of navItems) item.button.textContent = t(item.label);
 				navigation.setAttribute('aria-label', t('settingsNavigation'));
 				handleLookupIntervalText.textContent = t('handleLookupIntervalLabel') + ': ';
-				const korean = getLang() === 'ko';
 				const intervalLabels: Record<string, string> = {
-					always: korean ? 'handle 갱신마다' : 'By every handle update',
-					'60': korean ? '1분' : '1m',
-					'300': korean ? '5분' : '5m',
-					'600': korean ? '10분' : '10m',
-					'3600': korean ? '1시간' : '1h',
-					'43200': korean ? '12시간' : '12h',
-					'86400': korean ? '1일' : '1d',
-					'604800': korean ? '1주' : '7d',
-					'2592000': korean ? '1개월' : '1M',
+					always: t('handleLookupIntervalAlways'),
+					'60': t('handleLookupIntervalMinutes', 1),
+					'300': t('handleLookupIntervalMinutes', 5),
+					'600': t('handleLookupIntervalMinutes', 10),
+					'3600': t('handleLookupIntervalHours', 1),
+					'43200': t('handleLookupIntervalHours', 12),
+					'86400': t('handleLookupIntervalDays', 1),
+					'604800': t('handleLookupIntervalDays', 7),
+					'2592000': t('handleLookupIntervalMonth'),
 					custom: t('handleLookupCustomLabel')
 				};
 				Array.from(handleLookupIntervalSelect.options).forEach(option => { option.textContent = defaultOptionText(option, intervalLabels[option.value]); });
@@ -1901,7 +1921,7 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 					if (val !== 'import') return null;
 					const rawText = ta.value || '';
 					if (rawText.length > 1024 * 1024) {
-						Toast.show(getLang() === 'ko' ? '가져오기 입력이 너무 큽니다.' : 'Import text is too large.');
+						Toast.show(t('importTooLarge'));
 						return { ok: false, count: 0 };
 					}
 					const txt = rawText.trim();

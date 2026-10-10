@@ -1,5 +1,6 @@
 import {
 	makePlainTextNode,
+	getLang,
 	type DialogButton,
 	type DialogRefreshContext
 } from './02-utils-i18n.ts';
@@ -25,6 +26,7 @@ import {
 				Toast._element = el;
 			}
 			el.textContent = msg;
+			el.lang = getLang();
 			el.style.opacity = '0';
 			Toast._frame = requestAnimationFrame(() => {
 				Toast._frame = null;
@@ -76,6 +78,7 @@ import {
 				const backdrop = Object.assign(document.createElement('div'), { className: 'tm-backdrop' });
 				const dialog = Object.assign(document.createElement('div'), { className: 'tm-dialog' });
 				dialog.setAttribute('role', 'dialog');
+				dialog.lang = getLang();
 				dialog.setAttribute('aria-modal', 'true');
 
 				const header = document.createElement('header');
@@ -155,6 +158,7 @@ import {
 				});
 
 				instance = {
+					dialog,
 					close,
 					onKey,
 					refresh: (reason: 'all' | 'storage' = 'all') => onRefresh?.({ ...refreshContext, reason })
@@ -172,6 +176,7 @@ import {
 		}
 		static refreshAll(reason: 'all' | 'storage' = 'all') {
 			for (const instance of Array.from(Dialog._instances)) {
+				instance.dialog.lang = getLang();
 				try { instance.refresh?.(reason); } catch { }
 			}
 		}

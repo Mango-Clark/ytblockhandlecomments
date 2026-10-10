@@ -12,6 +12,8 @@
     .tm-dialog{background:#fff;color:#000;padding:calc(24px * var(--tm-ui-scale)) calc(28px * var(--tm-ui-scale));border-radius:12px;width:min(calc(980px * var(--tm-ui-scale)),94vw);max-width:calc(980px * var(--tm-ui-scale));box-shadow:0 10px 30px rgba(0,0,0,.25);max-height:84vh;display:flex;flex-direction:column;font-size:calc(14px * var(--tm-font-scale))}
     .tm-dialog header{margin:0 0 14px 0;font-size:18px;font-weight:700}
     .tm-dialog .tm-content{flex:1 1 auto;overflow:auto;min-height:0}
+    .tm-language-picker{display:flex;flex-direction:column;gap:8px;min-width:0}
+    .tm-language-picker select{box-sizing:border-box;width:100%;min-width:0;max-width:100%;min-height:36px;padding:7px 10px;border:1px solid var(--tm-theme-border);border-radius:8px;background:var(--tm-theme-surface);color:var(--tm-theme-text);font:inherit}
     .tm-dialog footer{display:flex;justify-content:flex-end;gap:8px;margin-top:16px;flex-wrap:wrap}
     .tm-dialog button{padding:10px 16px;border:none;border-radius:8px;font-size:14px;cursor:pointer}
     .tm-dialog button.primary{background:#065fd4;color:#fff}

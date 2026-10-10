@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import { LOCALES } from '../src/i18n/locales.ts';
 import { buildGeneratedFiles, documentOutputs, findOutdatedGeneratedFiles, publishGeneratedFiles, readVersion, replaceVersionTokens, type GeneratedFileOps } from '../scripts/build-userscript.ts';
 
 test('build reads VERSION and resolves version placeholders', () => {
@@ -18,6 +19,16 @@ test('build generates userscript and all document outputs', async () => {
 	assert.ok(outputPaths.some(file => file.endsWith('/ytblockhandlecomments.js')));
 	for (const output of documentOutputs) assert.ok(outputPaths.some(file => file.endsWith(`/${output}`)));
 	for (const file of files) assert.doesNotMatch(file.content, /\{\{version\}\}/);
+	for (const locale of LOCALES) {
+		const readme = files.find(file => file.path.replace(/\\/g, '/').endsWith('/' + locale.readme));
+		assert.ok(readme, locale.code);
+		const content = readme?.content || '';
+		assert.doesNotMatch(content, /\{\{(?:language_links|translation_contributors)\}\}/);
+		for (const language of LOCALES) assert.ok(content.includes(`](${language.readme})`), language.code);
+		assert.ok(content.includes('- 한국어 - Mango-Clark'));
+		assert.equal((content.match(/ - GPT-6\.1 Sol/g) || []).length, 8);
+		assert.doesNotMatch(content, /- English \(US\) -/);
+	}
 	const userscript = files.find(file => file.path.endsWith('ytblockhandlecomments.js'))?.content || '';
 	assert.match(userscript, versionPattern);
 	assert.match(userscript, /^\/\/ @exclude\s+https:\/\/www\.youtube\.com\/embed\*$/m);

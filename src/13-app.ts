@@ -5,7 +5,10 @@ import {
 	decodeMaybe,
 	findHandleItem,
 	getItemKey,
+	createLanguageSelect,
 	getLang,
+	getLanguagePreference,
+	setLanguagePreference,
 	sanitizeHandle,
 	t,
 	type BlockItem,
@@ -149,6 +152,15 @@ import { Logger } from './15-logger.ts';
 		refreshLanguageUi() {
 			this._registerMenu();
 			this._syncPairBanner();
+			for (const placeholder of document.querySelectorAll<HTMLElement>('.tm-block-placeholder')) {
+				placeholder.textContent = t(placeholder.tagName.toLowerCase() === 'button' ? 'blockedCommentReveal' : 'blockedCommentPlaceholder');
+				placeholder.lang = getLang();
+			}
+			for (const item of document.querySelectorAll<HTMLElement>('.tm-hide-channel')) {
+				const label = item.querySelector('.tm-menu-script-label');
+				if (label) label.textContent = t(item.getAttribute('data-tm-state') === 'blocked' ? 'menuUnhide' : 'menuHide');
+				item.lang = getLang();
+			}
 			Dialog.refreshAll();
 		}
 
@@ -664,6 +676,7 @@ import { Logger } from './15-logger.ts';
 				this._pairBanner = banner;
 			}
 			this._pairBanner.querySelector('strong').textContent = t('pairBannerTitle');
+			this._pairBanner.lang = getLang();
 			this._pairBanner.querySelector('p').textContent = t('pairBannerBody', summary.stale, summary.mismatch);
 			this._pairBanner.querySelector('[data-role="update"]').textContent = t('updateNow');
 			this._pairBanner.querySelector('[data-role="later"]').textContent = t('later');
@@ -694,11 +707,31 @@ import { Logger } from './15-logger.ts';
 					Toast.show(this.clearAllEntries() ? (t('clear') || 'Reset') : t('storageSaveFailed'));
 				});
 				});
-				const langId = GM_registerMenuCommand('🌐 Language: ' + getLang().toUpperCase(), () => {
-					const next = getLang() === 'ko' ? 'en' : 'ko';
-					try { GM_setValue('lang', next); } catch { }
-					Toast.show('Lang: ' + next.toUpperCase());
-					this.refreshLanguageUi();
+				const langId = GM_registerMenuCommand('🌐 ' + t('languageLabel'), () => {
+					const label = document.createElement('label');
+					label.className = 'tm-language-picker';
+					const text = document.createElement('span');
+					const select = createLanguageSelect();
+					label.append(text, select);
+					select.addEventListener('change', () => {
+						if (!setLanguagePreference(select.value)) {
+							select.value = getLanguagePreference();
+							Toast.show(t('storageSaveFailed'));
+							return;
+						}
+						this.refreshLanguageUi();
+						Toast.show(t('languageChanged'));
+					});
+					Dialog.show({ title: t('languageLabel'), body: label,
+						buttons: [{ label: t('close'), value: false, primary: true }],
+						onRefresh: ctx => {
+							ctx.setTitle(t('languageLabel'));
+							text.textContent = t('languageLabel');
+							select.options[0].textContent = t('languageAutomatic');
+							select.value = getLanguagePreference();
+							ctx.buttons[0].textContent = t('close');
+						}
+					});
 				});
 				this._menuCommandIds = [manageId, settingsId, clearId, langId].filter(Boolean);
 			} catch { /* Tampermonkey menu may be unavailable in some envs */ }

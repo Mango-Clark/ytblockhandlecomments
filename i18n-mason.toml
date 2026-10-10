@@ -1,0 +1,31 @@
+version = 1
+default_locale = "en-us"
+locales = ["en-us", "ko-kr", "ja-jp", "de-de", "zh-cn", "zh-tw", "fr-fr", "pt-br", "ru-ru", "id-id"]
+
+[[scopes]]
+path = "src/template/docs"
+locales = ["en-us", "ko-kr"]
+
+[[scopes]]
+path = "src/template/docs/TODO.md"
+locales = ["en-us"]
+
+[[scopes]]
+path = "src/template/docs/ABOUT.md"
+locales = ["en-us"]
+
+[[scopes]]
+path = "src/template/docs/README.md"
+locales = ["en-us"]
+
+[[scopes]]
+path = "scripts/README.md"
+locales = ["en-us"]
+
+[[scopes]]
+path = "CONTRIBUTING.md"
+locales = ["en-us", "ko-kr"]
+
+[[scopes]]
+path = "CONTRIBUTING.ko.md"
+locales = ["en-us", "ko-kr"]

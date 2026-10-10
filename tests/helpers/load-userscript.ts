@@ -9,6 +9,7 @@ type LoadOptions = {
 	gmSetValue?: (key: string, value: unknown) => void;
 	url?: string;
 	language?: string;
+	languages?: string[];
 	deferAnimationFrames?: boolean;
 	skipBootstrap?: boolean;
 };
@@ -80,7 +81,7 @@ export function loadUserscript(options: LoadOptions = {}) {
 		Element,
 		document,
 		location,
-		navigator: { language: options.language || 'ko-KR' },
+		navigator: { language: options.language || 'ko-KR', languages: options.languages },
 		URL,
 		URLSearchParams,
 		AbortController,

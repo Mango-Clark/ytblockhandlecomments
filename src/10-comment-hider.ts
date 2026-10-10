@@ -2,6 +2,7 @@ import {
 	COMMENTS_HOST_SELECTOR,
 	HIDEABLE_COMMENT_SELECTOR,
 	getHandleCompareKey,
+	getLang,
 	safeRegexTest,
 	t,
 	validateRegexSpec,
@@ -253,6 +254,7 @@ import { Extractor } from './09-extractor.ts';
 				node.appendChild(placeholder);
 			}
 			const placeholderText = mode === 'placeholder-reveal' ? t('blockedCommentReveal') : t('blockedCommentPlaceholder');
+			placeholder.lang = getLang();
 			if (placeholder.textContent !== placeholderText) placeholder.textContent = placeholderText;
 			if (mode === 'placeholder-reveal' && !placeholder.__tmRevealBound) {
 				placeholder.__tmRevealBound = true;

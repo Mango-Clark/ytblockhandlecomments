@@ -7,6 +7,11 @@ import {
 	safeRegexTest,
 	searchManagerIndex,
 	t,
+	getLang,
+	getLanguagePreference,
+	setLanguagePreference,
+	I18N,
+	formatDateTime,
 	validateRegexSpec
 } from './02-utils-i18n.ts';
 import { AppSettingsStorage } from './03-app-settings-storage.ts';
@@ -50,6 +55,11 @@ const TEST_HOOK = typeof window === 'object' ? window.__YT_BLOCK_TEST_HOOK__ || 
 			App,
 			Logger,
 			t,
+			getLang,
+			getLanguagePreference,
+			setLanguagePreference,
+			I18N,
+			formatDateTime,
 			validateRegexSpec,
 			parseRegexLiteral,
 			exportRegexLiteral,

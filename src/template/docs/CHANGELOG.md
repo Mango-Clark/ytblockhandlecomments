@@ -10,10 +10,15 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); projec
 
 ### Added
 
+- UI and README translations for Japanese, German, Simplified/Traditional Chinese, French, Brazilian Portuguese, Russian, and Indonesian, with shared translation credits.
+
 - Added English and Korean contribution guides covering repository workflow, documentation, commits, and validation.
 - Independent lookup policies for creation, updates, and immediate pairing; settings section navigation.
 
 ### Changed
+
+- Language selection now offers ten locales and browser-based automatic selection with English fallback; saved English/Korean choices remain compatible. All catalogs share a typed message contract, and localized READMEs participate in transactional generation and releases.
+- Current README and contribution guidance describe the latest pairing/settings behavior and translation workflow.
 
 - Settings now uses eight uniform sections with headings above vertical fields, help, and actions; display/theme share one section and diagnostics remain under logs.
 

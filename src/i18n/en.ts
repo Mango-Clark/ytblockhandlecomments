@@ -1,10 +1,25 @@
-import type { I18nBundle } from '../02-utils-i18n.ts';
+import type { I18nMessages } from '../02-utils-i18n.ts';
 
 /* ----------------------------------------------------------
 	 * 1b. English i18n strings
 	 * ---------------------------------------------------------- */
 
-	export const I18N_EN: I18nBundle = {
+	export const I18N_EN = {
+			languageLabel: 'Language',
+			languageAutomatic: 'Automatic (browser language)',
+			languageHelp: 'Choose a UI language. Automatic uses browser preferences, then English for unsupported languages.',
+			languageChanged: 'Language saved',
+			importTooLarge: 'Import text is too large.',
+			debugMutationBatches: 'Mutation batches',
+			debugFullRefreshes: 'Full refreshes',
+			debugIncrementalRefreshes: 'Incremental refreshes',
+			debugScannedNodes: 'Scanned nodes',
+			debugMissingChannelIds: 'Missing UCIDs',
+			debugMissingHandles: 'Missing handles',
+			debugLastDiagnostic: 'Last diagnostic',
+			debugAutoAddedRegexHandles: 'Handles added by regex',
+			debugLastDurationMs: 'Last duration (ms)',
+			debugTotalDurationMs: 'Total duration (ms)',
 			lowPerformanceMode: 'Low-performance mode',
 			lowPerformanceHelp: 'Process work in smaller batches and show 50 entries per page. Automatic channel lookup and pair creation pause; manual pair requests run one at a time. Existing blocking and keyword actions remain enabled. In pair matching mode, new UCID links require manual pair creation. Turning this off does not replay skipped lookups.',
 			pagePrevious: 'Previous page',
@@ -252,7 +267,7 @@ import type { I18nBundle } from '../02-utils-i18n.ts';
 			consoleTimezoneLabel: 'Console timezone',
 			consoleTimezoneSystem: 'System timezone',
 			consoleTimezoneUserInput: 'Custom timezone',
-			consoleTimezonePlaceholder: 'Asia/Seoul, KST, or offset:+09:00',
+			consoleTimezonePlaceholder: 'Asia/Seoul, KST, offset:+09:00',
 			consoleLoggingInvalid: (field) => `Invalid console ${field}. Fix it before saving.`,
 			loggingLevelError: 'Errors only',
 			loggingLevelWarn: 'Warnings and errors',
@@ -294,10 +309,10 @@ import type { I18nBundle } from '../02-utils-i18n.ts';
 			typeFilterLabel: 'Type',
 			typeAll: 'all',
 			typeHandle: 'handle',
-			typeId: 'id',
+			typeId: 'UCID',
 			typeRegex: 'regex',
 			searchLabel: 'Search',
-			searchPlaceholder: 'Search handle, id, regex',
+			searchPlaceholder: 'Search handle, UCID, regex',
 			searchNoMatches: 'No search results.',
 			resetFilters: 'Reset filters',
 			tagFilterLabel: 'Tags',
@@ -322,4 +337,4 @@ import type { I18nBundle } from '../02-utils-i18n.ts';
 			regexSelectedMatches: (n) => `Selected ${n} matching handle(s)`,
 			noFilteredEntries: 'No entries match the current filters.',
 			noEntries: '—'
-		};
+		} satisfies I18nMessages;

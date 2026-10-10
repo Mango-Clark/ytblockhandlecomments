@@ -1,305 +1,97 @@
 # 📌 YouTube Comment Blocker — v{{version}}
 
-[English](README.md) | [한국어](README.ko.md)
+{{language_links}}
 
-상세: [WIKI.md](docs/WIKI.md) | [WIKI.ko.md](docs/WIKI.ko.md)
+YouTube 시청·Shorts 페이지에서 채널 기준으로 댓글을 숨기는 Tampermonkey 사용자 스크립트입니다. 핸들·UCID·정규식 규칙, 자동화와 로컬 저장소를 제공합니다.
 
-채널 식별자 기반 YouTube 댓글 숨김 Tampermonkey 스크립트.
-기본 handle 차단. `v{{version}}`: `v0.6.x` 안전성·설정·pair 유지보수 수정 유지 + 별도 설정 창 개선, regex 자동 추가, debug counter, pair 결과 도구, quota 안내, 페이지별 regex 매칭 목록, 역할별 소스, 압축 userscript 추가.
+## 설치·사용
 
-빠른 설치: raw URL을 Tampermonkey로 열어 설치·업데이트
+1. [Tampermonkey](https://www.tampermonkey.net/)를 설치합니다.
+2. 아래 raw URL을 열거나 새 사용자 스크립트에 `ytblockhandlecomments.js`를 붙여 넣습니다.
+3. YouTube 시청·Shorts 페이지에서 댓글 작성자의 핸들을 우클릭하거나 댓글 `⋯` 메뉴로 채널을 차단·해제합니다.
+4. Tampermonkey의 스크립트 메뉴에서 차단목록·설정·UI 언어를 엽니다.
 
-- <https://raw.githubusercontent.com/Mango-Clark/ytblockhandlecomments/refs/heads/master/ytblockhandlecomments.js>
+<https://raw.githubusercontent.com/Mango-Clark/ytblockhandlecomments/refs/heads/master/ytblockhandlecomments.js>
 
-소스 구조:
+## 기능
 
-- 역할별 소스: `src/`
-- 숫자 접두사는 읽기 순서를 안내하며 실제 실행 순서는 ES module import가 결정
-- Tampermonkey 저장소 공통 처리는 `03a-gm-backed-store.ts`, 공개 manager 진입점은 목록·설정·내보내기·pairing·runtime 작업을 `12a`–`12e`에 위임
-- `npm run build`로 `ytblockhandlecomments.js` 재생성
-- `npm run check:build`로 루트 userscript와 `src/` 동기화 확인
-- Tampermonkey 설치 대상: 루트 `ytblockhandlecomments.js`; `src/`는 개발용
-- 루트 userscript는 압축됨. 가독성 있는 수정은 `src/`
-- 변경한 `src/` + 재빌드한 루트 userscript 함께 커밋
+- **차단:** 기본 핸들 규칙, 선택적 UCID 페어 규칙, 독립된 정규식 규칙과 핸들 대소문자 구분을 지원합니다. 댓글 작성자 상호작용만 확장합니다.
+- **댓글·자동화:** 숨김·회색 대체·클릭 공개, 자동 싫어요, 정규식 자동 추가, 본문·핸들·고정 라벨의 키워드 검사와 선택 동작을 지원합니다. 재사용된 댓글 노드도 다시 처리합니다.
+- **차단목록:** 검색·유형/태그 필터·선택·일괄 작업, JSON/텍스트 가져오기·내보내기·다운로드를 제공합니다. 정규식 일치 수·선택·펼침·페이지는 목록 전체 재생성 없이 처리합니다.
+- **설정:** 차단 방식·댓글 처리·자동화·페어링·API 키·표시/테마·로그/진단·초기화의 8개 세로형 섹션입니다. 좁은 화면에서는 왼쪽 메뉴가 상단으로 이동합니다. 자동 저장과 기본값 표시를 지원합니다.
+- **표시:** 글자·UI 크기 5단계와 밝음·어두움·시스템·반전 시스템·YouTube·반전 YouTube·사용자 지정 테마를 제공합니다. YouTube 기본 다크 상태로 동기화하며 색상은 스크립트 UI에만 적용됩니다.
+- **성능:** 캐시된 매칭과 제한된 댓글 호스트 탐색을 사용하며 목록은 페이지당 100개입니다. 저성능 모드는 50개·작은 배치·검색 지연·순차 수동 페어링을 사용합니다. 생략된 자동 조회는 재실행하지 않습니다.
+- **로그:** 로컬·콘솔 출력, 수준·보존 수·접두사·시간대·ISO/사용자 지정 시각, 테스트 출력·다운로드·확인 후 삭제·V0–V5 상세도를 제공합니다. 민감값을 숨기며 댓글별 매칭은 기록하지 않습니다.
+- **상태:** 화면·언어 변경 시 입력 초안과 목록의 검색·필터·선택·페이지·스크롤을 유지합니다. SPA 이동은 임시 관찰자를 초기화하며 대화상자는 키보드 포커스를 관리합니다.
+
+## UCID 페어링
+
+1. 핸들 차단은 즉시 적용됩니다. 차단 즉시 페어 생성은 기본 켜짐이며 비동기로 실행하고, 실패 시 기존 차단·연결을 보존합니다.
+2. 생성은 **handle → UCID**로 조회해 페어와 `id` 규칙을 저장합니다. 갱신은 **UCID → 최신 handle**로 조회하고 UCID를 유지하며 이전 핸들을 교체합니다. UCID가 없으면 생성 경로를 사용합니다.
+3. 생성·갱신·차단 즉시 생성의 조회방식을 각각 채널 페이지만·공식 API만·페이지 우선 후 API로 설정합니다. 페이지 조회는 키가 필요 없고 API 요청은 저장된 키가 필요합니다.
+4. UCID 매칭은 UCID 감지와 UCID 페어 규칙을 켭니다. 필요한 UCID 규칙이 생기기 전에는 핸들 모드를 사용하세요. 키워드 페어는 생성 정책을 사용하며 저성능 모드는 자동 조회를 멈추지만 수동 실행은 허용합니다.
+5. 갱신 간격 또는 사용자 지정 초(최소 1초)를 선택합니다. 기본은 페이지 조회 10분·API 조회 1주입니다. 전체 갱신은 주기를 따르며 선택 항목 갱신은 강제 조회합니다.
+6. 차단목록에서 페어 작업을 실행합니다. 상태·핸들별 결과·필터/정렬·실패 핸들 복사/내보내기·진행 표시·시청 페이지 배너를 확인하세요. API 키 테스트는 반복된 할당량 오류 안내를 제공합니다.
+7. 페이지는 해당 채널 자체 메타데이터를 읽습니다. API 갱신은 일치하는 UCID와 `@handle` 형식 custom URL이 필요합니다. 누락·충돌·취소·조회 실패 시 기존 연결을 보존합니다.
+
+## 언어
+
+UI·README는 `en-us`, `ko-kr`, `ja-jp`, `de-de`, `zh-cn`, `zh-tw`, `fr-fr`, `pt-br`, `ru-ru`, `id-id`를 지원합니다. 설정 → 표시/테마 또는 Tampermonkey 언어 메뉴에서 선택합니다. 저장된 선택이 우선이며 자동은 브라우저 언어를 확인하고 미지원 시 `en-us`를 사용합니다.
+
+지역 변형은 같은 지원 언어로 연결합니다(`en-GB` → `en-us`, `pt-PT` → `pt-br`). 중국어는 Hans/CN/SG → `zh-cn`, Hant/TW/HK/MO → `zh-tw`로 구분하며 `zh`는 간체입니다. 기존 `en`/`ko` 선택을 유지합니다. Wiki·changelog는 한영, 나머지 안내는 기존 언어를 유지합니다.
+
+## 저장·개인정보
+
+- `blocked_v2`: `handle`·`id`(UCID)·`regex` 규칙입니다. JSON/텍스트 형식과 `/pattern/flags` 정규식 리터럴을 유지합니다.
+- `pair_meta_v1`: UCID 연결·확인 정보, `app_settings_v1`: 설정, `youtube_data_api_v3_config`: API 키·테스트/할당량 정보, `lang`: 언어 선택입니다.
+- 페어 정보·API 키는 차단목록 가져오기·내보내기에서 제외합니다. 키는 로컬 저장 후 공식 API 요청 시에만 전송합니다. 다운로드 로그는 UTC ISO 시각을 쓰고 저장 위치는 브라우저가 정합니다.
+- 탭 동기화는 항목 리비전·삭제 표식으로 추가를 병합하고 삭제 규칙·로그가 돌아오지 않게 합니다. 읽기 실패 시 쓰기를 막고 저장 거부 시 이전 데이터를 보존합니다.
+- 레거시 목록은 유효한 현재 데이터가 없을 때만 이전합니다. UID 필드는 저장소 키·리비전·삭제 표식·시각을 유지하며 UCID로 변환합니다. 업데이트 후 이전 버전 탭을 새로고침하세요.
+- payload 스키마·콘솔 시각 토큰·구현 상세는 아래 Wiki에 설명합니다.
+
+## 기본값
+
+- 핸들 매칭·완전 숨김·자동 싫어요 꺼짐·즉시 페어 켜짐입니다. 신규 설치의 세 조회 정책은 모두 채널 페이지입니다.
+- 글자·UI 크기는 3단계이며 2단계는 이전 크기입니다. 진단은 V3이며 V0/V1은 payload 생략, V2는 1필드·V3는 3·V4는 6·V5는 10개입니다.
+- 저성능 모드·로그는 꺼짐입니다. 키워드는 대소문자를 구분하지 않고 기본으로 댓글 본문을 검사하며 활성화 전에는 동작하지 않습니다.
+- 업데이트 시 기존 설정·사용자 지정 주기를 보존합니다. 조회·UI 언어 변경은 차단 규칙과 입력 초안을 초기화하지 않습니다.
+
+## 제한·참고
+
+- 페이지 조회는 비공식이며 YouTube HTML 변경 후 실패할 수 있습니다. 공식 API는 할당량을 사용하며 UCID 규칙 생성 후 매칭은 로컬입니다. 키 테스트는 고정 공개 채널을 조회합니다.
+- 옛 핸들은 소문자로 저장됐을 수 있어 재저장·추가 후에만 정확한 대소문자 매칭을 보장합니다. 정규식은 핸들, 키워드는 선택 필드만 검사합니다.
+- 정규식 길이·플래그·보수적 구조 복잡도를 검사하고 대상은 128자로 제한합니다. 댓글 처리는 지원 시청·Shorts 영역에 한정하며 페어 배너는 시청 페이지에만 표시합니다.
+- YouTube/API 응답 원문·사용자 저장 내용·채널 식별자·프로토콜 필드·기계용 로그는 번역하지 않습니다. 임베드 플레이어는 제외하며 명시된 Tampermonkey 권한만 사용합니다.
 
 ## 문서
 
-- 기여 안내: [CONTRIBUTING.md](CONTRIBUTING.md) | [CONTRIBUTING.ko.md](CONTRIBUTING.ko.md)
-- 위키: [docs/WIKI.md](docs/WIKI.md) | [docs/WIKI.ko.md](docs/WIKI.ko.md)
-- 변경사항: [docs/CHANGELOG.md](docs/CHANGELOG.md) | [docs/CHANGELOG.ko.md](docs/CHANGELOG.ko.md)
-- TODO: [docs/TODO.md](docs/TODO.md)
-- 리뷰 헬퍼: [docs/ABOUT.md](docs/ABOUT.md)
+- Wiki: [English](docs/WIKI.md) / [한국어](docs/WIKI.ko.md)
+- Changelog: [English](docs/CHANGELOG.md) / [한국어](docs/CHANGELOG.ko.md)
+- 기여 안내: [English](CONTRIBUTING.md) / [한국어](CONTRIBUTING.ko.md)
+- [TODO](docs/TODO.md) / [리뷰 도우미](docs/ABOUT.md)
 
----
+## 개발·검증
 
-## 주요 기능
+- `dev`에서 작업하고 `src/`의 역할별 TypeScript를 수정합니다. 숫자는 읽기 순서이며 실행은 ES import가 결정합니다. 공통 저장소는 `03a-gm-backed-store.ts`, 관리자는 `12a`–`12e`입니다.
+- 생성된 README/docs 대신 `src/template/`을 수정합니다. `npm run build`는 번역 README와 압축된 `ytblockhandlecomments.js`를 트랜잭션으로 재생성하며 Tampermonkey는 루트 스크립트만 읽습니다.
+- UI·README 10개 번역을 맞춥니다. `en.ts`는 메시지 계약, `locales.ts`는 언어명·README 경로·기여자, `i18n-mason.toml`은 언어 범위입니다. 치환값과 기계용 텍스트는 보존합니다.
+- `npm run verify`는 lint·Markdown lint·typecheck·결정적 `node:test`·build·생성물 확인을 실행합니다. 각 명령은 개별 실행 가능하며 명시적으로 생략한 검사는 보고합니다.
+- 소스·생성물을 Conventional Commit으로 함께 커밋하고 독립 리뷰를 받습니다. 명시적 승인 없이 버전 변경·push하지 않습니다. 릴리스는 `npm run bump:version -- <MAJOR.MINOR.PATCH>`를 사용합니다.
 
-### 성능
-
-- 설정·차단 목록의 중복 렌더링과 반복 상태 복사를 줄입니다.
-- 차단 목록·페어 결과는 페이지당 100개를 표시하며 필터·전체 선택은 일치하는 모든 항목에 적용됩니다.
-- 설정의 **저성능 모드**(기본 꺼짐)는 작업 분할, 페이지당 50개 표시, 검색 지연, 수동 페어 조회의 순차 처리를 적용합니다. 기존 차단 기능은 유지합니다.
-
-### 핵심 차단
-
-- 댓글 작성자 handle 우클릭 차단·해제.
-- 다른 YouTube handle 링크는 가로채지 않음.
-- 댓글 `⋯` 메뉴에 `Hide comments from this channel` 추가.
-- watch·Shorts 일치 댓글 실시간 숨김.
-- `blocked_v2`에 `handle`, `id`, `regex` 규칙 저장.
-- `handle` 또는 UCID pair `id` 매칭 선택. regex는 독립 적용.
-- 선택 시 handle 대소문자 구분.
-
-### 댓글 자동 처리
-
-- 숨김·회색 대체 문구·클릭 공개 방식.
-- 자동 싫어요: 안 함·새 숨김만·숨김 동안 항상.
-- YouTube의 comment DOM node 재사용에도 keyword·자동 싫어요 재적용.
-- regex·keyword 대상·싫어요·handle 차단·UCID pair를 한 창에서 설정.
-- 저장·매칭 전 regex 길이·flag·보수적 구조 복잡도 검사. 매칭 대상은 128자로 제한.
-- regex 최초 일치 handle 자동 저장 후 handle 매칭.
-
-### 설정·테마
-
-- API·UCID·regex 자동 추가·표시 크기·debug counter 별도 설정 창.
-- 매칭·댓글 표시·키워드 자동 처리·로그·표시 크기·유지보수 그룹.
-- 자동 저장. 기본 선택지 `(기본)` 표시.
-- 확인 후 표시·매칭 설정 초기화.
-- 글자·UI 크기 5단계. 2단계=이전 크기, 3단계=기본값.
-- UI 테마: 라이트·다크·기기설정·기기설정(반대)·yt설정·yt설정(inverted)·커스텀.
-- YouTube 테마 동기화는 자체 다크 상태 신호만 사용.
-
-### 차단 목록 관리
-
-- 검색·타입 필터·handle 태그 필터.
-- row 선택·bulk 액션.
-- 관리자 대화상자에 userscript 버전 표시.
-- regex 매칭 handle 수·일괄 선택.
-- regex 결과 cache. 대규모 목록 페이지별 표시.
-- 내보내기 창에서 목록 복귀 또는 규칙 JSON·텍스트 다운로드.
-
-### Channel pairing
-
-- 선택적 channel ID 감지. handle↔channel ID를 `pair_meta_v1`에 저장.
-- channel link·안정적 channel-ID attribute에서 ID 추출.
-- 기본 공개 채널 페이지 조회. cache + 선택적 YouTube Data API v3 조회/fallback.
-- `Create Pair`, `Update Pair`; handle별 결과.
-- 결과 필터·정렬, 실패 handle 복사·내보내기.
-- API 키 테스트·pair 중 loading bar.
-- 반복 API quota 실패 시 구조화 안내.
-
-### 로그·진단
-
-- 로컬·브라우저 콘솔 로그 독립 설정.
-- 출력·상세도·콘솔 형식·저장 로그 관리별 설정 구성.
-- 현재 저장 수·마지막 항목·콘솔 미리보기·테스트 출력·다운로드·확인 후 삭제.
-- 수준·보관 수·접두사·시간·형식·시간대 설정; 보관 수 감소 즉시 정리.
-- 탭 간 동시 로그 추가 병합 및 명시적 삭제 후 오래된 항목 복원 방지.
-- 개인정보 제거 V0-V5 진단 상세도. 기본 V3.
-- pair mode channel ID 미검출 진단 counter.
-
-### 탐색·성능
-
-- watch/Shorts root에서만 제한적 comment host 탐색·재시도.
-- 안정적 Shorts 댓글 panel host에서 thread 지속 관찰.
-- page-data/history로 SPA 이동 감지. 동일 page key 상태 유지.
-- 설정 창↔차단 목록 이동.
-- 언어 변경 시 관리자 UI·dialog·배너·메뉴 label 갱신.
-
----
-
-## 사용 방법
-
-1. [Tampermonkey](https://www.tampermonkey.net/) 설치.
-2. raw URL로 설치하거나 새 사용자 스크립트에 `ytblockhandlecomments.js` 붙여넣기.
-3. YouTube watch 또는 Shorts 열기.
-4. 댓글 작성자 handle 우클릭해 차단·해제.
-5. `Tampermonkey -> YouTube Comment Blocker -> Manage block list` 열기.
-6. API 조회·페이지 조회 fallback 필요 시에만 YouTube Data API v3 API 키 저장·테스트.
-7. handle 대소문자·신원 차단 방식·UCID 감지·로그·자동 처리·목록 필터·bulk 액션·import/export 설정.
-8. 키워드 자동 처리 토글 후 차단·키워드 자동 처리 창에서 규칙·동작 설정.
-
-일반 channel ID 흐름:
-
-1. handle 차단.
-2. `Manage block list` 열기.
-3. 기본 YouTube 채널 페이지 조회 유지 또는 API 조회 선택.
-4. API 조회/fallback 필요 시 API 키 저장·테스트.
-5. channel ID 감지 켜기.
-6. pair 없는 항목에 `Create Pair` 실행 또는 새 handle 추가 시 조회 켜기.
-7. 갱신 주기·저장 channel ID 확인·handle 재조회 선택.
-8. stale/mismatch 시 `Update Pair` 실행.
-
----
-
-## 저장 구조
-
-메인 규칙 저장소:
-
-```ts
-{
-  version: 2,
-  updatedAt: number,
-  items: Array<
-    | { type: 'handle', value: string }
-    | { type: 'id', value: string }
-    | { type: 'regex', value: string, flags?: string }
-  >
-}
+```sh
+npm run lint
+npm run lint:markdown
+npm run typecheck
+npm run build
+npm run check:build
+npm run verify
 ```
 
-Pair 메타 저장소:
+향후 선택적 브라우저 검증은 무의존 검증과 분리하며 자동 테스트는 실제 YouTube 세션을 요구하지 않습니다.
 
-```ts
-{
-  version: 2,
-  enableUcidDetection: boolean,
-  lastPairCheckAt: number | null,
-  pairNotificationDismissedAt: number | null,
-  pairs: Array<{
-    handle: string,
-    ucid: string,
-    verifiedAt: number | null,
-    status: 'verified' | 'stale' | 'mismatch' | 'unverified',
-    source: string,
-    lastResolvedUcid?: string | null,
-    lastError?: string | null
-  }>
-}
-```
+## 번역 기여자
 
-앱 설정 저장소:
-
-```ts
-{
-	version: 2,
-	lowPerformanceMode: boolean,
-	handleCaseSensitive: boolean,
-	autoAddRegexHandles: boolean,
-	blockMatchMode: 'handle' | 'pair',
-	pairLookup: { create: 'page' | 'api' | 'page-api', update: 'page' | 'api' | 'page-api', onBlock: 'page' | 'api' | 'page-api' },
-	pairRefreshInterval: 'always' | '60' | '300' | '600' | '3600' | '43200' | '86400' | '604800' | '2592000' | 'custom',
-	pairRefreshCustomSeconds: number,
-	pairOnBlock: boolean,
-	keywordAutomationEnabled: boolean,
-	themeMode: 'light' | 'dark' | 'system' | 'system-inverted' | 'youtube' | 'youtube-inverted' | 'custom',
-	themeCustom: { background: string, surface: string, text: string, muted: string, border: string, primary: string, danger: string },
-	keywordRules: string[],
-	keywordFields: { commentText: boolean, handle: boolean, pinned: boolean },
-	keywordActions: { dislike: boolean, blockHandle: boolean, createPair: boolean },
-	logging: { fileEnabled: boolean, consoleEnabled: boolean, level: 'error' | 'warn' | 'info' | 'debug', retention: 100 | 500 | 1000, consolePrefix: string, consoleTimestampEnabled: boolean, consoleTimeFormat: string, consoleTimeZone: string, consoleTimeZoneInput: string },
-	verboseLevel: 0 | 1 | 2 | 3 | 4 | 5,
-  dislikeMode: 'none' | 'new-hidden' | 'always',
-  commentBlockMode: 'hide' | 'placeholder' | 'placeholder-reveal',
-  fontSizeLevel: 1 | 2 | 3 | 4 | 5,
-  uiScaleLevel: 1 | 2 | 3 | 4 | 5
-}
-```
-
-API 설정 저장소:
-
-```ts
-{
-  version: 2,
-  apiKey: string,
-  quotaFailureCount: number,
-  lastQuotaFailureAt: number | null,
-  lastTestResult: {
-    checkedAt: number,
-    ok: boolean,
-		category: 'ok' | 'invalid' | 'quota' | 'forbidden' | 'network' | 'timeout' | 'cancelled' | 'unknown',
-    httpStatus: number | null,
-    message: string
-  } | null
-}
-```
-
-참고:
-
-- 규칙 키: `blocked_v2`
-- pair 메타 키: `pair_meta_v1`
-- 앱 설정 키: `app_settings_v1`
-- API 설정 키: `youtube_data_api_v3_config`
-- 기본 `dislikeMode`: `none`
-- 기본 `commentBlockMode`: `hide`
-- 기본 `blockMatchMode`: `handle`; `pair`는 UCID 감지 중 저장된 `id` 사용
-- 조회 결과는 pair metadata·메모리에 cache. 기본 갱신: 페이지 10분, API 1주. 선택 handle 강제 갱신은 cache 우회.
-- 페이지 조회 실패 시 기존 데이터 유지 + 재시도/API fallback 안내. API는 저장 키 필요, 요청당 quota 1 unit.
-- pair 없음/unverified면 UCID 규칙 생성 전까지 `handle`로 전환.
-- 키워드는 대소문자 무시, 기본 댓글 본문 검사. 직접 활성화 전 동작 없음.
-- 로그 기본 꺼짐. 저장 로그는 Tampermonkey 저장소에 보관·텍스트 다운로드. 위치는 브라우저 설정 따름.
-- console 시간: calendar(`iso`, `iso-date`, `iso-basic-date`), week(`iso-week-date`), ordinal(`iso-ordinal-date`) date 지원. 직접 형식은 `yyyy`, `MM`, `dd`, `DDD`, `ww`, `e`, `HH`, `mm`, `ss`, `SSS`, `X`, `XXX`, `Z`, `T`, `W` 조합으로 ISO basic/extended time·timezone 생성.
-- Tampermonkey가 설정·규칙·pair·API 키·로그 쓰기 거부 시 기존값 유지 + UI 재시도 안내.
-- 기본 `verboseLevel`: `3`. V0/V1 payload 생략, V2 1필드, V3 3필드, V4 6필드, V5 10필드. 중첩 API 키·token·URL·account·comment·handle·사용자 식별자는 console·저장 전 제거.
-- 기본 `fontSizeLevel`·`uiScaleLevel`: `3`; `2`는 이전 크기.
-- 유효한 `blocked_v2` 없을 때만 레거시 `blockedHandles`, `blockedHandles_v1` 자동 migration. 이후 삭제·전체 초기화 뒤 legacy 복원 안 함.
-- 탭 간 `blocked_v2` 동기화는 항목별 revision·tombstone 사용. 동시 추가 병합, 추가/삭제/전체 초기화 충돌 결정론적 수렴.
-- `v{{version}}`도 pair 메타데이터를 import/export에서 제외.
-- API 키는 Tampermonkey 로컬 저장소에만 저장, 스크립트 코드 제외.
-
----
-
-## 테스트
-
-- `npm run verify`로 code lint, Markdown lint, typecheck, test, build, 생성물 동기화 검사 실행
-- 개별 검사는 `npm run lint`, `npm run lint:markdown`, `npm run typecheck`, `npm test`, `npm run check:build`로 각각 실행 가능
-- 외부 의존성 없이 `node:test` + 작은 DOM shim 회귀 테스트.
-- 범위: 관리자 lifecycle·검색, 대화상자 i18n refresh, pair 결과 UI 상태·정렬·필터 helper, quota 안내 counter, 탐색 observer reset, pair update skip/force, regex safety/import literal.
-
-### 장기 브라우저 coverage 계획
-
-기본 검증 suite는 dependency-free·결정론적 실행을 유지한다. 향후 선택형 Playwright 계층은 별도 `npm run test:e2e` 명령으로 실행하고, Chromium local fixture와 GM API shim을 사용한다. 브라우저 lifecycle 순서, userscript 반복 주입, custom-element 교체, fetch 취소, 탭 간 이벤트를 검증하되 browser binary나 실제 YouTube network를 `npm run verify`에 포함하지 않는다. 실제 Tampermonkey extension profile과 heap 측정은 이후 확장 범위로 남긴다.
-
----
-
-## 참고 사항
-
-- 최초 생성은 handle → UCID, 갱신은 고정 UCID → 최신 handle입니다. 이름 변경 시 이전 handle 규칙을 교체합니다.
-- 최초 생성·갱신·차단 즉시 생성에 페이지 전용·API 전용·페이지 우선/API fallback을 각각 설정합니다. 차단은 즉시 적용하며 조회 실패 시 기존 규칙을 보존합니다.
-- 설정은 제목 아래 옵션·설명·버튼을 세로 배치한 동일한 형식의 8개 섹션과 이동 메뉴를 제공합니다. 설정에 정책/API 키, 차단목록에 페어 실행·결과를 두며 목록 복귀 시 기존 화면 상태를 유지합니다.
-- 기존 UID 필드·설정을 저장소 키 변경 없이 UCID payload로 변환합니다. 업데이트 후 기존 탭을 새로고침하세요.
-
-- 기본 신원 차단은 `handle`; `pair`는 UCID 감지 중 `id` 매칭.
-- handle 기본 case-insensitive; exact 비교 가능.
-- 기존 handle은 소문자 저장 가능. exact 보장은 재저장·신규 항목부터.
-- UCID 매칭은 `UCID Detection` 토글.
-- `pair` + UCID 감지 모두 활성일 때만 `id` 매칭.
-- pair 생성·handle 재조회는 선택한 조회 방식을 사용. 기본은 공개 YouTube 채널 페이지이며, API 조회 선택 시 YouTube Data API v3 `channels.list`의 `forHandle` 사용.
-- pair 데이터가 있으면 UCID 매칭은 로컬. API 호출은 pair 작업 중만.
-- regex 자동 추가 시 일치 handle을 `handle`로 저장, 이후 regex 없이 handle 확인.
-- `Update Pair`는 stale 주기 전 verified pair 건너뜀. 선택 handle bulk update는 강제 조회.
-- watch pair 검토 배너는 `나중에` 또는 최근 검사 후 stale 주기 동안 숨김.
-- pair update에서 UCID 변경 시 오래된 `id` 교체, stale UCID의 예전 채널 매칭 방지.
-- API 조회 또는 페이지 조회 실패 후 API fallback을 사용할 때만 관리자 대화상자에 저장한 API 키 필요.
-- bulk pair 액션은 선택된 `handle`만.
-- regex 선택은 보이는 checkbox·counter만 즉시 갱신; 전체 목록 재생성 안 함.
-- regex 펼침/접힘·매칭 페이지 이동은 해당 행만 갱신.
-- API 키 테스트는 반복 `quota` 실패 추적 + reset window 안내.
-- pair 상세 필터·정렬, 실패 handle 복사·내보내기.
-- UCID 조회 실패해도 handle 차단 유지; pair는 `unverified`/`stale`.
-- regex는 handle 텍스트만. 키워드는 댓글 본문·작성자 handle·고정 표시 문구 검사 가능.
-- plain-text import/export는 regex literal을 `/pattern/flags`로 왕복.
-- 차단 목록 내보내기는 pair 메타데이터·API 설정 제외. JSON/텍스트 파일 다운로드.
-- YouTube 테마 감지는 root·현재 `ytd-app`·직접 `ytd-app` 교체 이벤트만 관찰.
-- 중첩 dialog의 Escape·Enter·Tab focus·backdrop click은 최상위 dialog만.
-- API test·pair는 예상 밖 오류 후 control 복구. 겹친 pair 요청은 실행 공유.
-- 댓글 숨김은 watch·Shorts 댓글만.
-- pair 검토 배너는 watch만.
-- 탐색 시 임시 댓글 observer·메타데이터 cache 초기화, 긴 세션의 오래된 댓글 DOM node 해제.
-- 성능 counter는 설정 창·`window.__ytCommentBlockerPerf`에서 확인.
-- 로그는 앱 시작·API 테스트·pair 같은 저빈도 이벤트만. 댓글별 고빈도 매칭은 기록 안 함.
-
----
-
-## 사용자 스크립트 메타데이터
-
-- `@name`: `YouTube Comment Blocker`
-- `@version`: `{{version}}`
-- `@match`: `https://www.youtube.com/*`
-- `@exclude`: `https://www.youtube.com/embed*`
-- `@grant`: `GM_getValue`, `GM_setValue`, `GM_addValueChangeListener`, `GM_registerMenuCommand`, `GM_unregisterMenuCommand`
-
----
+{{translation_contributors}}
 
 ## 작성자
 
