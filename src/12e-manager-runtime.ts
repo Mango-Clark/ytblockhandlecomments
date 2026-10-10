@@ -400,6 +400,13 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 			};
 			const defaultOptionText = (option: HTMLOptionElement, label: string) =>
 				option.classList.contains('tm-default-option') ? `${label} ${t('defaultOption')}` : label;
+			const makeSettingField = (label: HTMLLabelElement, ...details: HTMLElement[]) => {
+				const field = document.createElement('div');
+				field.className = 'tm-setting-field';
+				label.className = label.querySelector('input')?.type === 'checkbox' ? 'tm-setting-label tm-setting-checkbox' : 'tm-setting-label';
+				field.append(label, ...details);
+				return field;
+			};
 			const body = document.createElement('div');
 			body.className = 'tm-settings-layout';
 			const settingsSection = document.createElement('section');
@@ -446,7 +453,7 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 			const autoText = document.createElement('span');
 			autoLabel.append(autoToggle, autoText);
 			const autoHelp = document.createElement('p');
-			matchingControls.append(lowModeLabel, lowModeHelp, matchModeLabel, matchModeHelp, caseLabel, caseHelp, caseLegacy, autoLabel, autoHelp);
+			matchingControls.append(makeSettingField(lowModeLabel, lowModeHelp), makeSettingField(matchModeLabel, matchModeHelp), makeSettingField(caseLabel, caseHelp, caseLegacy), makeSettingField(autoLabel, autoHelp));
 			matchingGroup.append(matchingTitle, matchingControls);
 
 			const commentGroup = document.createElement('li');
@@ -476,7 +483,7 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 			});
 			blockModeLabel.append(blockModeText, blockModeSelect);
 			const blockModeHelp = document.createElement('p');
-			commentControls.append(dislikeLabel, dislikeHelp, blockModeLabel, blockModeHelp);
+			commentControls.append(makeSettingField(dislikeLabel, dislikeHelp), makeSettingField(blockModeLabel, blockModeHelp));
 			commentGroup.append(commentTitle, commentControls);
 
 			const keywordGroup = document.createElement('li');
@@ -492,7 +499,7 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 			keywordEnabledLabel.append(keywordEnabledToggle, keywordEnabledText);
 			const keywordEnabledHelp = document.createElement('p');
 			const openAutomationBtn = Object.assign(document.createElement('button'), { className: 'secondary' });
-			keywordControls.append(keywordEnabledLabel, keywordEnabledHelp, openAutomationBtn);
+			keywordControls.append(makeSettingField(keywordEnabledLabel, keywordEnabledHelp), openAutomationBtn);
 			keywordGroup.append(keywordTitle, keywordControls);
 
 			const loggingGroup = document.createElement('li');
@@ -603,16 +610,17 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 			const clearLogBtn = Object.assign(document.createElement('button'), { className: 'secondary' });
 			logActions.append(testLogBtn, downloadLogBtn, clearLogBtn);
 			const logHelp = document.createElement('p');
-			loggingOutputGroup.body.append(logFileLabel, logConsoleLabel);
-			loggingScopeGroup.body.append(logLevelLabel, verboseLabel, verboseHelp);
-			loggingConsoleGroup.body.append(consolePrefixLabel, consoleTimestampLabel, consoleFormatLabel, consoleFormatInput, consoleTimezoneLabel, consoleTimezoneInput, consoleLoggingStatus, consolePreview);
-			loggingSavedGroup.body.append(logRetentionLabel, logStatus, logActions);
+			loggingOutputGroup.body.append(makeSettingField(logFileLabel), makeSettingField(logConsoleLabel));
+			loggingScopeGroup.body.append(makeSettingField(logLevelLabel), makeSettingField(verboseLabel, verboseHelp));
+			loggingConsoleGroup.body.append(makeSettingField(consolePrefixLabel), makeSettingField(consoleTimestampLabel), makeSettingField(consoleFormatLabel, consoleFormatInput), makeSettingField(consoleTimezoneLabel, consoleTimezoneInput), consoleLoggingStatus, consolePreview);
+			loggingSavedGroup.body.append(makeSettingField(logRetentionLabel, logStatus), logActions);
 			loggingControls.append(loggingOutputGroup.group, loggingScopeGroup.group, loggingConsoleGroup.group, loggingSavedGroup.group, logHelp);
 			loggingGroup.append(loggingTitle, loggingControls);
 
 			const displayGroup = document.createElement('li');
 			displayGroup.className = 'tm-setting-group';
 			const displayTitle = document.createElement('h4');
+			const displaySizeTitle = document.createElement('h5');
 			const displayControls = document.createElement('div');
 			displayControls.className = 'tm-setting-controls';
 			const fontSizeLabel = document.createElement('label');
@@ -634,14 +642,10 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 			fontSizeLabel.append(fontSizeText, fontSizeSelect);
 			uiScaleLabel.append(uiScaleText, uiScaleSelect);
 			const displayHelp = document.createElement('p');
-			displayControls.append(fontSizeLabel, uiScaleLabel, displayHelp);
+			displayControls.append(displaySizeTitle, makeSettingField(fontSizeLabel), makeSettingField(uiScaleLabel, displayHelp));
 			displayGroup.append(displayTitle, displayControls);
 
-			const themeGroup = document.createElement('li');
-			themeGroup.className = 'tm-setting-group';
-			const themeTitle = document.createElement('h4');
-			const themeControls = document.createElement('div');
-			themeControls.className = 'tm-setting-controls';
+			const themeTitle = document.createElement('h5');
 			const themeModeLabel = document.createElement('label');
 			const themeModeText = document.createElement('span');
 			const themeModeSelect = document.createElement('select');
@@ -654,8 +658,7 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 			themeModeLabel.append(themeModeText, themeModeSelect);
 			const themeHelp = document.createElement('p');
 			const customizeThemeBtn = Object.assign(document.createElement('button'), { className: 'secondary' });
-			themeControls.append(themeModeLabel, themeHelp, customizeThemeBtn);
-			themeGroup.append(themeTitle, themeControls);
+			displayControls.append(themeTitle, makeSettingField(themeModeLabel, themeHelp), customizeThemeBtn);
 
 			markDefaultOption(matchModeSelect, 'handle');
 			markDefaultOption(dislikeSelect, 'none');
@@ -681,17 +684,18 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 			resetSettingsActions.append(openListBtn, resetSettingsBtn);
 			maintenanceControls.append(resetSettingsActions);
 			maintenanceGroup.append(maintenanceTitle, maintenanceControls);
-			settingsList.append(matchingGroup, commentGroup, keywordGroup, loggingGroup, displayGroup, themeGroup, maintenanceGroup);
 			settingsSection.append(settingsTitle, settingsIntro, settingsList);
 
-			const apiSection = document.createElement('section');
-			apiSection.className = 'tm-section';
-			const apiTitle = document.createElement('h3');
+			const apiSection = document.createElement('li');
+			apiSection.className = 'tm-setting-group';
+			const apiTitle = document.createElement('h4');
+			const apiControls = document.createElement('div');
+			apiControls.className = 'tm-setting-controls';
 			const apiLabel = document.createElement('label');
 			const apiInput = document.createElement('input');
 			apiInput.type = 'password';
-			apiInput.style.minWidth = '280px';
-			apiInput.style.width = 'min(420px, 100%)';
+			apiInput.id = 'tm-settings-api-key';
+			apiLabel.htmlFor = apiInput.id;
 			const apiHelp = document.createElement('p');
 			const apiStatus = document.createElement('div');
 			apiStatus.className = 'tm-muted';
@@ -706,18 +710,21 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 			const testApiBtn = Object.assign(document.createElement('button'), { className: 'secondary' });
 			const clearApiBtn = Object.assign(document.createElement('button'), { className: 'secondary' });
 			apiActions.append(saveApiBtn, testApiBtn, clearApiBtn);
-			apiSection.append(apiTitle, apiLabel, apiInput, apiHelp, apiStatus, apiTestStatus, apiProgress, apiActions);
+			apiControls.append(makeSettingField(apiLabel, apiInput, apiHelp), apiStatus, apiTestStatus, apiProgress, apiActions);
+			apiSection.append(apiTitle, apiControls);
 
-			const pairSection = document.createElement('section');
-			pairSection.className = 'tm-section';
-			const pairTitle = document.createElement('h3');
+			const pairSection = document.createElement('li');
+			pairSection.className = 'tm-setting-group';
+			const pairTitle = document.createElement('h4');
+			const pairControls = document.createElement('div');
+			pairControls.className = 'tm-setting-controls';
 			const toggleLabel = document.createElement('label');
 			const ucidToggle = document.createElement('input');
 			ucidToggle.type = 'checkbox';
+			ucidToggle.dataset.setting = 'ucid-detection';
 			const ucidText = document.createElement('span');
 			toggleLabel.append(ucidToggle, ucidText);
 			const toggleHelp = document.createElement('p');
-			const handleLookupTitle = document.createElement('h4');
 			const lookupControls = (['create', 'update', 'onBlock'] as const).map(stage => {
 				const label = document.createElement('label');
 				const text = document.createElement('span');
@@ -735,20 +742,22 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 			['always', '60', '300', '600', '3600', '43200', '86400', '604800', '2592000', 'custom'].forEach(value => { const option = document.createElement('option'); option.value = value; handleLookupIntervalSelect.appendChild(option); });
 			handleLookupIntervalLabel.append(handleLookupIntervalText, handleLookupIntervalSelect);
 			const handleLookupCustomInput = document.createElement('input'); handleLookupCustomInput.type = 'number'; handleLookupCustomInput.min = '1';
+			handleLookupCustomInput.dataset.setting = 'pair-refresh-custom-seconds';
 			const handleLookupOnAddLabel = document.createElement('label'); const handleLookupOnAddToggle = document.createElement('input'); handleLookupOnAddToggle.type = 'checkbox'; const handleLookupOnAddText = document.createElement('span'); handleLookupOnAddLabel.append(handleLookupOnAddToggle, handleLookupOnAddText);
 			const handleLookupHelp = document.createElement('p');
 			const openPairListBtn = Object.assign(document.createElement('button'), { className: 'secondary' });
-			pairSection.append(pairTitle, toggleLabel, toggleHelp, handleLookupTitle, ...lookupControls.map(control => control.label), handleLookupIntervalLabel, handleLookupCustomInput, handleLookupOnAddLabel, handleLookupHelp, openPairListBtn);
+			pairControls.append(makeSettingField(toggleLabel, toggleHelp), ...lookupControls.map(control => makeSettingField(control.label)), makeSettingField(handleLookupIntervalLabel, handleLookupCustomInput), makeSettingField(handleLookupOnAddLabel, handleLookupHelp), openPairListBtn);
+			pairSection.append(pairTitle, pairControls);
 
 			const debugSection = document.createElement('section');
-			debugSection.className = 'tm-section';
-			const debugTitle = document.createElement('h3');
+			debugSection.className = 'tm-logging-subgroup';
+			const debugTitle = document.createElement('h5');
 			const debugList = document.createElement('div');
 			debugList.className = 'tm-inline-note';
 			debugSection.append(debugTitle, debugList);
-			const pairingGroup = document.createElement('li'); pairingGroup.append(pairSection);
-			const apiGroup = document.createElement('li'); apiGroup.append(apiSection);
-			settingsList.append(matchingGroup, commentGroup, keywordGroup, pairingGroup, apiGroup, displayGroup, themeGroup, loggingGroup, maintenanceGroup);
+			const pairingGroup = pairSection;
+			const apiGroup = apiSection;
+			settingsList.append(matchingGroup, commentGroup, keywordGroup, pairingGroup, apiGroup, displayGroup, loggingGroup, maintenanceGroup);
 			loggingControls.append(debugSection);
 			const navigation = document.createElement('nav'); navigation.className = 'tm-settings-nav';
 			const main = document.createElement('div'); main.className = 'tm-settings-main'; main.append(settingsSection);
@@ -763,13 +772,18 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 				{ id: 'reset', target: maintenanceGroup, label: 'resetSettings' }
 			];
 			let activeSection = sections.find(item => item.id === section) || sections[0];
+			const sectionOffset = () => window.matchMedia?.('(max-width: 700px)')?.matches ? navigation.getBoundingClientRect().height + 12 : 12;
+			const scrollToSection = (target: HTMLElement) => {
+				target.style.scrollMarginTop = sectionOffset() + 'px';
+				target.scrollIntoView?.({ block: 'start' });
+			};
 			const markActive = (id: string) => { for (const item of navItems) { if (item.id === id) item.button.setAttribute('aria-current', 'location'); else item.button.removeAttribute('aria-current'); } };
 			const navItems = sections.map(item => {
 				item.target.id = 'tm-settings-' + item.id; item.target.tabIndex = -1;
 				const button = Object.assign(document.createElement('button'), { type: 'button', className: 'secondary' });
 				button.dataset.section = item.id;
 				button.setAttribute('aria-controls', item.target.id);
-				button.addEventListener('click', event => { event.stopPropagation(); activeSection = item; item.target.scrollIntoView?.({ block: 'start' }); item.target.focus?.({ preventScroll: true }); markActive(item.id); });
+				button.addEventListener('click', event => { event.stopPropagation(); activeSection = item; scrollToSection(item.target); item.target.focus?.({ preventScroll: true }); markActive(item.id); });
 				button.addEventListener('keydown', event => { if (event.key === 'Enter') event.stopPropagation(); });
 				navigation.append(button);
 				return { ...item, button };
@@ -778,8 +792,9 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 			let scrollContent: HTMLElement | null = null;
 			const syncNavigation = () => {
 				if (!scrollContent) return;
-				const top = scrollContent.getBoundingClientRect().top;
-				const visible = sections.filter(item => item.target.getBoundingClientRect().top <= top + 64).at(-1);
+				const top = scrollContent.getBoundingClientRect().top + sectionOffset();
+				const atEnd = scrollContent.scrollTop > 0 && scrollContent.scrollHeight - scrollContent.scrollTop - scrollContent.clientHeight <= 1;
+				const visible = atEnd ? sections.at(-1) : sections.filter(item => item.target.getBoundingClientRect().top <= top + 1).at(-1);
 				if (visible) { activeSection = visible; markActive(visible.id); }
 			};
 			const drafts = new Map<HTMLInputElement | HTMLSelectElement, { value: string; hidden: boolean }>();
@@ -867,7 +882,7 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 				apiProgress.hidden = !apiTestBusy;
 				renderApiStatus();
 				renderDebug();
-				for (const [input, draft] of drafts) { input.value = draft.value; input.hidden = draft.hidden; }
+				for (const [input, draft] of drafts) { input.value = draft.value; if (input !== handleLookupCustomInput) input.hidden = draft.hidden; }
 			};
 			const applyLanguage = () => {
 				settingsTitle.textContent = t('settingsTitle');
@@ -885,7 +900,7 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 				keywordEnabledText.textContent = t('keywordAutomationEnabled');
 				keywordEnabledHelp.textContent = t('keywordAutomationEnabledHelp');
 				openAutomationBtn.textContent = t('openBlockKeywordAutomation');
-				loggingTitle.textContent = t('loggingTitle');
+				loggingTitle.textContent = t('settingsLogsDiagnosticsTitle');
 				loggingOutputGroup.title.textContent = t('loggingOutputTitle');
 				loggingScopeGroup.title.textContent = t('loggingScopeTitle');
 				loggingConsoleGroup.title.textContent = t('loggingConsoleTitle');
@@ -898,11 +913,13 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 				const consoleFormatKeys: Record<string, string> = { iso: 'Iso', 'iso-date': 'IsoDate', 'iso-time': 'IsoTime', 'iso-basic': 'IsoBasic', 'iso-basic-date': 'IsoBasicDate', 'iso-week-date': 'IsoWeekDate', 'iso-ordinal-date': 'IsoOrdinalDate', custom: 'Custom' };
 				Array.from(consoleFormatSelect.options).forEach(option => { option.textContent = defaultOptionText(option, t(`consoleTimeFormat${consoleFormatKeys[option.value] || 'Custom'}`)); });
 				consoleFormatInput.placeholder = t('consoleTimeFormatPlaceholder');
+				consoleFormatInput.setAttribute('aria-label', t('consoleTimeFormatPlaceholder'));
 				consoleTimezoneText.textContent = t('consoleTimezoneLabel') + ': ';
 				Array.from(consoleTimezoneSelect.options).forEach(option => {
 					option.textContent = option.value === 'system' ? defaultOptionText(option, t('consoleTimezoneSystem')) : option.value === 'userinput' ? t('consoleTimezoneUserInput') : option.value.startsWith('offset:') ? `UTC${option.value.slice(7)}` : option.value === 'Asia/Seoul' ? 'Asia/Seoul (KST)' : option.value === 'Asia/Tokyo' ? 'Asia/Tokyo (JST)' : option.value === 'Europe/Berlin' ? 'Europe/Berlin (CET/CEST)' : option.value;
 				});
 				consoleTimezoneInput.placeholder = t('consoleTimezonePlaceholder');
+				consoleTimezoneInput.setAttribute('aria-label', t('consoleTimezonePlaceholder'));
 				logLevelText.textContent = t('loggingLevelLabel') + ': ';
 				logRetentionText.textContent = t('loggingRetentionLabel') + ': ';
 				verboseText.textContent = t('verboseLevelLabel') + ': ';
@@ -914,8 +931,9 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 				downloadLogBtn.textContent = t('loggingDownload');
 				clearLogBtn.textContent = t('loggingClear');
 				logHelp.textContent = t('loggingHelp');
-				displayTitle.textContent = t('settingsDisplayTitle');
-				maintenanceTitle.textContent = t('settingsMaintenanceTitle');
+				displayTitle.textContent = t('settingsDisplayThemeTitle');
+			displaySizeTitle.textContent = t('settingsDisplayTitle');
+				maintenanceTitle.textContent = t('resetSettings');
 				caseText.textContent = t('handleCaseLabel');
 				caseHelp.textContent = t('handleCaseHelp');
 				caseLegacy.textContent = t('handleCaseLegacy');
@@ -955,10 +973,9 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 				apiHelp.textContent = t('apiKeyHelp');
 				saveApiBtn.textContent = t('apiKeySave');
 				clearApiBtn.textContent = t('apiKeyClear');
-				pairTitle.textContent = t('ucidDetectionLabel');
+				pairTitle.textContent = t('pairLookupTitle');
 				ucidText.textContent = t('ucidDetectionLabel');
 				toggleHelp.textContent = t('ucidDetectionHelp');
-				handleLookupTitle.textContent = t('pairLookupTitle');
 				for (const control of lookupControls) {
 					control.text.textContent = t('pairLookupStage' + control.stage) + ': ';
 					for (const option of Array.from(control.select.options)) option.textContent = defaultOptionText(option, t('pairLookupMethod' + option.value));
@@ -981,7 +998,7 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 					custom: t('handleLookupCustomLabel')
 				};
 				Array.from(handleLookupIntervalSelect.options).forEach(option => { option.textContent = defaultOptionText(option, intervalLabels[option.value]); });
-				handleLookupOnAddText.textContent = t('handleLookupOnAddLabel'); handleLookupCustomInput.placeholder = t('handleLookupCustomLabel'); handleLookupHelp.textContent = t('handleLookupHelp');
+				handleLookupOnAddText.textContent = t('handleLookupOnAddLabel'); handleLookupCustomInput.placeholder = t('handleLookupCustomLabel'); handleLookupCustomInput.setAttribute('aria-label', t('handleLookupCustomLabel')); handleLookupHelp.textContent = t('handleLookupHelp');
 				debugTitle.textContent = t('debugTitle');
 			};
 			lowModeToggle.addEventListener('change', () => {
@@ -1196,7 +1213,7 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 			scrollContent = body.parentElement;
 			scrollContent?.addEventListener('scroll', syncNavigation, { passive: true });
 			markActive(activeSection.id);
-			if (section !== 'matching') activeSection.target.scrollIntoView?.({ block: 'start' });
+			if (section !== 'matching') scrollToSection(activeSection.target);
 			const unsubscribeLogging = this.app.logger?.subscribe?.(renderLoggingState) || (() => {});
 			settingsDialog.then(value => { unsubscribeLogging(); scrollContent?.removeEventListener('scroll', syncNavigation); if (value === 'list') this.openList(); });
 		}

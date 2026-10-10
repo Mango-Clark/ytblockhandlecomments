@@ -307,3 +307,74 @@ test('list exposes pair operations without a key and returns from settings with 
 	assert.equal(document.querySelectorAll('.tm-dialog').length, 1);
 	assert.equal(manager._listViewState.selection.join(','), before);
 });
+
+
+test('each settings destination has one section and pairing fields stay separate', () => {
+	const { manager, document } = managerSetup();
+	manager.openSettings();
+	const sections = document.querySelectorAll('.tm-settings-list > .tm-setting-group');
+	assert.equal(sections.length, 8);
+	for (const button of document.querySelectorAll('.tm-settings-nav button')) {
+		const section = document.querySelector('#' + button.getAttribute('aria-controls'));
+		assert.ok(sections.includes(section));
+		assert.equal(section.querySelectorAll('.tm-setting-controls').length, 1);
+	}
+	const pairing = document.querySelector('#tm-settings-pairing');
+	assert.equal(pairing.querySelector('h4').textContent, '페어링');
+	assert.equal(pairing.querySelectorAll('.tm-setting-field').length, 6);
+	const lookupFields = pairing.querySelectorAll('select').map((select: any) => select.closest('.tm-setting-field'));
+	assert.equal(new Set(lookupFields).size, 4);
+	assert.ok(pairing.querySelector('input[data-setting="ucid-detection"]').closest('.tm-setting-checkbox'));
+	const apiLabel = document.querySelector('#tm-settings-api').querySelector('label');
+	assert.equal(apiLabel.htmlFor, 'tm-settings-api-key');
+});
+
+test('custom pairing interval stays adjacent to its field and preserves its draft on refresh', () => {
+	const { manager, document, settings, api, setLang } = managerSetup();
+	settings.setPairRefreshInterval('custom', 123);
+	manager.openSettings('pairing');
+	const interval = document.querySelector('select[data-setting="handle-lookup-interval"]');
+	const custom = document.querySelector('input[data-setting="pair-refresh-custom-seconds"]');
+	assert.equal(custom.hidden, false);
+	assert.equal(custom.closest('.tm-setting-field'), interval.closest('.tm-setting-field'));
+	custom.value = '321';
+	custom.dispatchEvent({ type: 'input' });
+	setLang('en'); api.Dialog.refreshAll();
+	api.Dialog.refreshAll('storage');
+	assert.equal(custom.value, '321');
+	assert.equal(custom.hidden, false);
+	assert.equal(custom.getAttribute('aria-label'), 'Custom seconds');
+	assert.equal(settings._state.pairRefreshCustomSeconds, 123);
+	settings.setPairRefreshInterval('600');
+	api.Dialog.refreshAll('storage');
+	assert.equal(custom.hidden, true);
+	settings.setPairRefreshInterval('custom');
+	api.Dialog.refreshAll('storage');
+	assert.equal(custom.hidden, false);
+	assert.equal(custom.value, '321');
+});
+
+test('top-menu navigation uses its actual height and marks the visible section', () => {
+	const { manager, document, context } = managerSetup();
+	manager.openSettings();
+	context.matchMedia = () => ({ matches: true });
+	const navigation = document.querySelector('.tm-settings-nav');
+	navigation.getBoundingClientRect = () => ({ height: 164 });
+	const sections = document.querySelectorAll('.tm-settings-list > .tm-setting-group');
+	sections.forEach((section: any, index: number) => { section.getBoundingClientRect = () => ({ top: index < 3 ? 50 : index === 3 ? 276 : 1000 }); });
+	const button = navigation.querySelectorAll('button').find((item: any) => item.dataset.section === 'pairing');
+	button.click();
+	const pairing = document.querySelector('#tm-settings-pairing');
+	assert.equal(pairing.style.scrollMarginTop, '176px');
+	const scrollContent = document.querySelector('.tm-content');
+	scrollContent.getBoundingClientRect = () => ({ top: 100 });
+	scrollContent.dispatchEvent({ type: 'scroll' });
+	assert.equal(button.getAttribute('aria-current'), 'location');
+	assert.equal(document.activeElement, pairing);
+	scrollContent.scrollHeight = 1000;
+	scrollContent.clientHeight = 500;
+	scrollContent.scrollTop = 500;
+	scrollContent.dispatchEvent({ type: 'scroll' });
+	const reset = navigation.querySelectorAll('button').find((item: any) => item.dataset.section === 'reset');
+	assert.equal(reset.getAttribute('aria-current'), 'location');
+});

@@ -333,7 +333,8 @@ Settings dialog:
 - API tests/pair actions use `finally` cleanup. Requests have bounded timeouts. Concurrent manual requests share the active run; automatic requests wait for it instead of being skipped. Closing a dialog detaches the view; it does not cancel the shared app run.
 - Debug metrics include page mode, comments-host/extraction failure counters, latest selector reason; exclude comment text, URLs, API keys, account data
 - Intro note: changes auto-save
-- Groups: matching, comment display, keyword automation, logging, display size, maintenance
+- Eight sections share the API section layout: heading above vertical fields/help/actions, consistent borders and spacing. Sections match navigation: matching, comments, automation, pairing, API key, display/theme, logs/diagnostics, reset.
+- Select/text labels sit above their controls; checkbox labels stay inline. Custom refresh seconds stay below their interval selector. Input widths shrink to fit narrow screens.
 - Default choices marked with muted `(Default)`
 - Handle case sensitivity
 - Identity method: `handle` rules or UCID pair `id` rules

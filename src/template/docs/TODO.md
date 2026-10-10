@@ -23,3 +23,11 @@
   - (5) Remove obsolete pairing checks and only proven redundant checks elsewhere; retain state and boundary protection.
   - (6) Update paired docs and generated output; run static checks/build and independent review. Do not execute tests or `npm run verify`.
   - (7) Lint, Markdown lint, typecheck, build, generated-output check, and independent review passed. Tests and full verify were not run by user instruction.
+
+- [x] (B) Repair UCID detection layout and unify Settings with the API section's vertical layout.
+  - (0) Baseline: `5d7f9a91c954a64e81e5ad1f184733cc7393ac4f`.
+  - (1) Match eight navigation destinations to eight sections with consistent headings, borders, spacing, and controls.
+  - (2) Give UCID detection and each pairing option an independent field; preserve custom interval visibility and draft values.
+  - (3) Keep navigation, translations, themes, scale, keyboard focus, and list-return state; prevent narrow-screen overflow.
+  - (4) Update regression cases, paired docs, changelog, and generated output; run allowed static checks and independent review without tests or full verify.
+  - (5) Static checks/build and independent review passed. Synthetic browser preview covered desktop, 320px light and 390px dark at maximum scale; tests/full verify were not executed.

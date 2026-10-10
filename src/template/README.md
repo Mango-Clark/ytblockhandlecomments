@@ -23,6 +23,7 @@ Source layout:
 
 ## Documentation
 
+- Contributing: [CONTRIBUTING.md](CONTRIBUTING.md) | [CONTRIBUTING.ko.md](CONTRIBUTING.ko.md)
 - Wiki: [docs/WIKI.md](docs/WIKI.md) | [docs/WIKI.ko.md](docs/WIKI.ko.md)
 - Changelog: [docs/CHANGELOG.md](docs/CHANGELOG.md) | [docs/CHANGELOG.ko.md](docs/CHANGELOG.ko.md)
 - TODO: [docs/TODO.md](docs/TODO.md)
@@ -244,7 +245,7 @@ The default verification suite intentionally stays dependency-free and determini
 
 - Create pairs from handle → UCID; update current handles from stable UCID → handle. Previous handle rules are replaced after a rename.
 - Configure creation, updates, and immediate pairing independently: page only, API only, or page first with API fallback. Blocking applies immediately; lookup failure preserves existing rules.
-- Settings has section navigation and contains policies/API keys; the block list contains pair operations and results. Returning preserves list state.
+- Settings uses eight uniform sections with headings above vertically arranged fields, descriptions, and actions; navigation moves between sections. It contains policies/API keys; the block list contains pair operations and results. Returning preserves list state.
 - Existing UID fields/settings migrate to UCID payloads without changing storage keys; refresh older tabs after updating.
 
 - `handle` default identity method; `pair` matches `id` rules only with `UCID Detection` enabled.

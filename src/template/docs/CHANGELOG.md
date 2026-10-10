@@ -10,9 +10,12 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); projec
 
 ### Added
 
+- Added English and Korean contribution guides covering repository workflow, documentation, commits, and validation.
 - Independent lookup policies for creation, updates, and immediate pairing; settings section navigation.
 
 ### Changed
+
+- Settings now uses eight uniform sections with headings above vertical fields, help, and actions; display/theme share one section and diagnostics remain under logs.
 
 - Pair updates follow stable UCIDs to current handles and replace previous handle rules. UID names and stored/synchronized metadata migrate to UCID fields while preserving revisions and deletions.
 - Configuration lives in Settings; pair operations/status/results live in the block list. Draft inputs and list state survive navigation.
@@ -27,6 +30,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); projec
 - Obsolete stored-UID existence checks, old-handle re-resolution, forced update-check toggles, and API-key requirements for page lookup.
 
 ### Fixed
+
+- Separate UCID detection/pairing fields prevent inline layout collisions; settings inputs fit narrow screens and retain custom interval drafts.
 
 - Queued creation skips completed pairs; transient storage failures remain retryable, and rollback preserves unrelated rules.
 

@@ -37,24 +37,34 @@
     .tm-block-meta{font-size:12px;line-height:1.5;color:#5f6368}
     .tm-section{border:1px solid #e5e5e5;border-radius:12px;padding:14px 16px;margin-bottom:14px}
     .tm-section h3{margin:0 0 10px 0;font-size:15px}
-    .tm-settings-panel{padding:0;overflow:hidden}
-    .tm-settings-panel > h3{padding:14px 16px 0 16px}
-    .tm-settings-intro{padding:0 16px 12px 16px;margin:0;border-bottom:1px solid #ececec}
-    .tm-settings-list{list-style:none;margin:0;padding:0}
+    .tm-settings-panel{padding:0;border:none;overflow:visible}
+    .tm-settings-panel > h3{padding:0}
+    .tm-settings-intro{padding:0;margin:0 0 14px}
+    .tm-settings-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:14px}
     .tm-settings-layout{display:grid;grid-template-columns:170px minmax(0,1fr);gap:16px;align-items:start}
     .tm-settings-main{min-width:0}
     .tm-settings-nav{position:sticky;top:0;display:flex;flex-direction:column;gap:6px;padding:8px 0;background:var(--tm-theme-surface);z-index:2}
     .tm-settings-nav button{text-align:left;overflow-wrap:anywhere}
     .tm-settings-nav button[aria-current="location"]{outline:2px solid var(--tm-theme-primary);outline-offset:-2px}
     .tm-settings-list > li{scroll-margin-top:12px}
-    .tm-settings-list > li > .tm-section{margin:0;border-radius:0;border-width:1px 0 0}
     .tm-settings-main [tabindex="-1"]:focus{outline:2px solid var(--tm-theme-primary);outline-offset:-2px}
     @media(max-width:700px){.tm-settings-layout{grid-template-columns:minmax(0,1fr)}.tm-settings-nav{flex-direction:row;flex-wrap:wrap;gap:4px}.tm-settings-nav button{padding:7px 9px;font-size:12px}.tm-settings-list > li{scroll-margin-top:120px}}
-    .tm-settings-list > .tm-setting-group{display:grid;grid-template-columns:minmax(130px,.7fr) minmax(0,2fr);gap:12px;border-top:1px solid #ececec;padding:14px 16px;margin:0}
-    .tm-settings-list > .tm-setting-group:first-child{border-top:none}
-    .tm-settings-list > .tm-setting-group.tm-setting-group-matching{margin-top:8px}
-    .tm-settings-list > .tm-setting-group h4{margin:0;font-size:13px;color:#3c4043}
+    .tm-settings-layout .tm-settings-list > .tm-setting-group{display:flex;flex-direction:column;gap:14px;border:1px solid var(--tm-theme-border);border-radius:12px;padding:14px 16px;margin:0;min-width:0;background:var(--tm-theme-surface)}
+    .tm-settings-list > .tm-setting-group > h4{margin:0;font-size:15px;line-height:1.4;color:var(--tm-theme-text)}
     .tm-setting-controls{display:flex;flex-direction:column;gap:10px;min-width:0}
+    .tm-settings-layout .tm-setting-controls{gap:14px}
+    .tm-settings-layout .tm-setting-field{display:flex;flex-direction:column;gap:6px;min-width:0}
+    .tm-settings-layout .tm-setting-label{display:flex;flex-direction:column;align-items:flex-start;gap:6px;font-weight:600;min-width:0;overflow-wrap:anywhere}
+    .tm-settings-layout .tm-setting-label > span{min-width:0}
+    .tm-settings-layout .tm-setting-checkbox{flex-direction:row;flex-wrap:nowrap;align-items:flex-start;gap:8px}
+    .tm-settings-layout .tm-setting-checkbox > span{flex:1;min-width:0}
+    .tm-settings-layout input:not([type="checkbox"]),.tm-settings-layout select{box-sizing:border-box;width:min(420px,100%);min-width:0;max-width:100%;min-height:36px;padding:7px 10px;border:1px solid var(--tm-theme-border);border-radius:8px;background:var(--tm-theme-surface);color:var(--tm-theme-text);font:inherit}
+    .tm-settings-layout .tm-setting-checkbox input{appearance:auto;box-sizing:border-box;width:16px;height:16px;min-height:0;padding:0;margin:2px 0 0;flex:0 0 16px;accent-color:var(--tm-theme-primary)}
+    .tm-settings-layout .tm-setting-controls p{margin:0;font-size:12px;line-height:1.5;color:var(--tm-theme-muted);overflow-wrap:anywhere}
+    .tm-settings-layout .tm-setting-controls > button{align-self:flex-start;max-width:100%;white-space:normal;overflow-wrap:anywhere}
+    .tm-settings-layout .tm-setting-controls > h5{margin:4px 0 0;font-size:13px;color:var(--tm-theme-text)}
+    .tm-settings-layout .tm-inline-actions button{max-width:100%;white-space:normal;overflow-wrap:anywhere}
+    .tm-settings-layout [hidden]{display:none !important}
     .tm-setting-controls label{display:flex;align-items:center;gap:8px;font-weight:600;flex-wrap:wrap}
 			.tm-setting-controls option.tm-default-option{color:#5f6368}
     .tm-setting-controls p{margin:2px 0 0 0;font-size:12px;color:#5f6368}
@@ -125,7 +135,6 @@
     button.tm-block-placeholder:hover{background:#e8eaed;color:#202124}
     @media (max-width: 640px){
       .tm-dialog{padding:18px}
-      .tm-settings-list > .tm-setting-group{grid-template-columns:1fr}
       .tm-block-list li{flex-direction:column}
       .tm-block-list li button{align-self:flex-end}
       .tm-toolbar-row,.tm-toolbar-group{align-items:stretch}

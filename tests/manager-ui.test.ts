@@ -263,7 +263,7 @@ test('settings dialog groups related controls', () => {
 	manager.openSettings();
 	const titles = document.querySelectorAll('.tm-setting-group h4').map((node: any) => node.textContent);
 
-	assert.deepEqual(titles, ['매칭', '댓글 표시', '키워드 자동 처리', '표시 크기', '테마', '로그', '유지보수']);
+	assert.deepEqual(titles, ['매칭', '댓글 표시', '키워드 자동 처리', '페어링', 'YouTube Data API v3', '표시 / 테마', '로그 / 진단', '설정 초기화']);
 	assert.ok(document.querySelector('.tm-setting-group-matching'));
 	assert.equal(document.querySelectorAll('.tm-setting-group-matching').length, 1);
 	assert.match(document.querySelector('.tm-settings-panel').textContent, /키워드 매칭과 선택한 모든 동작을 한 번에 켜거나 끕니다/);
@@ -293,7 +293,7 @@ test('logging settings show grouped status, preview, and test output controls', 
 	manager.openSettings();
 	assert.deepEqual(
 		document.querySelectorAll('.tm-logging-subgroup h5').map((node: any) => node.textContent),
-		['출력 대상', '기록 상세도', '콘솔 표시 형식', '저장 로그 관리']
+		['출력 대상', '기록 상세도', '콘솔 표시 형식', '저장 로그 관리', 'Debug / Dev']
 	);
 	assert.match(document.querySelector('.tm-log-preview').textContent, /^\[YTCB\] Test log output$/);
 	assert.match(document.querySelector('.tm-settings-panel').textContent, /1\/500개 저장/);
@@ -1152,8 +1152,8 @@ test('settings dialog uses grouped task list layout', () => {
 
 	assert.ok(document.querySelector('.tm-settings-panel'));
 	assert.ok(document.querySelector('.tm-settings-intro').textContent.includes('자동으로 저장'));
-	assert.equal(document.querySelectorAll('.tm-settings-list > .tm-setting-group').length, 7);
-	assert.equal(document.querySelectorAll('.tm-setting-controls').length, 7);
+	assert.equal(document.querySelectorAll('.tm-settings-list > .tm-setting-group').length, 8);
+	assert.equal(document.querySelectorAll('.tm-setting-controls').length, 8);
 });
 
 test('settings options mark their default values', () => {

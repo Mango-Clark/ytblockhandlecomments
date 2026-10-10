@@ -24,6 +24,7 @@
 
 ## 문서
 
+- 기여 안내: [CONTRIBUTING.md](CONTRIBUTING.md) | [CONTRIBUTING.ko.md](CONTRIBUTING.ko.md)
 - 위키: [docs/WIKI.md](docs/WIKI.md) | [docs/WIKI.ko.md](docs/WIKI.ko.md)
 - 변경사항: [docs/CHANGELOG.md](docs/CHANGELOG.md) | [docs/CHANGELOG.ko.md](docs/CHANGELOG.ko.md)
 - TODO: [docs/TODO.md](docs/TODO.md)
@@ -255,7 +256,7 @@ API 설정 저장소:
 
 - 최초 생성은 handle → UCID, 갱신은 고정 UCID → 최신 handle입니다. 이름 변경 시 이전 handle 규칙을 교체합니다.
 - 최초 생성·갱신·차단 즉시 생성에 페이지 전용·API 전용·페이지 우선/API fallback을 각각 설정합니다. 차단은 즉시 적용하며 조회 실패 시 기존 규칙을 보존합니다.
-- 설정 메뉴에는 정책·API 키, 차단목록에는 페어 실행·결과를 둡니다. 목록 복귀 시 기존 화면 상태를 유지합니다.
+- 설정은 제목 아래 옵션·설명·버튼을 세로 배치한 동일한 형식의 8개 섹션과 이동 메뉴를 제공합니다. 설정에 정책/API 키, 차단목록에 페어 실행·결과를 두며 목록 복귀 시 기존 화면 상태를 유지합니다.
 - 기존 UID 필드·설정을 저장소 키 변경 없이 UCID payload로 변환합니다. 업데이트 후 기존 탭을 새로고침하세요.
 
 - 기본 신원 차단은 `handle`; `pair`는 UCID 감지 중 `id` 매칭.
