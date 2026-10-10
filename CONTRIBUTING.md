@@ -1,6 +1,6 @@
 # Contributing
 
-[English](CONTRIBUTING.md) | [한국어](CONTRIBUTING.ko.md)
+[English](CONTRIBUTING.md) | [한국어](docs/ko-kr/CONTRIBUTING.md)
 
 ## Before You Start
 
@@ -15,6 +15,7 @@
 - Edit generated documentation through `src/template/`. Run `npm run build` to update generated README and `docs/` files; do not edit those generated files directly. `docs/AGENTS.md` is maintained directly.
 - Keep English and Korean documentation aligned: update English first, then its Korean pair, with the same section order, links, commands, dates, and versions.
 - UI and README support ten locales. Update the English message contract first, then every catalog and README translation. Preserve parameters, commands and machine-facing identifiers. Native names, README paths and credits belong in `src/i18n/locales.ts`; scope is recorded in `i18n-mason.toml`.
+- Keep non-English documentation in `docs/<locale>/` and generated templates at matching paths under `src/template/`. The Korean contribution guide is direct-managed at `docs/ko-kr/CONTRIBUTING.md`.
 - Record meaningful technical changes in the paired changelogs under `Unreleased`, using the existing Keep a Changelog categories.
 - Keep user-facing behavior, storage, and compatibility descriptions consistent with the implementation.
 

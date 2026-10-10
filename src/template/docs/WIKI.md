@@ -1,6 +1,6 @@
 # 📚 YouTube Comment Blocker Wiki — v{{version}}
 
-[English](WIKI.md) | [한국어](WIKI.ko.md)
+[English](WIKI.md) | [한국어](ko-kr/WIKI.md)
 
 Current implementation details beyond [`README.md`](../README.md).
 

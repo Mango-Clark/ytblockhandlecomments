@@ -50,7 +50,7 @@ test('releaseChangelog resets English Unreleased sections without duplicates', (
 });
 
 test('releaseChangelog resets Korean Unreleased sections with Korean empty text', () => {
-	const result = releaseChangelog(makeChangelog('없음'), 'docs/CHANGELOG.ko.md', '0.2.0', '2026-06-24');
+	const result = releaseChangelog(makeChangelog('없음'), 'docs/ko-kr/CHANGELOG.md', '0.2.0', '2026-06-24');
 	const unreleased = result.slice(result.indexOf('## [Unreleased]'), result.indexOf('## [0.2.0]'));
 
 	assert.match(unreleased, /### Added\n\n- 없음\n\n### Changed/);
@@ -90,6 +90,9 @@ test('release stages templates and generated files, then pushes tag', () => {
 	assert.ok(releaseFiles.includes('VERSION'));
 	assert.ok(releaseFiles.includes('src/template/docs/CHANGELOG.md'));
 	assert.ok(releaseFiles.includes('docs/CHANGELOG.md'));
+	assert.ok(releaseFiles.includes('src/template/docs/ko-kr/CHANGELOG.md'));
+	assert.ok(releaseFiles.includes('docs/ko-kr/CHANGELOG.md'));
+	assert.equal(releaseFiles.includes('docs/CHANGELOG.ko.md'), false);
 	assert.deepEqual(releasePushCommands('v1.5.1'), [
 		['push', 'origin', 'dev'],
 		['push', 'origin', 'v1.5.1']

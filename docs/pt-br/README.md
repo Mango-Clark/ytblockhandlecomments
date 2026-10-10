@@ -1,6 +1,7 @@
-# 📌 YouTube Comment Blocker — v{{version}}
+<!-- Generated from src/template templates by npm run build. Edit the templates instead. -->
+# 📌 YouTube Comment Blocker — v1.5.4
 
-{{language_links}}
+[English (US)](../../README.md) | [한국어](../ko-kr/README.md) | [日本語](../ja-jp/README.md) | [Deutsch](../de-de/README.md) | [简体中文](../zh-cn/README.md) | [繁體中文](../zh-tw/README.md) | [Français](../fr-fr/README.md) | [Português (Brasil)](README.md) | [Русский](../ru-ru/README.md) | [Bahasa Indonesia](../id-id/README.md)
 
 Um script Tampermonkey que oculta comentários do YouTube por canal em vídeos e Shorts. Gerencie regras de identificador, UCID e regex com automação configurável e armazenamento local.
 
@@ -65,10 +66,10 @@ Variantes regionais usam o idioma disponível (`en-GB` → `en-us`, `pt-PT` → 
 
 ## Documentação
 
-- Wiki: [English](docs/WIKI.md) / [한국어](docs/WIKI.ko.md)
-- Changelog: [English](docs/CHANGELOG.md) / [한국어](docs/CHANGELOG.ko.md)
-- Guia de contribuição: [English](CONTRIBUTING.md) / [한국어](CONTRIBUTING.ko.md)
-- [TODO](docs/TODO.md) / [Auxiliar de revisão](docs/ABOUT.md)
+- Wiki: [English](../WIKI.md) / [한국어](../ko-kr/WIKI.md)
+- Changelog: [English](../CHANGELOG.md) / [한국어](../ko-kr/CHANGELOG.md)
+- Guia de contribuição: [English](../../CONTRIBUTING.md) / [한국어](../ko-kr/CONTRIBUTING.md)
+- [TODO](../TODO.md) / [Auxiliar de revisão](../ABOUT.md)
 
 ## Desenvolvimento e verificação
 
@@ -91,7 +92,15 @@ Futura cobertura opcional de navegador fica separada; testes não exigem sessão
 
 ## Contribuidores de tradução
 
-{{translation_contributors}}
+- 한국어 - Mango-Clark
+- 日本語 - GPT-6.1 Sol
+- Deutsch - GPT-6.1 Sol
+- 简体中文 - GPT-6.1 Sol
+- 繁體中文 - GPT-6.1 Sol
+- Français - GPT-6.1 Sol
+- Português (Brasil) - GPT-6.1 Sol
+- Русский - GPT-6.1 Sol
+- Bahasa Indonesia - GPT-6.1 Sol
 
 ## Autor
 

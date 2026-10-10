@@ -1,7 +1,6 @@
-<!-- Generated from src/template templates by npm run build. Edit the templates instead. -->
-# 📌 YouTube Comment Blocker — v1.5.4
+# 📌 YouTube Comment Blocker — v{{version}}
 
-[English (US)](README.md) | [한국어](README.ko.md) | [日本語](README.ja-jp.md) | [Deutsch](README.de-de.md) | [简体中文](README.zh-cn.md) | [繁體中文](README.zh-tw.md) | [Français](README.fr-fr.md) | [Português (Brasil)](README.pt-br.md) | [Русский](README.ru-ru.md) | [Bahasa Indonesia](README.id-id.md)
+{{language_links}}
 
 YouTubeの視聴ページとShortsで、チャンネルに基づいてコメントを非表示にするTampermonkeyスクリプトです。ハンドル・UCID・正規表現ルール、自動化、ローカル保存を管理できます。
 
@@ -66,10 +65,10 @@ UIとREADMEは`en-us`, `ko-kr`, `ja-jp`, `de-de`, `zh-cn`, `zh-tw`, `fr-fr`, `pt
 
 ## ドキュメント
 
-- Wiki: [English](docs/WIKI.md) / [한국어](docs/WIKI.ko.md)
-- Changelog: [English](docs/CHANGELOG.md) / [한국어](docs/CHANGELOG.ko.md)
-- 貢献ガイド: [English](CONTRIBUTING.md) / [한국어](CONTRIBUTING.ko.md)
-- [TODO](docs/TODO.md) / [レビューヘルパー](docs/ABOUT.md)
+- Wiki: [English](../WIKI.md) / [한국어](../ko-kr/WIKI.md)
+- Changelog: [English](../CHANGELOG.md) / [한국어](../ko-kr/CHANGELOG.md)
+- 貢献ガイド: [English](../../CONTRIBUTING.md) / [한국어](../ko-kr/CONTRIBUTING.md)
+- [TODO](../TODO.md) / [レビューヘルパー](../ABOUT.md)
 
 ## 開発と検証
 
@@ -92,15 +91,7 @@ npm run verify
 
 ## 翻訳協力者
 
-- 한국어 - Mango-Clark
-- 日本語 - GPT-6.1 Sol
-- Deutsch - GPT-6.1 Sol
-- 简体中文 - GPT-6.1 Sol
-- 繁體中文 - GPT-6.1 Sol
-- Français - GPT-6.1 Sol
-- Português (Brasil) - GPT-6.1 Sol
-- Русский - GPT-6.1 Sol
-- Bahasa Indonesia - GPT-6.1 Sol
+{{translation_contributors}}
 
 ## 作者
 

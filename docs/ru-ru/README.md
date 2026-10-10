@@ -1,7 +1,7 @@
 <!-- Generated from src/template templates by npm run build. Edit the templates instead. -->
 # 📌 YouTube Comment Blocker — v1.5.4
 
-[English (US)](README.md) | [한국어](README.ko.md) | [日本語](README.ja-jp.md) | [Deutsch](README.de-de.md) | [简体中文](README.zh-cn.md) | [繁體中文](README.zh-tw.md) | [Français](README.fr-fr.md) | [Português (Brasil)](README.pt-br.md) | [Русский](README.ru-ru.md) | [Bahasa Indonesia](README.id-id.md)
+[English (US)](../../README.md) | [한국어](../ko-kr/README.md) | [日本語](../ja-jp/README.md) | [Deutsch](../de-de/README.md) | [简体中文](../zh-cn/README.md) | [繁體中文](../zh-tw/README.md) | [Français](../fr-fr/README.md) | [Português (Brasil)](../pt-br/README.md) | [Русский](README.md) | [Bahasa Indonesia](../id-id/README.md)
 
 Скрипт Tampermonkey, скрывающий комментарии YouTube по каналу на страницах видео и Shorts. Правила handle, UCID и регулярных выражений, настраиваемая автоматизация и локальное хранение.
 
@@ -66,10 +66,10 @@
 
 ## Документация
 
-- Wiki: [English](docs/WIKI.md) / [한국어](docs/WIKI.ko.md)
-- Changelog: [English](docs/CHANGELOG.md) / [한국어](docs/CHANGELOG.ko.md)
-- Руководство участника: [English](CONTRIBUTING.md) / [한국어](CONTRIBUTING.ko.md)
-- [TODO](docs/TODO.md) / [Помощник проверки](docs/ABOUT.md)
+- Wiki: [English](../WIKI.md) / [한국어](../ko-kr/WIKI.md)
+- Changelog: [English](../CHANGELOG.md) / [한국어](../ko-kr/CHANGELOG.md)
+- Руководство участника: [English](../../CONTRIBUTING.md) / [한국어](../ko-kr/CONTRIBUTING.md)
+- [TODO](../TODO.md) / [Помощник проверки](../ABOUT.md)
 
 ## Разработка и проверка
 

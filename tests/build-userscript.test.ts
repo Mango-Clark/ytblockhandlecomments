@@ -24,7 +24,11 @@ test('build generates userscript and all document outputs', async () => {
 		assert.ok(readme, locale.code);
 		const content = readme?.content || '';
 		assert.doesNotMatch(content, /\{\{(?:language_links|translation_contributors)\}\}/);
-		for (const language of LOCALES) assert.ok(content.includes(`](${language.readme})`), language.code);
+		assert.equal(locale.readme, locale.code === 'en-us' ? 'README.md' : `docs/${locale.code}/README.md`);
+		for (const language of LOCALES) {
+			const relative = path.posix.relative(path.posix.dirname(locale.readme), language.readme);
+			assert.ok(content.includes(`](${relative})`), `${locale.code}/${language.code}`);
+		}
 		assert.ok(content.includes('- 한국어 - Mango-Clark'));
 		assert.equal((content.match(/ - GPT-6\.1 Sol/g) || []).length, 8);
 		assert.doesNotMatch(content, /- English \(US\) -/);

@@ -1,7 +1,7 @@
 <!-- Generated from src/template templates by npm run build. Edit the templates instead. -->
 # 📌 YouTube Comment Blocker — v1.5.4
 
-[English (US)](README.md) | [한국어](README.ko.md) | [日本語](README.ja-jp.md) | [Deutsch](README.de-de.md) | [简体中文](README.zh-cn.md) | [繁體中文](README.zh-tw.md) | [Français](README.fr-fr.md) | [Português (Brasil)](README.pt-br.md) | [Русский](README.ru-ru.md) | [Bahasa Indonesia](README.id-id.md)
+[English (US)](../../README.md) | [한국어](../ko-kr/README.md) | [日本語](../ja-jp/README.md) | [Deutsch](../de-de/README.md) | [简体中文](README.md) | [繁體中文](../zh-tw/README.md) | [Français](../fr-fr/README.md) | [Português (Brasil)](../pt-br/README.md) | [Русский](../ru-ru/README.md) | [Bahasa Indonesia](../id-id/README.md)
 
 在YouTube观看页面和Shorts中按频道身份隐藏评论的Tampermonkey用户脚本。支持账号名、UCID和正则规则，以及可配置自动化和本地存储。
 
@@ -66,10 +66,10 @@
 
 ## 文档
 
-- Wiki: [English](docs/WIKI.md) / [한국어](docs/WIKI.ko.md)
-- Changelog: [English](docs/CHANGELOG.md) / [한국어](docs/CHANGELOG.ko.md)
-- 贡献指南: [English](CONTRIBUTING.md) / [한국어](CONTRIBUTING.ko.md)
-- [TODO](docs/TODO.md) / [审查助手](docs/ABOUT.md)
+- Wiki: [English](../WIKI.md) / [한국어](../ko-kr/WIKI.md)
+- Changelog: [English](../CHANGELOG.md) / [한국어](../ko-kr/CHANGELOG.md)
+- 贡献指南: [English](../../CONTRIBUTING.md) / [한국어](../ko-kr/CONTRIBUTING.md)
+- [TODO](../TODO.md) / [审查助手](../ABOUT.md)
 
 ## 开发与验证
 

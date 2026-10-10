@@ -65,10 +65,10 @@ Varian wilayah memakai bahasa yang tersedia (`en-GB` → `en-us`, `pt-PT` → `p
 
 ## Dokumentasi
 
-- Wiki: [English](docs/WIKI.md) / [한국어](docs/WIKI.ko.md)
-- Changelog: [English](docs/CHANGELOG.md) / [한국어](docs/CHANGELOG.ko.md)
-- Panduan kontribusi: [English](CONTRIBUTING.md) / [한국어](CONTRIBUTING.ko.md)
-- [TODO](docs/TODO.md) / [Bantuan peninjauan](docs/ABOUT.md)
+- Wiki: [English](../WIKI.md) / [한국어](../ko-kr/WIKI.md)
+- Changelog: [English](../CHANGELOG.md) / [한국어](../ko-kr/CHANGELOG.md)
+- Panduan kontribusi: [English](../../CONTRIBUTING.md) / [한국어](../ko-kr/CONTRIBUTING.md)
+- [TODO](../TODO.md) / [Bantuan peninjauan](../ABOUT.md)
 
 ## Pengembangan dan verifikasi
 

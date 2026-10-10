@@ -65,10 +65,10 @@ Regionale Varianten werden zugeordnet (`en-GB` → `en-us`, `pt-PT` → `pt-br`)
 
 ## Dokumentation
 
-- Wiki: [English](docs/WIKI.md) / [한국어](docs/WIKI.ko.md)
-- Changelog: [English](docs/CHANGELOG.md) / [한국어](docs/CHANGELOG.ko.md)
-- Beitragsleitfaden: [English](CONTRIBUTING.md) / [한국어](CONTRIBUTING.ko.md)
-- [TODO](docs/TODO.md) / [Review-Hilfe](docs/ABOUT.md)
+- Wiki: [English](../WIKI.md) / [한국어](../ko-kr/WIKI.md)
+- Changelog: [English](../CHANGELOG.md) / [한국어](../ko-kr/CHANGELOG.md)
+- Beitragsleitfaden: [English](../../CONTRIBUTING.md) / [한국어](../ko-kr/CONTRIBUTING.md)
+- [TODO](../TODO.md) / [Review-Hilfe](../ABOUT.md)
 
 ## Entwicklung und Prüfung
 

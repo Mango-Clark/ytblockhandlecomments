@@ -1,7 +1,7 @@
 <!-- Generated from src/template templates by npm run build. Edit the templates instead. -->
 # 📌 YouTube Comment Blocker — v1.5.4
 
-[English (US)](README.md) | [한국어](README.ko.md) | [日本語](README.ja-jp.md) | [Deutsch](README.de-de.md) | [简体中文](README.zh-cn.md) | [繁體中文](README.zh-tw.md) | [Français](README.fr-fr.md) | [Português (Brasil)](README.pt-br.md) | [Русский](README.ru-ru.md) | [Bahasa Indonesia](README.id-id.md)
+[English (US)](README.md) | [한국어](docs/ko-kr/README.md) | [日本語](docs/ja-jp/README.md) | [Deutsch](docs/de-de/README.md) | [简体中文](docs/zh-cn/README.md) | [繁體中文](docs/zh-tw/README.md) | [Français](docs/fr-fr/README.md) | [Português (Brasil)](docs/pt-br/README.md) | [Русский](docs/ru-ru/README.md) | [Bahasa Indonesia](docs/id-id/README.md)
 
 A Tampermonkey userscript that hides YouTube comments by channel identity on watch and Shorts pages. Manage handle, UCID, and regex rules with configurable automation and local storage.
 
@@ -66,9 +66,9 @@ Regional variants match the same supported language (`en-GB` → `en-us`, `pt-PT
 
 ## Documentation
 
-- Wiki: [English](docs/WIKI.md) / [한국어](docs/WIKI.ko.md)
-- Changelog: [English](docs/CHANGELOG.md) / [한국어](docs/CHANGELOG.ko.md)
-- Contribution guide: [English](CONTRIBUTING.md) / [한국어](CONTRIBUTING.ko.md)
+- Wiki: [English](docs/WIKI.md) / [한국어](docs/ko-kr/WIKI.md)
+- Changelog: [English](docs/CHANGELOG.md) / [한국어](docs/ko-kr/CHANGELOG.md)
+- Contribution guide: [English](CONTRIBUTING.md) / [한국어](docs/ko-kr/CONTRIBUTING.md)
 - [TODO](docs/TODO.md) / [Review helper](docs/ABOUT.md)
 
 ## Development and verification

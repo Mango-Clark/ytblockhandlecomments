@@ -1,7 +1,6 @@
-<!-- Generated from src/template templates by npm run build. Edit the templates instead. -->
 # 변경사항
 
-[English](CHANGELOG.md) | [한국어](CHANGELOG.ko.md)
+[English](../CHANGELOG.md) | [한국어](CHANGELOG.md)
 
 모든 중요 변경 기록.
 
@@ -19,6 +18,7 @@
 
 ### Changed
 
+- 영어 외 문서와 대응 템플릿을 `docs/` 아래 언어별 폴더로 정리했습니다. 언어·문서의 상대 링크와 릴리스의 한국어 changelog 처리도 새 경로를 사용합니다.
 - 10개 로케일 선택과 브라우저 기반 자동 선택·영어 fallback을 제공합니다. 기존 한영 선택을 유지하며 번역은 공통 타입 계약을 따릅니다. 번역 README도 트랜잭션 생성·릴리스 대상에 포함됩니다.
 - README·기여 안내에 최신 페어링·설정 동작과 번역 작업 방식을 반영했습니다.
 

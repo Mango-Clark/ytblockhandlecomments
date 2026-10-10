@@ -1,6 +1,7 @@
-# 📌 YouTube Comment Blocker — v{{version}}
+<!-- Generated from src/template templates by npm run build. Edit the templates instead. -->
+# 📌 YouTube Comment Blocker — v1.5.4
 
-{{language_links}}
+[English (US)](../../README.md) | [한국어](../ko-kr/README.md) | [日本語](../ja-jp/README.md) | [Deutsch](../de-de/README.md) | [简体中文](../zh-cn/README.md) | [繁體中文](README.md) | [Français](../fr-fr/README.md) | [Português (Brasil)](../pt-br/README.md) | [Русский](../ru-ru/README.md) | [Bahasa Indonesia](../id-id/README.md)
 
 在YouTube觀看頁面和Shorts中依頻道身分隱藏留言的Tampermonkey使用者腳本。支援帳號代碼、UCID和正規表示式規則，以及可設定的自動化和本機儲存。
 
@@ -65,10 +66,10 @@
 
 ## 文件
 
-- Wiki: [English](docs/WIKI.md) / [한국어](docs/WIKI.ko.md)
-- Changelog: [English](docs/CHANGELOG.md) / [한국어](docs/CHANGELOG.ko.md)
-- 貢獻指南: [English](CONTRIBUTING.md) / [한국어](CONTRIBUTING.ko.md)
-- [TODO](docs/TODO.md) / [審查助手](docs/ABOUT.md)
+- Wiki: [English](../WIKI.md) / [한국어](../ko-kr/WIKI.md)
+- Changelog: [English](../CHANGELOG.md) / [한국어](../ko-kr/CHANGELOG.md)
+- 貢獻指南: [English](../../CONTRIBUTING.md) / [한국어](../ko-kr/CONTRIBUTING.md)
+- [TODO](../TODO.md) / [審查助手](../ABOUT.md)
 
 ## 開發與驗證
 
@@ -91,7 +92,15 @@ npm run verify
 
 ## 翻譯貢獻者
 
-{{translation_contributors}}
+- 한국어 - Mango-Clark
+- 日本語 - GPT-6.1 Sol
+- Deutsch - GPT-6.1 Sol
+- 简体中文 - GPT-6.1 Sol
+- 繁體中文 - GPT-6.1 Sol
+- Français - GPT-6.1 Sol
+- Português (Brasil) - GPT-6.1 Sol
+- Русский - GPT-6.1 Sol
+- Bahasa Indonesia - GPT-6.1 Sol
 
 ## 作者
 

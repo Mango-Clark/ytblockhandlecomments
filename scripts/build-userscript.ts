@@ -16,11 +16,11 @@ export const documentOutputs = [
 	...LOCALES.map(locale => locale.readme),
 	'docs/ABOUT.md',
 	'docs/CHANGELOG.md',
-	'docs/CHANGELOG.ko.md',
+	'docs/ko-kr/CHANGELOG.md',
 	'docs/README.md',
 	'docs/TODO.md',
 	'docs/WIKI.md',
-	'docs/WIKI.ko.md'
+	'docs/ko-kr/WIKI.md'
 ];
 
 type CompactState = 'normal' | 'single' | 'double' | 'regex' | 'regex-class' | 'template';
@@ -237,7 +237,7 @@ export const readDocumentTemplates = (version: string): GeneratedFile[] => {
 		for (const token of ['{{language_links}}', '{{translation_contributors}}']) {
 			if (!content.includes(token)) throw new Error(`Missing ${token} in src/template/${output}`);
 		}
-		content = content.replaceAll('{{language_links}}', LOCALES.map(locale => `[${locale.name}](${locale.readme})`).join(' | '))
+		content = content.replaceAll('{{language_links}}', LOCALES.map(locale => `[${locale.name}](${path.posix.relative(path.posix.dirname(output), locale.readme)})`).join(' | '))
 			.replaceAll('{{translation_contributors}}', LOCALES.filter(locale => locale.contributors.length)
 				.map(locale => `- ${locale.name} - ${locale.contributors.join(', ')}`).join('\n'));
 	}

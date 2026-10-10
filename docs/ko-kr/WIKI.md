@@ -1,9 +1,9 @@
 <!-- Generated from src/template templates by npm run build. Edit the templates instead. -->
 # 📚 YouTube Comment Blocker 위키 — v1.5.4
 
-[English](WIKI.md) | [한국어](WIKI.ko.md)
+[English](../WIKI.md) | [한국어](WIKI.md)
 
-현재 구현 상세. [`README.md`](../README.md)보다 구체적.
+현재 구현 상세. [`README.md`](../../README.md)보다 구체적.
 
 ## 1. 개요
 

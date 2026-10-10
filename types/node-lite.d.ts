@@ -42,6 +42,10 @@ declare module 'node:fs' {
 
 declare module 'node:path' {
 	const path: {
+		posix: {
+			dirname(value: string): string;
+			relative(from: string, to: string): string;
+		};
 		dirname(value: string): string;
 		join(...parts: string[]): string;
 		relative(from: string, to: string): string;

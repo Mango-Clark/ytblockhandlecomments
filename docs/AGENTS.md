@@ -1,7 +1,7 @@
 # Docs Rules
 
 Generated user docs are built from `src/template/` templates via `npm run build`.
-Generated files carry a build notice; edit templates only. `docs/AGENTS.md` is direct-managed.
+Generated files carry a build notice; edit templates only. `docs/AGENTS.md` and `docs/ko-kr/CONTRIBUTING.md` are direct-managed.
 
 ## Common
 
@@ -14,19 +14,19 @@ Generated files carry a build notice; edit templates only. `docs/AGENTS.md` is d
 
 ## README
 
-- Edit `src/template/README.md`, then its nine translated README templates, then build. Preserve existing English/Korean public paths.
+- Edit `src/template/README.md`, then `src/template/docs/<locale>/README.md` for the nine translations, then build. English stays at the root; non-English documentation belongs in `docs/<locale>/`.
 - UI and README support the ten locales in `i18n-mason.toml`; other docs retain their existing languages. Preserve shared language-link and contributor placeholders.
 - Feature descriptions must match implemented behavior.
 
 ## WIKI
 
-- For behavior/storage changes, edit `src/template/docs/WIKI.md`, then the Korean pair, then build.
+- For behavior/storage changes, edit `src/template/docs/WIKI.md`, then `src/template/docs/ko-kr/WIKI.md`, then build.
 - Document user behavior, storage effects, and configuration constraints.
 - Keep implementation-only reference details out of README.
 
 ## Changelog
 
-- Edit `src/template/docs/CHANGELOG.md`, then the Korean pair, then build.
+- Edit `src/template/docs/CHANGELOG.md`, then `src/template/docs/ko-kr/CHANGELOG.md`, then build.
 - Record technical changes, including internal implementation, build/tooling, storage, test-affecting, and non-visible behavior changes.
 - Omit only changes with no meaningful technical effect, such as pure formatting or wording cleanup.
 - Follow Keep a Changelog 1.1.0 sections: `Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`, `Security`.

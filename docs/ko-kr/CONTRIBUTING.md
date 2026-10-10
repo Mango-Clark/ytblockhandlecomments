@@ -1,6 +1,6 @@
 # 기여 안내
 
-[English](CONTRIBUTING.md) | [한국어](CONTRIBUTING.ko.md)
+[English](../../CONTRIBUTING.md) | [한국어](CONTRIBUTING.md)
 
 ## 시작하기 전에
 
@@ -15,6 +15,7 @@
 - 생성 문서는 `src/template/`에서 수정하세요. `npm run build`로 README와 `docs/` 생성 파일을 갱신하고 생성 파일을 직접 편집하지 마세요. `docs/AGENTS.md`는 직접 관리합니다.
 - 영어·한국어 문서를 함께 맞추세요. 영어를 먼저 수정한 뒤 한국어 짝 문서를 갱신하고, 섹션 순서·링크·명령·날짜·버전을 동일하게 유지하세요.
 - UI·README는 10개 로케일을 지원합니다. 영어 메시지 계약을 먼저 갱신하고 모든 카탈로그·README 번역을 맞추세요. 매개변수·명령·기계용 식별자는 보존합니다. 언어명·README 경로·기여자는 `src/i18n/locales.ts`, 언어 범위는 `i18n-mason.toml`에서 관리합니다.
+- 영어 외 문서는 `docs/<locale>/`에, 생성 문서의 템플릿은 `src/template/` 아래 대응 경로에 둡니다. 한국어 기여 안내는 `docs/ko-kr/CONTRIBUTING.md`에서 직접 관리합니다.
 - 의미 있는 기술 변경은 기존 Keep a Changelog 범주를 사용해 짝 changelog의 `Unreleased`에 기록하세요.
 - 사용자 동작, 저장 방식, 호환성 설명은 실제 구현과 일치시켜야 합니다.
 

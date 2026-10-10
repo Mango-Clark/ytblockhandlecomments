@@ -26,9 +26,9 @@ npm run typecheck
 
 ## Build Workflow
 
-Ten localized README outputs come from `src/i18n/locales.ts`. Build expands `{{language_links}}` and `{{translation_contributors}}` from that shared metadata, preserving the existing English/Korean filenames. The release script consumes the same output list, so localized templates and generated READMEs are included automatically. Other documents retain their current languages.
+Ten localized README outputs come from `src/i18n/locales.ts`. English stays at root `README.md`; translations use `docs/<locale>/README.md`. Korean Wiki, changelog, and the direct-managed contribution guide share `docs/ko-kr/`. Build expands relative `{{language_links}}` and `{{translation_contributors}}` from the shared metadata. The release script consumes the same output list and updates the Korean changelog at its locale path. Other documents retain their current languages.
 
-`build-userscript.ts` reads the one-line `VERSION` file. It uses `src/14-bootstrap.ts` as bundle entry and replaces `{{version}}` in userscript source + `src/template/` Markdown templates. `src/template/README*.md` generates root README files; `src/template/docs/*.md` generates matching `docs/*.md` files. `docs/AGENTS.md` remains direct-managed.
+`build-userscript.ts` reads the one-line `VERSION` file. It uses `src/14-bootstrap.ts` as bundle entry and replaces `{{version}}` in userscript source + `src/template/` Markdown templates. `src/template/README.md` generates root `README.md`; templates under `src/template/docs/` generate matching paths under `docs/`. `docs/AGENTS.md` and `docs/ko-kr/CONTRIBUTING.md` remain direct-managed.
 
 After source changes:
 

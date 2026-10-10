@@ -59,7 +59,7 @@ export const releasePushCommands = (tag: string): string[][] => [
 ];
 
 export const buildFreshUnreleased = (file: string): string => {
-	const emptyEntry = file.endsWith('.ko.md') ? '없음' : 'None';
+	const emptyEntry = file.replaceAll('\\', '/').includes('/ko-kr/') ? '없음' : 'None';
 	const sections = CHANGELOG_SECTIONS
 		.map(section => `### ${section}\n\n- ${emptyEntry}`)
 		.join('\n\n');
@@ -114,8 +114,8 @@ const files: VersionFile[] = [
 		replace: (text) => releaseChangelog(text, 'src/template/docs/CHANGELOG.md')
 	},
 	{
-		path: 'src/template/docs/CHANGELOG.ko.md',
-		replace: (text) => releaseChangelog(text, 'src/template/docs/CHANGELOG.ko.md')
+		path: 'src/template/docs/ko-kr/CHANGELOG.md',
+		replace: (text) => releaseChangelog(text, 'src/template/docs/ko-kr/CHANGELOG.md')
 	},
 	{
 		path: 'src/template/docs/TODO.md',

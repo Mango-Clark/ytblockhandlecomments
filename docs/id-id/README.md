@@ -1,7 +1,7 @@
 <!-- Generated from src/template templates by npm run build. Edit the templates instead. -->
 # 📌 YouTube Comment Blocker — v1.5.4
 
-[English (US)](README.md) | [한국어](README.ko.md) | [日本語](README.ja-jp.md) | [Deutsch](README.de-de.md) | [简体中文](README.zh-cn.md) | [繁體中文](README.zh-tw.md) | [Français](README.fr-fr.md) | [Português (Brasil)](README.pt-br.md) | [Русский](README.ru-ru.md) | [Bahasa Indonesia](README.id-id.md)
+[English (US)](../../README.md) | [한국어](../ko-kr/README.md) | [日本語](../ja-jp/README.md) | [Deutsch](../de-de/README.md) | [简体中文](../zh-cn/README.md) | [繁體中文](../zh-tw/README.md) | [Français](../fr-fr/README.md) | [Português (Brasil)](../pt-br/README.md) | [Русский](../ru-ru/README.md) | [Bahasa Indonesia](README.md)
 
 Skrip Tampermonkey yang menyembunyikan komentar YouTube berdasarkan kanal pada halaman video dan Shorts. Kelola aturan handle, UCID, dan regex dengan otomatisasi serta penyimpanan lokal.
 
@@ -66,10 +66,10 @@ Varian wilayah memakai bahasa yang tersedia (`en-GB` → `en-us`, `pt-PT` → `p
 
 ## Dokumentasi
 
-- Wiki: [English](docs/WIKI.md) / [한국어](docs/WIKI.ko.md)
-- Changelog: [English](docs/CHANGELOG.md) / [한국어](docs/CHANGELOG.ko.md)
-- Panduan kontribusi: [English](CONTRIBUTING.md) / [한국어](CONTRIBUTING.ko.md)
-- [TODO](docs/TODO.md) / [Bantuan peninjauan](docs/ABOUT.md)
+- Wiki: [English](../WIKI.md) / [한국어](../ko-kr/WIKI.md)
+- Changelog: [English](../CHANGELOG.md) / [한국어](../ko-kr/CHANGELOG.md)
+- Panduan kontribusi: [English](../../CONTRIBUTING.md) / [한국어](../ko-kr/CONTRIBUTING.md)
+- [TODO](../TODO.md) / [Bantuan peninjauan](../ABOUT.md)
 
 ## Pengembangan dan verifikasi
 

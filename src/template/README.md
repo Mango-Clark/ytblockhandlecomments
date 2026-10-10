@@ -65,9 +65,9 @@ Regional variants match the same supported language (`en-GB` → `en-us`, `pt-PT
 
 ## Documentation
 
-- Wiki: [English](docs/WIKI.md) / [한국어](docs/WIKI.ko.md)
-- Changelog: [English](docs/CHANGELOG.md) / [한국어](docs/CHANGELOG.ko.md)
-- Contribution guide: [English](CONTRIBUTING.md) / [한국어](CONTRIBUTING.ko.md)
+- Wiki: [English](docs/WIKI.md) / [한국어](docs/ko-kr/WIKI.md)
+- Changelog: [English](docs/CHANGELOG.md) / [한국어](docs/ko-kr/CHANGELOG.md)
+- Contribution guide: [English](CONTRIBUTING.md) / [한국어](docs/ko-kr/CONTRIBUTING.md)
 - [TODO](docs/TODO.md) / [Review helper](docs/ABOUT.md)
 
 ## Development and verification

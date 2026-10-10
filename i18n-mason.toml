@@ -3,7 +3,19 @@ default_locale = "en-us"
 locales = ["en-us", "ko-kr", "ja-jp", "de-de", "zh-cn", "zh-tw", "fr-fr", "pt-br", "ru-ru", "id-id"]
 
 [[scopes]]
-path = "src/template/docs"
+path = "src/template/docs/WIKI.md"
+locales = ["en-us", "ko-kr"]
+
+[[scopes]]
+path = "src/template/docs/ko-kr/WIKI.md"
+locales = ["en-us", "ko-kr"]
+
+[[scopes]]
+path = "src/template/docs/CHANGELOG.md"
+locales = ["en-us", "ko-kr"]
+
+[[scopes]]
+path = "src/template/docs/ko-kr/CHANGELOG.md"
 locales = ["en-us", "ko-kr"]
 
 [[scopes]]
@@ -27,5 +39,5 @@ path = "CONTRIBUTING.md"
 locales = ["en-us", "ko-kr"]
 
 [[scopes]]
-path = "CONTRIBUTING.ko.md"
+path = "docs/ko-kr/CONTRIBUTING.md"
 locales = ["en-us", "ko-kr"]

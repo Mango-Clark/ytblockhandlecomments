@@ -6,7 +6,7 @@
 - Edit source under `src/`; run build to regenerate root `ytblockhandlecomments.js`.
 - Verify generated userscript output with the project build check.
 - Tampermonkey loads the generated root userscript; commit it with source changes.
-- Documentation templates live in `src/template/`; generated root README files and `docs/*.md` files carry a build notice and must not be edited directly.
+- Documentation templates live in `src/template/`; generated root `README.md` and documents under `docs/` carry a build notice and must not be edited directly. Non-English templates and outputs use matching `docs/<locale>/` paths.
 
 ## Behavior And UI
 

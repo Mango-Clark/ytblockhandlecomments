@@ -1,7 +1,7 @@
 <!-- Generated from src/template templates by npm run build. Edit the templates instead. -->
 # Changelog
 
-[English](CHANGELOG.md) | [한국어](CHANGELOG.ko.md)
+[English](CHANGELOG.md) | [한국어](ko-kr/CHANGELOG.md)
 
 Notable project changes documented here.
 
@@ -18,6 +18,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); projec
 
 ### Changed
 
+- Non-English documentation and matching templates now use locale folders under `docs/`; relative language/document links and Korean release changelog handling follow the new paths.
 - Language selection now offers ten locales and browser-based automatic selection with English fallback; saved English/Korean choices remain compatible. All catalogs share a typed message contract, and localized READMEs participate in transactional generation and releases.
 - Current README and contribution guidance describe the latest pairing/settings behavior and translation workflow.
 

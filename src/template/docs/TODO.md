@@ -40,3 +40,10 @@
   - (3) Keep navigation, translations, themes, scale, keyboard focus, and list-return state; prevent narrow-screen overflow.
   - (4) Update regression cases, paired docs, changelog, and generated output; run allowed static checks and independent review without tests or full verify.
   - (5) Static checks/build and independent review passed. Synthetic browser preview covered desktop, 320px light and 390px dark at maximum scale; tests/full verify were not executed.
+
+- [x] (D) Group non-English documentation under locale folders.
+  - (0) Baseline: `72e1f60b215ae4f9ba1ee3559443820a3a64db6a`.
+  - (1) Keep English paths; move translated READMEs and Korean guides into `docs/<locale>/`, with matching template paths.
+  - (2) Preserve translation content and credits; update relative links, locale metadata, documentation rules, generation, and release paths.
+  - (3) Update affected regression cases; run lint, Markdown lint, typecheck, build, generated-output and link checks, and independent review. Do not run tests or full verify.
+  - (4) All allowed checks and independent static review passed; 201 relative links across 20 documents have existing targets. Tests and full verify were not run by user instruction.

@@ -1,7 +1,6 @@
-<!-- Generated from src/template templates by npm run build. Edit the templates instead. -->
-# 📌 YouTube Comment Blocker — v1.5.4
+# 📌 YouTube Comment Blocker — v{{version}}
 
-[English (US)](README.md) | [한국어](README.ko.md) | [日本語](README.ja-jp.md) | [Deutsch](README.de-de.md) | [简体中文](README.zh-cn.md) | [繁體中文](README.zh-tw.md) | [Français](README.fr-fr.md) | [Português (Brasil)](README.pt-br.md) | [Русский](README.ru-ru.md) | [Bahasa Indonesia](README.id-id.md)
+{{language_links}}
 
 YouTube 시청·Shorts 페이지에서 채널 기준으로 댓글을 숨기는 Tampermonkey 사용자 스크립트입니다. 핸들·UCID·정규식 규칙, 자동화와 로컬 저장소를 제공합니다.
 
@@ -66,10 +65,10 @@ UI·README는 `en-us`, `ko-kr`, `ja-jp`, `de-de`, `zh-cn`, `zh-tw`, `fr-fr`, `pt
 
 ## 문서
 
-- Wiki: [English](docs/WIKI.md) / [한국어](docs/WIKI.ko.md)
-- Changelog: [English](docs/CHANGELOG.md) / [한국어](docs/CHANGELOG.ko.md)
-- 기여 안내: [English](CONTRIBUTING.md) / [한국어](CONTRIBUTING.ko.md)
-- [TODO](docs/TODO.md) / [리뷰 도우미](docs/ABOUT.md)
+- Wiki: [English](../WIKI.md) / [한국어](WIKI.md)
+- Changelog: [English](../CHANGELOG.md) / [한국어](CHANGELOG.md)
+- 기여 안내: [English](../../CONTRIBUTING.md) / [한국어](CONTRIBUTING.md)
+- [TODO](../TODO.md) / [리뷰 도우미](../ABOUT.md)
 
 ## 개발·검증
 
@@ -92,15 +91,7 @@ npm run verify
 
 ## 번역 기여자
 
-- 한국어 - Mango-Clark
-- 日本語 - GPT-6.1 Sol
-- Deutsch - GPT-6.1 Sol
-- 简体中文 - GPT-6.1 Sol
-- 繁體中文 - GPT-6.1 Sol
-- Français - GPT-6.1 Sol
-- Português (Brasil) - GPT-6.1 Sol
-- Русский - GPT-6.1 Sol
-- Bahasa Indonesia - GPT-6.1 Sol
+{{translation_contributors}}
 
 ## 작성자
 
