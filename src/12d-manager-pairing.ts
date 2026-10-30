@@ -130,6 +130,7 @@ export function renderManagerPairResultList(container: HTMLElement, stats: PairR
 		handle.textContent = ` ${item.handle}`;
 		title.append(outcome, handle);
 		li.appendChild(title);
+		if (item.direction) li.appendChild(context.createMetaLine(t(item.direction === 'ucid-to-handle' ? 'pairDirectionUpdate' : 'pairDirectionCreate')));
 		if (item.ucid) li.appendChild(context.createMetaLine(t('metaUcid', item.ucid)));
 		if (item.resolvedUcid && item.resolvedUcid !== item.ucid) li.appendChild(context.createMetaLine(t('metaResolvedUcid', item.resolvedUcid)));
 		if (item.message) li.appendChild(context.createMetaLine(item.message));

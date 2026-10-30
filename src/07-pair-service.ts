@@ -285,18 +285,19 @@ const PAIR_LOOKUP_TIMEOUT_MS = 15000;
 				for (const resume of this._lookupWaiters.splice(0)) resume();
 			}
 		}
-		_recordPersistenceFailure(stats: PairRunStats, handle: string | null, error: unknown) {
+		_recordPersistenceFailure(stats: PairRunStats, handle: string | null, error: unknown, direction?: PairRunItem['direction']) {
 			stats.persistenceFailures = (stats.persistenceFailures || 0) + 1;
 			stats.failed += 1;
-			if (handle) stats.items.push({ handle, outcome: 'failed', message: error instanceof Error ? error.message : String(error) });
+			if (handle) stats.items.push({ handle, outcome: 'failed', ...(direction ? { direction } : {}), message: error instanceof Error ? error.message : String(error) });
 		}
 		_recordRollbackFailure(stats: PairRunStats, error: unknown) {
 			stats.persistenceFailures = (stats.persistenceFailures || 0) + 1;
 			this.logger?.warn?.('Pair rollback failed', { error: error instanceof Error ? error.message : String(error) });
 		}
 		_saveResolvedPair(stats: PairRunStats, handle: string, existing: PairRecord | null, next: PairRecord, pairRevision: string | undefined, ruleRevision: string | undefined) {
+			const direction = existing?.ucid ? 'ucid-to-handle' : 'handle-to-ucid';
 			if (!this.storage.refreshFromStorage() || !this.pairStore.refreshFromStorage()) {
-				this._recordPersistenceFailure(stats, handle, 'Unable to refresh pairing storage.');
+				this._recordPersistenceFailure(stats, handle, 'Unable to refresh pairing storage.', direction);
 				return false;
 			}
 			const key = getHandleCompareKey(handle, this.settings.isHandleCaseSensitive()) || '';
@@ -306,7 +307,7 @@ const PAIR_LOOKUP_TIMEOUT_MS = 15000;
 				|| JSON.stringify(this.storage._entries['h:' + key]) !== ruleRevision
 				|| JSON.stringify(current) !== JSON.stringify(existing)) {
 				stats.skipped += 1;
-				stats.items.push({ handle, outcome: 'skipped', message: t('pairChangedDuringLookup') });
+				stats.items.push({ handle, outcome: 'skipped', direction, message: t('pairChangedDuringLookup') });
 				return false;
 			}
 			const nextKey = getHandleCompareKey(next.handle, this.settings.isHandleCaseSensitive()) || '';
@@ -318,7 +319,7 @@ const PAIR_LOOKUP_TIMEOUT_MS = 15000;
 			if (addedId) nextItems.push({ type: 'id', value: next.ucid });
 			const blockWrite = this.storage.setAllResult(nextItems);
 			if (!blockWrite.ok) {
-				this._recordPersistenceFailure(stats, handle, blockWrite.error || 'Block list could not be saved.');
+				this._recordPersistenceFailure(stats, handle, blockWrite.error || 'Block list could not be saved.', direction);
 				return false;
 			}
 			const touched = new Set(['h:' + key, 'h:' + nextKey, ...(addedId ? ['i:' + next.ucid] : [])]);
@@ -327,7 +328,7 @@ const PAIR_LOOKUP_TIMEOUT_MS = 15000;
 			if (!pairWrite.ok) {
 				const rollback = this.storage.restoreTouchedItems(previousItems, expected);
 				if (!rollback.ok) this._recordRollbackFailure(stats, rollback.error);
-				this._recordPersistenceFailure(stats, handle, pairWrite.error || 'Pair metadata could not be saved.');
+				this._recordPersistenceFailure(stats, handle, pairWrite.error || 'Pair metadata could not be saved.', direction);
 				return false;
 			}
 			if (addedId) stats.addedIds += 1;
@@ -378,6 +379,7 @@ const PAIR_LOOKUP_TIMEOUT_MS = 15000;
 						}
 						const pairRevision = JSON.stringify(this.pairStore._pairEntries[key]);
 						const ruleRevision = JSON.stringify(this.storage._entries['h:' + key]);
+						const direction = existing?.ucid ? 'ucid-to-handle' : 'handle-to-ucid';
 						try {
 							const refresh = !!existing?.ucid;
 							const resolved = await this._withLookupSlot(() => refresh
@@ -389,11 +391,11 @@ const PAIR_LOOKUP_TIMEOUT_MS = 15000;
 							if (!this._saveResolvedPair(stats, handle, existing, next, pairRevision, ruleRevision)) continue;
 							if (existing?.ucid) stats.refreshed += 1;
 							else stats.created += 1;
-							stats.items.push({ handle, outcome: existing?.ucid ? 'updated' : 'created', ucid: next.ucid });
+							stats.items.push({ handle, outcome: existing?.ucid ? 'updated' : 'created', direction, ucid: next.ucid });
 						} catch (error) {
 							const code = (error as any)?.code;
 							stats.failed += 1;
-							stats.items.push({ handle, outcome: 'failed', ucid: existing?.ucid || undefined, message: error instanceof Error ? error.message : String(error), reason: code === 'timeout' || code === 'cancelled' ? code : 'network' });
+							stats.items.push({ handle, outcome: 'failed', direction, ucid: existing?.ucid || undefined, message: error instanceof Error ? error.message : String(error), reason: code === 'timeout' || code === 'cancelled' ? code : 'network' });
 							if (code === 'cancelled') return;
 						}
 					}

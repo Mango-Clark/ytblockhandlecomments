@@ -32,6 +32,7 @@ import { DEFAULT_LOCALE, LOCALES, matchBrowserLocale, matchSavedLocale, type Loc
 	export type PairRunItem = {
 		handle: string;
 		outcome: PairOutcome;
+		direction?: 'handle-to-ucid' | 'ucid-to-handle';
 		ucid?: string;
 		resolvedUcid?: string;
 		message?: string;

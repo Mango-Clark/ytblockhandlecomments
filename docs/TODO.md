@@ -48,3 +48,11 @@
   - (2) Preserve translation content and credits; update relative links, locale metadata, documentation rules, generation, and release paths.
   - (3) Update affected regression cases; run lint, Markdown lint, typecheck, build, generated-output and link checks, and independent review. Do not run tests or full verify.
   - (4) All allowed checks and independent static review passed; 201 relative links across 20 documents have existing targets. Tests and full verify were not run by user instruction.
+
+- [x] (E) Clarify disabled pagination and pair lookup directions.
+  - (0) Baseline: `b91521c91b03fba00861edb364ff70432b4e043d`.
+  - (1) Stop showing a loading cursor on inactive pagination; explain one-page results and preserve multi-page navigation.
+  - (2) Show creation/update directions in actions, explain fallback for missing UCIDs, and label the actual direction of attempted lookups in results.
+  - (3) Keep all ten translations aligned; preserve lookup policy, storage, filtering, sorting, and result export behavior.
+  - (4) Update regression cases and paired docs, run allowed static/build checks and independent review. Do not run tests or full verify.
+  - (5) Lint, Markdown lint, typecheck, build, generated-output check, and independent static review passed. Tests/full verify and browser visual checks were not executed; the user prohibited further Computer Use.

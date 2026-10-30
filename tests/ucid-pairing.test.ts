@@ -145,6 +145,7 @@ test('updates replace the old handle without changing its UCID', async () => {
 	service.resolveHandleToUcid = async () => { throw new Error('Old handle must not be re-resolved'); };
 	const stats = await service.updatePairsForHandles(['@alpha']);
 	assert.equal(stats.refreshed, 1);
+	assert.equal(stats.items[0].direction, 'ucid-to-handle');
 	assert.equal(pairs.getPair('@alpha'), null);
 	assert.equal(pairs.getPair('@latest').ucid, UCID);
 	assert.equal(storage.all().filter((item: any) => item.type === 'handle').map((item: any) => item.value).join(','), '@latest');
@@ -161,7 +162,9 @@ test('lookup failures and handle conflicts preserve existing blocking', async ()
 	assert.equal(pairs.getPair('@alpha').ucid, UCID);
 	assert.equal(pairs.getPair('@occupied').ucid, OTHER_UCID);
 	service.resolveUcidToHandle = async () => { throw new Error('channel unavailable'); };
-	assert.equal((await service.updatePairsForHandles(['@alpha'])).failed, 1);
+	const failed = await service.updatePairsForHandles(['@alpha']);
+	assert.equal(failed.failed, 1);
+	assert.equal(failed.items[0].direction, 'ucid-to-handle');
 	assert.ok(storage.all().some((item: any) => item.value === '@alpha'));
 });
 
@@ -200,12 +203,22 @@ test('failed pair rename rolls back only its rules and can retry', async () => {
 	pairs.replacePair = () => { storage.addHandle('@unrelated'); return { ok: false, error: new Error('pair write failed') }; };
 	const first = await service.updatePairsForHandles(['@alpha']);
 	assert.equal(first.refreshed, 0);
+	assert.equal(first.items[0].direction, 'ucid-to-handle');
 	assert.ok(first.persistenceFailures >= 1);
 	assert.ok(storage.all().some((item: any) => item.value === '@alpha'));
 	assert.ok(storage.all().some((item: any) => item.value === '@unrelated'));
 	assert.equal(storage.all().some((item: any) => item.value === '@latest'), false);
 	pairs.replacePair = replacePair;
 	assert.equal((await service.updatePairsForHandles(['@alpha'])).refreshed, 1);
+});
+
+test('update without a stored UCID reports its creation direction on failure', async () => {
+	const { service, storage } = setup();
+	storage.addHandle('@alpha');
+	service.resolveHandleToUcid = async () => { throw new Error('channel unavailable'); };
+	const stats = await service.updatePairsForHandles(['@alpha']);
+	assert.equal(stats.failed, 1);
+	assert.equal(stats.items[0].direction, 'handle-to-ucid');
 });
 
 test('successful storage refresh clears a previous transient write error', () => {

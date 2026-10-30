@@ -307,6 +307,9 @@ Pair results:
 
 - Pair runs return summary counts + per-handle outcomes
 - Manager shows `Last Pair Run`
+- Actions show `handle → UCID` for creation and `UCID → handle` for updates. Existing UCIDs are recovered in the update direction; items without UCIDs use the creation direction even during updates.
+- New result rows retain the actual lookup direction, including lookup and save failures; older results without direction metadata remain unlabeled.
+- A single result page disables both navigation buttons and explains that no additional pages exist. Disabled controls use an unavailable cursor; the loading cursor is reserved for busy pair actions.
 - Details support outcome filtering, run-order/outcome/handle sorting, failed-handle copy/export
 - Watch-page banner updates can open details
 

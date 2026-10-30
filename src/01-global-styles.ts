@@ -19,7 +19,8 @@
     .tm-dialog button.primary{background:#065fd4;color:#fff}
     .tm-dialog button.secondary{background:#eee;color:#000}
     .tm-dialog button.danger{background:#b3261e;color:#fff}
-    .tm-dialog button[disabled]{opacity:.6;cursor:wait}
+    .tm-dialog button[disabled]{opacity:.6;cursor:not-allowed}
+    .tm-dialog button[disabled][aria-busy="true"]{cursor:wait}
     .tm-dialog textarea{width:100%;height:260px;resize:vertical;margin-top:8px;font-family:monospace;font-size:14px}
     .tm-block-list{list-style:none;padding:0;margin:0}
     .tm-block-list li{display:flex;justify-content:space-between;align-items:flex-start;padding:10px 0;gap:12px;word-break:break-word;border-bottom:1px solid #ececec}

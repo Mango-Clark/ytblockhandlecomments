@@ -1261,6 +1261,8 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 			const pairSection = document.createElement('section');
 			pairSection.className = 'tm-section';
 			const pairTitle = document.createElement('h3');
+			const pairHelp = document.createElement('p');
+			pairHelp.className = 'tm-inline-note';
 			const toggleRow = document.createElement('div');
 			toggleRow.className = 'tm-toggle-row';
 			const pairActions = document.createElement('div');
@@ -1282,7 +1284,7 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 			pairProgress.className = 'tm-progress';
 			pairProgress.hidden = true;
 			const pairResultPanel = document.createElement('div');
-			pairSection.append(pairTitle, toggleRow, summaryTitle, lastCheck, summaryGrid, pairProgress, pairResultPanel);
+			pairSection.append(pairTitle, toggleRow, pairHelp, summaryTitle, lastCheck, summaryGrid, pairProgress, pairResultPanel);
 
 			const form = document.createElement('section');
 			form.className = 'tm-section tm-automation-entry';
@@ -1580,6 +1582,8 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 				const pairBulk = bulkSelect.value === 'create' || bulkSelect.value === 'update';
 				createBtn.disabled = pairState.busy;
 				updateBtn.disabled = pairState.busy;
+				createBtn.setAttribute('aria-busy', String(pairState.busy));
+				updateBtn.setAttribute('aria-busy', String(pairState.busy));
 				createBtn.textContent = pairState.busy ? t('pairWorking') : t('pairCreate');
 				updateBtn.textContent = pairState.busy ? t('pairWorking') : t('pairUpdate');
 				pairProgress.hidden = !pairState.busy;
@@ -1673,7 +1677,8 @@ import { createManagerPairController, getFailedPairHandles, getPairOutcomeLabel,
 				versionTitle.textContent = t('versionTitle');
 				versionText.textContent = t('versionValue', getScriptVersion());
 				openSettingsBtn.textContent = t('openSettings');
-				pairTitle.textContent = t('pairSummary');
+				pairTitle.textContent = t('pairLookupTitle');
+				pairHelp.textContent = t('pairDirectionHelp');
 				createBtn.textContent = t('pairCreate');
 				updateBtn.textContent = t('pairUpdate');
 				summaryTitle.textContent = t('pairSummary');

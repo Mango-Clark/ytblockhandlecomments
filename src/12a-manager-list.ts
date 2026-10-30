@@ -71,6 +71,12 @@ export function renderManagerPagination(container: HTMLElement, page: number, to
 	const status = document.createElement('span');
 	status.setAttribute('aria-live', 'polite');
 	status.textContent = t('pageStatus', page + 1, pages, total);
+	if (pages === 1) {
+		const hint = t('pageSingleHelp');
+		status.textContent += ' · ' + hint;
+		previous.title = hint;
+		next.title = hint;
+	}
 	previous.addEventListener('click', () => onChange(page - 1));
 	next.addEventListener('click', () => onChange(page + 1));
 	container.className = 'tm-inline-actions tm-pagination';

@@ -38,6 +38,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); projec
 
 ### Fixed
 
+- Inactive pagination no longer looks busy; single-page results explain why navigation is unavailable. Pair actions and new per-handle results display lookup directions, including the missing-UCID creation path during updates.
 - Separate UCID detection/pairing fields prevent inline layout collisions; settings inputs fit narrow screens and retain custom interval drafts.
 
 - Queued creation skips completed pairs; transient storage failures remain retryable, and rollback preserves unrelated rules.

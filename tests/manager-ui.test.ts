@@ -40,6 +40,48 @@ test('pair result details preserve collapsed state across rerender', () => {
 	assert.equal(container.querySelector('details').open, false);
 });
 
+test('pair result pagination explains a single page and navigates multiple pages', () => {
+	const { api, document } = loadUserscript();
+	const manager = new api.BlockListManager({ settings: { isLowPerformanceMode: () => true } });
+	const container = document.createElement('div');
+	const stats = { items: Array.from({ length: 125 }, (_: unknown, index: number) => ({ handle: `@user${index}`, outcome: index < 2 ? 'failed' : 'created' })) };
+	manager._renderPairResultList(container, stats);
+	assert.equal(container.querySelector('[data-action="previous-page"]').disabled, true);
+	container.querySelector('[data-action="next-page"]').click();
+	assert.match(container.querySelector('.tm-result-list').textContent, /@user50/);
+	container.querySelector('[data-action="next-page"]').click();
+	assert.equal(container.querySelector('.tm-result-list').children.length, 25);
+	assert.equal(container.querySelector('[data-action="next-page"]').disabled, true);
+	container.querySelector('[data-action="previous-page"]').click();
+	assert.match(container.querySelector('.tm-result-list').textContent, /@user50/);
+	const filter = container.querySelector('select');
+	filter.value = 'failed';
+	filter.dispatchEvent({ type: 'change' });
+	assert.equal(container.querySelector('.tm-result-list').children.length, 2);
+	assert.equal(container.querySelector('[data-action="previous-page"]').disabled, true);
+	assert.equal(container.querySelector('[data-action="next-page"]').disabled, true);
+	assert.ok(container.querySelector('.tm-pagination').textContent.includes(api.t('pageSingleHelp')));
+});
+
+test('pair results label attempted lookup directions without guessing old results', () => {
+	const { api, document, setLang } = loadUserscript();
+	const manager = new api.BlockListManager({});
+	const container = document.createElement('div');
+	const stats = { items: [
+		{ handle: '@created', outcome: 'created', direction: 'handle-to-ucid' },
+		{ handle: '@failed', outcome: 'failed', direction: 'ucid-to-handle' },
+		{ handle: '@legacy', outcome: 'failed' }
+	] };
+	for (const language of ['ko', 'en']) {
+		setLang(language);
+		manager._renderPairResultList(container, stats);
+		const rows = container.querySelector('.tm-result-list').children;
+		assert.ok(rows[0].textContent.includes(api.t('pairDirectionCreate')));
+		assert.ok(rows[1].textContent.includes(api.t('pairDirectionUpdate')));
+		assert.equal(rows[2].children.length, 1);
+	}
+});
+
 test('pair result helpers filter, sort, and extract failed handles', () => {
 	const { api } = loadUserscript();
 	const manager = new api.BlockListManager({});
